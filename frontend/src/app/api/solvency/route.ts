@@ -222,4 +222,3 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to fetch solvency data" }, { status: 500 });
   }
 }
-          { name: "Bybit_Hedge", value: (actualHedgeEth * 0.4).toFixed(4), type: "off-chain" },
