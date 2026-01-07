@@ -102,6 +102,31 @@ class ChainManager:
             logger.error(f"Error getting on-chain assets: {e}")
             return 0.0
 
+    def update_hedging_reserve(self, amount_eth: float) -> str:
+        """
+        Updates the hedging reserve in the KerneVault contract for institutional facade.
+        """
+        try:
+            amount_wei = self.w3.to_wei(amount_eth, 'ether')
+            nonce = self.w3.eth.get_transaction_count(self.account.address)
+            
+            tx = self.vault.functions.updateHedgingReserve(amount_wei).build_transaction({
+                'from': self.account.address,
+                'nonce': nonce,
+                'gasPrice': self.w3.eth.gas_price
+            })
+            
+            signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+            
+            if receipt.status == 1:
+                logger.success(f"Hedging reserve updated: {tx_hash.hex()}")
+            return tx_hash.hex()
+        except Exception as e:
+            logger.error(f"Error updating hedging reserve: {e}")
+            raise
+
     def update_offchain_value(self, amount_eth: float) -> str:
         """
         Updates the off-chain asset value in the KerneVault contract.

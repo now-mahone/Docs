@@ -16,7 +16,7 @@ import { KUSD_ADDRESS, KERNE_ADDRESS } from '@/constants/addresses';
 export function BridgeInterface() {
   const { address } = useAccount();
   const { kusdBalance } = useKUSD();
-  const { balance: kerneBalance } = useToken(address, address, KERNE_ADDRESS);
+  const { balance: kerneBalance } = useToken(address as `0x${string}`, address as `0x${string}`, KERNE_ADDRESS as `0x${string}`);
 
   const [token, setToken] = useState('kUSD');
   const [amount, setAmount] = useState('');
