@@ -4,14 +4,14 @@
 import { useState, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 import { formatUnits, parseUnits } from 'viem';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { toast } from 'sonner';
-import { useKUSD } from '@/hooks/useKUSD';
-import { useToken } from '@/hooks/useToken';
-import { KUSD_ADDRESS, KERNE_ADDRESS } from '@/constants/addresses';
+import { useKUSD } from '../hooks/useKUSD';
+import { useToken } from '../hooks/useToken';
+import { KUSD_ADDRESS, KERNE_ADDRESS } from '../constants/addresses';
 
 export function BridgeInterface() {
   const { address } = useAccount();
