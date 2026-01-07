@@ -76,7 +76,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         address strategist_,
         address exchangeDepositAddress_
     ) ERC4626(asset_) ERC20(name_, symbol_) {
-        _initialize(asset_, name_, symbol_, admin_, strategist_, exchangeDepositAddress_, address(0), 0);
+        _initialize(asset_, name_, symbol_, admin_, strategist_, exchangeDepositAddress_, address(0), 0, 1000, false);
     }
 
     /**
@@ -88,13 +88,26 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         string memory symbol_,
         address admin_,
         address founder_,
-        uint256 founderFeeBps_
+        uint256 founderFeeBps_,
+        uint256 performanceFeeBps_,
+        bool whitelistEnabled_
     ) external {
         // In OZ 5.0, asset() is set in the constructor. For clones, we need to handle this.
         // Since we can't change immutable variables, we check if the clone is already initialized
         // by checking a non-immutable state variable.
         require(founder == address(0), "Already initialized");
-        _initialize(IERC20(asset_), name_, symbol_, admin_, msg.sender, address(0), founder_, founderFeeBps_);
+        _initialize(
+            IERC20(asset_),
+            name_,
+            symbol_,
+            admin_,
+            msg.sender,
+            address(0),
+            founder_,
+            founderFeeBps_,
+            performanceFeeBps_,
+            whitelistEnabled_
+        );
     }
 
     string private _name;
@@ -116,7 +129,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         address strategist_,
         address exchangeDepositAddress_,
         address founder_,
-        uint256 founderFeeBps_
+        uint256 founderFeeBps_,
+        uint256 performanceFeeBps_,
+        bool whitelistEnabled_
     ) internal {
         require(admin_ != address(0), "Admin cannot be zero address");
 
@@ -129,6 +144,12 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
 
         founder = founder_;
         founderFeeBps = founderFeeBps_;
+        
+        // Set bespoke configurations during initialization
+        if (performanceFeeBps_ > 0 && performanceFeeBps_ <= 2000) {
+            grossPerformanceFeeBps = performanceFeeBps_;
+        }
+        whitelistEnabled = whitelistEnabled_;
 
         // Note: In a real clone, we'd need to handle the immutable exchangeDepositAddress differently
         // For this synthesis, we assume the factory provides a default or it's set post-deploy.

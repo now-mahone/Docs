@@ -44,11 +44,18 @@ contract KerneVaultFactory is Ownable {
         bool whitelistEnabled
     ) external onlyOwner returns (address) {
         address clone = Clones.clone(implementation);
-        KerneVault(clone).initialize(asset, name, symbol, admin, founder, founderFeeBps);
-
-        // Set additional bespoke configurations
-        KerneVault(clone).setPerformanceFee(performanceFeeBps);
-        KerneVault(clone).setWhitelistEnabled(whitelistEnabled);
+        
+        // Initialize with all bespoke configurations in one call
+        KerneVault(clone).initialize(
+            asset,
+            name,
+            symbol,
+            admin,
+            founder,
+            founderFeeBps,
+            performanceFeeBps,
+            whitelistEnabled
+        );
 
         allVaults.push(clone);
         emit VaultDeployed(clone, admin, name, symbol);
