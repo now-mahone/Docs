@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  kerne-bot:
+    build: .
+    container_name: kerne-bot
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env
+      - ../out:/app/out

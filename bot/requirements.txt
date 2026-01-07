@@ -1,0 +1,6 @@
+ccxt==4.2.19      # For Exchange API interaction (Binance/Bybit)
+web3==6.15.0      # For interacting with Base/Ethereum
+pandas==2.2.0     # For data analysis and CSV handling
+python-dotenv==1.0.1 # For security (loading private keys)
+loguru==0.7.2     # For professional logging
+requests==2.31.0  # For generic API calls
