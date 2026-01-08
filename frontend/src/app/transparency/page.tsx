@@ -81,7 +81,7 @@ export default function TransparencyPage() {
               <div>
                 <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-4">Off-Chain_Collateral</h4>
                 <div className="text-2xl font-bold text-white">{data.assets.off_chain_eth} ETH</div>
-                <div className="text-sm text-zinc-500 mt-1">Institutional Reserve & CEX Reserves</div>
+                <div className="text-sm text-zinc-500 mt-1">CEX Hedging Collateral (Pending Verification)</div>
               </div>
             </div>
           </div>
@@ -116,7 +116,7 @@ export default function TransparencyPage() {
         <section className="p-6 bg-zinc-950 border border-dashed border-zinc-800">
           <h3 className="text-xs text-zinc-500 uppercase mb-4 tracking-widest">Transparency_Protocol_Note</h3>
           <p className="text-sm text-zinc-400 leading-relaxed">
-            Kerne Protocol utilizes a delta-neutral hedging strategy. Assets are split between on-chain liquidity for immediate withdrawals and off-chain collateral (Institutional Reserve & CEX Reserves) to maintain short positions against ETH price volatility. The Institutional Reserve represents protocol-owned capital and verified off-exchange settlement (OES) balances deployed to ensure deep liquidity and stability during the Genesis phase.
+            Kerne Protocol utilizes a delta-neutral hedging strategy. Assets are split between on-chain liquidity for immediate withdrawals and off-chain collateral on CEX exchanges to maintain short positions against ETH price volatility. Off-chain balances are attested by the protocol&apos;s strategist bot and may not be independently verifiable in real-time.
           </p>
         </section>
 

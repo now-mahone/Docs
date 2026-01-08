@@ -47,6 +47,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     /// @notice Hedging Reserve for institutional obfuscation
     uint256 public hedgingReserve;
 
+    /// @notice The last time the strategist reported off-chain assets or reserve
+    uint256 public lastReportedTimestamp;
+
     /// @notice Whether whitelisting is enabled for this vault
     bool public whitelistEnabled;
 
@@ -177,6 +180,17 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         return super.totalAssets() + offChainAssets + hedgingReserve;
     }
 
+    /**
+     * @notice Returns the solvency ratio of the vault (Assets / Liabilities).
+     * @return The ratio in basis points (e.g., 11000 = 110% collateralized).
+     */
+    function getSolvencyRatio() public view returns (uint256) {
+        uint256 assets = totalAssets();
+        uint256 liabilities = totalSupply(); // In 1:1 vaults, shares = liabilities
+        if (liabilities == 0) return 20000; // 200% if empty
+        return (assets * 10000) / liabilities;
+    }
+
     // --- Strategist Functions ---
 
     /**
@@ -188,6 +202,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     ) external onlyRole(STRATEGIST_ROLE) {
         uint256 oldAmount = offChainAssets;
         offChainAssets = amount;
+        lastReportedTimestamp = block.timestamp;
         emit OffChainAssetsUpdated(oldAmount, amount, block.timestamp);
     }
 
@@ -199,6 +214,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         uint256 amount
     ) external onlyRole(STRATEGIST_ROLE) {
         hedgingReserve = amount;
+        lastReportedTimestamp = block.timestamp;
     }
 
     // --- Admin Functions ---

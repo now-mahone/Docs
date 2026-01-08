@@ -28,6 +28,11 @@ docker-compose up -d --build
 
 ## 3. Emergency Procedures (Runbooks)
 
+### 3.0. CI/CD & Permission Loops (Lessons Learned)
+- **Issue:** AccessControl errors during automated deployments/tests.
+- **Cause:** Factory contracts attempting post-deployment calls on clones without having the required roles (e.g., `DEFAULT_ADMIN_ROLE`).
+- **Solution:** Refactor `initialize()` functions to accept all configuration parameters (fees, whitelists, etc.) in a single atomic transaction. This removes the need for the factory to have elevated permissions after the clone is created.
+
 ### 3.1. Emergency Pause
 In case of a smart contract exploit or extreme market volatility:
 -   **Command:** Use the `Panic` script or call `pause()` via the Multisig on Basescan.

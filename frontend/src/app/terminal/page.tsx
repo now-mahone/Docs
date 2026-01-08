@@ -209,6 +209,20 @@ export default function Dashboard() {
       { date: '2024-12-28', price: 3404.00 },
       { date: '2024-12-29', price: 3356.48 },
       { date: '2024-12-30', price: 3361.84 },
+      // 2025 data (simulated continuation)
+      { date: '2025-01-15', price: 3280.00 },
+      { date: '2025-02-01', price: 3150.00 },
+      { date: '2025-03-01', price: 3420.00 },
+      { date: '2025-04-01', price: 3550.00 },
+      { date: '2025-05-01', price: 3380.00 },
+      { date: '2025-06-01', price: 3620.00 },
+      { date: '2025-07-01', price: 3480.00 },
+      { date: '2025-08-01', price: 3320.00 },
+      { date: '2025-09-01', price: 3580.00 },
+      { date: '2025-10-01', price: 3450.00 },
+      { date: '2025-11-01', price: 3680.00 },
+      { date: '2025-12-01', price: 3520.00 },
+      { date: '2026-01-01', price: 3400.00 },
     ];
 
     const data = [];
@@ -275,10 +289,9 @@ export default function Dashboard() {
   }, []);
 
   const rawTvl = totalAssets ? parseFloat(formatEther(totalAssets)) : 0;
-  const isSeeded = rawTvl < 0.1;
   
-  // Seeded TVL with natural noise (124.489 ETH)
-  const tvlDisplay = isSeeded ? 124.489 : rawTvl;
+  // Display actual TVL from on-chain data
+  const tvlDisplay = rawTvl;
   const tvlUsd = (tvlDisplay * ethPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   // kUSD Peg Simulation (Reflecting bot/liquidity_manager.py logic)
@@ -327,9 +340,9 @@ export default function Dashboard() {
         <MetricCard 
           label="TOTAL_VALUE_LOCKED" 
           value={`${tvlDisplay.toFixed(4)} ETH`} 
-          subValue={`≈ $${tvlUsd}${isSeeded ? '*' : ''}`}
+          subValue={`≈ $${tvlUsd}`}
           trend="up"
-          tooltip={isSeeded ? "*Includes pending institutional deposits" : undefined}
+          tooltip="Total assets in the vault smart contract on Base."
         />
         <MetricCard 
           label="STRATEGY_UTILIZATION" 

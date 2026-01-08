@@ -43,13 +43,14 @@ export default function LandingPage() {
     fetchPrice();
   }, []);
 
-  const seededTvlEth = 124.489;
-  const tvlUsd = (seededTvlEth * ethPrice).toLocaleString(undefined, { maximumFractionDigits: 0 });
+  // TVL will be fetched from on-chain data - show placeholder during genesis
+  const tvlEth = 0; // Will be populated from vault contract
+  const tvlUsd = (tvlEth * ethPrice).toLocaleString(undefined, { maximumFractionDigits: 0 });
   
   const yearlyYield = (calcAmount * (apy / 100)).toFixed(4);
   const monthlyYield = (parseFloat(yearlyYield) / 12).toFixed(4);
 
-  const capacityPercent = Math.min((seededTvlEth / 500) * 100, 100);
+  const capacityPercent = Math.min((tvlEth / 500) * 100, 100);
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-emerald-500/30 overflow-x-hidden">
@@ -150,7 +151,7 @@ export default function LandingPage() {
             <div className="mt-4 max-w-[200px] mx-auto">
               <div className="flex justify-between text-[8px] font-mono text-zinc-500 mb-1 uppercase tracking-widest">
                 <span>Beta_Capacity</span>
-                <span>{seededTvlEth.toFixed(1)} / 500 ETH</span>
+                <span>{tvlEth.toFixed(1)} / 500 ETH</span>
               </div>
               <div className="h-1 w-full bg-zinc-800 overflow-hidden">
                 <motion.div 
