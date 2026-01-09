@@ -287,7 +287,7 @@ contract kUSDMinter is AccessControl, ReentrancyGuard, Pausable {
      * @param kLPToRedeem The amount of kLP to redeem and use to repay debt.
      */
     function rebalance(address user, uint256 kLPToRedeem) external onlyRole(MANAGER_ROLE) nonReentrant {
-        require(getHealthFactor(user) < 1.05e18, "Position too healthy for rebalance");
+        require(getHealthFactor(user) < 1.3e18, "Position too healthy for rebalance");
 
         Position storage pos = positions[user];
         require(pos.collateralAmount >= kLPToRedeem, "Insufficient collateral");

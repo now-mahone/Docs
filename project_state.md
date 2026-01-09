@@ -247,3 +247,4 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 - [2026-01-08 18:05] - GitHub Migration: Created private repository `kerne-protocol/kerne-private` and pushed all project files for secure collaboration with Mahone. - Status: SUCCESS.
 - [2026-01-08 19:15] - 2-Hour Sprint Initiated: Defined high-intensity tasks for Scofield (Leverage Hardening, OFT Prep) and Mahone (Lead Scanning, Pitch Deck, Live Heartbeat). - Status: ACTIVE.
 - [2026-01-08 23:44] - Literature Ranking: Ranked top 7 books for Kerne's $1B TVL mission. - Status: SUCCESS.
+- [2026-01-09 12:30] - Leverage Hardening: Audited `kUSDMinter.sol` health factor logic and increased rebalance threshold to 1.3e18 for safer institutional operations. Verified with `test/KerneStressTest.t.sol`. - Status: SUCCESS.
