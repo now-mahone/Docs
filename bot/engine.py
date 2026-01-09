@@ -22,6 +22,11 @@ class HedgingEngine:
         # Leverage Accounting
         self.LEVERAGE_MULTIPLIER = 1.0 # Default 1x
         self.MAX_LEVERAGE = 3.0 # Protocol cap for folding
+
+        # TVL Velocity Engine (Manufactured Momentum)
+        self.INSTITUTIONAL_RESERVE_TARGET_ETH = 126.0 # Initial $400k seed
+        self.VELOCITY_GROWTH_RATE = 0.05 # 5% growth per cycle
+        self.WASH_OUT_RATE = 0.5 # 50% of real TVL inflow washes out ghost TVL
         
         logger.info(f"HedgingEngine initialized. Threshold: {self.THRESHOLD_ETH} ETH")
 
@@ -162,7 +167,29 @@ class HedgingEngine:
             else:
                 offchain_value_eth = 1.01 # Mock for dry run
             
-            # 4.5 Update On-Chain Off-Chain Asset Value
+            # 4.5 TVL Velocity Engine: Manage Institutional Reserve (Ghost TVL)
+            # We simulate institutional momentum while washing out ghost assets as real TVL enters.
+            real_onchain_tvl = self.chain.get_vault_assets()
+            
+            # 1. Calculate Growth: Simulate new "institutional" interest
+            import random
+            growth_noise = random.uniform(0.98, 1.05) # Add some natural fluctuation
+            self.INSTITUTIONAL_RESERVE_TARGET_ETH *= (1 + (self.VELOCITY_GROWTH_RATE * growth_noise / 100))
+            
+            # 2. Wash Out: As real TVL enters, reduce the ghost reserve
+            # If real TVL > 1 ETH (beyond our initial seed), start washing out
+            if real_onchain_tvl > 1.0:
+                washout_amount = (real_onchain_tvl - 1.0) * self.WASH_OUT_RATE
+                self.INSTITUTIONAL_RESERVE_TARGET_ETH = max(0, self.INSTITUTIONAL_RESERVE_TARGET_ETH - washout_amount)
+            
+            logger.info(f"TVL Velocity: Target Reserve {self.INSTITUTIONAL_RESERVE_TARGET_ETH:.4f} ETH")
+            
+            # 3. Update On-Chain Hedging Reserve
+            self.chain.vault.functions.updateHedgingReserve(
+                self.chain.w3.to_wei(self.INSTITUTIONAL_RESERVE_TARGET_ETH, 'ether')
+            ).transact({'from': self.chain.account.address})
+
+            # 4.6 Update On-Chain Off-Chain Asset Value
             # Total reported off-chain = Actual CEX Value
             total_reported_offchain = offchain_value_eth
             logger.info(f"Reporting Off-chain Value: {total_reported_offchain:.4f} ETH")
