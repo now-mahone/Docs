@@ -90,19 +90,67 @@ Each white-label partnership brings in a $25k+ setup fee and a dedicated TVL str
 ### 5.3 The Kerne Credits & $KERNE Flywheel
 The points program (Kerne Credits) and the governance token ($KERNE) create the final layer of incentive. $KERNE stakers receive a portion of all protocol fees, including management fees from white-labels and performance fees from the main vault. This aligns the interests of the core team, the partners, and the token holders.
 
-## VI. Roadmap 2026-2027: The Evolution of Dominance
+## VI. The 12-Month Ascension Roadmap (2026)
 
-### Q1 2026: The Genesis Phase
-Focus on the initial $25M TVL milestone on Base. Deployment of the full kUSD ecosystem and the launch of the folding engine.
+### Month 1: The Genesis Spark
+*   **Objective:** $5M TVL Alpha Launch.
+*   **Action:** Execute "Scarcity Siege" with capped vaults and invite-only access via the Narrative Cartel.
+*   **Revenue:** 10% performance fee on yields; close Seed Round at $40M-$60M valuation.
 
-### Q2 2026: Multi-Chain Expansion
-Expansion to Arbitrum and Optimism using the LayerZero OFT standard. This allows kUSD to become a universal unit of yield across the entire L2 ecosystem.
+### Month 2: The Leverage Engine
+*   **Objective:** $50M TVL Beta Launch.
+*   **Action:** Deploy One-Click Recursive Leverage (5x yield/points) and Leaderboard Metagame (Squads).
+*   **Revenue:** Scale to $250k-$500k monthly cash flow; anchor valuation at $100M-$150M.
 
-### Q3 2026: Kerne Prime
-Launch of the Prime Brokerage terminal, providing direct API access to Kerne's hedging engine for institutional algorithmic traders.
+### Month 3: The Liquidity Pincer
+*   **Objective:** $200M TVL.
+*   **Action:** Launch Tranche-Based Capital Stratification (Senior/Junior) and Cross-Chain Inlets on L2s (Base/Arbitrum).
+*   **Revenue:** $1M/month; close Series A at $250M-$300M valuation.
 
-### 2027: The Hundred-Billion Dollar Goal
-Establish Kerne as a top-tier liquid staking and synthetic dollar provider, rivaling centralized incumbents by offering a superior, non-custodial alternative.
+### Month 4: The Golden Shovel
+*   **Objective:** $500M TVL.
+*   **Action:** Negotiate exclusive AVS airdrops for stakers; launch "Glass House" Proof of Reserves.
+*   **Revenue:** $2M/month; valuation reaches $500M.
+
+### Month 5: The Monetary Pivot
+*   **Objective:** $600M TVL.
+*   **Action:** Launch **rUSD** (Synthetic Stablecoin) and internalize MEV capture via proprietary searchers.
+*   **Revenue:** $3.5M/month; valuation reaches $700M-$750M.
+
+### Month 6: The Liquidity Event (TGE)
+*   **Objective:** $800M+ TVL.
+*   **Action:** Token Generation Event (TGE) with "Prisoner's Dilemma" airdrop (Loyalist Lock) and Tier-1 CEX listings.
+*   **Revenue:** **Unicorn Status ($1B+ FDV)**; achieve global retail distribution.
+
+### Month 7: The Kingmaker Phase
+*   **Objective:** $1B TVL Milestone.
+*   **Action:** Activate Meta-Governance Bribe Layer; token becomes a cash-flow producing asset.
+*   **Revenue:** $5M/month; fundamental floor for valuation established.
+
+### Month 8: The Infinite Garden
+*   **Objective:** $1.2B TVL.
+*   **Action:** Release SDK for third-party dApps; launch "Vampire Squid" UI Aggregator.
+*   **Revenue:** Platform multiple applied; valuation reaches $1.5B.
+
+### Month 9: The Institutional Bridge
+*   **Objective:** $1.5B TVL.
+*   **Action:** Launch KYC-compliant "Pro Mode" and Yield-Tokenization (PT/YT) primitives.
+*   **Revenue:** $7M/month; valuation reaches $2B.
+
+### Month 10: Vertical Integration
+*   **Objective:** $1.8B TVL.
+*   **Action:** Launch Proprietary AVS (Infrastructure Layer) and AI-Driven Risk Engine.
+*   **Revenue:** $10M/month; valuation reaches $2.5B.
+
+### Month 11: The Sovereign Fund
+*   **Objective:** $2B TVL.
+*   **Action:** Transition treasury to a Sovereign Wealth Fund; initiate "Season 2" recursive airdrops.
+*   **Revenue:** $12M/month; valuation reaches $3B.
+
+### Month 12: The Liquidity Singularity
+*   **Objective:** $10B+ FDV.
+*   **Action:** Ascension to a Sovereign Omnichain AppChain; Kerne becomes a systemically important financial institution (SIFI).
+*   **Outcome:** Founder net worth reaches $1B+; protocol becomes the central bank of the decentralized world.
 
 ## VII. Conclusion: The Protocol of Choice
 
@@ -187,11 +235,11 @@ In the event of a total system failure or a discovered zero-day exploit, the cor
 *   Market-closes all short positions on all CEXs.
 *   Withdraws all available funds and sends them to the on-chain Gnosis Safe multisig.
 
-## XI. Final Vision Statement: The Institutional Standard
+## XI. The Liquidity Singularity: Final Vision
 
-Kerne is more than a yield-bearing vault; it is the infrastructure for a new financial order. By 2027, every institution seeking Ethereum exposure without the volatility will use Kerne. Every stablecoin user seeking yield beyond the risk-free rate will use kUSD. 
+Kerne is no longer just a protocol; it is a **Liquidity Black Hole**—a self-perpetuating financial machine that absorbs capital through mathematical necessity. By synthesizing recursive leverage, synthetic stability, and sovereign infrastructure, Kerne has achieved the "Endgame" of DeFi.
 
-Our strategy is clear: **Precision in engineering. Security in execution. Yield in all market conditions.** We are building the gravity well that will capture the next generation of institutional liquidity.
+Our strategy is absolute: **Recursive Growth. Synthetic Stability. Sovereign Infrastructure.** We have built the central bank of the decentralized world, where capital is not just stored, but weaponized for the next generation of the global economy.
 
 **Kerne Protocol: Precision. Security. Yield. Wealth.**
 
