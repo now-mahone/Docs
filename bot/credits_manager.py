@@ -144,6 +144,28 @@ class CreditsManager:
     def get_credits(self, address: str) -> float:
         return self.credits_data.get(address.lower(), {}).get("total_credits", 0.0)
 
+    def get_leaderboard(self, limit: int = 10):
+        """
+        Returns the top addresses by total credits.
+        """
+        sorted_data = sorted(
+            self.credits_data.items(),
+            key=lambda x: x[1].get("total_credits", 0.0),
+            reverse=True
+        )
+        return sorted_data[:limit]
+
+    def get_referral_leaderboard(self, limit: int = 10):
+        """
+        Returns the top referrers by total volume referred or referral count.
+        """
+        sorted_data = sorted(
+            self.referral_data.items(),
+            key=lambda x: x[1].get("total_earned", 0.0),
+            reverse=True
+        )
+        return sorted_data[:limit]
+
 if __name__ == "__main__":
     manager = CreditsManager()
     manager.update_credits("0x1234567890123456789012345678901234567890", 10.5)
