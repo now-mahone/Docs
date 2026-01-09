@@ -29,3 +29,30 @@ To prevent context loss and confusion between old/new code:
 
 ## 5. CURRENT PHASE: DAY 1 (ARCHITECTURE & SETUP)
 We are currently defining the mechanism and setting up the environment.
+
+## 6. GIT SYNC PROTOCOL (MULTI-MACHINE COLLABORATION)
+**Purpose:** Keep Scofield and Mahone's machines synchronized via GitHub.
+**Private Repo:** `https://github.com/kerne-protocol/kerne-private`
+
+### At the START of every task:
+1.  **Pull latest changes** before doing ANY work:
+    ```bash
+    git pull private main
+    ```
+2.  If there are merge conflicts, STOP and alert the user immediately.
+
+### At the END of every successful task:
+1.  **Stage, commit, and push** all changes:
+    ```bash
+    git add -A
+    git commit -m "[YYYY-MM-DD] Brief description of changes"
+    git push private main
+    ```
+2.  If push fails due to remote changes, pull first, resolve conflicts if any, then push.
+
+### Commit Message Format:
+`[YYYY-MM-DD] <area>: <brief description>`
+Examples:
+- `[2026-01-08] contracts: Add insurance fund logic`
+- `[2026-01-08] bot: Fix hedging engine threshold`
+- `[2026-01-08] docs: Update mechanism spec`
