@@ -32,7 +32,15 @@ We are currently defining the mechanism and setting up the environment.
 
 ## 6. GIT SYNC PROTOCOL (MULTI-MACHINE COLLABORATION)
 **Purpose:** Keep Scofield and Mahone's machines synchronized via GitHub.
-**Private Repo:** `https://github.com/kerne-protocol/kerne-private`
+
+### CRITICAL: PRIVATE REPOSITORY ONLY
+**The ONLY repository for all code pushes/pulls is the PRIVATE repo:**
+- **Repository:** `kerne-protocol/kerne-private`
+- **URL:** `https://github.com/kerne-protocol/kerne-private`
+- **Remote Name:** `private`
+- **Access:** ONLY Scofield and Mahone have access. No public code leaks.
+
+**DO NOT push to any public repository.** The `origin` remote has been removed to prevent accidental public exposure.
 
 ### At the START of every task:
 1.  **Pull latest changes** before doing ANY work:
@@ -42,7 +50,7 @@ We are currently defining the mechanism and setting up the environment.
 2.  If there are merge conflicts, STOP and alert the user immediately.
 
 ### At the END of every successful task:
-1.  **Stage, commit, and push** all changes:
+1.  **Stage, commit, and push** all changes to the PRIVATE repo:
     ```bash
     git add -A
     git commit -m "[YYYY-MM-DD] Brief description of changes"
@@ -56,3 +64,7 @@ Examples:
 - `[2026-01-08] contracts: Add insurance fund logic`
 - `[2026-01-08] bot: Fix hedging engine threshold`
 - `[2026-01-08] docs: Update mechanism spec`
+
+### Current Git Remotes (as of 2026-01-08):
+- `private` → https://github.com/kerne-protocol/kerne-private.git (PRIMARY - all pushes go here)
+- `vercel` → https://github.com/enerzy17/kerne-protocol.git (frontend deployment only)
