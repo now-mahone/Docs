@@ -121,4 +121,25 @@ contract KerneStressTest is Test {
         console.log("Health Factor after rebalance:", hfAfter);
         assertTrue(hfAfter > hf);
     }
+
+    /**
+     * @notice Test the dynamic deposit caps.
+     */
+    function testVaultCap() public {
+        vm.startPrank(admin);
+        vault.setMaxTotalAssets(100e18);
+        vm.stopPrank();
+
+        vm.startPrank(user);
+        asset.approve(address(vault), 200e18);
+        
+        // Should succeed
+        vault.deposit(50e18, user);
+        
+        // Should fail (50 + 60 = 110 > 100)
+        vm.expectRevert("Vault cap exceeded");
+        vault.deposit(60e18, user);
+        
+        vm.stopPrank();
+    }
 }

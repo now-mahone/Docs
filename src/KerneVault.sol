@@ -56,6 +56,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     /// @notice Mapping of whitelisted addresses
     mapping(address => bool) public whitelisted;
 
+    /// @notice The maximum amount of assets the vault can hold (0 = unlimited)
+    uint256 public maxTotalAssets;
+
     /// @notice The treasury address for fee collection
     address public treasury;
 
@@ -365,11 +368,21 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         insuranceFundBps = bps;
     }
 
+    /**
+     * @notice Sets the maximum total assets the vault can hold.
+     */
+    function setMaxTotalAssets(uint256 _maxTotalAssets) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        maxTotalAssets = _maxTotalAssets;
+    }
+
     // --- ERC4626 Overrides with Pausable and Buffer Checks ---
 
     function deposit(uint256 assets, address receiver) public virtual override whenNotPaused returns (uint256) {
         if (whitelistEnabled) {
             require(whitelisted[msg.sender] || hasRole(STRATEGIST_ROLE, msg.sender), "Not whitelisted");
+        }
+        if (maxTotalAssets > 0) {
+            require(totalAssets() + assets <= maxTotalAssets, "Vault cap exceeded");
         }
         return super.deposit(assets, receiver);
     }
@@ -377,6 +390,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     function mint(uint256 shares, address receiver) public virtual override whenNotPaused returns (uint256) {
         if (whitelistEnabled) {
             require(whitelisted[msg.sender] || hasRole(STRATEGIST_ROLE, msg.sender), "Not whitelisted");
+        }
+        uint256 assets = previewMint(shares);
+        if (maxTotalAssets > 0) {
+            require(totalAssets() + assets <= maxTotalAssets, "Vault cap exceeded");
         }
         return super.mint(shares, receiver);
     }
