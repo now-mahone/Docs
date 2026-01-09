@@ -260,4 +260,5 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 - [2026-01-09 14:48] - Technical Blueprint: Defined 3-step execution for Permissionless Integration (ERC-4626, Yield Oracle, DEX Liquidity). - Status: SUCCESS.
 - [2026-01-09 14:51] - ERC-4626 Hardening: Implemented `getProjectedAPY()` and refined `maxDeposit`/`maxMint` in `KerneVault.sol` for aggregator compatibility. - Status: SUCCESS.
 - [2026-01-09 14:59] - Yield Oracle Automation: Updated `bot/engine.py` to calculate verifiable APY based on share price growth and automatically update the on-chain oracle. - Status: SUCCESS.
+- [2026-01-09 15:41] - Dynamic Maximization: Defined the "Break-Point" APY logic (~75%+) based on Recursive Leverage (Folding) until the 1.1x health factor limit. - Status: SUCCESS.
 - [2026-01-09 14:42] - Strategic Pivot: Defined "Permissionless Yield Arbitrage" strategy to capture TVL via automated aggregators without direct BD or meetings. - Status: SUCCESS.
