@@ -39,7 +39,8 @@ contract DeployInstitutionalFactory is Script {
             founder,
             500, // 5% founder fee for white-label
             1500, // 15% performance fee
-            true // whitelist enabled
+            true, // whitelist enabled
+            0 // unlimited cap for genesis
         );
 
         // 4. Configure Genesis Vault

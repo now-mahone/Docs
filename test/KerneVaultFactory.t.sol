@@ -33,7 +33,7 @@ contract KerneVaultFactoryTest is Test {
     function testDeployVault() public {
         vm.startPrank(factory.owner());
         address vaultAddr =
-            factory.deployVault(address(asset), "Partner Vault", "PVT", partner, founder, 500, 1500, true);
+            factory.deployVault(address(asset), "Partner Vault", "PVT", partner, founder, 500, 1500, true, 1000e18);
         vm.stopPrank();
 
         KerneVault vault = KerneVault(vaultAddr);
@@ -41,12 +41,13 @@ contract KerneVaultFactoryTest is Test {
         assertEq(vault.symbol(), "PVT");
         assertEq(vault.founder(), founder);
         assertEq(vault.founderFeeBps(), 500);
+        assertEq(vault.maxTotalAssets(), 1000e18);
         assertTrue(vault.hasRole(vault.DEFAULT_ADMIN_ROLE(), partner));
     }
 
     function testDeployVaultNonOwner() public {
         vm.prank(partner);
         vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", partner));
-        factory.deployVault(address(asset), "Partner Vault", "PVT", partner, founder, 500, 1500, true);
+        factory.deployVault(address(asset), "Partner Vault", "PVT", partner, founder, 500, 1500, true, 0);
     }
 }

@@ -41,7 +41,8 @@ contract KerneInstitutionalTest is Test {
             founder,
             500, // 5% founder fee
             1500, // 15% performance fee
-            true // whitelist enabled
+            true, // whitelist enabled
+            0 // unlimited
         );
         vm.stopPrank();
 
@@ -55,7 +56,7 @@ contract KerneInstitutionalTest is Test {
     function testWhitelisting() public {
         vm.startPrank(factory.owner());
         address vaultAddr =
-            factory.deployVault(address(asset), "Whitelisted Vault", "kWL", admin, founder, 0, 1500, true);
+            factory.deployVault(address(asset), "Whitelisted Vault", "kWL", admin, founder, 0, 1500, true, 0);
         vm.stopPrank();
 
         KerneVault vault = KerneVault(vaultAddr);

@@ -371,7 +371,8 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     /**
      * @notice Sets the maximum total assets the vault can hold.
      */
-    function setMaxTotalAssets(uint256 _maxTotalAssets) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setMaxTotalAssets(uint256 _maxTotalAssets) external {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(STRATEGIST_ROLE, msg.sender), "Not authorized");
         maxTotalAssets = _maxTotalAssets;
     }
 

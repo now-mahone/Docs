@@ -41,7 +41,8 @@ contract KerneVaultFactory is Ownable {
         address founder,
         uint256 founderFeeBps,
         uint256 performanceFeeBps,
-        bool whitelistEnabled
+        bool whitelistEnabled,
+        uint256 maxTotalAssets
     ) external onlyOwner returns (address) {
         address clone = Clones.clone(implementation);
         
@@ -56,6 +57,10 @@ contract KerneVaultFactory is Ownable {
             performanceFeeBps,
             whitelistEnabled
         );
+
+        if (maxTotalAssets > 0) {
+            KerneVault(clone).setMaxTotalAssets(maxTotalAssets);
+        }
 
         allVaults.push(clone);
         emit VaultDeployed(clone, admin, name, symbol);
