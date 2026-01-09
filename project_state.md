@@ -258,4 +258,5 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 - [2026-01-09 14:36] - Strategic Pivot: Defined "Invisible Infrastructure" growth strategy (Aggregator Integration) to drive TVL without direct website visits. - Status: SUCCESS.
 - [2026-01-09 14:46] - Strategic Pivot: Defined "Permissionless Yield Arbitrage" strategy to capture TVL via automated aggregators without direct BD or meetings. - Status: SUCCESS.
 - [2026-01-09 14:48] - Technical Blueprint: Defined 3-step execution for Permissionless Integration (ERC-4626, Yield Oracle, DEX Liquidity). - Status: SUCCESS.
+- [2026-01-09 14:51] - ERC-4626 Hardening: Implemented `getProjectedAPY()` and refined `maxDeposit`/`maxMint` in `KerneVault.sol` for aggregator compatibility. - Status: SUCCESS.
 - [2026-01-09 14:42] - Strategic Pivot: Defined "Permissionless Yield Arbitrage" strategy to capture TVL via automated aggregators without direct BD or meetings. - Status: SUCCESS.
