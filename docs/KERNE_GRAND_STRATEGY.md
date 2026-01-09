@@ -1,7 +1,7 @@
 # Kerne Protocol: The Grand Synthesis & Strategic Blueprint
 
 **Date:** 2026-01-08  
-**Version:** 1.0  
+**Version:** 2.0 (Institutional Expansion)
 **Classification:** Strategic Master Document  
 **Authors:** Scofield (Lead Architect), Mahone (Core Contributor)
 
