@@ -40,8 +40,8 @@ export function FAQ() {
         transition={{ duration: 0.6 }}
         className="text-center mb-16"
       >
-        <h2 className="text-[10px] uppercase tracking-[0.3em] text-emerald-500 font-bold mb-4">Common Questions</h2>
-        <h3 className="text-4xl font-bold tracking-tighter uppercase">Frequently Asked Questions</h3>
+        <h2 className="text-[10px] uppercase tracking-[0.3em] text-primary font-bold mb-4">Common Questions</h2>
+        <h3 className="text-4xl font-heading font-bold tracking-tighter uppercase">Frequently Asked Questions</h3>
       </motion.div>
 
       <div className="space-y-4">
@@ -52,16 +52,16 @@ export function FAQ() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: index * 0.1 }}
-            className="border border-border/50 rounded-xl overflow-hidden bg-muted/10 backdrop-blur-sm"
+            className="border border-border rounded-xl overflow-hidden bg-card backdrop-blur-sm shadow-sm"
           >
             <button
               onClick={() => setOpenIndex(openIndex === index ? null : index)}
-              className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-muted/20 transition-colors"
+              className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-muted transition-colors font-heading"
             >
-              <span className="font-bold uppercase tracking-tight text-sm">{faq.question}</span>
+              <span className="font-bold uppercase tracking-tight text-sm text-foreground">{faq.question}</span>
               <ChevronDown
                 size={18}
-                className={`text-emerald-500 transition-transform duration-300 ${openIndex === index ? 'rotate-180' : ''}`}
+                className={`text-primary transition-transform duration-300 ${openIndex === index ? 'rotate-180' : ''}`}
               />
             </button>
             <AnimatePresence>
@@ -72,7 +72,7 @@ export function FAQ() {
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                 >
-                  <div className="px-6 pt-2 pb-6 text-zinc-400 text-sm leading-relaxed">
+                  <div className="px-6 pt-2 pb-6 text-muted-foreground text-sm leading-relaxed">
                     {faq.answer}
                   </div>
                 </motion.div>

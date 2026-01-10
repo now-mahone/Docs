@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import { Space_Grotesk, Manrope } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
 
-const jetbrainsMono = JetBrains_Mono({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-mono",
+  variable: "--font-heading",
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-sans",
 });
 
 export const metadata: Metadata = {
@@ -44,21 +49,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${jetbrainsMono.variable} font-mono antialiased`}>
+      <body className={`${spaceGrotesk.variable} ${manrope.variable} font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
-          forcedTheme="dark"
-          enableSystem={false}
+          defaultTheme="light"
+          enableSystem={true}
           disableTransitionOnChange
         >
           <Providers>
             {children}
             <Toaster 
-              theme="dark" 
+              theme="light" 
               position="bottom-right" 
               toastOptions={{
-                className: "font-mono uppercase text-[10px] tracking-widest border-emerald-500/20 bg-obsidian text-emerald-500",
+                className: "font-sans uppercase text-[10px] tracking-widest border-zinc-200 bg-white text-zinc-900",
               }}
             />
           </Providers>

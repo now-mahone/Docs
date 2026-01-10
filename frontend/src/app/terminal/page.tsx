@@ -311,23 +311,23 @@ export default function Dashboard() {
   const utilization = total > 0 ? ((offChain / total) * 100).toFixed(2) : '0.00';
 
   return (
-    <main className="min-h-screen bg-obsidian text-zinc-100 p-6 font-mono">
+    <main className="min-h-screen bg-background text-foreground p-6 font-sans">
       {/* Header */}
-      <header className="flex justify-between items-center mb-12 border-b border-zinc-800 pb-4">
+      <header className="flex justify-between items-center mb-12 border-b border-border pb-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tighter">KERNE_TERMINAL_v1.0</h1>
+          <h1 className="text-xl font-heading font-bold tracking-tighter">KERNE_TERMINAL_v1.0</h1>
           <div className="flex items-center gap-4 mt-1">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-              <span className="text-[10px] text-emerald-500 uppercase">System_Live</span>
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+              <span className="text-[10px] text-primary uppercase font-bold">System_Live</span>
             </div>
-            <div className="text-[10px] text-zinc-500 uppercase">
-              Block: <span className="text-zinc-300">{blockNumber?.toString() || '-------'}</span>
+            <div className="text-[10px] text-muted-foreground uppercase">
+              Block: <span className="text-foreground font-mono">{blockNumber?.toString() || '-------'}</span>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-6">
-          <Link href="/docs" className="text-[10px] text-zinc-500 hover:text-white uppercase tracking-widest transition-colors">
+          <Link href="/docs" className="text-[10px] text-muted-foreground hover:text-primary uppercase tracking-widest transition-colors font-bold">
             [LITEPAPER]
           </Link>
           <ChainSwitcher />
@@ -366,43 +366,43 @@ export default function Dashboard() {
 
       {/* Quick Actions / Zap */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="md:col-span-2 p-4 bg-zinc-900/30 border border-zinc-800 rounded-xl flex items-center justify-between">
+        <div className="md:col-span-2 p-4 bg-card border border-border rounded-xl flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-500">
+            <div className="p-2 bg-primary/10 rounded-lg text-primary">
               <Zap size={20} />
             </div>
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-widest mb-2">One-Click Liquidity (Zap)</h3>
-              <p className="text-[10px] text-zinc-500">Instantly provide liquidity to kUSD/USDC pool on Aerodrome.</p>
+              <h3 className="text-xs font-heading font-bold uppercase tracking-widest mb-2">One-Click Liquidity (Zap)</h3>
+              <p className="text-[10px] text-muted-foreground">Instantly provide liquidity to kUSD/USDC pool on Aerodrome.</p>
             </div>
           </div>
-          <button className="px-6 py-2 bg-white text-black text-[10px] font-bold uppercase tracking-tighter hover:bg-zinc-200 transition-all active:scale-95">
+          <button className="px-6 py-2 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-tighter hover:bg-primary-dark transition-all active:scale-95 rounded-sm">
             EXECUTE_ZAP
           </button>
         </div>
-        <div className="p-4 bg-zinc-900/30 border border-zinc-800 rounded-xl flex items-center justify-between">
+        <div className="p-4 bg-card border border-border rounded-xl flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-            <span className="text-[10px] text-zinc-400 uppercase">Peg_Protection: ACTIVE</span>
+            <div className="w-2 h-2 bg-secondary rounded-full animate-pulse" />
+            <span className="text-[10px] text-muted-foreground uppercase font-bold">Peg_Protection: ACTIVE</span>
           </div>
-          <span className="text-[10px] text-zinc-600 font-mono">v1.0.4</span>
+          <span className="text-[10px] text-muted-foreground font-mono">v1.0.4</span>
         </div>
       </div>
 
       {/* Main Content Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 border border-zinc-800 bg-obsidian/50 h-[500px] flex flex-col relative overflow-hidden p-6">
-          <div className="absolute inset-0 opacity-10 pointer-events-none" 
-               style={{ backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+        <div className="lg:col-span-2 border border-border bg-card h-[500px] flex flex-col relative overflow-hidden p-6 rounded-xl shadow-sm">
+          <div className="absolute inset-0 opacity-5 pointer-events-none" 
+               style={{ backgroundImage: 'linear-gradient(#4c7be7 1px, transparent 1px), linear-gradient(90deg, #4c7be7 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
           
           <div className="flex justify-between items-center mb-8 relative z-10">
             <div>
-              <h3 className="text-[10px] text-zinc-500 uppercase tracking-[0.2em]">Performance_Metrics</h3>
-              <p className="text-xs text-emerald-500 mt-1">PROJECTED_ANNUAL_YIELD (APY)</p>
+              <h3 className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">Performance_Metrics</h3>
+              <p className="text-xs text-primary mt-1 font-heading font-bold">PROJECTED_ANNUAL_YIELD (APY)</p>
             </div>
             <div className="text-right">
-              <span className="text-[10px] text-zinc-500 uppercase">SOURCE: </span>
-              <span className="text-xs text-zinc-300">ETH-PERP FUNDING</span>
+              <span className="text-[10px] text-muted-foreground uppercase font-bold">SOURCE: </span>
+              <span className="text-xs text-foreground font-bold">ETH-PERP FUNDING</span>
             </div>
           </div>
 
