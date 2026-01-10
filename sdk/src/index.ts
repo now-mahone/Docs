@@ -13,6 +13,8 @@ import KerneVaultFactoryABI from './abis/KerneVaultFactory.json';
 import KerneVaultABI from './abis/KerneVault.json';
 import IERC20ABI from './abis/IERC20.json';
 
+export enum VaultTier { BASIC, PRO, INSTITUTIONAL }
+
 export class KerneSDK {
     public publicClient: PublicClient;
     public walletClient?: WalletClient;
@@ -34,19 +36,21 @@ export class KerneSDK {
         name: string;
         symbol: string;
         admin: Address;
-        founder: Address;
-        founderFeeBps: number;
         performanceFeeBps: number;
         whitelistEnabled: boolean;
         maxTotalAssets: bigint;
+        tier: VaultTier;
     }) {
         if (!this.walletClient || !this.walletClient.account) throw new Error("Wallet client required for deployment");
 
-        const deploymentFee = await this.publicClient.readContract({
+        const tierConfig = await this.publicClient.readContract({
             address: this.factoryAddress,
             abi: KerneVaultFactoryABI.abi,
-            functionName: 'deploymentFee',
-        }) as bigint;
+            functionName: 'tierConfigs',
+            args: [params.tier]
+        }) as [bigint, bigint, boolean];
+
+        const deploymentFee = tierConfig[0];
 
         const { request } = await this.publicClient.simulateContract({
             account: this.walletClient.account,
@@ -58,11 +62,10 @@ export class KerneSDK {
                 params.name,
                 params.symbol,
                 params.admin,
-                params.founder,
-                params.founderFeeBps,
                 params.performanceFeeBps,
                 params.whitelistEnabled,
-                params.maxTotalAssets
+                params.maxTotalAssets,
+                params.tier
             ],
             value: deploymentFee
         });
@@ -100,6 +103,61 @@ export class KerneSDK {
             totalSupply,
             projectedAPY,
             symbol
+        };
+    }
+
+    // --- Compliance Methods ---
+
+    async setComplianceHook(vaultAddress: Address, hookAddress: Address) {
+        if (!this.walletClient || !this.walletClient.account) throw new Error("Wallet client required");
+
+        const { request } = await this.publicClient.simulateContract({
+            account: this.walletClient.account,
+            address: vaultAddress,
+            abi: KerneVaultABI.abi,
+            functionName: 'setComplianceHook',
+            args: [hookAddress]
+        });
+
+        return await this.walletClient.writeContract(request);
+    }
+
+    async setWhitelisted(vaultAddress: Address, account: Address, status: boolean) {
+        if (!this.walletClient || !this.walletClient.account) throw new Error("Wallet client required");
+
+        const { request } = await this.publicClient.simulateContract({
+            account: this.walletClient.account,
+            address: vaultAddress,
+            abi: KerneVaultABI.abi,
+            functionName: 'setWhitelisted',
+            args: [account, status]
+        });
+
+        return await this.walletClient.writeContract(request);
+    }
+
+    // --- Analytics Methods ---
+
+    async getVaultAnalytics(vaultAddress: Address) {
+        const vault = getContract({
+            address: vaultAddress,
+            abi: KerneVaultABI.abi,
+            client: this.publicClient
+        });
+
+        const [totalAssets, totalSupply, solvencyRatio, lastReported] = await Promise.all([
+            vault.read.totalAssets(),
+            vault.read.totalSupply(),
+            vault.read.getSolvencyRatio(),
+            vault.read.lastReportedTimestamp()
+        ]);
+
+        return {
+            totalAssets,
+            totalSupply,
+            solvencyRatio: Number(solvencyRatio) / 100,
+            lastReported: new Date(Number(lastReported) * 1000),
+            isHealthy: Number(solvencyRatio) >= 10000
         };
     }
 

@@ -15,8 +15,15 @@ contract KerneVaultFactory is Ownable {
     address public immutable implementation;
     address[] public allVaults;
 
-    /// @notice Fee required to deploy a vault permissionlessly (in native ETH)
-    uint256 public deploymentFee = 0.05 ether;
+    enum VaultTier { BASIC, PRO, INSTITUTIONAL }
+
+    struct TierConfig {
+        uint256 deploymentFee;
+        uint256 protocolFounderFeeBps;
+        bool complianceRequired;
+    }
+
+    mapping(VaultTier => TierConfig) public tierConfigs;
 
     /// @notice The address that receives deployment fees
     address public feeRecipient;
@@ -24,8 +31,8 @@ contract KerneVaultFactory is Ownable {
     /// @notice Mapping to track vaults deployed by each address
     mapping(address => address[]) public vaultsByDeployer;
 
-    event VaultDeployed(address indexed vault, address indexed admin, string name, string symbol);
-    event DeploymentFeeUpdated(uint256 newFee);
+    event VaultDeployed(address indexed vault, address indexed admin, string name, string symbol, VaultTier tier);
+    event TierConfigUpdated(VaultTier tier, uint256 fee, uint256 founderFeeBps, bool compliance);
     event FeeRecipientUpdated(address newRecipient);
 
     constructor(
@@ -33,33 +40,38 @@ contract KerneVaultFactory is Ownable {
     ) Ownable(msg.sender) {
         implementation = _implementation;
         feeRecipient = msg.sender;
+
+        // Initialize default tiers
+        tierConfigs[VaultTier.BASIC] = TierConfig(0.05 ether, 1000, false); // 10% of performance fee
+        tierConfigs[VaultTier.PRO] = TierConfig(0.2 ether, 750, true);      // 7.5% of performance fee
+        tierConfigs[VaultTier.INSTITUTIONAL] = TierConfig(1 ether, 500, true); // 5% of performance fee
     }
 
     /**
-     * @notice Deploys a new bespoke vault.
+     * @notice Deploys a new bespoke vault with a specific tier.
      * @param asset The underlying asset (e.g., USDC, WETH).
      * @param name Name of the vault token.
      * @param symbol Symbol of the vault token.
      * @param admin Admin of the new vault.
-     * @param founder Founder address for fee capture.
-     * @param founderFeeBps Fee taken by the Kerne founder.
      * @param performanceFeeBps Initial performance fee for the vault.
      * @param whitelistEnabled Whether whitelisting is enabled initially.
      * @param maxTotalAssets Maximum capacity of the vault.
+     * @param tier The tier of the vault being deployed.
      */
     function deployVault(
         address asset,
         string memory name,
         string memory symbol,
         address admin,
-        address founder,
-        uint256 founderFeeBps,
         uint256 performanceFeeBps,
         bool whitelistEnabled,
-        uint256 maxTotalAssets
+        uint256 maxTotalAssets,
+        VaultTier tier
     ) external payable returns (address) {
+        TierConfig memory config = tierConfigs[tier];
+
         if (msg.sender != owner()) {
-            require(msg.value >= deploymentFee, "Insufficient deployment fee");
+            require(msg.value >= config.deploymentFee, "Insufficient deployment fee");
             if (msg.value > 0 && feeRecipient != address(0)) {
                 (bool success, ) = payable(feeRecipient).call{value: msg.value}("");
                 require(success, "Fee transfer failed");
@@ -69,7 +81,14 @@ contract KerneVaultFactory is Ownable {
         address clone = Clones.clone(implementation);
 
         KerneVault(clone).initialize(
-            asset, name, symbol, admin, founder, founderFeeBps, performanceFeeBps, whitelistEnabled
+            asset, 
+            name, 
+            symbol, 
+            admin, 
+            owner(), // Kerne Protocol Treasury
+            config.protocolFounderFeeBps, 
+            performanceFeeBps, 
+            whitelistEnabled || config.complianceRequired
         );
 
         if (maxTotalAssets > 0) {
@@ -79,17 +98,22 @@ contract KerneVaultFactory is Ownable {
         allVaults.push(clone);
         vaultsByDeployer[msg.sender].push(clone);
         
-        emit VaultDeployed(clone, admin, name, symbol);
+        emit VaultDeployed(clone, admin, name, symbol, tier);
 
         return clone;
     }
 
     /**
-     * @notice Allows owner to update the deployment fee.
+     * @notice Allows owner to update tier configurations.
      */
-    function setDeploymentFee(uint256 _newFee) external onlyOwner {
-        deploymentFee = _newFee;
-        emit DeploymentFeeUpdated(_newFee);
+    function setTierConfig(
+        VaultTier tier,
+        uint256 deploymentFee,
+        uint256 protocolFounderFeeBps,
+        bool complianceRequired
+    ) external onlyOwner {
+        tierConfigs[tier] = TierConfig(deploymentFee, protocolFounderFeeBps, complianceRequired);
+        emit TierConfigUpdated(tier, deploymentFee, protocolFounderFeeBps, complianceRequired);
     }
 
     /**

@@ -10,6 +10,7 @@ import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol"
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IComplianceHook } from "./interfaces/IComplianceHook.sol";
 
 /**
  * @title KerneVault
@@ -55,6 +56,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
 
     /// @notice Mapping of whitelisted addresses
     mapping(address => bool) public whitelisted;
+
+    /// @notice External compliance hook for automated KYC/AML
+    IComplianceHook public complianceHook;
 
     /// @notice The maximum amount of assets the vault can hold (0 = unlimited)
     uint256 public maxTotalAssets;
@@ -277,6 +281,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         whitelisted[account] = status;
     }
 
+    function setComplianceHook(address _hook) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        complianceHook = IComplianceHook(_hook);
+    }
+
     function setPerformanceFee(
         uint256 bps
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -335,7 +343,15 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         address receiver
     ) public view virtual override returns (uint256) {
         if (paused()) return 0;
-        if (whitelistEnabled && !whitelisted[receiver]) return 0;
+        if (whitelistEnabled) {
+            if (!whitelisted[receiver]) {
+                if (address(complianceHook) != address(0)) {
+                    if (!complianceHook.isCompliant(address(this), receiver)) return 0;
+                } else {
+                    return 0;
+                }
+            }
+        }
         uint256 assets = totalAssets();
         if (maxTotalAssets > 0) {
             return assets >= maxTotalAssets ? 0 : maxTotalAssets - assets;
@@ -347,7 +363,15 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         address receiver
     ) public view virtual override returns (uint256) {
         if (paused()) return 0;
-        if (whitelistEnabled && !whitelisted[receiver]) return 0;
+        if (whitelistEnabled) {
+            if (!whitelisted[receiver]) {
+                if (address(complianceHook) != address(0)) {
+                    if (!complianceHook.isCompliant(address(this), receiver)) return 0;
+                } else {
+                    return 0;
+                }
+            }
+        }
         uint256 assets = totalAssets();
         if (maxTotalAssets > 0) {
             if (assets >= maxTotalAssets) return 0;
@@ -358,7 +382,11 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
 
     function deposit(uint256 assets, address receiver) public virtual override whenNotPaused returns (uint256) {
         if (whitelistEnabled) {
-            require(whitelisted[receiver] || hasRole(STRATEGIST_ROLE, msg.sender), "Not whitelisted");
+            bool isCompliant = whitelisted[receiver] || hasRole(STRATEGIST_ROLE, msg.sender);
+            if (!isCompliant && address(complianceHook) != address(0)) {
+                isCompliant = complianceHook.isCompliant(address(this), receiver);
+            }
+            require(isCompliant, "Not whitelisted or compliant");
         }
         if (maxTotalAssets > 0) {
             require(totalAssets() + assets <= maxTotalAssets, "Vault cap exceeded");
@@ -368,7 +396,11 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
 
     function mint(uint256 shares, address receiver) public virtual override whenNotPaused returns (uint256) {
         if (whitelistEnabled) {
-            require(whitelisted[receiver] || hasRole(STRATEGIST_ROLE, msg.sender), "Not whitelisted");
+            bool isCompliant = whitelisted[receiver] || hasRole(STRATEGIST_ROLE, msg.sender);
+            if (!isCompliant && address(complianceHook) != address(0)) {
+                isCompliant = complianceHook.isCompliant(address(this), receiver);
+            }
+            require(isCompliant, "Not whitelisted or compliant");
         }
         uint256 assets = previewMint(shares);
         if (maxTotalAssets > 0) {
