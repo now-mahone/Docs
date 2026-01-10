@@ -68,8 +68,7 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="flex justify-between items-center px-8 py-6 border-b border-border backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center gap-2">
-          <Image src="/kerne-logo.png" alt="Kerne Logo" width={24} height={24} className="rounded-sm object-contain" />
-          <span className="text-xl font-heading font-bold tracking-tighter uppercase">Kerne</span>
+          <Image src="/kerne-lockup.svg" alt="Kerne Logo" width={100} height={24} className="object-contain" priority />
         </div>
           <div className="hidden md:flex items-center gap-8 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
             <Link href="/about" className="hover:text-primary transition-colors">About</Link>
@@ -358,8 +357,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-start gap-24">
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-3">
-              <Image src="/kerne-logo.png" alt="Kerne Logo" width={32} height={32} className="rounded-sm" />
-              <span className="text-2xl font-heading font-bold tracking-tighter uppercase">Kerne</span>
+              <Image src="/kerne-lockup.svg" alt="Kerne Logo" width={140} height={32} className="object-contain" />
             </div>
             <p className="text-muted-foreground text-xs max-w-[240px] leading-relaxed">
               © 2025 Kerne Protocol. <br />
