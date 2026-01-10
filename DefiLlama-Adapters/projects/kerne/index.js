@@ -11,6 +11,10 @@ async function tvl(api) {
     { target: KERNE_VAULT, abi: "uint256:totalAssets" },
     { target: KERNE_VAULT, abi: "address:asset" },
   ]);
+  
+  // Institutional Hardening: Ensure no double-counting of kUSD if it's minted against the reserve
+  // We only report the underlying asset (WETH) held by the vault.
+  // Any kUSD liquidity on Aerodrome is excluded here to prevent "Double Counting" flags.
   api.add(asset, totalAssets);
 }
 

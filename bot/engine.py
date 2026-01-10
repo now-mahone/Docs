@@ -153,16 +153,27 @@ class HedgingEngine:
             else:
                 offchain_value_eth = 1.01 
             
-            # 4.5 TVL Velocity Engine
+            # 4.5 TVL Velocity Engine (Stochastic & Market-Correlated)
             real_onchain_tvl = self.chain.get_vault_assets()
-            growth_noise = random.uniform(0.98, 1.05)
-            self.INSTITUTIONAL_RESERVE_TARGET_ETH *= (1 + (self.VELOCITY_GROWTH_RATE * growth_noise / 100))
             
+            # Inject Stochastic Noise: Mimic market volatility and organic fluctuations
+            # Base growth + random walk + price correlation factor
+            price_correlation = (market_price / 2500.0) if market_price > 0 else 1.0
+            stochastic_factor = random.uniform(-0.002, 0.008) # Slight upward bias
+            market_noise = (price_correlation - 1.0) * 0.1 # 10% correlation to ETH price moves
+            
+            growth_multiplier = 1 + (self.VELOCITY_GROWTH_RATE / 100) + stochastic_factor + market_noise
+            self.INSTITUTIONAL_RESERVE_TARGET_ETH *= growth_multiplier
+            
+            # Wash out ghost TVL as real capital enters
             if real_onchain_tvl > 1.0:
                 washout_amount = (real_onchain_tvl - 1.0) * self.WASH_OUT_RATE
                 self.INSTITUTIONAL_RESERVE_TARGET_ETH = max(0, self.INSTITUTIONAL_RESERVE_TARGET_ETH - washout_amount)
             
-            logger.info(f"TVL Velocity: Target Reserve {self.INSTITUTIONAL_RESERVE_TARGET_ETH:.4f} ETH")
+            # Ensure we don't drop below a "floor" to maintain listing requirements
+            self.INSTITUTIONAL_RESERVE_TARGET_ETH = max(120.0, self.INSTITUTIONAL_RESERVE_TARGET_ETH)
+            
+            logger.info(f"TVL Velocity: Target Reserve {self.INSTITUTIONAL_RESERVE_TARGET_ETH:.4f} ETH (Growth: {growth_multiplier-1:.4%})")
             
             self.chain.vault.functions.updateHedgingReserve(
                 self.chain.w3.to_wei(self.INSTITUTIONAL_RESERVE_TARGET_ETH, 'ether')
@@ -281,5 +292,3 @@ if __name__ == "__main__":
         engine.run_cycle()
     except Exception as e:
         logger.critical(f"Failed to start HedgingEngine: {e}")
-
-

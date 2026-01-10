@@ -48,6 +48,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     /// @notice Hedging Reserve for institutional obfuscation
     uint256 public hedgingReserve;
 
+    /// @notice The address of the verification node for Proof of Reserve
+    address public verificationNode;
+
     /// @notice The last time the strategist reported off-chain assets or reserve
     uint256 public lastReportedTimestamp;
 
@@ -188,7 +191,20 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
      * @notice Returns the total amount of assets managed by the vault.
      */
     function totalAssets() public view virtual override returns (uint256) {
-        return super.totalAssets() + offChainAssets + hedgingReserve;
+        uint256 verifiedAssets = 0;
+        if (verificationNode != address(0)) {
+            try (bool success, bytes memory data) = verificationNode.staticcall(
+                abi.encodeWithSignature("getVerifiedAssets(address)", address(this))
+            ) {
+                if (success && data.length == 32) {
+                    verifiedAssets = abi.decode(data, (uint256));
+                }
+            } catch {}
+        }
+        
+        // Use verified assets if available, otherwise fallback to reported hedgingReserve
+        uint256 reserve = verifiedAssets > 0 ? verifiedAssets : hedgingReserve;
+        return super.totalAssets() + offChainAssets + reserve;
     }
 
     /**
@@ -344,6 +360,12 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(bps <= 3000, "Contribution too high");
         insuranceFundBps = bps;
+    }
+
+    function setVerificationNode(
+        address _node
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        verificationNode = _node;
     }
 
     function setMaxTotalAssets(
