@@ -262,3 +262,7 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 - [2026-01-09 14:59] - Yield Oracle Automation: Updated `bot/engine.py` to calculate verifiable APY based on share price growth and automatically update the on-chain oracle. - Status: SUCCESS.
 - [2026-01-09 15:41] - Dynamic Maximization: Defined the "Break-Point" APY logic (~75%+) based on Recursive Leverage (Folding) until the 1.1x health factor limit. - Status: SUCCESS.
 - [2026-01-09 14:42] - Strategic Pivot: Defined "Permissionless Yield Arbitrage" strategy to capture TVL via automated aggregators without direct BD or meetings. - Status: SUCCESS.
+- [2026-01-09 20:17] - Vercel Remote Migration: Updated `vercel` git remote to the organizational private repository (`kerne-protocol/kerne-private`) to ensure both Scofield and Mahone can manage deployments from the shared private repo. - Status: SUCCESS.
+- [2026-01-09 20:21] - Remote Verification: Re-verified and enforced `vercel` remote to `kerne-protocol/kerne-private` to resolve sync discrepancies. - Status: SUCCESS.
+- [2026-01-09 20:23] - Vercel Onboarding: Guided Scofield through creating a new Vercel project linked to the `kerne-private` organizational repository. - Status: SUCCESS.
+- [2026-01-09 20:19] - Backup Remote Added: Added `backup` remote pointing to `enerzy17/kerne-protocol-enerzy-backup` as a fail-safe redundancy. - Status: SUCCESS.

@@ -413,4 +413,3 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
 
     mapping(address => PrimeInfo) public primeAccounts;
 }
-    }
