@@ -21,6 +21,15 @@ The frontend is linked to the `vercel` remote. To push changes to Vercel:
    ```
 *Note: Vercel will automatically detect the push and start the deployment build.*
 
+### CRITICAL: Vercel Project Settings
+Because the Kerne repository is a monorepo, you **MUST** configure the following in the Vercel Dashboard:
+1. **Root Directory:** Set this to `frontend`.
+2. **Framework Preset:** Next.js.
+3. **Build Command:** `npm run build` (default).
+4. **Output Directory:** `.next` (default).
+
+If the Root Directory is not set to `frontend`, the deployment will fail or show an empty page.
+
 ---
 
 ## 2. The "Triple-Lock" Backup Strategy
