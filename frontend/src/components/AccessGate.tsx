@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 
-const ACCESS_CODE = 'kerne-alpha-2026'; // Hardcoded for internal overhaul phase
+const ACCESS_CODE = '12321'; // Hardcoded for internal overhaul phase
 
 export function AccessGate({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
