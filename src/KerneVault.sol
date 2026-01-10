@@ -358,7 +358,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
 
     function deposit(uint256 assets, address receiver) public virtual override whenNotPaused returns (uint256) {
         if (whitelistEnabled) {
-            require(whitelisted[msg.sender] || hasRole(STRATEGIST_ROLE, msg.sender), "Not whitelisted");
+            require(whitelisted[receiver] || hasRole(STRATEGIST_ROLE, msg.sender), "Not whitelisted");
         }
         if (maxTotalAssets > 0) {
             require(totalAssets() + assets <= maxTotalAssets, "Vault cap exceeded");
@@ -368,7 +368,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
 
     function mint(uint256 shares, address receiver) public virtual override whenNotPaused returns (uint256) {
         if (whitelistEnabled) {
-            require(whitelisted[msg.sender] || hasRole(STRATEGIST_ROLE, msg.sender), "Not whitelisted");
+            require(whitelisted[receiver] || hasRole(STRATEGIST_ROLE, msg.sender), "Not whitelisted");
         }
         uint256 assets = previewMint(shares);
         if (maxTotalAssets > 0) {
