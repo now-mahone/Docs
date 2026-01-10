@@ -32,22 +32,38 @@ contract KerneVaultFactoryTest is Test {
 
     function testDeployVault() public {
         vm.startPrank(factory.owner());
-        address vaultAddr =
-            factory.deployVault(address(asset), "Partner Vault", "PVT", partner, founder, 500, 1500, true, 1000e18);
+        address vaultAddr = factory.deployVault(
+            address(asset),
+            "Partner Vault",
+            "PVT",
+            partner,
+            1500,
+            true,
+            1000e18,
+            KerneVaultFactory.VaultTier.INSTITUTIONAL
+        );
         vm.stopPrank();
 
         KerneVault vault = KerneVault(vaultAddr);
         assertEq(vault.name(), "Partner Vault");
         assertEq(vault.symbol(), "PVT");
-        assertEq(vault.founder(), founder);
+        assertEq(vault.founder(), factory.owner());
         assertEq(vault.founderFeeBps(), 500);
         assertEq(vault.maxTotalAssets(), 1000e18);
         assertTrue(vault.hasRole(vault.DEFAULT_ADMIN_ROLE(), partner));
     }
 
     function testDeployVaultNonOwner() public {
-        vm.prank(partner);
-        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", partner));
-        factory.deployVault(address(asset), "Partner Vault", "PVT", partner, founder, 500, 1500, true, 0);
+        vm.deal(partner, 1 ether);
+        vm.startPrank(partner);
+        // Non-owner can deploy if they pay the fee
+        // Note: feeRecipient is address(this) in setUp because factory is deployed by address(this)
+        address vaultAddr = factory.deployVault{ value: 0.05 ether }(
+            address(asset), "Partner Vault", "PVT", partner, 1500, true, 0, KerneVaultFactory.VaultTier.BASIC
+        );
+        assertTrue(vaultAddr != address(0));
+        vm.stopPrank();
     }
+
+    receive() external payable { }
 }

@@ -39,19 +39,11 @@ contract KernePermissionlessTest is Test {
     function testPermissionlessDeployment() public {
         vm.deal(partner, 1 ether);
         vm.startPrank(partner);
-        
-        uint256 fee = factory.deploymentFee();
-        
-        address vaultAddr = factory.deployVault{value: fee}(
-            address(asset),
-            "Partner Vault",
-            "PVT",
-            partner,
-            owner,
-            500,
-            1500,
-            false,
-            0
+
+        (uint256 fee, , ) = factory.tierConfigs(KerneVaultFactory.VaultTier.BASIC);
+
+        address vaultAddr = factory.deployVault{ value: fee }(
+            address(asset), "Partner Vault", "PVT", partner, 1500, false, 0, KerneVaultFactory.VaultTier.BASIC
         );
 
         assertTrue(vaultAddr != address(0));
@@ -70,18 +62,10 @@ contract KernePermissionlessTest is Test {
     function testInsufficientFee() public {
         vm.deal(partner, 1 ether);
         vm.startPrank(partner);
-        
+
         vm.expectRevert("Insufficient deployment fee");
-        factory.deployVault{value: 0.01 ether}(
-            address(asset),
-            "Fail Vault",
-            "FAIL",
-            partner,
-            owner,
-            500,
-            1500,
-            false,
-            0
+        factory.deployVault{ value: 0.01 ether }(
+            address(asset), "Fail Vault", "FAIL", partner, 1500, false, 0, KerneVaultFactory.VaultTier.BASIC
         );
         vm.stopPrank();
     }

@@ -36,6 +36,17 @@ class RiskEngine:
         net_delta = (onchain_collateral + cex_short_position) / onchain_collateral
         return round(net_delta, 4)
 
+    def monitor_lst_peg(self, lst_symbol: str, current_price_eth: float) -> float:
+        """
+        Monitors LST/ETH peg. Returns the discount/premium.
+        """
+        # In production, this would fetch from Chainlink/Uniswap
+        # For now, we assume 1.0 is parity
+        deviation = (current_price_eth - 1.0) / 1.0
+        if abs(deviation) > 0.02:  # 2% depeg threshold
+            logger.warning(f"CRITICAL: {lst_symbol} depeg detected! Deviation: {deviation:.2%}")
+        return deviation
+
     def calculate_health_score(self, profile: Dict) -> float:
         """
         Aggregates various risk metrics into a single health score.

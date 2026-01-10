@@ -36,11 +36,10 @@ contract DeployInstitutionalFactory is Script {
             "Kerne Genesis Institutional",
             "kGEN-INST",
             deployer,
-            founder,
-            500, // 5% founder fee for white-label
             1500, // 15% performance fee
             true, // whitelist enabled
-            0 // unlimited cap for genesis
+            0, // unlimited cap for genesis
+            KerneVaultFactory.VaultTier.INSTITUTIONAL
         );
 
         // 4. Configure Genesis Vault

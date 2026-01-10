@@ -50,17 +50,30 @@ def run_stress_test():
     profile_3 = risk_engine.analyze_vault(data_3)
     logger.info(f"Health Score: {profile_3.health_score}, Delta: {profile_3.net_delta}")
     
-    # Generate Report for Scenario 2
+    # Scenario 4: Black Swan (-50% ETH in 1 hour)
+    logger.info("Scenario 4: Black Swan (-50% ETH in 1 hour)")
+    # In a black swan, LSTs often depeg and CEX liquidity thins
+    data_4 = {
+        "address": vault_address,
+        "onchain_collateral": 500.0, # ETH dropped 50%
+        "cex_short_position": -1000.0, # Short is now 2x collateral
+        "liq_onchain": 0.10,
+        "liq_cex": 0.05
+    }
+    profile_4 = risk_engine.analyze_vault(data_4)
+    logger.info(f"CRITICAL Health Score: {profile_4.health_score}, Delta: {profile_4.net_delta}")
+
+    # Generate Report for Scenario 4
     perf_data = {
-        "apy": 0.15,
+        "apy": -0.12, # Negative yield during crash
         "attribution": {
-            "funding_revenue": 0.80,
-            "basis_trading": 0.15,
-            "staking_rewards": 0.05
+            "funding_revenue": 0.50,
+            "basis_trading": -0.60,
+            "staking_rewards": 0.10
         }
     }
-    report_path = report_gen.generate_vault_report(vault_address, profile_2, perf_data)
-    logger.info(f"Stress test report generated at: {report_path}")
+    report_path = report_gen.generate_vault_report(vault_address, profile_4, perf_data)
+    logger.info(f"Black Swan report generated at: {report_path}")
 
 if __name__ == "__main__":
     run_stress_test()

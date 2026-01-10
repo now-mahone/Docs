@@ -38,25 +38,32 @@ contract KerneInstitutionalTest is Test {
             "Institutional Vault",
             "kINST",
             admin,
-            founder,
-            500, // 5% founder fee
             1500, // 15% performance fee
             true, // whitelist enabled
-            0 // unlimited
+            0, // unlimited
+            KerneVaultFactory.VaultTier.INSTITUTIONAL
         );
         vm.stopPrank();
 
         KerneVault vault = KerneVault(vaultAddr);
         assertEq(vault.name(), "Institutional Vault");
         assertEq(vault.symbol(), "kINST");
-        assertEq(vault.founder(), founder);
-        assertEq(vault.founderFeeBps(), 500);
+        assertEq(vault.founder(), factory.owner());
+        assertEq(vault.founderFeeBps(), 500); // From TierConfig
     }
 
     function testWhitelisting() public {
         vm.startPrank(factory.owner());
-        address vaultAddr =
-            factory.deployVault(address(asset), "Whitelisted Vault", "kWL", admin, founder, 0, 1500, true, 0);
+        address vaultAddr = factory.deployVault(
+            address(asset),
+            "Whitelisted Vault",
+            "kWL",
+            admin,
+            1500,
+            true,
+            0,
+            KerneVaultFactory.VaultTier.INSTITUTIONAL
+        );
         vm.stopPrank();
 
         KerneVault vault = KerneVault(vaultAddr);
@@ -70,7 +77,7 @@ contract KerneInstitutionalTest is Test {
         asset.approve(address(vault), 1000 ether);
 
         // Should fail
-        vm.expectRevert("Not whitelisted");
+        vm.expectRevert("Not whitelisted or compliant");
         vault.deposit(100 ether, user);
         vm.stopPrank();
 

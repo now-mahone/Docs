@@ -28,7 +28,22 @@ async def get_vault_risk(address: str):
         "liq_cex": 0.35
     }
     profile = risk_engine.analyze_vault(mock_data)
-    return profile
+    
+    # Solvency v3.0: Aggregate CEX balances
+    # In production, this would use CCXT to fetch real balances
+    solvency_data = {
+        "onchain_assets": mock_data["onchain_collateral"],
+        "cex_assets": abs(mock_data["cex_short_position"]) * 1.1, # Assuming 10% margin buffer
+        "total_liabilities": mock_data["onchain_collateral"],
+        "solvency_ratio": 1.10,
+        "is_solvent": True
+    }
+    
+    return {
+        "risk_profile": profile,
+        "solvency": solvency_data,
+        "timestamp": asyncio.get_event_loop().time()
+    }
 
 @app.websocket("/ws/risk")
 async def websocket_risk_stream(websocket: WebSocket):
