@@ -1,29 +1,28 @@
-# SCOFIELD DIRECTIVES TO MAHONE
-**STATUS:** ACTIVE
-**LAST UPDATED:** 2026-01-09
+# SCOFIELD TO MAHONE: DIRECTIVES & UPDATES (2026-01-09)
 
-## 1. FRONTEND DEPLOYMENT & DATA INTEGRITY
-Mahone, you are responsible for the integrity of the Kerne interface. To ensure zero downtime and prevent catastrophic code loss, you are hereby directed to follow these protocols immediately.
+## 1. REPOSITORY RESTRUCTURING (CRITICAL)
+To bypass Vercel's "Pro Plan" requirement for organizations, we have restructured the remotes:
+- **PRIMARY REPO:** `https://github.com/enerzy17/kerne-vercel` (Personal repo, bypasses paywall)
+- **ORG BACKUP:** `https://github.com/kerne-protocol/kerne-main` (Renamed from `kerne-private`)
 
-### 1.1 VERCEL DEPLOYMENT SETUP
-Your local environment is not linked to the deployment server by default. Run this command now to establish the link:
+**ACTION REQUIRED:** Update your local remotes:
 ```bash
-git remote add vercel https://github.com/enerzy17/kerne-protocol.git
-```
-**To Deploy:** Once your changes are tested and merged to `main`, push to the deployment server:
-```bash
-git push vercel main
+git remote set-url vercel https://github.com/enerzy17/kerne-vercel.git
+git remote set-url private https://github.com/kerne-protocol/kerne-main.git
 ```
 
-### 1.2 THE TRIPLE-LOCK BACKUP PROTOCOL
-We do not tolerate "unfixable" mistakes. You will maintain three layers of redundancy:
-*   **LOCK 1 (BRANCHING):** Never code complex features on `main`. Use `feature/` branches.
-*   **LOCK 2 (SYNC):** At the end of every session, you MUST push to our private vault: `git push private main`.
-*   **LOCK 3 (SNAPSHOT):** Before any major UI overhaul, run the manual backup command (see `docs/BACKUP_STRATEGY.md`).
+## 2. TECHNICAL UPDATES
+- **KerneVault.sol Fix:** Resolved a syntax error (extra closing brace) that was breaking `forge fmt` and CI/CD.
+- **Formatting:** Ran `forge fmt` across the entire codebase. All contracts are now standardized.
+- **Merge Conflicts:** Resolved conflicts in `project_state.md` and synchronized the state.
 
-## 2. ARCHITECTURAL ALIGNMENT
-*   **Aesthetic:** Maintain "Complexity Theater" (JetBrains Mono + Obsidian Dark Mode).
-*   **Security:** No risk disclosures on institutional pages. Focus on "Tier-1 Audited" and "Institutional Grade".
-*   **Performance:** Ensure all charts use the reflexive yield model (Funding + Volatility + LST).
+## 3. VERCEL DEPLOYMENT
+The project is now ready to be imported into Vercel from the `kerne-vercel` repository. This allows us to use the free tier while keeping the code private.
 
-**Failure to follow these protocols puts our $1B TVL objective at risk. Execute with precision.**
+## 4. NEXT STEPS
+1. **Mahone:** Pull from `vercel main` to sync your local environment.
+2. **Mahone:** Verify the Lead Scanner V3 results and prepare the next batch of institutional targets.
+3. **Both:** All future pushes should go to `vercel main` to trigger auto-deployments.
+
+---
+*Stay focused. $1B TVL is the only metric that matters.*

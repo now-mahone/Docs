@@ -264,3 +264,6 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 - [2026-01-09 14:42] - Strategic Pivot: Defined "Permissionless Yield Arbitrage" strategy to capture TVL via automated aggregators without direct BD or meetings. - Status: SUCCESS.
 - [2026-01-09 20:13] - Website Branding Update: Changed hero header text from "THE FUTURE OF STABLE YIELD." to "Universal prime for the onchain economy" in `frontend/src/app/page.tsx`. - Status: SUCCESS.
 - [2026-01-09 20:41] - Identity Confirmation: Mahone (Core Contributor, ISFP) verified protocol access and synchronized with private repository. - Status: SUCCESS.
+- [2026-01-09 20:52] - Vercel Deployment Strategy: Created `kerne-vercel` personal repository to bypass Vercel Pro organization paywall. Codebase synchronized and ready for free-tier deployment. - Status: SUCCESS.
+- [2026-01-09 20:56] - Repository Restructuring: Renamed organizational repo to `kerne-main` and established `kerne-vercel` as the primary deployment repo. Updated `.clinerules` and created `docs/SCOFIELD_TO_MAHONE.md` for team alignment. - Status: SUCCESS.
+- [2026-01-09 20:57] - Mahone Cline Alignment: Created `docs/MAHONE_CLINE_SYNC.md` to provide full context and instructions for Mahone's AI agent. - Status: SUCCESS.
