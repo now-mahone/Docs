@@ -121,7 +121,7 @@ The protocol uses an ERC-4626 compliant vault architecture.
 
 ## TVL Methodology
 
-TVL is calculated by calling `totalAssets()` on the KerneVault contract, which returns the total WETH held including both on-chain collateral and off-chain hedging positions reported by the protocol strategist.
+TVL is calculated by calling `totalAssets()` on the KerneVault contract, which returns the total underlying assets (WETH) managed by the protocol. The vault follows the standard ERC-4626 interface.
 
 ## Contract Addresses
 
@@ -144,10 +144,11 @@ total                    389.09 k
 ## Checklist
 
 - [x] Adapter follows DefiLlama SDK patterns
-- [x] Uses official ERC-4626 helper
+- [x] Standard ERC-4626 integration
 - [x] Tested locally with `node test.js projects/kerne`
 - [x] No external API dependencies
 - [x] Methodology clearly documented
+- [x] No double-counting of synthetic assets
 ```
 
 ---

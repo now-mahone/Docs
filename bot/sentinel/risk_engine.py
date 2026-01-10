@@ -3,6 +3,7 @@ from typing import Dict, List, Optional
 from loguru import logger
 import pandas as pd
 from dataclasses import dataclass
+from web3 import Web3
 
 @dataclass
 class VaultRiskProfile:
@@ -18,12 +19,47 @@ class RiskEngine:
     Kerne Sentinel Risk Engine
     Calculates real-time risk metrics for Kerne Vaults.
     """
-    def __init__(self):
+    def __init__(self, w3: Optional[Web3] = None, private_key: Optional[str] = None):
+        self.w3 = w3
+        self.private_key = private_key
         self.risk_thresholds = {
             "delta_limit": 0.05,  # Max 5% delta exposure
             "min_health_score": 70.0,
-            "min_liquidation_distance": 0.20  # 20% buffer
+            "min_liquidation_distance": 0.20,  # 20% buffer
+            "critical_health_score": 40.0  # Trigger circuit breaker
         }
+        self.alert_cooldowns = {} # To prevent spamming
+
+    def trigger_circuit_breaker(self, vault_address: str):
+        """
+        Calls the pause() function on the KerneVault contract.
+        Requires PAUSER_ROLE.
+        """
+        if not self.w3 or not self.private_key:
+            logger.error(f"Circuit Breaker failed: Web3 or Private Key not configured for {vault_address}")
+            return
+
+        try:
+            account = self.w3.eth.account.from_key(self.private_key)
+            # Minimal ABI for pausing
+            pause_abi = [{"inputs":[],"name":"pause","outputs":[],"stateMutability":"nonpayable","type":"function"}]
+            vault_contract = self.w3.eth.contract(address=Web3.to_checksum_address(vault_address), abi=pause_abi)
+            
+            tx = vault_contract.functions.pause().build_transaction({
+                'from': account.address,
+                'nonce': self.w3.eth.get_transaction_count(account.address),
+                'gas': 100000,
+                'gasPrice': self.w3.eth.gas_price,
+                'chainId': self.w3.eth.chain_id
+            })
+            
+            signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            
+            logger.critical(f"!!! CIRCUIT BREAKER TRIGGERED FOR {vault_address} !!! TX: {tx_hash.hex()}")
+            return tx_hash.hex()
+        except Exception as e:
+            logger.error(f"Failed to trigger circuit breaker for {vault_address}: {e}")
 
     def calculate_vault_delta(self, onchain_collateral: float, cex_short_position: float) -> float:
         """
@@ -82,6 +118,14 @@ class RiskEngine:
         
         health_score = self.calculate_health_score(profile_dict)
         
+        # Production Alerting & Circuit Breaker Logic
+        if health_score < self.risk_thresholds["min_health_score"]:
+            logger.warning(f"Vault {vault_data['address']} health low: {health_score:.2f}")
+            
+            if health_score < self.risk_thresholds["critical_health_score"]:
+                logger.critical(f"Vault {vault_data['address']} CRITICAL RISK! Health: {health_score:.2f}")
+                self.trigger_circuit_breaker(vault_data["address"])
+
         return VaultRiskProfile(
             vault_address=vault_data["address"],
             net_delta=net_delta,

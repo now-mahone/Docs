@@ -193,15 +193,14 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     function totalAssets() public view virtual override returns (uint256) {
         uint256 verifiedAssets = 0;
         if (verificationNode != address(0)) {
-            try (bool success, bytes memory data) = verificationNode.staticcall(
+            (bool success, bytes memory data) = verificationNode.staticcall(
                 abi.encodeWithSignature("getVerifiedAssets(address)", address(this))
-            ) {
-                if (success && data.length == 32) {
-                    verifiedAssets = abi.decode(data, (uint256));
-                }
-            } catch {}
+            );
+            if (success && data.length == 32) {
+                verifiedAssets = abi.decode(data, (uint256));
+            }
         }
-        
+
         // Use verified assets if available, otherwise fallback to reported hedgingReserve
         uint256 reserve = verifiedAssets > 0 ? verifiedAssets : hedgingReserve;
         return super.totalAssets() + offChainAssets + reserve;
