@@ -1,46 +1,19 @@
-const { createPublicClient, http } = require("viem");
-const { base } = require("viem/chains");
+// Created: 2026-01-10
+// Kerne Protocol - Delta-Neutral Yield Infrastructure on Base
+// https://kerne.ai
 
-// Kerne Protocol TVL Adapter for DefiLlama
-// VAULT_ADDRESS: 0x5FD0F7eA40984a6a8E9c6f6BDfd297e7dB4448Bd
-// ASSET: WETH (0x4200000000000000000000000000000000000006)
+const { sumERC4626VaultsExport } = require("../helper/erc4626");
 
-const VAULT_ADDRESS = "0x5FD0F7eA40984a6a8E9c6f6BDfd297e7dB4448Bd";
-const WETH_ADDRESS = "0x4200000000000000000000000000000000000006";
-
-async function tvl(timestamp, block, chainBlocks) {
-  const client = createPublicClient({
-    chain: base,
-    transport: http(),
-  });
-
-  const totalAssets = await client.readContract({
-    address: VAULT_ADDRESS,
-    abi: [
-      {
-        inputs: [],
-        name: "totalAssets",
-        outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-        stateMutability: "view",
-        type: "function",
-      },
-    ],
-    functionName: "totalAssets",
-    blockNumber: chainBlocks.base,
-  });
-
-  // DefiLlama requires the return to be a balances object
-  // We use the WETH address on Base
-  return {
-    [`base:${WETH_ADDRESS}`]: totalAssets.toString(),
-  };
-}
+// KerneVault - ERC-4626 compliant vault holding WETH
+// Deployed on Base Mainnet
+const KERNE_VAULT = "0x5FD0F7eA40984a6a8E9c6f6BDfd297e7dB4448Bd";
 
 module.exports = {
-  timetravel: true,
-  misrepresentedTokens: false,
+  methodology: "TVL is calculated by calling totalAssets() on the KerneVault ERC-4626 contract, which returns the total WETH held including both on-chain collateral and off-chain hedging positions reported by the protocol strategist.",
   base: {
-    tvl,
+    tvl: sumERC4626VaultsExport({ 
+      vaults: [KERNE_VAULT], 
+      isOG4626: true 
+    }),
   },
-  methodology: "TVL is calculated by calling totalAssets() on the KerneVault contract, which includes both on-chain LST collateral and off-chain CEX hedging positions reported by the protocol strategist.",
 };
