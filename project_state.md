@@ -279,3 +279,4 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 - [2026-01-09 22:51] - Visual Overhaul: Initiated complete design redesign. New brand identity (Blue/Grey) and typography (Space Grotesk/Manrope) to be implemented on the new Vercel site. - Status: ACTIVE.
 - [2026-01-09 22:56] - Visual Overhaul Phase 1: Implemented new Landing Page UI inspired by Cursor, Morpho, and Ironfish. Massive hero, glassmorphism showcases, and minimalist "Proof of Institutional" grid live. - Status: SUCCESS.
 - [2026-01-09 23:05] - Universal Adapter Logic: Implemented ERC-4626 universal vault architecture and finalized growth strategy ranking. - Status: SUCCESS.
+- [2026-01-09 23:25] - White-Label SDK & Permissionless Factory: Upgraded `KerneVaultFactory.sol` for permissionless deployments with protocol fees. Launched `@kerne/sdk` frontend components (Context, Hooks, DepositCard) for rapid partner onboarding. - Status: SUCCESS.
