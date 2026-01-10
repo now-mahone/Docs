@@ -62,17 +62,17 @@ contract KerneStressTest is Test {
         // Health Factor check: (1000 * 100 * 1e18) / (700 * 120) = 1.19e18.
         // Wait, 1.19e18 is > 1.1e18. So 200e18 fold might actually be healthy.
         // Let's try a much larger fold to ensure it reverts.
-        
+
         vm.expectRevert("Position unhealthy after folding");
         minter.fold(500e18, 0);
 
         // Safe fold: 100 kUSD
         minter.fold(100e18, 0);
-        
+
         (uint256 collateral, uint256 debt) = minter.positions(user);
         assertEq(debt, 600e18);
         assertTrue(collateral > initialKLP);
-        
+
         uint256 hf = minter.getHealthFactor(user);
         console.log("Health Factor after safe fold:", hf);
         assertTrue(hf >= 1.1e18);
@@ -90,7 +90,7 @@ contract KerneStressTest is Test {
         vault.deposit(1000e18, user);
         vault.approve(address(minter), vault.balanceOf(user));
         minter.mint(vault.balanceOf(user), 500e18);
-        
+
         asset.mint(address(minter), 1000e18);
         minter.fold(100e18, 0);
         vm.stopPrank();
@@ -100,7 +100,7 @@ contract KerneStressTest is Test {
         vm.startPrank(admin);
         vault.setFounder(admin); // Ensure sweep destination exists
         uint256 vaultAssets = vault.totalAssets();
-        vault.sweepToExchange(vaultAssets * 20 / 100); 
+        vault.sweepToExchange(vaultAssets * 20 / 100);
         vm.stopPrank();
 
         uint256 hf = minter.getHealthFactor(user);
@@ -132,14 +132,14 @@ contract KerneStressTest is Test {
 
         vm.startPrank(user);
         asset.approve(address(vault), 200e18);
-        
+
         // Should succeed
         vault.deposit(50e18, user);
-        
+
         // Should fail (50 + 60 = 110 > 100)
         vm.expectRevert("Vault cap exceeded");
         vault.deposit(60e18, user);
-        
+
         vm.stopPrank();
     }
 }

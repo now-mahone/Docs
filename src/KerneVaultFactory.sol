@@ -45,17 +45,10 @@ contract KerneVaultFactory is Ownable {
         uint256 maxTotalAssets
     ) external onlyOwner returns (address) {
         address clone = Clones.clone(implementation);
-        
+
         // Initialize with all bespoke configurations in one call
         KerneVault(clone).initialize(
-            asset,
-            name,
-            symbol,
-            admin,
-            founder,
-            founderFeeBps,
-            performanceFeeBps,
-            whitelistEnabled
+            asset, name, symbol, admin, founder, founderFeeBps, performanceFeeBps, whitelistEnabled
         );
 
         if (maxTotalAssets > 0) {

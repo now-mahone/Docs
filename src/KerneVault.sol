@@ -151,7 +151,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
 
         founder = founder_;
         founderFeeBps = founderFeeBps_;
-        
+
         if (performanceFeeBps_ > 0 && performanceFeeBps_ <= 2000) {
             grossPerformanceFeeBps = performanceFeeBps_;
         }
@@ -322,14 +322,18 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         insuranceFundBps = bps;
     }
 
-    function setMaxTotalAssets(uint256 _maxTotalAssets) external {
+    function setMaxTotalAssets(
+        uint256 _maxTotalAssets
+    ) external {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(STRATEGIST_ROLE, msg.sender), "Not authorized");
         maxTotalAssets = _maxTotalAssets;
     }
 
     // --- ERC4626 Overrides ---
 
-    function maxDeposit(address receiver) public view virtual override returns (uint256) {
+    function maxDeposit(
+        address receiver
+    ) public view virtual override returns (uint256) {
         if (paused()) return 0;
         if (whitelistEnabled && !whitelisted[receiver]) return 0;
         uint256 assets = totalAssets();
@@ -339,7 +343,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         return type(uint256).max;
     }
 
-    function maxMint(address receiver) public view virtual override returns (uint256) {
+    function maxMint(
+        address receiver
+    ) public view virtual override returns (uint256) {
         if (paused()) return 0;
         if (whitelistEnabled && !whitelisted[receiver]) return 0;
         uint256 assets = totalAssets();
