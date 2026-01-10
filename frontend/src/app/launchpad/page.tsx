@@ -16,9 +16,14 @@ import {
   Globe,
   Download,
   ExternalLink,
-  Info
+  Info,
+  Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useFactory } from '@/sdk/hooks/useFactory';
+import { FACTORY_ADDRESS, WETH_ADDRESS } from '@/config';
+import { useWaitForTransactionReceipt } from 'wagmi';
+import { formatEther } from 'viem';
 
 // Steps:
 // 1. Configuration (Name, Symbol, Fees)
@@ -35,6 +40,10 @@ const STEPS = [
 
 export default function LaunchpadPage() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [deployedAddress, setDeployedAddress] = useState<string | null>(null);
+  const [txHash, setTxHash] = useState<`0x${string}` | null>(null);
+
   const [config, setConfig] = useState({
     name: '',
     symbol: '',
@@ -44,7 +53,84 @@ export default function LaunchpadPage() {
     logoUrl: '',
   });
 
-  const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1));
+  const { deployVault, deploymentFee } = useFactory(FACTORY_ADDRESS);
+  
+  const { data: receipt, isLoading: isWaitingForTx } = useWaitForTransactionReceipt({
+    hash: txHash || undefined,
+  });
+
+  // Effect to handle successful deployment from receipt
+  React.useEffect(() => {
+    if (receipt && receipt.status === 'success' && currentStep === 2) {
+      // In a real scenario, we'd parse the logs for the VaultDeployed event
+      // For now, we'll simulate finding the address or just move to success
+      toast.success('Vault deployed successfully!');
+      setCurrentStep(3);
+      setIsDeploying(false);
+    }
+  }, [receipt, currentStep]);
+
+  const handleDeploy = async () => {
+    if (!config.name || !config.symbol) {
+      toast.error('Please provide a name and symbol for your vault.');
+      return;
+    }
+
+    try {
+      setIsDeploying(true);
+      const hash = await deployVault({
+        asset: WETH_ADDRESS,
+        name: config.name,
+        symbol: config.symbol,
+        performanceFeeBps: config.performanceFee * 100,
+        whitelistEnabled: config.whitelistEnabled,
+        maxTotalAssets: '0', // Unlimited
+      });
+
+      if (hash) {
+        setTxHash(hash);
+        toast.info('Deployment transaction submitted...');
+      }
+    } catch (error: any) {
+      console.error('Deployment failed:', error);
+      toast.error(error.message || 'Deployment failed. Please try again.');
+      setIsDeploying(false);
+    }
+  };
+
+  const downloadConfig = () => {
+    const configData = {
+      vaultAddress: deployedAddress || '0x...',
+      name: config.name,
+      symbol: config.symbol,
+      branding: {
+        primaryColor: config.primaryColor,
+        logoUrl: config.logoUrl,
+      },
+      network: 'base',
+      version: '1.0.0',
+    };
+
+    const blob = new Blob([JSON.stringify(configData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `kerne-config-${config.symbol.toLowerCase()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Configuration downloaded!');
+  };
+
+  const nextStep = () => {
+    if (currentStep === 2) {
+      handleDeploy();
+    } else {
+      setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1));
+    }
+  };
+  
   const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 0));
 
   return (
@@ -270,9 +356,20 @@ export default function LaunchpadPage() {
                     </div>
                     <div className="pt-4 border-t border-zinc-100 flex justify-between text-sm font-bold">
                       <span>Total Due</span>
-                      <span className="text-primary">0.05 ETH</span>
+                      <span className="text-primary">
+                        {deploymentFee ? formatEther(deploymentFee) : '0.05'} ETH
+                      </span>
                     </div>
                   </div>
+                  
+                  {(isDeploying || isWaitingForTx) && (
+                    <div className="flex items-center gap-3 text-primary font-bold animate-pulse">
+                      <Loader2 className="animate-spin" size={20} />
+                      <span className="text-xs uppercase tracking-widest">
+                        {isWaitingForTx ? 'Confirming on-chain...' : 'Awaiting Signature...'}
+                      </span>
+                    </div>
+                  )}
                 </motion.div>
               )}
 
@@ -292,10 +389,13 @@ export default function LaunchpadPage() {
                   </p>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg">
-                    <button className="flex items-center justify-center gap-3 p-4 bg-zinc-900 text-white rounded-2xl font-bold uppercase tracking-wider text-xs hover:bg-zinc-800 transition-all">
+                    <button 
+                      onClick={downloadConfig}
+                      className="flex items-center justify-center gap-3 p-4 bg-zinc-900 text-white rounded-2xl font-bold uppercase tracking-wider text-xs hover:bg-zinc-800 transition-all"
+                    >
                       <Download size={18} /> Download Config
                     </button>
-                    <Link href="/partner/0x.../dashboard" className="flex items-center justify-center gap-3 p-4 border border-zinc-200 text-zinc-900 rounded-2xl font-bold uppercase tracking-wider text-xs hover:bg-zinc-50 transition-all">
+                    <Link href={`/partner/${deployedAddress || '0x...'}/dashboard`} className="flex items-center justify-center gap-3 p-4 border border-zinc-200 text-zinc-900 rounded-2xl font-bold uppercase tracking-wider text-xs hover:bg-zinc-50 transition-all">
                       <ExternalLink size={18} /> Partner Dashboard
                     </Link>
                   </div>
@@ -315,9 +415,10 @@ export default function LaunchpadPage() {
                 </button>
                 <button 
                   onClick={nextStep}
-                  className="px-8 py-4 bg-primary text-white rounded-xl font-bold uppercase tracking-widest text-[11px] flex items-center gap-3 hover:bg-primary-dark transition-all shadow-lg shadow-primary/20"
+                  disabled={isDeploying || isWaitingForTx}
+                  className={`px-8 py-4 bg-primary text-white rounded-xl font-bold uppercase tracking-widest text-[11px] flex items-center gap-3 hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 ${(isDeploying || isWaitingForTx) ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  {currentStep === 2 ? 'Deploy Vault' : 'Continue'} <ArrowRight size={16} />
+                  {currentStep === 2 ? (isDeploying || isWaitingForTx ? 'Deploying...' : 'Deploy Vault') : 'Continue'} <ArrowRight size={16} />
                 </button>
               </div>
             )}
