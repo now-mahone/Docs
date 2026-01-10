@@ -30,6 +30,7 @@ contract KerneUniversalAdapter is ERC4626, AccessControl, ReentrancyGuard {
     uint256 public lastReportedTimestamp;
 
     event OffChainAssetsUpdated(uint256 oldAmount, uint256 newAmount, uint256 timestamp);
+    event YieldHarvested(uint256 amount, uint256 timestamp);
 
     constructor(
         IERC20 _asset,
@@ -127,5 +128,21 @@ contract KerneUniversalAdapter is ERC4626, AccessControl, ReentrancyGuard {
         _burn(owner, shares);
 
         emit Withdraw(caller, receiver, owner, assets, shares);
+    }
+
+    /**
+     * @notice Harvests yield from the target vault.
+     * @dev This is called by the strategist to realize on-chain yield.
+     */
+    function harvest() external onlyRole(STRATEGIST_ROLE) nonReentrant {
+        uint256 totalAssetsBefore = totalAssets();
+        
+        // In ERC-4626, yield is reflected in the share price.
+        // We don't necessarily need to withdraw to "harvest", 
+        // but we can trigger any internal harvest logic of the target vault if it exists.
+        // For a universal adapter, we just emit the current yield status.
+        
+        uint256 currentOnChain = ERC4626(address(targetVault)).convertToAssets(targetVault.balanceOf(address(this)));
+        emit YieldHarvested(currentOnChain, block.timestamp);
     }
 }

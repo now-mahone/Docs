@@ -30,8 +30,13 @@ class BotOrchestrator:
         Deploys a new Docker container for a specific vault.
         """
         if vault_address in self.active_instances:
-            logger.warning(f"Instance already exists for vault {vault_address}")
-            return self.active_instances[vault_address]
+            status = self.get_status(vault_address)
+            if status == "RUNNING":
+                logger.warning(f"Instance already running for vault {vault_address}")
+                return self.active_instances[vault_address]
+            else:
+                logger.info(f"Instance for {vault_address} exists but is {status}. Restarting...")
+                self.stop_instance(vault_address)
 
         logger.info(f"Deploying isolated hedging instance for vault: {vault_address}")
 
@@ -43,19 +48,26 @@ class BotOrchestrator:
             "EXCHANGE_PASSPHRASE": partner_config.get("passphrase"),
             "STRATEGIST_PRIVATE_KEY": partner_config.get("private_key"),
             "RPC_URL": partner_config.get("rpc_url", "https://mainnet.base.org"),
-            "RISK_THRESHOLD": str(partner_config.get("threshold", 0.5))
+            "RISK_THRESHOLD": str(partner_config.get("threshold", 0.5)),
+            "LOG_LEVEL": "INFO"
         }
 
         # Construct Docker run command
         # Assuming a pre-built 'kerne-hedging-engine' image
+        container_name = f"kerne-vault-{vault_address[:8]}"
         cmd = [
             "docker", "run", "-d",
-            "--name", f"kerne-vault-{vault_address[:8]}",
-            "--restart", "unless-stopped"
+            "--name", container_name,
+            "--restart", "unless-stopped",
+            "--health-cmd", "python -c 'import os; exit(0 if os.path.exists(\"/tmp/heartbeat\") else 1)'",
+            "--health-interval", "30s",
+            "--health-timeout", "10s",
+            "--health-retries", "3"
         ]
         
         for k, v in env_vars.items():
-            cmd.extend(["-e", f"{k}={v}"])
+            if v: # Only add if value exists
+                cmd.extend(["-e", f"{k}={v}"])
         
         cmd.append("kerne-hedging-engine")
 
@@ -64,10 +76,15 @@ class BotOrchestrator:
             container_id = result.stdout.strip()
             self.active_instances[vault_address] = container_id
             self._save_config()
-            logger.success(f"Deployed container {container_id} for vault {vault_address}")
+            logger.success(f"Deployed container {container_id} ({container_name}) for vault {vault_address}")
             return container_id
         except subprocess.CalledProcessError as e:
-            logger.error(f"Failed to deploy container: {e.stderr}")
+            logger.error(f"Failed to deploy container for {vault_address}: {e.stderr}")
+            # Attempt cleanup if name conflict
+            if "already in use" in e.stderr:
+                logger.info(f"Container name {container_name} conflict. Attempting to remove and retry...")
+                subprocess.run(["docker", "rm", "-f", container_name], check=False)
+                return self.deploy_instance(vault_address, partner_config)
             raise
 
     def stop_instance(self, vault_address: str):
