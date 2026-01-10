@@ -262,3 +262,4 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 - [2026-01-09 14:59] - Yield Oracle Automation: Updated `bot/engine.py` to calculate verifiable APY based on share price growth and automatically update the on-chain oracle. - Status: SUCCESS.
 - [2026-01-09 15:41] - Dynamic Maximization: Defined the "Break-Point" APY logic (~75%+) based on Recursive Leverage (Folding) until the 1.1x health factor limit. - Status: SUCCESS.
 - [2026-01-09 14:42] - Strategic Pivot: Defined "Permissionless Yield Arbitrage" strategy to capture TVL via automated aggregators without direct BD or meetings. - Status: SUCCESS.
+- [2026-01-09 20:13] - Website Branding Update: Changed hero header text from "THE FUTURE OF STABLE YIELD." to "Universal prime for the onchain economy" in `frontend/src/app/page.tsx`. - Status: SUCCESS.

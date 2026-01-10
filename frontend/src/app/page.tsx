@@ -98,8 +98,7 @@ export default function LandingPage() {
             Institutional Delta-Neutral Protocol Live on Base
           </div>
           <h1 className="text-6xl md:text-9xl font-bold tracking-tighter mb-8 leading-[0.85]">
-            THE FUTURE OF <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-b from-zinc-100 to-zinc-500">STABLE YIELD.</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-b from-zinc-100 to-zinc-500">Universal prime for the onchain economy</span>
           </h1>
           <p className="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 font-light leading-relaxed">
             Kerne combines non-custodial vault architecture with institutional-grade hedging to capture delta-neutral funding rates. 
