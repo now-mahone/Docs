@@ -169,7 +169,7 @@ export default function LandingPage() {
           </motion.div>
           <motion.div className="text-center" variants={fadeInUp}>
             <div className="text-zinc-500 text-[10px] uppercase tracking-widest mb-2">Active Nodes</div>
-            <div className="text-4xl font-bold tracking-tighter">142</div>
+            <div className="text-4xl font-bold tracking-tighter">144</div>
           </motion.div>
         </div>
       </motion.section>
@@ -333,19 +333,19 @@ export default function LandingPage() {
           <span>•</span>
           <span>Strategy Rebalance: 12.5 ETH Hedged on Binance</span>
           <span>•</span>
-          <span>Yield Distribution: 0.042 ETH to 142 Nodes</span>
+          <span>Yield Distribution: 0.042 ETH to 144 Nodes</span>
           <span>•</span>
           <span>Live Activity: New Deposit 1.8 ETH from 0x3a...e9</span>
           <span>•</span>
           <span>Strategy Rebalance: 8.2 ETH Hedged on Bybit</span>
           <span>•</span>
-          <span>Yield Distribution: 0.028 ETH to 142 Nodes</span>
+          <span>Yield Distribution: 0.028 ETH to 144 Nodes</span>
           {/* Duplicate for seamless loop */}
           <span>Live Activity: New Deposit 4.2 ETH from 0x82...f1</span>
           <span>•</span>
           <span>Strategy Rebalance: 12.5 ETH Hedged on Binance</span>
           <span>•</span>
-          <span>Yield Distribution: 0.042 ETH to 142 Nodes</span>
+          <span>Yield Distribution: 0.042 ETH to 144 Nodes</span>
         </motion.div>
       </section>
 
