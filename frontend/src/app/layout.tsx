@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
+import { AccessGate } from "@/components/AccessGate";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -56,16 +57,18 @@ export default function RootLayout({
           enableSystem={true}
           disableTransitionOnChange
         >
-          <Providers>
-            {children}
-            <Toaster 
-              theme="light" 
+          <AccessGate>
+            <Providers>
+              {children}
+              <Toaster 
+                theme="light" 
               position="bottom-right" 
               toastOptions={{
                 className: "font-sans uppercase text-[10px] tracking-widest border-zinc-200 bg-white text-zinc-900",
               }}
-            />
-          </Providers>
+              />
+            </Providers>
+          </AccessGate>
         </ThemeProvider>
       </body>
     </html>
