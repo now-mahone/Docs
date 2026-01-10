@@ -29,20 +29,21 @@ contract KerneVaultFactory is Ownable {
     event FeeRecipientUpdated(address newRecipient);
 
     constructor(
-        address _implementation,
-        address _feeRecipient
+        address _implementation
     ) Ownable(msg.sender) {
         implementation = _implementation;
-        feeRecipient = _feeRecipient;
+        feeRecipient = msg.sender;
     }
 
     /**
-     * @notice Deploys a new bespoke vault permissionlessly.
+     * @notice Deploys a new bespoke vault.
      * @param asset The underlying asset (e.g., USDC, WETH).
      * @param name Name of the vault token.
      * @param symbol Symbol of the vault token.
      * @param admin Admin of the new vault.
-     * @param performanceFeeBps Initial performance fee for the vault (max 20%).
+     * @param founder Founder address for fee capture.
+     * @param founderFeeBps Fee taken by the Kerne founder.
+     * @param performanceFeeBps Initial performance fee for the vault.
      * @param whitelistEnabled Whether whitelisting is enabled initially.
      * @param maxTotalAssets Maximum capacity of the vault.
      */
@@ -51,6 +52,8 @@ contract KerneVaultFactory is Ownable {
         string memory name,
         string memory symbol,
         address admin,
+        address founder,
+        uint256 founderFeeBps,
         uint256 performanceFeeBps,
         bool whitelistEnabled,
         uint256 maxTotalAssets
@@ -65,20 +68,8 @@ contract KerneVaultFactory is Ownable {
 
         address clone = Clones.clone(implementation);
 
-        // Default Kerne Protocol parameters for permissionless vaults
-        // Founder is the factory owner (Kerne Treasury)
-        // Founder fee is fixed at 5% of gross yield for white-label instances
-        uint256 protocolFounderFeeBps = 500; 
-
         KerneVault(clone).initialize(
-            asset, 
-            name, 
-            symbol, 
-            admin, 
-            owner(), // Kerne Treasury
-            protocolFounderFeeBps, 
-            performanceFeeBps, 
-            whitelistEnabled
+            asset, name, symbol, admin, founder, founderFeeBps, performanceFeeBps, whitelistEnabled
         );
 
         if (maxTotalAssets > 0) {
@@ -120,5 +111,9 @@ contract KerneVaultFactory is Ownable {
 
     function getVaultsCount() external view returns (uint256) {
         return allVaults.length;
+    }
+
+    function getUserVaults(address user) external view returns (address[] memory) {
+        return vaultsByDeployer[user];
     }
 }
