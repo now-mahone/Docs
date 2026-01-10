@@ -50,11 +50,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${spaceGrotesk.variable} ${manrope.variable} font-sans antialiased`}>
+      <body className={`${spaceGrotesk.variable} ${manrope.variable} font-sans antialiased bg-white text-zinc-900 selection:bg-primary/20`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
-          enableSystem={true}
+          enableSystem={false}
+          forcedTheme="light"
           disableTransitionOnChange
         >
           <AccessGate>
@@ -64,7 +65,7 @@ export default function RootLayout({
                 theme="light" 
               position="bottom-right" 
               toastOptions={{
-                className: "font-sans uppercase text-[10px] tracking-widest border-zinc-200 bg-white text-zinc-900",
+                className: "font-sans uppercase text-[10px] tracking-widest border-zinc-200 bg-white text-zinc-900 shadow-xl",
               }}
               />
             </Providers>
