@@ -55,11 +55,10 @@ class HedgingEngine:
             self._check_fee_settlement()
 
             # 1. Fetch Data (Multi-Chain Aggregation)
-            vault_tvl = self.chain.get_vault_assets() # Base
-            
-            # Simulate Multi-Chain TVL Aggregation
-            arb_tvl = 0.0 
-            opt_tvl = 0.0 
+            multi_chain_tvl = self.chain.get_multi_chain_tvl()
+            vault_tvl = multi_chain_tvl.get("Base", 0.0)
+            arb_tvl = multi_chain_tvl.get("Arbitrum", 0.0)
+            opt_tvl = multi_chain_tvl.get("Optimism", 0.0)
             
             total_vault_tvl = vault_tvl + arb_tvl + opt_tvl
             logger.info(f"Aggregated Multi-Chain TVL: {total_vault_tvl:.4f} ETH (Base: {vault_tvl}, Arb: {arb_tvl}, Opt: {opt_tvl})")
@@ -282,6 +281,5 @@ if __name__ == "__main__":
         engine.run_cycle()
     except Exception as e:
         logger.critical(f"Failed to start HedgingEngine: {e}")
->>>>+++ REPLACE
 
 

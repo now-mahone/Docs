@@ -8,7 +8,20 @@ import "../src/KerneOFT.sol";
 contract DeployOFT is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address lzEndpoint = vm.envAddress("LZ_ENDPOINT"); // Arbitrum LZ Endpoint
+        address lzEndpoint;
+
+        // LayerZero V2 Endpoints
+        // Base: 0x1a44076050125825900e736c501f859c50fE728c
+        // Arbitrum: 0x1a44076050125825900e736c501f859c50fE728c
+        // (Note: LZ V2 often uses the same address across many chains)
+
+        if (block.chainid == 8453) {
+            lzEndpoint = 0x1a44076050125825900e736c501f859c50fE728c;
+        } else if (block.chainid == 42161) {
+            lzEndpoint = 0x1a44076050125825900e736c501f859c50fE728c;
+        } else {
+            lzEndpoint = vm.envAddress("LZ_ENDPOINT");
+        }
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -28,6 +41,7 @@ contract DeployOFT is Script {
             lzEndpoint
         );
 
+        console.log("Chain ID:", block.chainid);
         console.log("kUSD OFT deployed at:", address(kusdOFT));
         console.log("KERNE OFT deployed at:", address(kerneOFT));
 
