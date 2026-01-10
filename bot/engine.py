@@ -19,7 +19,7 @@ class HedgingEngine:
         self.credits = credits or CreditsManager()
         
         # Hysteresis threshold to prevent over-trading
-        self.THRESHOLD_ETH = 0.5
+        self.THRESHOLD_ETH = 0.1 # Reduced for institutional precision
         self.SYMBOL = 'ETH/USDT:USDT'
 
         # Leverage Accounting
@@ -111,7 +111,7 @@ class HedgingEngine:
             # 2.5 Stability Buffer & Anti-Reflexive Logic
             if not dry_run and not seed_only:
                 collateral_ratio = (collateral_usdt + pnl) / (vault_tvl * market_price) if vault_tvl > 0 else 2.0
-                if collateral_ratio < 1.35:
+                if collateral_ratio < 1.50: # Increased for institutional safety
                     logger.warning(f"STABILITY BUFFER TRIGGERED: CR at {collateral_ratio:.2f}. Rebalancing hedge.")
                     self.THRESHOLD_ETH = 0.01 
 

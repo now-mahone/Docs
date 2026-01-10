@@ -123,6 +123,53 @@ contract KerneStressTest is Test {
     }
 
     /**
+     * @notice Test the circuit breakers.
+     */
+    function testCircuitBreakers() public {
+        vm.startPrank(admin);
+        vault.setCircuitBreakers(10e18, 5e18, 0); // Disable solvency for initial deposit
+        vm.stopPrank();
+
+        vm.startPrank(user);
+        asset.approve(address(vault), 20e18);
+
+        // 1. Deposit limit
+        vm.expectRevert("Deposit limit exceeded");
+        vault.deposit(11e18, user);
+
+        vault.deposit(10e18, user);
+        vm.stopPrank();
+
+        vm.startPrank(admin);
+        vault.setCircuitBreakers(10e18, 5e18, 0); // Keep solvency disabled for withdraw test
+        vm.stopPrank();
+
+        vm.startPrank(user);
+
+        // 2. Withdraw limit
+        vm.expectRevert("Withdraw limit exceeded");
+        vault.withdraw(6e18, user, user);
+
+        vault.withdraw(5e18, user, user);
+        vm.stopPrank();
+
+        // 3. Solvency threshold
+        // Simulate insolvency by decreasing assets.
+        vm.startPrank(admin);
+        vault.setFounder(admin);
+        vault.sweepToExchange(4 ether); // totalAssets = 5 - 4 = 1. liabilities = ~10e18. ratio = ~0.01%
+        
+        // Now enable solvency threshold
+        vault.setCircuitBreakers(10e18, 5e18, 10100);
+        vm.stopPrank();
+
+        vm.startPrank(user);
+        vm.expectRevert("Solvency below threshold");
+        vault.deposit(1e18, user);
+        vm.stopPrank();
+    }
+
+    /**
      * @notice Test the dynamic deposit caps.
      */
     function testVaultCap() public {

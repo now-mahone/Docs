@@ -70,6 +70,15 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     /// @notice The treasury address for fee collection
     address public treasury;
 
+    /// @notice Circuit breaker: Maximum deposit allowed in a single transaction
+    uint256 public maxDepositLimit;
+
+    /// @notice Circuit breaker: Maximum withdrawal allowed in a single transaction
+    uint256 public maxWithdrawLimit;
+
+    /// @notice Circuit breaker: Minimum solvency ratio required for operations (e.g., 10100 = 101%)
+    uint256 public minSolvencyThreshold;
+
     // --- Events ---
     event OffChainAssetsUpdated(uint256 oldAmount, uint256 newAmount, uint256 timestamp);
     event FundsSwept(uint256 amount, address destination);
@@ -188,8 +197,15 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     function getSolvencyRatio() public view returns (uint256) {
         uint256 assets = totalAssets();
         uint256 liabilities = totalSupply();
-        if (liabilities == 0) return 20000;
+        if (liabilities <= 1000) return 20000; // Account for dead shares
         return (assets * 10000) / liabilities;
+    }
+
+    function _checkSolvency() internal view {
+        if (minSolvencyThreshold > 0 && totalSupply() > 1000) {
+            uint256 ratio = getSolvencyRatio();
+            require(ratio >= minSolvencyThreshold, "Solvency below threshold");
+        }
     }
 
     // --- Strategist Functions ---
@@ -337,6 +353,16 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         maxTotalAssets = _maxTotalAssets;
     }
 
+    function setCircuitBreakers(
+        uint256 _maxDepositLimit,
+        uint256 _maxWithdrawLimit,
+        uint256 _minSolvencyThreshold
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        maxDepositLimit = _maxDepositLimit;
+        maxWithdrawLimit = _maxWithdrawLimit;
+        minSolvencyThreshold = _minSolvencyThreshold;
+    }
+
     // --- ERC4626 Overrides ---
 
     function maxDeposit(
@@ -391,6 +417,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         if (maxTotalAssets > 0) {
             require(totalAssets() + assets <= maxTotalAssets, "Vault cap exceeded");
         }
+        if (maxDepositLimit > 0) {
+            require(assets <= maxDepositLimit, "Deposit limit exceeded");
+        }
+        _checkSolvency();
         return super.deposit(assets, receiver);
     }
 
@@ -406,6 +436,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         if (maxTotalAssets > 0) {
             require(totalAssets() + assets <= maxTotalAssets, "Vault cap exceeded");
         }
+        if (maxDepositLimit > 0) {
+            require(assets <= maxDepositLimit, "Deposit limit exceeded");
+        }
+        _checkSolvency();
         return super.mint(shares, receiver);
     }
 
@@ -415,6 +449,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         address owner
     ) public virtual override whenNotPaused returns (uint256) {
         require(IERC20(asset()).balanceOf(address(this)) >= assets, "Insufficient liquid buffer");
+        if (maxWithdrawLimit > 0) {
+            require(assets <= maxWithdrawLimit, "Withdraw limit exceeded");
+        }
+        _checkSolvency();
         return super.withdraw(assets, receiver, owner);
     }
 
@@ -425,6 +463,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     ) public virtual override whenNotPaused returns (uint256) {
         uint256 assets = previewRedeem(shares);
         require(IERC20(asset()).balanceOf(address(this)) >= assets, "Insufficient liquid buffer");
+        if (maxWithdrawLimit > 0) {
+            require(assets <= maxWithdrawLimit, "Withdraw limit exceeded");
+        }
+        _checkSolvency();
         return super.redeem(shares, receiver, owner);
     }
 
