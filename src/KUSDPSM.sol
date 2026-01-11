@@ -24,8 +24,17 @@ contract KUSDPSM is AccessControl, ReentrancyGuard {
     mapping(address => uint256) public swapFees;
     mapping(address => bool) public supportedStables;
 
+    /// @notice Tiered fee thresholds for institutional volume (amount => feeBps)
+    /// @dev Allows for lower fees on large institutional swaps.
+    struct TieredFee {
+        uint256 threshold;
+        uint256 feeBps;
+    }
+    mapping(address => TieredFee[]) public tieredFees;
+
     event StableAdded(address indexed stable, uint256 fee);
     event Swap(address indexed user, address indexed fromToken, address indexed toToken, uint256 amount, uint256 fee);
+    event TieredFeeAdded(address indexed stable, uint256 threshold, uint256 feeBps);
 
     constructor(address _kUSD, address _admin) {
         kUSD = IERC20(_kUSD);
@@ -33,11 +42,28 @@ contract KUSDPSM is AccessControl, ReentrancyGuard {
     }
 
     /**
+     * @notice Calculates the fee for a given amount and stablecoin.
+     */
+    function getFee(address stable, uint256 amount) public view returns (uint256) {
+        uint256 feeBps = swapFees[stable];
+        TieredFee[] storage tiers = tieredFees[stable];
+        
+        // Check tiered fees (descending order of threshold is expected for efficiency)
+        for (uint256 i = 0; i < tiers.length; i++) {
+            if (amount >= tiers[i].threshold) {
+                feeBps = tiers[i].feeBps;
+                break;
+            }
+        }
+        return (amount * feeBps) / 10000;
+    }
+
+    /**
      * @notice Swaps a supported stablecoin for kUSD 1:1.
      */
     function swapStableForKUSD(address stable, uint256 amount) external nonReentrant {
         require(supportedStables[stable], "Stable not supported");
-        uint256 fee = (amount * swapFees[stable]) / 10000;
+        uint256 fee = getFee(stable, amount);
         uint256 amountAfterFee = amount - fee;
 
         IERC20(stable).safeTransferFrom(msg.sender, address(this), amount);
@@ -51,7 +77,7 @@ contract KUSDPSM is AccessControl, ReentrancyGuard {
      */
     function swapKUSDForStable(address stable, uint256 amount) external nonReentrant {
         require(supportedStables[stable], "Stable not supported");
-        uint256 fee = (amount * swapFees[stable]) / 10000;
+        uint256 fee = getFee(stable, amount);
         uint256 amountAfterFee = amount - fee;
 
         kUSD.safeTransferFrom(msg.sender, address(this), amount);
@@ -75,5 +101,14 @@ contract KUSDPSM is AccessControl, ReentrancyGuard {
 
     function withdrawReserves(address token, uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) {
         IERC20(token).safeTransfer(msg.sender, amount);
+    }
+
+    function setTieredFees(address stable, TieredFee[] calldata fees) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        delete tieredFees[stable];
+        for (uint256 i = 0; i < fees.length; i++) {
+            require(fees[i].feeBps <= 500, "Fee too high");
+            tieredFees[stable].push(fees[i]);
+            emit TieredFeeAdded(stable, fees[i].threshold, fees[i].feeBps);
+        }
     }
 }

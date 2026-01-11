@@ -1,3 +1,4 @@
 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
 forge-std/=lib/forge-std/src/
 solidity-examples/=lib/solidity-examples/contracts/
+@layerzerolabs/oft-evm/=lib/solidity-examples/contracts/token/oft/v1/

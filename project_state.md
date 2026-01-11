@@ -307,4 +307,6 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 - [2026-01-10 20:10] - Sentinel Autonomous Defense: Integrated `bot/sentinel/risk_engine.py` with on-chain circuit breakers for automated protocol pausing during depeg or risk events. - Status: SUCCESS.
 - [2026-01-10 20:15] - kUSD Peg Stability Module: Implemented `KUSDPSM.sol` for 1:1 stablecoin swaps to maintain kUSD peg. - Status: SUCCESS.
 - [2026-01-10 23:07] - Sentinel Risk Engine Hardening: Updated `KerneVault.sol` to grant `PAUSER_ROLE` to the strategist, enabling autonomous circuit breakers. Hardened `bot/sentinel/risk_engine.py` with automated pause logic and verified with `test_hardening.py`. - Status: SUCCESS.
+- [2026-01-10 23:13] - KUSD PSM Optimization: Implemented tiered fee structure in `KUSDPSM.sol` for institutional volume. Fixed LayerZero OFT compilation issues by downgrading `KerneOFT.sol` to V1 and updating `DeployOFT.s.sol`. Verified core kUSD tests pass. - Status: SUCCESS.
+- [2026-01-10 23:14] - Yield Oracle Hardening: Linked `KerneYieldOracle.sol` to `KerneVerificationNode.sol`. Yield updates now require a recent (within 24h) cryptographic attestation of vault solvency. Verified with `test/KerneYieldOracle.t.sol`. - Status: SUCCESS.
 >>>>+++ REPLACE

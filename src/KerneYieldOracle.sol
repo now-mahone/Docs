@@ -32,10 +32,24 @@ contract KerneYieldOracle is AccessControl {
 
     /**
      * @notice Records a new share price observation for a vault.
+     * @dev Requires that the vault's solvency has been recently verified by the VerificationNode.
      * @param vault The address of the KerneVault
      */
     function updateYield(address vault) external onlyRole(UPDATER_ROLE) {
         KerneVault v = KerneVault(vault);
+        
+        // Verify that the vault's assets are backed by a recent attestation
+        address verificationNode = v.verificationNode();
+        if (verificationNode != address(0)) {
+            (bool success, bytes memory data) = verificationNode.staticcall(
+                abi.encodeWithSignature("latestAttestations(address)", vault)
+            );
+            if (success && data.length >= 64) {
+                (, uint256 timestamp, bool verified) = abi.decode(data, (uint256, uint256, bool));
+                require(verified && (block.timestamp - timestamp < 24 hours), "Yield update requires recent attestation");
+            }
+        }
+
         uint256 price = v.convertToAssets(1e18);
         
         observations[vault].push(YieldObservation({

@@ -36,16 +36,14 @@ contract DeployOFT is Script {
         KerneOFT kusdOFT = new KerneOFT(
             "Kerne Synthetic Dollar",
             "kUSD",
-            lzEndpoint,
-            delegate
+            lzEndpoint
         );
 
         // Deploy KERNE OFT
         KerneOFT kerneOFT = new KerneOFT(
             "Kerne Governance Token",
             "KERNE",
-            lzEndpoint,
-            delegate
+            lzEndpoint
         );
 
         console.log("Chain ID:", block.chainid);
