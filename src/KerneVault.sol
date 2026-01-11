@@ -70,6 +70,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     /// @dev Updated by the strategist based on funding rates and LST rewards.
     uint256 public projectedAPY;
 
+    /// @notice The address of the yield oracle for TWAY reporting
+    address public yieldOracle;
+
     /// @notice The treasury address for fee collection
     address public treasury;
 
@@ -367,6 +370,12 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         verificationNode = _node;
     }
 
+    function setYieldOracle(
+        address _oracle
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        yieldOracle = _oracle;
+    }
+
     function setMaxTotalAssets(
         uint256 _maxTotalAssets
     ) external {
@@ -492,6 +501,15 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     }
 
     function getProjectedAPY() external view returns (uint256) {
+        if (yieldOracle != address(0)) {
+            (bool success, bytes memory data) = yieldOracle.staticcall(
+                abi.encodeWithSignature("getTWAY(address)", address(this))
+            );
+            if (success && data.length == 32) {
+                uint256 tway = abi.decode(data, (uint256));
+                if (tway > 0) return tway;
+            }
+        }
         return projectedAPY;
     }
 

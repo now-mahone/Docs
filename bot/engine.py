@@ -183,7 +183,10 @@ class HedgingEngine:
             logger.info(f"Reporting Off-chain Value: {total_reported_offchain:.4f} ETH")
             self.chain.update_offchain_value(total_reported_offchain)
 
-            # 4.7 Calculate and Update APY (Yield Oracle)
+            # 4.7 Update Yield Oracle (TWAY)
+            self.chain.update_yield_oracle()
+
+            # 4.8 Calculate and Update APY (Legacy/Fallback)
             self._update_calculated_apy()
 
             # 5. Wealth Capture & Referral Logic

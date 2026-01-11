@@ -23,14 +23,16 @@ class RiskEngine:
         self.w3 = w3
         self.private_key = private_key
         self.risk_thresholds = {
-            "delta_limit": 0.05,  # Max 5% delta exposure
-            "min_health_score": 70.0,
-            "min_liquidation_distance": 0.20,  # 20% buffer
-            "critical_health_score": 40.0  # Trigger circuit breaker
+            "delta_limit": 0.03,  # Tightened to 3% for institutional mainnet
+            "min_health_score": 75.0, # Increased buffer
+            "min_liquidation_distance": 0.25,  # 25% buffer for mainnet volatility
+            "critical_health_score": 50.0,  # Trigger circuit breaker earlier
+            "max_slippage_allowed": 0.005, # 0.5% max slippage for rebalances
+            "lst_depeg_threshold": 0.03 # 3% LST depeg triggers alert
         }
         self.alert_cooldowns = {} # To prevent spamming
 
-    def trigger_circuit_breaker(self, vault_address: str):
+    def trigger_circuit_breaker(self, vault_address: str, reason: str = "Unknown"):
         """
         Calls the pause() function on the KerneVault contract.
         Requires PAUSER_ROLE.
@@ -45,6 +47,13 @@ class RiskEngine:
             pause_abi = [{"inputs":[],"name":"pause","outputs":[],"stateMutability":"nonpayable","type":"function"}]
             vault_contract = self.w3.eth.contract(address=Web3.to_checksum_address(vault_address), abi=pause_abi)
             
+            # Check if already paused
+            is_paused_abi = [{"inputs":[],"name":"paused","outputs":[{"name":"","type":"bool"}],"stateMutability":"view","type":"function"}]
+            is_paused_contract = self.w3.eth.contract(address=Web3.to_checksum_address(vault_address), abi=is_paused_abi)
+            if is_paused_contract.functions.paused().call():
+                logger.info(f"Vault {vault_address} is already paused.")
+                return None
+
             tx = vault_contract.functions.pause().build_transaction({
                 'from': account.address,
                 'nonce': self.w3.eth.get_transaction_count(account.address),
@@ -56,7 +65,15 @@ class RiskEngine:
             signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
             tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
             
-            logger.critical(f"!!! CIRCUIT BREAKER TRIGGERED FOR {vault_address} !!! TX: {tx_hash.hex()}")
+            logger.critical(f"!!! CIRCUIT BREAKER TRIGGERED FOR {vault_address} !!! Reason: {reason} TX: {tx_hash.hex()}")
+            
+            # Alerting
+            try:
+                from bot.alerts import send_discord_alert
+                send_discord_alert(f"🚨 CIRCUIT BREAKER TRIGGERED\nVault: {vault_address}\nReason: {reason}\nTX: {tx_hash.hex()}", level="CRITICAL")
+            except ImportError:
+                pass
+
             return tx_hash.hex()
         except Exception as e:
             logger.error(f"Failed to trigger circuit breaker for {vault_address}: {e}")
@@ -72,15 +89,16 @@ class RiskEngine:
         net_delta = (onchain_collateral + cex_short_position) / onchain_collateral
         return round(net_delta, 4)
 
-    def monitor_lst_peg(self, lst_symbol: str, current_price_eth: float) -> float:
+    def monitor_lst_peg(self, vault_address: str, lst_symbol: str, current_price_eth: float) -> float:
         """
         Monitors LST/ETH peg. Returns the discount/premium.
         """
         # In production, this would fetch from Chainlink/Uniswap
         # For now, we assume 1.0 is parity
         deviation = (current_price_eth - 1.0) / 1.0
-        if abs(deviation) > 0.02:  # 2% depeg threshold
+        if abs(deviation) > self.risk_thresholds["lst_depeg_threshold"]:
             logger.warning(f"CRITICAL: {lst_symbol} depeg detected! Deviation: {deviation:.2%}")
+            self.trigger_circuit_breaker(vault_address, f"LST Depeg: {lst_symbol} at {deviation:.2%}")
         return deviation
 
     def calculate_health_score(self, profile: Dict) -> float:

@@ -48,6 +48,20 @@ class ChainManager:
 
         self.vault = self.w3.eth.contract(address=self.vault_address, abi=self.abi)
 
+        # Load Yield Oracle ABI
+        oracle_address = os.getenv("YIELD_ORACLE_ADDRESS")
+        if oracle_address:
+            oracle_abi_path = os.path.join(os.path.dirname(__file__), "..", "out", "KerneYieldOracle.sol", "KerneYieldOracle.json")
+            if not os.path.exists(oracle_abi_path):
+                oracle_abi_path = os.path.join(os.path.dirname(__file__), "out", "KerneYieldOracle.sol", "KerneYieldOracle.json")
+            
+            with open(oracle_abi_path, "r", encoding="utf-8") as f:
+                oracle_artifact = json.load(f)
+                self.oracle_abi = oracle_artifact["abi"]
+            self.oracle = self.w3.eth.contract(address=oracle_address, abi=self.oracle_abi)
+        else:
+            self.oracle = None
+
         # Load kUSDMinter ABI
         minter_address = os.getenv("KUSD_MINTER_ADDRESS")
         if minter_address:
@@ -125,6 +139,29 @@ class ChainManager:
             return tx_hash.hex()
         except Exception as e:
             logger.error(f"Error updating hedging reserve: {e}")
+            raise
+
+    def update_yield_oracle(self) -> str:
+        """
+        Triggers the updateYield function on the KerneYieldOracle contract.
+        """
+        if not self.oracle:
+            return ""
+        try:
+            nonce = self.w3.eth.get_transaction_count(self.account.address)
+            tx = self.oracle.functions.updateYield(self.vault_address).build_transaction({
+                'from': self.account.address,
+                'nonce': nonce,
+                'gasPrice': self.w3.eth.gas_price
+            })
+            signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+            if receipt.status == 1:
+                logger.success(f"Yield oracle updated: {tx_hash.hex()}")
+            return tx_hash.hex()
+        except Exception as e:
+            logger.error(f"Error updating yield oracle: {e}")
             raise
 
     def update_offchain_value(self, amount_eth: float) -> str:
@@ -205,18 +242,25 @@ class ChainManager:
 
     def _connect_with_retry(self, url: str, name: str, retries: int = 3) -> Web3:
         """
-        Connects to an RPC URL with retry logic.
+        Connects to an RPC URL with retry logic and failover support.
         """
-        for i in range(retries):
-            try:
-                w3 = Web3(Web3.HTTPProvider(url))
-                if w3.is_connected():
-                    logger.info(f"Connected to {name} RPC.")
-                    return w3
-            except Exception as e:
-                logger.warning(f"Retry {i+1}/{retries} for {name} RPC failed: {e}")
+        # Support for comma-separated fallback RPCs in environment variables
+        urls = [u.strip() for u in url.split(",")] if url else []
         
-        logger.error(f"Failed to connect to {name} RPC after {retries} attempts.")
+        for current_url in urls:
+            for i in range(retries):
+                try:
+                    w3 = Web3(Web3.HTTPProvider(current_url, request_kwargs={'timeout': 10}))
+                    if w3.is_connected():
+                        logger.info(f"Connected to {name} RPC: {current_url}")
+                        return w3
+                except Exception as e:
+                    logger.warning(f"Retry {i+1}/{retries} for {name} RPC ({current_url}) failed: {e}")
+            
+            logger.error(f"Failed to connect to {name} RPC at {current_url}. Trying next fallback...")
+        
+        logger.critical(f"ALL RPC FALLBACKS FAILED FOR {name}!")
+        send_discord_alert(f"CRITICAL: All RPC fallbacks failed for {name}!", level="CRITICAL")
         return None
 
     def get_multi_chain_tvl(self) -> dict:
@@ -281,9 +325,9 @@ class ChainManager:
             logger.error(f"Error drawing from insurance fund: {e}")
             raise
 
-    def bridge_kusd(self, amount_eth: float, dst_chain_id: int) -> str:
+    def bridge_kusd(self, amount_eth: float, dst_eid: int) -> str:
         """
-        Bridges kUSD to another chain using the KerneOFT contract.
+        Bridges kUSD to another chain using the KerneOFT contract (LayerZero V2).
         """
         try:
             oft_address = os.getenv("KUSD_OFT_ADDRESS")
@@ -303,22 +347,37 @@ class ChainManager:
             oft_contract = self.w3.eth.contract(address=oft_address, abi=oft_abi)
             amount_wei = self.w3.to_wei(amount_eth, 'ether')
             
+            # LZ V2 SendParam
+            # struct SendParam {
+            #     uint32 dstEid;
+            #     bytes32 to;
+            #     uint256 amountLD;
+            #     uint256 minAmountLD;
+            #     bytes extraOptions;
+            #     bytes composeMsg;
+            #     bytes oftCmd;
+            # }
+            to_bytes32 = self.w3.to_bytes(hexstr=self.account.address).rjust(32, b'\0')
+            send_param = (
+                dst_eid,
+                to_bytes32,
+                amount_wei,
+                int(amount_wei * 0.99), # 1% slippage
+                b"", # extraOptions
+                b"", # composeMsg
+                b""  # oftCmd
+            )
+
             # Estimate fees
-            adapter_params = b"" # Default
-            use_eth = True
-            fees = oft_contract.functions.estimateSendFee(dst_chain_id, self.account.address, amount_wei, use_eth, adapter_params).call()
+            fees = oft_contract.functions.quoteSend(send_param, False).call()
             native_fee = fees[0]
 
             nonce = self.w3.eth.get_transaction_count(self.account.address)
             
-            tx = oft_contract.functions.sendFrom(
-                self.account.address,
-                dst_chain_id,
-                self.account.address,
-                amount_wei,
-                self.account.address,
-                "0x0000000000000000000000000000000000000000",
-                adapter_params
+            tx = oft_contract.functions.send(
+                send_param,
+                (native_fee, 0), # MessagingFee
+                self.account.address # refundAddress
             ).build_transaction({
                 'from': self.account.address,
                 'nonce': nonce,

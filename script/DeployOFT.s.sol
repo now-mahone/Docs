@@ -30,20 +30,22 @@ contract DeployOFT is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
+        address delegate = vm.addr(deployerPrivateKey);
+
         // Deploy kUSD OFT
         KerneOFT kusdOFT = new KerneOFT(
             "Kerne Synthetic Dollar",
             "kUSD",
-            6, // Shared decimals
-            lzEndpoint
+            lzEndpoint,
+            delegate
         );
 
         // Deploy KERNE OFT
         KerneOFT kerneOFT = new KerneOFT(
             "Kerne Governance Token",
             "KERNE",
-            6, // Shared decimals
-            lzEndpoint
+            lzEndpoint,
+            delegate
         );
 
         console.log("Chain ID:", block.chainid);

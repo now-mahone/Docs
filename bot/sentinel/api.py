@@ -40,7 +40,11 @@ async def get_vault_risk(address: str):
     }
     
     return {
-        "risk_profile": profile,
+        "vault_address": profile.vault_address,
+        "net_delta": profile.net_delta,
+        "health_score": profile.health_score,
+        "liquidation_distance_onchain": profile.liquidation_distance_onchain,
+        "liquidation_distance_cex": profile.liquidation_distance_cex,
         "solvency": solvency_data,
         "timestamp": asyncio.get_event_loop().time()
     }

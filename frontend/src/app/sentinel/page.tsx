@@ -85,11 +85,11 @@ export default function SentinelDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           <div className="p-6 bg-white border border-zinc-100 rounded-2xl">
             <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-4">On-chain Liq. Distance</div>
-            <div className="text-2xl font-heading font-bold">{(risk?.liquidation_distance_onchain || 0 * 100).toFixed(2)}%</div>
+            <div className="text-2xl font-heading font-bold">{((risk?.liquidation_distance_onchain || 0) * 100).toFixed(2)}%</div>
           </div>
           <div className="p-6 bg-white border border-zinc-100 rounded-2xl">
             <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-4">CEX Liq. Distance</div>
-            <div className="text-2xl font-heading font-bold">{(risk?.liquidation_distance_cex || 0 * 100).toFixed(2)}%</div>
+            <div className="text-2xl font-heading font-bold">{((risk?.liquidation_distance_cex || 0) * 100).toFixed(2)}%</div>
           </div>
           <div className="p-6 bg-white border border-zinc-100 rounded-2xl">
             <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-4">LST Peg Deviation</div>
