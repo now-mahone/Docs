@@ -517,6 +517,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     function transferToPrime(address prime, uint256 amount) external nonReentrant {
         require(hasRole(STRATEGIST_ROLE, msg.sender) || msg.sender == prime, "Not authorized");
         require(prime != address(0), "Invalid prime address");
+        _checkSolvency();
         SafeERC20.safeTransfer(IERC20(asset()), prime, amount);
     }
 
@@ -525,6 +526,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     ) external nonReentrant {
         require(hasRole(STRATEGIST_ROLE, msg.sender) || primeAccounts[msg.sender].active, "Not authorized");
         SafeERC20.safeTransferFrom(IERC20(asset()), msg.sender, address(this), amount);
+        _checkSolvency();
     }
 
     struct PrimeInfo {

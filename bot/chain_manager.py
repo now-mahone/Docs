@@ -325,9 +325,9 @@ class ChainManager:
             logger.error(f"Error drawing from insurance fund: {e}")
             raise
 
-    def bridge_kusd(self, amount_eth: float, dst_eid: int) -> str:
+    def bridge_kusd(self, amount_eth: float, dst_chain_id: int) -> str:
         """
-        Bridges kUSD to another chain using the KerneOFT contract (LayerZero V2).
+        Bridges kUSD to another chain using the KerneOFT contract (LayerZero V1).
         """
         try:
             oft_address = os.getenv("KUSD_OFT_ADDRESS")
@@ -347,37 +347,24 @@ class ChainManager:
             oft_contract = self.w3.eth.contract(address=oft_address, abi=oft_abi)
             amount_wei = self.w3.to_wei(amount_eth, 'ether')
             
-            # LZ V2 SendParam
-            # struct SendParam {
-            #     uint32 dstEid;
-            #     bytes32 to;
-            #     uint256 amountLD;
-            #     uint256 minAmountLD;
-            #     bytes extraOptions;
-            #     bytes composeMsg;
-            #     bytes oftCmd;
-            # }
+            # LZ V1 sendFrom
+            # function sendFrom(address _from, uint16 _dstChainId, bytes32 _toAddress, uint _amount, address payable _refundAddress, address _zroPaymentAddress, bytes memory _adapterParams) public payable
             to_bytes32 = self.w3.to_bytes(hexstr=self.account.address).rjust(32, b'\0')
-            send_param = (
-                dst_eid,
-                to_bytes32,
-                amount_wei,
-                int(amount_wei * 0.99), # 1% slippage
-                b"", # extraOptions
-                b"", # composeMsg
-                b""  # oftCmd
-            )
-
+            
             # Estimate fees
-            fees = oft_contract.functions.quoteSend(send_param, False).call()
+            fees = oft_contract.functions.estimateSendFee(dst_chain_id, to_bytes32, amount_wei, False, b"").call()
             native_fee = fees[0]
 
             nonce = self.w3.eth.get_transaction_count(self.account.address)
             
-            tx = oft_contract.functions.send(
-                send_param,
-                (native_fee, 0), # MessagingFee
-                self.account.address # refundAddress
+            tx = oft_contract.functions.sendFrom(
+                self.account.address,
+                dst_chain_id,
+                to_bytes32,
+                amount_wei,
+                self.account.address, # refundAddress
+                "0x0000000000000000000000000000000000000000", # zroPaymentAddress
+                b"" # adapterParams
             ).build_transaction({
                 'from': self.account.address,
                 'nonce': nonce,
