@@ -26,8 +26,13 @@ Kerne is a yield-bearing synthetic dollar protocol designed to maximize TVL by c
 - **Delta Neutrality:** The hedge must be rebalanced periodically to ensure the net delta remains near zero.
 - **Liquidation Risk:** While delta-neutral, extreme price gaps or decoupling between LSTs and ETH could affect the CR.
 - **CEX Risk:** Counterparty risk associated with the centralized exchange and API security.
+- **Sentinel Autonomous Defense:** The protocol employs an automated risk engine (Sentinel) that monitors health scores and can autonomously trigger on-chain circuit breakers (pausing) if health factors drop below critical thresholds (e.g., 1.1x).
 
-## 5. Mathematical Goal
+## 5. Peg Stability Module (PSM)
+The KUSDPSM allows for 1:1 swaps between kUSD and other major stablecoins (USDC, cbBTC) to maintain the peg.
+- **Tiered Fees:** Institutional users benefit from a tiered fee structure, where larger swap volumes incur lower basis point fees, incentivizing deep liquidity and peg stability.
+
+## 6. Mathematical Goal
 The total yield ($Y_{total}$) is defined as:
 $Y_{total} = Y_{staking} + Y_{funding} - C_{operational}$
 Where:

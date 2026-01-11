@@ -17,12 +17,17 @@ The Kerne smart contract system is built on the ERC-4626 standard to provide a c
   - `withdraw()` / `redeem()`: Burns shares and returns assets.
   - `totalAssets()`: Returns the total value managed by the vault (on-chain + off-chain).
 
-### `CexStrategy.sol`
-- **Role:** Handles the accounting and communication for the off-chain hedging strategy.
-- **Logic:**
-  - Tracks the amount of collateral bridged to CEXs.
-  - Reports the current valuation of the delta-neutral position back to the `KerneVault`.
-  - Manages the "virtual" balance that represents the short position and funding accrued.
+### `KUSDPSM.sol`
+- **Role:** Peg Stability Module for kUSD.
+- **Logic:** Allows 1:1 swaps between kUSD and other stablecoins with tiered institutional fees.
+
+### `KerneYieldOracle.sol`
+- **Role:** Manipulation-resistant TWAY yield reporting.
+- **Logic:** Records share price observations and calculates annualized yield over a rolling window.
+
+### `KerneVerificationNode.sol`
+- **Role:** Cryptographic Proof of Reserve.
+- **Logic:** Authorized signers submit signed attestations of off-chain assets, which are verified on-chain to back the vault's solvency.
 
 ## 3. Roles & Permissions (Access Control)
 
