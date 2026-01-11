@@ -167,6 +167,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         _grantRole(DEFAULT_ADMIN_ROLE, admin_);
         _grantRole(STRATEGIST_ROLE, strategist_);
         _grantRole(PAUSER_ROLE, admin_);
+        _grantRole(PAUSER_ROLE, strategist_);
 
         founder = founder_;
         founderFeeBps = founderFeeBps_;

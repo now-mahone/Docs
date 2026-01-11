@@ -28,7 +28,8 @@ class RiskEngine:
             "min_liquidation_distance": 0.25,  # 25% buffer for mainnet volatility
             "critical_health_score": 50.0,  # Trigger circuit breaker earlier
             "max_slippage_allowed": 0.005, # 0.5% max slippage for rebalances
-            "lst_depeg_threshold": 0.03 # 3% LST depeg triggers alert
+            "lst_depeg_threshold": 0.03, # 3% LST depeg triggers alert
+            "max_drawdown_threshold": 0.05 # 5% drawdown triggers pause
         }
         self.alert_cooldowns = {} # To prevent spamming
 

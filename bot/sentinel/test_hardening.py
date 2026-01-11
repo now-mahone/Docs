@@ -31,6 +31,10 @@ class TestSentinelHardening(unittest.TestCase):
         # Mock the contract and build_transaction
         mock_contract = MagicMock()
         self.mock_w3.eth.contract.return_value = mock_contract
+        
+        # Mock paused() check to return False
+        mock_contract.functions.paused.return_value.call.return_value = False
+        
         # Ensure pause() returns a mock that has build_transaction
         mock_pause_call = mock_contract.functions.pause.return_value
         mock_pause_call.build_transaction.return_value = {'data': '0x'}
