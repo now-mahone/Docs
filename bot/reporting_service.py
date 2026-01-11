@@ -34,6 +34,15 @@ class ReportingService:
             solvency_ratio = vault.functions.getSolvencyRatio().call()
             projected_apy = vault.functions.getProjectedAPY().call()
             
+            # Fetch verification status
+            verification_node_address = vault.functions.verificationNode().call()
+            is_verified = False
+            if verification_node_address != "0x0000000000000000000000000000000000000000":
+                # Minimal ABI for VerificationNode
+                vn_abi = [{"inputs":[{"name":"vault","type":"address"}],"name":"latestAttestations","outputs":[{"name":"totalAssets","type":"uint256"},{"name":"timestamp","type":"uint256"},{"name":"verified","type":"bool"}],"stateMutability":"view","type":"function"}]
+                vn = self.chain.w3.eth.contract(address=verification_node_address, abi=vn_abi)
+                _, _, is_verified = vn.functions.latestAttestations(vault_address).call()
+
             report = {
                 "vault_address": vault_address,
                 "timestamp": datetime.now().isoformat(),
@@ -42,7 +51,8 @@ class ReportingService:
                     "total_supply_shares": str(total_supply),
                     "solvency_ratio_bps": solvency_ratio,
                     "projected_apy_bps": projected_apy,
-                    "health_status": "HEALTHY" if solvency_ratio >= 10000 else "UNDERCOLLATERALIZED"
+                    "health_status": "HEALTHY" if solvency_ratio >= 10000 else "UNDERCOLLATERALIZED",
+                    "proof_of_reserve_verified": is_verified
                 },
                 "compliance": {
                     "whitelist_enabled": vault.functions.whitelistEnabled().call(),
