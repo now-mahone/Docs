@@ -426,6 +426,81 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         emit CircuitBreakersUpdated(_maxDepositLimit, _maxWithdrawLimit, _minSolvencyThreshold);
     }
 
+    function setFlashFee(uint256 bps) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(bps <= 100, "Fee too high");
+        flashFeeBps = bps;
+    }
+
+    // --- IERC3156FlashLender Implementation ---
+
+    /**
+     * @dev The amount of currency available to be lent.
+     * @param token The loan currency.
+     * @return The amount of `token` that can be borrowed.
+     */
+    function maxFlashLoan(address token) external view override returns (uint256) {
+        if (token != asset()) return 0;
+        if (paused()) return 0;
+        return IERC20(token).balanceOf(address(this));
+    }
+
+    /**
+     * @dev The fee to be charged for a given loan.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @return The amount of `token` to be charged for the loan, on top of the returned principal.
+     */
+    function flashFee(address token, uint256 amount) public view override returns (uint256) {
+        require(token == asset(), "Unsupported token");
+        
+        // Institutional differentiation: 0% fee for Prime partners and Strategists
+        if (hasRole(STRATEGIST_ROLE, msg.sender) || primeAccounts[msg.sender].active) {
+            return 0;
+        }
+        
+        return (amount * flashFeeBps) / 10000;
+    }
+
+    /**
+     * @dev Initiate a flash loan.
+     * @param receiver The receiver of the tokens in the loan, and the receiver of the callback.
+     * @param token The loan currency.
+     * @param amount The amount of tokens lent.
+     * @param data Arbitrary data structure, propagated to the receiver.
+     */
+    function flashLoan(
+        IERC3156FlashBorrower receiver,
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) external override nonReentrant whenNotPaused returns (bool) {
+        require(token == asset(), "Unsupported token");
+        uint256 fee = flashFee(token, amount);
+        
+        // Compliance check for whitelisted vaults
+        if (whitelistEnabled) {
+            bool isCompliant = whitelisted[address(receiver)] || hasRole(STRATEGIST_ROLE, msg.sender);
+            if (!isCompliant && address(complianceHook) != address(0)) {
+                isCompliant = complianceHook.isCompliant(address(this), address(receiver));
+            }
+            require(isCompliant, "Receiver not compliant");
+        }
+
+        SafeERC20.safeTransfer(IERC20(token), address(receiver), amount);
+
+        require(
+            receiver.onFlashLoan(msg.sender, token, amount, fee, data) == keccak256("ERC3156FlashBorrower.onFlashLoan"),
+            "Flash loan callback failed"
+        );
+
+        SafeERC20.safeTransferFrom(IERC20(token), address(receiver), address(this), amount + fee);
+        
+        // Ensure solvency is maintained after fee collection
+        _checkSolvency();
+        
+        return true;
+    }
+
     // --- ERC4626 Overrides ---
 
     function maxDeposit(

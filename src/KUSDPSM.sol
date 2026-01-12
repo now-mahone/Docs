@@ -115,11 +115,49 @@ contract KUSDPSM is AccessControl, ReentrancyGuard {
     }
 
     function setTieredFees(address stable, TieredFee[] calldata fees) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        delete tieredFees[stable];
         for (uint256 i = 0; i < fees.length; i++) {
             require(fees[i].feeBps <= 500, "Fee too high");
             tieredFees[stable].push(fees[i]);
             emit TieredFeeAdded(stable, fees[i].threshold, fees[i].feeBps);
         }
     }
+
+    function setFlashFee(uint256 bps) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(bps <= 100, "Fee too high");
+        flashFeeBps = bps;
+    }
+
+    // --- IERC3156FlashLender Implementation ---
+
+    function maxFlashLoan(address token) external view override returns (uint256) {
+        if (token != address(kUSD) && !supportedStables[token]) return 0;
+        return IERC20(token).balanceOf(address(this));
+    }
+
+    function flashFee(address token, uint256 amount) public view override returns (uint256) {
+        require(token == address(kUSD) || supportedStables[token], "Unsupported token");
+        return (amount * flashFeeBps) / 10000;
+    }
+
+    function flashLoan(
+        IERC3156FlashBorrower receiver,
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) external override nonReentrant returns (bool) {
+        require(token == address(kUSD) || supportedStables[token], "Unsupported token");
+        uint256 fee = flashFee(token, amount);
+
+        IERC20(token).safeTransfer(address(receiver), amount);
+
+        require(
+            receiver.onFlashLoan(msg.sender, token, amount, fee, data) == keccak256("ERC3156FlashBorrower.onFlashLoan"),
+            "Flash loan callback failed"
+        );
+
+        IERC20(token).safeTransferFrom(address(receiver), address(this), amount + fee);
+
+        return true;
+    }
+}
 }
