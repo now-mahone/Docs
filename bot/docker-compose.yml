@@ -10,3 +10,26 @@ services:
     volumes:
       - ./.env:/app/.env
       - ../out:/app/out
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; exit(0 if os.path.exists('main.py') else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  kerne-sentinel:
+    build: .
+    container_name: kerne-sentinel
+    restart: always
+    command: ["uvicorn", "bot.sentinel.api:app", "--host", "0.0.0.0", "--port", "8080"]
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./.env:/app/.env
+      - ../out:/app/out
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

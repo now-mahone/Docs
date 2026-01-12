@@ -27,6 +27,8 @@ Kerne is a yield-bearing synthetic dollar protocol designed to maximize TVL by c
 - **Liquidation Risk:** While delta-neutral, extreme price gaps or decoupling between LSTs and ETH could affect the CR.
 - **CEX Risk:** Counterparty risk associated with the centralized exchange and API security.
 - **Sentinel Autonomous Defense:** The protocol employs an automated risk engine (Sentinel) that monitors health scores and can autonomously trigger on-chain circuit breakers (pausing) if health factors drop below critical thresholds (e.g., 1.1x).
+- **Institutional Compliance:** Bespoke vaults can be gated via the `KerneComplianceHook`, allowing for automated KYC/AML verification before deposits are accepted.
+- **Emergency Unwind:** In extreme scenarios, the protocol can execute a full unwind, pausing on-chain contracts and closing all CEX positions simultaneously to protect principal capital.
 
 ## 5. Peg Stability Module (PSM)
 The KUSDPSM allows for 1:1 swaps between kUSD and other major stablecoins (USDC, cbBTC) to maintain the peg.

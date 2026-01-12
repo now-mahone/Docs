@@ -88,6 +88,14 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     // --- Events ---
     event OffChainAssetsUpdated(uint256 oldAmount, uint256 newAmount, uint256 timestamp);
     event FundsSwept(uint256 amount, address destination);
+    event HedgingReserveUpdated(uint256 oldAmount, uint256 newAmount, uint256 timestamp);
+    event ProjectedAPYUpdated(uint256 oldAPY, uint256 newAPY, uint256 timestamp);
+    event CircuitBreakersUpdated(uint256 maxDeposit, uint256 maxWithdraw, uint256 minSolvency);
+    event ComplianceHookUpdated(address indexed oldHook, address indexed newHook);
+    event YieldOracleUpdated(address indexed oldOracle, address indexed newOracle);
+    event VerificationNodeUpdated(address indexed oldNode, address indexed newNode);
+    event FounderWealthCaptured(uint256 amount, address indexed recipient);
+    event InsuranceFundContribution(uint256 amount);
 
     /**
      * @param asset_ The underlying asset (e.g., WETH or USDC)
@@ -247,8 +255,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     function updateHedgingReserve(
         uint256 amount
     ) external onlyRole(STRATEGIST_ROLE) {
+        uint256 oldAmount = hedgingReserve;
         hedgingReserve = amount;
         lastReportedTimestamp = block.timestamp;
+        emit HedgingReserveUpdated(oldAmount, amount, block.timestamp);
     }
 
     /**
@@ -257,7 +267,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     function updateProjectedAPY(
         uint256 _projectedAPY
     ) external onlyRole(STRATEGIST_ROLE) {
+        uint256 oldAPY = projectedAPY;
         projectedAPY = _projectedAPY;
+        emit ProjectedAPYUpdated(oldAPY, _projectedAPY, block.timestamp);
     }
 
     // --- Admin Functions ---
@@ -317,7 +329,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     }
 
     function setComplianceHook(address _hook) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        address oldHook = address(complianceHook);
         complianceHook = IComplianceHook(_hook);
+        emit ComplianceHookUpdated(oldHook, _hook);
     }
 
     function setPerformanceFee(
@@ -341,12 +355,14 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         if (fee > 0) {
             address recipient = treasury != address(0) ? treasury : founder;
             SafeERC20.safeTransfer(IERC20(asset()), recipient, fee);
+            emit FounderWealthCaptured(fee, recipient);
         }
         uint256 insuranceContribution = (grossYieldAmount * insuranceFundBps) / 10000;
         if (insuranceContribution > 0 && insuranceFund != address(0)) {
             IERC20(asset()).approve(insuranceFund, insuranceContribution);
             (bool success,) = insuranceFund.call(abi.encodeWithSignature("deposit(uint256)", insuranceContribution));
             require(success, "Insurance deposit failed");
+            emit InsuranceFundContribution(insuranceContribution);
         }
     }
 
@@ -368,13 +384,17 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
     function setVerificationNode(
         address _node
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        address oldNode = verificationNode;
         verificationNode = _node;
+        emit VerificationNodeUpdated(oldNode, _node);
     }
 
     function setYieldOracle(
         address _oracle
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        address oldOracle = yieldOracle;
         yieldOracle = _oracle;
+        emit YieldOracleUpdated(oldOracle, _oracle);
     }
 
     function setMaxTotalAssets(
@@ -392,6 +412,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         maxDepositLimit = _maxDepositLimit;
         maxWithdrawLimit = _maxWithdrawLimit;
         minSolvencyThreshold = _minSolvencyThreshold;
+        emit CircuitBreakersUpdated(_maxDepositLimit, _maxWithdrawLimit, _minSolvencyThreshold);
     }
 
     // --- ERC4626 Overrides ---

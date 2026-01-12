@@ -328,4 +328,7 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 - [2026-01-12 12:41] - Yield Oracle Hardening: Upgraded `KerneYieldOracle.sol` with 1e27 intermediate precision to prevent rounding errors in low-yield environments. - Status: SUCCESS.
 - [2026-01-12 12:44] - Emergency Unwind: Implemented `emergency_unwind()` in `bot/panic.py` to pause vault and close all CEX positions. - Status: SUCCESS.
 - [2026-01-12 12:44] - DefiLlama Adapter: Finalized `bot/defillama_adapter.js` with error handling and factory address placeholders. - Status: SUCCESS.
+- [2026-01-12 12:46] - Smart Contract Events: Added missing events to `KerneVault.sol` for better indexing and institutional transparency. - Status: SUCCESS.
+- [2026-01-12 12:46] - Dockerized Sentinel: Finalized `bot/Dockerfile` and `bot/docker-compose.yml` with health checks and multi-service support. - Status: SUCCESS.
+- [2026-01-12 12:47] - Documentation Sync: Updated `docs/mechanism_spec.md` to reflect compliance hooks and emergency unwind logic. - Status: SUCCESS.
 >>>>+++ REPLACE
