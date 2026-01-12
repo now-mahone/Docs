@@ -322,4 +322,6 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 - [2026-01-12 12:32] - KUSD PSM Stress Testing: Created `test/KUSDPSMStress.t.sol` and verified 1:1 swap stability and depeg drain scenarios. - Status: SUCCESS.
 - [2026-01-12 12:37] - Institutional Compliance: Implemented `KerneComplianceHook.sol` for KYC/AML gating. - Status: SUCCESS.
 - [2026-01-12 12:37] - Sentinel Reporting: Enhanced `performance_tracker.py` and `report_generator.py` with execution quality metrics (slippage, Sharpe ratio) for institutional auditing. - Status: SUCCESS.
+- [2026-01-12 12:40] - Omnichain Expansion: Validated `KerneOFT.sol` and updated `DeployOFT.s.sol` for LayerZero V2 compliance (delegate support). - Status: SUCCESS.
+- [2026-01-12 12:40] - Vault Factory Optimization: Optimized `KerneVaultFactory.sol` gas by using `calldata` for strings and `storage` for tier configs. - Status: SUCCESS.
 >>>>+++ REPLACE

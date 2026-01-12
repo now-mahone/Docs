@@ -1,4 +1,4 @@
-// Created: 2026-01-10
+// Created: 2026-01-12
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -8,14 +8,15 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 /**
  * @title KerneOFT
  * @author Kerne Protocol
- * @notice Omnichain Fungible Token for kUSD and $KERNE using LayerZero V1.
+ * @notice Omnichain Fungible Token for kUSD and $KERNE using LayerZero V2.
  */
 contract KerneOFT is OFT {
     constructor(
         string memory _name,
         string memory _symbol,
-        address _lzEndpoint
-    ) OFT(_name, _symbol, _lzEndpoint) { }
+        address _lzEndpoint,
+        address _delegate
+    ) OFT(_name, _symbol, _lzEndpoint, _delegate) { }
 
     /**
      * @notice Mints tokens on the destination chain.

@@ -60,20 +60,21 @@ contract KerneVaultFactory is Ownable {
      */
     function deployVault(
         address asset,
-        string memory name,
-        string memory symbol,
+        string calldata name,
+        string calldata symbol,
         address admin,
         uint256 performanceFeeBps,
         bool whitelistEnabled,
         uint256 maxTotalAssets,
         VaultTier tier
     ) external payable returns (address) {
-        TierConfig memory config = tierConfigs[tier];
+        TierConfig storage config = tierConfigs[tier];
 
         if (msg.sender != owner()) {
-            require(msg.value >= config.deploymentFee, "Insufficient deployment fee");
-            if (msg.value > 0 && feeRecipient != address(0)) {
-                (bool success, ) = payable(feeRecipient).call{value: msg.value}("");
+            uint256 fee = config.deploymentFee;
+            require(msg.value >= fee, "Insufficient deployment fee");
+            if (fee > 0) {
+                (bool success, ) = feeRecipient.call{value: fee}("");
                 require(success, "Fee transfer failed");
             }
         }
