@@ -1,14 +1,33 @@
 # Created: 2026-01-09
-from fastapi import FastAPI, WebSocket
-from typing import Dict
+from fastapi import FastAPI, WebSocket, Depends, HTTPException, Security
+from fastapi.security.api_key import APIKeyHeader, APIKey
+from starlette.status import HTTP_403_FORBIDDEN
+from typing import Dict, Optional
 import asyncio
 import json
+import os
 from datetime import datetime
 from loguru import logger
 from bot.sentinel.risk_engine import RiskEngine
 from bot.sentinel.performance_tracker import PerformanceTracker
 
 app = FastAPI(title="Kerne Sentinel API")
+
+# Security Configuration
+API_KEY = os.getenv("SENTINEL_API_KEY", "kerne_institutional_secret_2026")
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def get_api_key(
+    api_key_header: str = Security(api_key_header),
+):
+    if api_key_header == API_KEY:
+        return api_key_header
+    else:
+        raise HTTPException(
+            status_code=HTTP_403_FORBIDDEN, detail="Could not validate credentials"
+        )
+
 risk_engine = RiskEngine()
 perf_tracker = PerformanceTracker()
 
@@ -20,7 +39,7 @@ async def health_check():
     return {"status": "online", "engine": "Sentinel"}
 
 @app.get("/vault/{address}/risk")
-async def get_vault_risk(address: str):
+async def get_vault_risk(address: str, api_key: APIKey = Depends(get_api_key)):
     # In production, this would fetch real data from the chain/CEX
     mock_data = {
         "address": address,
@@ -53,6 +72,13 @@ async def get_vault_risk(address: str):
 
 @app.websocket("/ws/risk")
 async def websocket_risk_stream(websocket: WebSocket):
+    # WebSocket authentication (simple token check on first message or query param)
+    # For institutional simplicity, we check a query param 'api_key'
+    api_key = websocket.query_params.get("api_key")
+    if api_key != API_KEY:
+        await websocket.close(code=1008)
+        return
+
     await websocket.accept()
     try:
         while True:

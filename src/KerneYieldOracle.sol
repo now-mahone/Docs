@@ -110,11 +110,12 @@ contract KerneYieldOracle is AccessControl {
         
         if (latest.sharePrice <= oldest.sharePrice) return 0;
 
-        uint256 growth = ((latest.sharePrice * 1e18) / oldest.sharePrice) - 1e18;
+        // Use 1e27 for intermediate precision to prevent rounding errors in low-yield environments
+        uint256 growth = ((latest.sharePrice * 1e27) / oldest.sharePrice) - 1e27;
         uint256 annualizedGrowth = (growth * 365 days) / timeDiff;
         
-        // Convert to basis points (1e18 = 10000 bps)
-        apyBps = (annualizedGrowth * 10000) / 1e18;
+        // Convert to basis points (1e27 = 10000 bps)
+        apyBps = (annualizedGrowth * 10000) / 1e27;
     }
 
     /**
@@ -256,9 +257,10 @@ contract KerneYieldOracle is AccessControl {
         uint256 timeDiff = targetObs.timestamp - priorObs.timestamp;
         if (timeDiff == 0 || targetObs.sharePrice <= priorObs.sharePrice) return 0;
 
-        uint256 growth = ((targetObs.sharePrice * 1e18) / priorObs.sharePrice) - 1e18;
+        // Use 1e27 for intermediate precision
+        uint256 growth = ((targetObs.sharePrice * 1e27) / priorObs.sharePrice) - 1e27;
         uint256 annualizedGrowth = (growth * 365 days) / timeDiff;
-        apyBps = (annualizedGrowth * 10000) / 1e18;
+        apyBps = (annualizedGrowth * 10000) / 1e27;
     }
 
     /**

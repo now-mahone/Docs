@@ -324,4 +324,6 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 - [2026-01-12 12:37] - Sentinel Reporting: Enhanced `performance_tracker.py` and `report_generator.py` with execution quality metrics (slippage, Sharpe ratio) for institutional auditing. - Status: SUCCESS.
 - [2026-01-12 12:40] - Omnichain Expansion: Validated `KerneOFT.sol` and updated `DeployOFT.s.sol` for LayerZero V2 compliance (delegate support). - Status: SUCCESS.
 - [2026-01-12 12:40] - Vault Factory Optimization: Optimized `KerneVaultFactory.sol` gas by using `calldata` for strings and `storage` for tier configs. - Status: SUCCESS.
+- [2026-01-12 12:41] - Sentinel API Security: Implemented API key authentication for `bot/sentinel/api.py` (REST and WebSocket). - Status: SUCCESS.
+- [2026-01-12 12:41] - Yield Oracle Hardening: Upgraded `KerneYieldOracle.sol` with 1e27 intermediate precision to prevent rounding errors in low-yield environments. - Status: SUCCESS.
 >>>>+++ REPLACE
