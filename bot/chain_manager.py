@@ -48,6 +48,20 @@ class ChainManager:
 
         self.vault = self.w3.eth.contract(address=self.vault_address, abi=self.abi)
 
+        # Load Registry ABI
+        registry_address = os.getenv("VAULT_REGISTRY_ADDRESS")
+        if registry_address:
+            reg_abi_path = os.path.join(os.path.dirname(__file__), "..", "out", "KerneVaultRegistry.sol", "KerneVaultRegistry.json")
+            if not os.path.exists(reg_abi_path):
+                reg_abi_path = os.path.join(os.path.dirname(__file__), "out", "KerneVaultRegistry.sol", "KerneVaultRegistry.json")
+            
+            with open(reg_abi_path, "r", encoding="utf-8") as f:
+                reg_artifact = json.load(f)
+                self.reg_abi = reg_artifact["abi"]
+            self.registry = self.w3.eth.contract(address=registry_address, abi=self.reg_abi)
+        else:
+            self.registry = None
+
         # Load Yield Oracle ABI
         oracle_address = os.getenv("YIELD_ORACLE_ADDRESS")
         if oracle_address:
@@ -101,6 +115,12 @@ class ChainManager:
         except Exception as e:
             logger.error(f"Error calling totalAssets: {e}")
             raise
+
+    def get_vault_tvl(self) -> float:
+        """
+        Alias for get_vault_assets for consistency across services.
+        """
+        return self.get_vault_assets()
 
     def get_on_chain_assets(self) -> float:
         """
@@ -162,6 +182,34 @@ class ChainManager:
             return tx_hash.hex()
         except Exception as e:
             logger.error(f"Error updating yield oracle: {e}")
+            raise
+
+    def register_vault_in_registry(self, vault_address: str, asset_address: str, metadata: str = "") -> str:
+        """
+        Registers a vault in the KerneVaultRegistry.
+        """
+        if not self.registry:
+            return ""
+        try:
+            # Check if already registered
+            is_reg = self.registry.functions.isRegistered(vault_address).call()
+            if is_reg:
+                return "ALREADY_REGISTERED"
+
+            nonce = self.w3.eth.get_transaction_count(self.account.address)
+            tx = self.registry.functions.registerVault(vault_address, asset_address, metadata).build_transaction({
+                'from': self.account.address,
+                'nonce': nonce,
+                'gasPrice': self.w3.eth.gas_price
+            })
+            signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+            if receipt.status == 1:
+                logger.success(f"Vault registered in registry: {tx_hash.hex()}")
+            return tx_hash.hex()
+        except Exception as e:
+            logger.error(f"Error registering vault: {e}")
             raise
 
     def update_offchain_value(self, amount_eth: float) -> str:

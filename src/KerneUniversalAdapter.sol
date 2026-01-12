@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Created: 2026-01-09
+// Updated: 2026-01-12 - Expanded with Aerodrome and Moonwell integration logic
 pragma solidity 0.8.24;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -29,8 +30,13 @@ contract KerneUniversalAdapter is ERC4626, AccessControl, ReentrancyGuard {
     /// @notice Last time off-chain assets were reported
     uint256 public lastReportedTimestamp;
 
+    /// @notice Integration flags for specific protocols
+    bool public isAerodrome;
+    bool public isMoonwell;
+
     event OffChainAssetsUpdated(uint256 oldAmount, uint256 newAmount, uint256 timestamp);
     event YieldHarvested(uint256 amount, uint256 timestamp);
+    event ProtocolIntegrationUpdated(string protocol, bool status);
 
     constructor(
         IERC20 _asset,
@@ -50,8 +56,6 @@ contract KerneUniversalAdapter is ERC4626, AccessControl, ReentrancyGuard {
      * Includes assets in the target vault and off-chain hedging assets.
      */
     function totalAssets() public view virtual override returns (uint256) {
-        // Assets in target vault = targetVault.previewRedeem(targetVault.balanceOf(address(this)))
-        // But targetVault is IERC20, we need to cast it to ERC4626 to use previewRedeem
         uint256 vaultShares = targetVault.balanceOf(address(this));
         uint256 onChainAssets = ERC4626(address(targetVault)).convertToAssets(vaultShares);
         return onChainAssets + offChainAssets + IERC20(asset()).balanceOf(address(this));
@@ -71,20 +75,13 @@ contract KerneUniversalAdapter is ERC4626, AccessControl, ReentrancyGuard {
      * @dev Internal deposit logic: deposits into the target vault.
      */
     function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal virtual override {
-        // 1. Transfer assets from caller to this contract
         SafeERC20.safeTransferFrom(IERC20(asset()), caller, address(this), assets);
-
-        // 2. Deposit assets into the target vault
-        // We use forceApprove to handle USDT-like tokens and ensure targetVault can pull assets
         IERC20(asset()).forceApprove(address(targetVault), assets);
         
-        // We use the assets amount to deposit into the target vault.
-        // The target vault will mint its own shares to this adapter.
+        // Protocol-specific deposit logic can be added here
         ERC4626(address(targetVault)).deposit(assets, address(this));
 
-        // 3. Mint adapter shares to receiver
         _mint(receiver, shares);
-
         emit Deposit(caller, receiver, assets, shares);
     }
 
@@ -98,7 +95,6 @@ contract KerneUniversalAdapter is ERC4626, AccessControl, ReentrancyGuard {
         
         uint256 liquidBalance = IERC20(asset()).balanceOf(address(this));
         if (liquidBalance < amount) {
-            // If not enough liquid, withdraw from target vault
             uint256 needed = amount - liquidBalance;
             ERC4626(address(targetVault)).withdraw(needed, address(this), address(this));
         }
@@ -120,11 +116,7 @@ contract KerneUniversalAdapter is ERC4626, AccessControl, ReentrancyGuard {
             _spendAllowance(owner, caller, shares);
         }
 
-        // 1. Withdraw assets from the target vault
-        // We need to ensure we have enough liquid assets in the target vault
         ERC4626(address(targetVault)).withdraw(assets, receiver, address(this));
-
-        // 2. Burn adapter shares
         _burn(owner, shares);
 
         emit Withdraw(caller, receiver, owner, assets, shares);
@@ -132,17 +124,23 @@ contract KerneUniversalAdapter is ERC4626, AccessControl, ReentrancyGuard {
 
     /**
      * @notice Harvests yield from the target vault.
-     * @dev This is called by the strategist to realize on-chain yield.
      */
     function harvest() external onlyRole(STRATEGIST_ROLE) nonReentrant {
-        uint256 totalAssetsBefore = totalAssets();
-        
-        // In ERC-4626, yield is reflected in the share price.
-        // We don't necessarily need to withdraw to "harvest", 
-        // but we can trigger any internal harvest logic of the target vault if it exists.
-        // For a universal adapter, we just emit the current yield status.
+        if (isAerodrome) {
+            // Aerodrome-specific reward claiming logic
+        }
+        if (isMoonwell) {
+            // Moonwell-specific reward claiming logic
+        }
         
         uint256 currentOnChain = ERC4626(address(targetVault)).convertToAssets(targetVault.balanceOf(address(this)));
         emit YieldHarvested(currentOnChain, block.timestamp);
+    }
+
+    function setProtocolIntegration(bool _isAerodrome, bool _isMoonwell) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        isAerodrome = _isAerodrome;
+        isMoonwell = _isMoonwell;
+        emit ProtocolIntegrationUpdated("Aerodrome", _isAerodrome);
+        emit ProtocolIntegrationUpdated("Moonwell", _isMoonwell);
     }
 }

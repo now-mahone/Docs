@@ -1,4 +1,5 @@
 // Created: 2026-01-04
+// Updated: 2026-01-12 - Implemented socialization logic for institutional protection
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -8,6 +9,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title KerneInsuranceFund
+ * @author Kerne Protocol
  * @notice Protocol-owned insurance fund to cover depeg events or exchange failures.
  * @dev Funded by a 5% diversion of protocol yield.
  */
@@ -20,6 +22,7 @@ contract KerneInsuranceFund is Ownable, ReentrancyGuard {
     event FundsDeposited(uint256 amount);
     event AuthorizationUpdated(address indexed caller, bool status);
     event CoverageClaimed(address indexed recipient, uint256 amount);
+    event LossSocialized(address indexed vault, uint256 amount);
 
     constructor(
         address _asset
@@ -59,6 +62,25 @@ contract KerneInsuranceFund is Ownable, ReentrancyGuard {
         totalCovered += amount;
 
         emit CoverageClaimed(recipient, amount);
+    }
+
+    /**
+     * @notice Socializes a loss across the insurance fund to protect vault principal.
+     * @param vault The vault experiencing the loss.
+     * @param amount The amount of loss to cover.
+     */
+    function socializeLoss(address vault, uint256 amount) external nonReentrant {
+        require(isAuthorized[vault], "Vault not authorized for socialization");
+        uint256 balance = IERC20(asset).balanceOf(address(this));
+        
+        // If loss is greater than balance, cover as much as possible
+        uint256 coverAmount = amount > balance ? balance : amount;
+        
+        if (coverAmount > 0) {
+            IERC20(asset).transfer(vault, coverAmount);
+            totalCovered += coverAmount;
+            emit LossSocialized(vault, coverAmount);
+        }
     }
 
     /**

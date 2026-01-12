@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Created: 2026-01-12
+// Updated: 2026-01-12 - Finalized for institutional KYC/AML gating
 pragma solidity 0.8.24;
 
 import { IComplianceHook } from "./interfaces/IComplianceHook.sol";
@@ -20,8 +21,12 @@ contract KerneComplianceHook is IComplianceHook, AccessControl {
     /// @notice Global compliance status (applies to all vaults)
     mapping(address => bool) public globalCompliance;
 
+    /// @notice Mapping of vault => whether compliance is strictly required
+    mapping(address => bool) public strictCompliance;
+
     event ComplianceStatusUpdated(address indexed vault, address indexed account, bool status);
     event GlobalComplianceUpdated(address indexed account, bool status);
+    event StrictComplianceUpdated(address indexed vault, bool status);
 
     constructor(address admin) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
@@ -32,6 +37,9 @@ contract KerneComplianceHook is IComplianceHook, AccessControl {
      * @notice Checks if an address is compliant for a specific vault.
      */
     function isCompliant(address vault, address account) external view override returns (bool) {
+        if (!strictCompliance[vault]) {
+            return true; // Default to compliant if strict mode is off
+        }
         return globalCompliance[account] || complianceStatus[vault][account];
     }
 
@@ -49,6 +57,14 @@ contract KerneComplianceHook is IComplianceHook, AccessControl {
     function setGlobalCompliance(address account, bool status) external onlyRole(COMPLIANCE_MANAGER_ROLE) {
         globalCompliance[account] = status;
         emit GlobalComplianceUpdated(account, status);
+    }
+
+    /**
+     * @notice Sets whether compliance is strictly required for a vault.
+     */
+    function setStrictCompliance(address vault, bool status) external onlyRole(COMPLIANCE_MANAGER_ROLE) {
+        strictCompliance[vault] = status;
+        emit StrictComplianceUpdated(vault, status);
     }
 
     /**

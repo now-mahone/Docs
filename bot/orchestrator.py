@@ -1,10 +1,12 @@
 import os
 import subprocess
 import json
+import asyncio
 from loguru import logger
 from typing import Dict
 
 # Created: 2026-01-09
+# Updated: 2026-01-12 - Refactored for asynchronous execution to reduce hedging latency
 
 class BotOrchestrator:
     """
@@ -25,18 +27,18 @@ class BotOrchestrator:
         with open(self.config_path, "w") as f:
             json.dump(self.active_instances, f)
 
-    def deploy_instance(self, vault_address: str, partner_config: dict):
+    async def deploy_instance(self, vault_address: str, partner_config: dict):
         """
-        Deploys a new Docker container for a specific vault.
+        Deploys a new Docker container for a specific vault asynchronously.
         """
         if vault_address in self.active_instances:
-            status = self.get_status(vault_address)
+            status = await self.get_status(vault_address)
             if status == "RUNNING":
                 logger.warning(f"Instance already running for vault {vault_address}")
                 return self.active_instances[vault_address]
             else:
                 logger.info(f"Instance for {vault_address} exists but is {status}. Restarting...")
-                self.stop_instance(vault_address)
+                await self.stop_instance(vault_address)
 
         logger.info(f"Deploying isolated hedging instance for vault: {vault_address}")
 
@@ -53,7 +55,6 @@ class BotOrchestrator:
         }
 
         # Construct Docker run command
-        # Assuming a pre-built 'kerne-hedging-engine' image
         container_name = f"kerne-vault-{vault_address[:8]}"
         cmd = [
             "docker", "run", "-d",
@@ -72,22 +73,32 @@ class BotOrchestrator:
         cmd.append("kerne-hedging-engine")
 
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-            container_id = result.stdout.strip()
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            stdout, stderr = await process.communicate()
+            
+            if process.returncode != 0:
+                error_msg = stderr.decode().strip()
+                logger.error(f"Failed to deploy container for {vault_address}: {error_msg}")
+                if "already in use" in error_msg:
+                    logger.info(f"Container name {container_name} conflict. Attempting to remove and retry...")
+                    await asyncio.create_subprocess_exec("docker", "rm", "-f", container_name)
+                    return await self.deploy_instance(vault_address, partner_config)
+                raise Exception(f"Docker error: {error_msg}")
+
+            container_id = stdout.decode().strip()
             self.active_instances[vault_address] = container_id
             self._save_config()
             logger.success(f"Deployed container {container_id} ({container_name}) for vault {vault_address}")
             return container_id
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Failed to deploy container for {vault_address}: {e.stderr}")
-            # Attempt cleanup if name conflict
-            if "already in use" in e.stderr:
-                logger.info(f"Container name {container_name} conflict. Attempting to remove and retry...")
-                subprocess.run(["docker", "rm", "-f", container_name], check=False)
-                return self.deploy_instance(vault_address, partner_config)
+        except Exception as e:
+            logger.error(f"Orchestrator deployment failed: {e}")
             raise
 
-    def stop_instance(self, vault_address: str):
+    async def stop_instance(self, vault_address: str):
         if vault_address not in self.active_instances:
             return
 
@@ -95,29 +106,31 @@ class BotOrchestrator:
         logger.info(f"Stopping instance {container_id} for vault {vault_address}")
 
         try:
-            subprocess.run(["docker", "stop", container_id], check=True)
-            subprocess.run(["docker", "rm", container_id], check=True)
+            await asyncio.create_subprocess_exec("docker", "stop", container_id)
+            await asyncio.create_subprocess_exec("docker", "rm", container_id)
             del self.active_instances[vault_address]
             self._save_config()
             logger.success(f"Stopped and removed instance for vault {vault_address}")
-        except subprocess.CalledProcessError as e:
+        except Exception as e:
             logger.error(f"Failed to stop container: {e}")
 
-    def get_status(self, vault_address: str):
+    async def get_status(self, vault_address: str):
         if vault_address not in self.active_instances:
             return "NOT_DEPLOYED"
         
         container_id = self.active_instances[vault_address]
         try:
-            result = subprocess.run(
-                ["docker", "inspect", "-f", "{{.State.Status}}", container_id],
-                capture_output=True, text=True, check=True
+            process = await asyncio.create_subprocess_exec(
+                "docker", "inspect", "-f", "{{.State.Status}}", container_id,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
             )
-            return result.stdout.strip().upper()
-        except subprocess.CalledProcessError:
+            stdout, _ = await process.communicate()
+            return stdout.decode().strip().upper()
+        except Exception:
             return "ERROR"
 
 if __name__ == "__main__":
     orchestrator = BotOrchestrator()
     # Example usage:
-    # orchestrator.deploy_instance("0x123...", {"api_key": "...", "secret": "..."})
+    # asyncio.run(orchestrator.deploy_instance("0x123...", {"api_key": "...", "secret": "..."}))

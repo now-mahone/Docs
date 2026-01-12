@@ -211,6 +211,13 @@ class HedgingEngine:
             # 4.7 Update Yield Oracle (TWAY)
             self.chain.update_yield_oracle()
 
+            # 4.7.2 Auto-Register Vault in Registry
+            try:
+                asset_addr = self.chain.vault.functions.asset().call()
+                self.chain.register_vault_in_registry(self.chain.vault_address, asset_addr, "Genesis Vault")
+            except Exception as e:
+                logger.error(f"Auto-registration failed: {e}")
+
             # 4.7.5 Sentinel Guardian: Proactive Cap Management
             try:
                 from bot.sentinel.risk_engine import RiskEngine

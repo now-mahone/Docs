@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 // Created: 2026-01-10
+// Updated: 2026-01-12 - Fixed syntax and added flash loan support
 pragma solidity 0.8.24;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156FlashLender.sol";
+import { IERC3156FlashBorrower } from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
 
 /**
  * @title KUSDPSM
@@ -13,7 +16,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
  * @notice Peg Stability Module for kUSD.
  * Allows 1:1 swaps between kUSD and other major stables (e.g., USDC, cbBTC) to maintain the peg.
  */
-contract KUSDPSM is AccessControl, ReentrancyGuard {
+contract KUSDPSM is AccessControl, ReentrancyGuard, IERC3156FlashLender {
     using SafeERC20 for IERC20;
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
@@ -25,12 +28,15 @@ contract KUSDPSM is AccessControl, ReentrancyGuard {
     mapping(address => bool) public supportedStables;
 
     /// @notice Tiered fee thresholds for institutional volume (amount => feeBps)
-    /// @dev Allows for lower fees on large institutional swaps.
     struct TieredFee {
         uint256 threshold;
         uint256 feeBps;
     }
     mapping(address => TieredFee[]) public tieredFees;
+
+    bool public virtualPegEnabled;
+    uint256 public virtualPegFeeBps;
+    uint256 public flashFeeBps;
 
     event StableAdded(address indexed stable, uint256 fee);
     event Swap(address indexed user, address indexed fromToken, address indexed toToken, uint256 amount, uint256 fee);
@@ -52,7 +58,6 @@ contract KUSDPSM is AccessControl, ReentrancyGuard {
         uint256 feeBps = swapFees[stable];
         TieredFee[] storage tiers = tieredFees[stable];
         
-        // Check tiered fees (descending order of threshold is expected for efficiency)
         for (uint256 i = 0; i < tiers.length; i++) {
             if (amount >= tiers[i].threshold) {
                 feeBps = tiers[i].feeBps;
@@ -66,8 +71,6 @@ contract KUSDPSM is AccessControl, ReentrancyGuard {
         virtualPegEnabled = _enabled;
         virtualPegFeeBps = _feeBps;
     }
->>>>+++ REPLACE
-
 
     /**
      * @notice Swaps a supported stablecoin for kUSD 1:1.
@@ -115,6 +118,7 @@ contract KUSDPSM is AccessControl, ReentrancyGuard {
     }
 
     function setTieredFees(address stable, TieredFee[] calldata fees) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        delete tieredFees[stable];
         for (uint256 i = 0; i < fees.length; i++) {
             require(fees[i].feeBps <= 500, "Fee too high");
             tieredFees[stable].push(fees[i]);
@@ -159,5 +163,4 @@ contract KUSDPSM is AccessControl, ReentrancyGuard {
 
         return true;
     }
-}
 }

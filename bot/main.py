@@ -53,14 +53,27 @@ def main():
         try:
             # 1. Risk Analysis & Sentinel Defense
             # Fetch latest vault data for risk analysis
+            vault_tvl = chain.get_vault_tvl()
+            short_pos, _ = exchange.get_short_position('ETH/USDT:USDT')
+            collateral_usdt = exchange.get_collateral_balance('USDT')
+            
             vault_data = {
                 "address": chain.vault_address,
-                "onchain_collateral": chain.get_vault_tvl(),
-                "cex_short_position": exchange.get_total_short_position(),
+                "onchain_collateral": vault_tvl,
+                "cex_short_position": short_pos,
+                "available_margin_usd": collateral_usdt,
                 "liq_onchain": 0.5, # Placeholder: 50% distance to liquidation
                 "liq_cex": 0.3      # Placeholder: 30% distance to liquidation
             }
             risk_engine.analyze_vault(vault_data)
+            
+            # Check Health Factor for auto-deleverage
+            if chain.minter:
+                try:
+                    hf = chain.minter.functions.getHealthFactor(chain.vault_address).call() / 1e18
+                    risk_engine.auto_deleverage(chain.vault_address, hf)
+                except Exception as e:
+                    logger.error(f"Failed to check health factor: {e}")
 
             # 2. Execute one hedging and reporting cycle
             engine.run_cycle(dry_run=DRY_RUN)
