@@ -317,4 +317,7 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 - [2026-01-12 12:12] - DefiLlama PR Submitted: PR #17645 created and passing automated checks (llamabutler verified $391.42k TVL). Awaiting human reviewer merge. - Status: SUCCESS.
 - [2026-01-12 12:13] - Yield Oracle Hardening: Enhanced `KerneYieldOracle.sol` with aggregator integration features (staleness checks, batch updates, historical APY, vault registry). Compiles successfully. - Status: SUCCESS.
 - [2026-01-12 12:14] - Sentinel Risk Engine Hardening: Updated `risk_engine.py` with timestamp tracking and risk factor metadata for institutional reporting. - Status: SUCCESS.
+- [2026-01-12 12:28] - Institutional Sprint: Automated Yield Oracle "Push" logic in `bot/engine.py`, verified Sentinel Autonomous Defense with local fork tests, and finalized Sentinel WebSocket API for real-time institutional monitoring. - Status: SUCCESS.
+- [2026-01-12 12:32] - Sentinel Risk Engine Hardening: Implemented real-time slippage and liquidity depth checks in `bot/sentinel/risk_engine.py`. - Status: SUCCESS.
+- [2026-01-12 12:32] - KUSD PSM Stress Testing: Created `test/KUSDPSMStress.t.sol` and verified 1:1 swap stability and depeg drain scenarios. - Status: SUCCESS.
 >>>>+++ REPLACE

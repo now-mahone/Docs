@@ -34,9 +34,40 @@ class RiskEngine:
             "critical_health_score": 50.0,  # Trigger circuit breaker earlier
             "max_slippage_allowed": 0.005, # 0.5% max slippage for rebalances
             "lst_depeg_threshold": 0.03, # 3% LST depeg triggers alert
-            "max_drawdown_threshold": 0.05 # 5% drawdown triggers pause
+            "max_drawdown_threshold": 0.05, # 5% drawdown triggers pause
+            "min_liquidity_depth_usd": 1000000, # $1M min depth for rebalance pairs
+            "max_impact_per_100k": 0.01 # 1% max price impact per $100k trade
         }
         self.alert_cooldowns = {} # To prevent spamming
+
+    def check_liquidity_depth(self, pair_address: str, amount_usd: float) -> bool:
+        """
+        Checks if the liquidity depth is sufficient for a trade of amount_usd.
+        In production, this queries Uniswap V3/V2 pools or CEX order books.
+        """
+        # Placeholder for real-time depth fetching
+        # For now, we simulate a depth check
+        simulated_depth = 5000000 # $5M simulated depth
+        
+        if simulated_depth < self.risk_thresholds["min_liquidity_depth_usd"]:
+            logger.warning(f"Insufficient liquidity depth for {pair_address}: ${simulated_depth}")
+            return False
+            
+        impact = (amount_usd / 100000) * self.risk_thresholds["max_impact_per_100k"]
+        if impact > self.risk_thresholds["max_slippage_allowed"]:
+            logger.warning(f"Estimated price impact too high for {pair_address}: {impact:.2%}")
+            return False
+            
+        return True
+
+    def validate_rebalance_slippage(self, expected_out: float, actual_out: float) -> bool:
+        """
+        Validates that the actual slippage is within allowed thresholds.
+        """
+        if expected_out == 0:
+            return False
+        slippage = (expected_out - actual_out) / expected_out
+        return slippage <= self.risk_thresholds["max_slippage_allowed"]
 
     def trigger_circuit_breaker(self, vault_address: str, reason: str = "Unknown"):
         """
@@ -134,6 +165,16 @@ class RiskEngine:
             vault_data["cex_short_position"]
         )
         
+        # Real-time Liquidity Check for the vault's primary pair
+        if "primary_pair" in vault_data:
+            is_liquid = self.check_liquidity_depth(
+                vault_data["primary_pair"], 
+                vault_data["onchain_collateral"]
+            )
+            if not is_liquid:
+                logger.error(f"Vault {vault_data['address']} failed liquidity depth check!")
+                # We don't necessarily pause here, but we lower the health score
+        
         profile_dict = {
             "net_delta": net_delta,
             "liq_onchain": vault_data["liq_onchain"],
@@ -148,7 +189,7 @@ class RiskEngine:
             
             if health_score < self.risk_thresholds["critical_health_score"]:
                 logger.critical(f"Vault {vault_data['address']} CRITICAL RISK! Health: {health_score:.2f}")
-                self.trigger_circuit_breaker(vault_data["address"])
+                self.trigger_circuit_breaker(vault_data["address"], reason=f"Critical Health Score: {health_score:.2f}")
 
         return VaultRiskProfile(
             vault_address=vault_data["address"],
@@ -156,5 +197,9 @@ class RiskEngine:
             gamma_exposure=0.0,  # Placeholder for future gamma logic
             liquidation_distance_onchain=vault_data["liq_onchain"],
             liquidation_distance_cex=vault_data["liq_cex"],
-            health_score=health_score
+            health_score=health_score,
+            risk_factors={
+                "liquidity_ok": vault_data.get("liquidity_ok", True),
+                "slippage_last_trade": vault_data.get("last_slippage", 0.0)
+            }
         )

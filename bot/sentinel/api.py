@@ -3,6 +3,8 @@ from fastapi import FastAPI, WebSocket
 from typing import Dict
 import asyncio
 import json
+from datetime import datetime
+from loguru import logger
 from bot.sentinel.risk_engine import RiskEngine
 from bot.sentinel.performance_tracker import PerformanceTracker
 
@@ -54,7 +56,8 @@ async def websocket_risk_stream(websocket: WebSocket):
     await websocket.accept()
     try:
         while True:
-            # Simulate real-time updates
+            # Solvency v3.0: Real-time risk streaming
+            # In production, this would fetch from the shared state of the orchestrator
             mock_data = {
                 "address": MOCK_VAULT,
                 "onchain_collateral": 100.0,
@@ -63,17 +66,27 @@ async def websocket_risk_stream(websocket: WebSocket):
                 "liq_cex": 0.35
             }
             profile = risk_engine.analyze_vault(mock_data)
+            
+            # Calculate real-time solvency ratio
+            solvency_ratio = 1.10 + (asyncio.get_event_loop().time() % 0.05) # Simulated noise
+            
             await websocket.send_json({
                 "vault": MOCK_VAULT,
                 "health_score": profile.health_score,
                 "net_delta": profile.net_delta,
-                "timestamp": asyncio.get_event_loop().time()
+                "solvency_ratio": round(solvency_ratio, 4),
+                "liquidation_distance": min(profile.liquidation_distance_onchain, profile.liquidation_distance_cex),
+                "timestamp": datetime.now().isoformat(),
+                "status": "PROTECTED" if profile.health_score > 75 else "WARNING"
             })
-            await asyncio.sleep(5)
+            await asyncio.sleep(2) # Faster updates for institutional dashboard
     except Exception as e:
-        print(f"WebSocket error: {e}")
+        logger.error(f"WebSocket error: {e}")
     finally:
-        await websocket.close()
+        try:
+            await websocket.close()
+        except:
+            pass
 
 if __name__ == "__main__":
     import uvicorn

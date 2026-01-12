@@ -230,6 +230,7 @@ class HedgingEngine:
             prev_price = history.get("last_price", current_share_price)
             prev_timestamp = history.get("last_timestamp", current_timestamp - 3600)
             
+            # Calculate growth: (currentPrice / prevPrice)
             price_growth = current_share_price / prev_price if prev_price > 0 else 1.0
             time_delta = current_timestamp - prev_timestamp
             
@@ -237,22 +238,38 @@ class HedgingEngine:
                 logger.warning("Time delta is zero. Skipping APY calculation.")
                 return
 
+            # Annualize: (growth ^ (seconds_in_year / time_delta)) - 1
             seconds_in_year = 365 * 24 * 3600
             annualized_yield = (price_growth ** (seconds_in_year / time_delta)) - 1
             
+            # Convert to basis points (1e18 = 10000 bps)
             apy_bps = min(10000, int(annualized_yield * 10000))
             apy_bps = max(0, apy_bps) 
             
             logger.info(f"Calculated APY: {apy_bps/100:.2f}% ({apy_bps} bps)")
             
-            self.chain.vault.functions.updateProjectedAPY(apy_bps).transact({'from': self.chain.account.address})
+            # Update the vault's projected APY (legacy)
+            try:
+                nonce = self.chain.w3.eth.get_transaction_count(self.chain.account.address)
+                tx = self.chain.vault.functions.updateProjectedAPY(apy_bps).build_transaction({
+                    'from': self.chain.account.address,
+                    'nonce': nonce,
+                    'gasPrice': self.chain.w3.eth.gas_price
+                })
+                signed_tx = self.chain.w3.eth.account.sign_transaction(tx, self.chain.private_key)
+                self.chain.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            except Exception as e:
+                logger.error(f"Failed to update vault projected APY: {e}")
+            
+            # Update the Yield Oracle (TWAY)
+            self.chain.update_yield_oracle()
             
             history["last_price"] = current_share_price
             history["last_timestamp"] = current_timestamp
             with open(history_file, "w") as f:
                 json.dump(history, f)
                 
-            logger.success("Yield Oracle updated successfully.")
+            logger.success("Yield Oracle and Vault APY updated successfully.")
             
         except Exception as e:
             logger.error(f"Failed to update APY: {e}")
