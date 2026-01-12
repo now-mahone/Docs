@@ -325,20 +325,20 @@ class ChainManager:
             logger.error(f"Error drawing from insurance fund: {e}")
             raise
 
-    def bridge_kusd(self, amount_eth: float, dst_chain_id: int) -> str:
+    def bridge_kusd_v2(self, amount_eth: float, dst_eid: int) -> str:
         """
-        Bridges kUSD to another chain using the KerneOFT contract (LayerZero V1).
+        Bridges kUSD to another chain using the KerneOFTV2 contract (LayerZero V2).
         """
         try:
-            oft_address = os.getenv("KUSD_OFT_ADDRESS")
+            oft_address = os.getenv("KUSD_OFT_V2_ADDRESS")
             if not oft_address:
-                logger.error("KUSD_OFT_ADDRESS not set.")
+                logger.error("KUSD_OFT_V2_ADDRESS not set.")
                 return ""
 
-            # Load OFT ABI
-            oft_abi_path = os.path.join(os.path.dirname(__file__), "..", "out", "KerneOFT.sol", "KerneOFT.json")
+            # Load OFT V2 ABI
+            oft_abi_path = os.path.join(os.path.dirname(__file__), "..", "out", "KerneOFTV2.sol", "KerneOFTV2.json")
             if not os.path.exists(oft_abi_path):
-                oft_abi_path = os.path.join(os.path.dirname(__file__), "out", "KerneOFT.sol", "KerneOFT.json")
+                oft_abi_path = os.path.join(os.path.dirname(__file__), "out", "KerneOFTV2.sol", "KerneOFTV2.json")
             
             with open(oft_abi_path, "r", encoding="utf-8") as f:
                 oft_artifact = json.load(f)
@@ -347,24 +347,30 @@ class ChainManager:
             oft_contract = self.w3.eth.contract(address=oft_address, abi=oft_abi)
             amount_wei = self.w3.to_wei(amount_eth, 'ether')
             
-            # LZ V1 sendFrom
-            # function sendFrom(address _from, uint16 _dstChainId, bytes32 _toAddress, uint _amount, address payable _refundAddress, address _zroPaymentAddress, bytes memory _adapterParams) public payable
+            # LZ V2 send
+            # function send(SendParam calldata _sendParam, MessagingFee calldata _fee, address _refundAddress) external payable returns (MessagingReceipt memory msgReceipt, OFTReceipt memory oftReceipt)
             to_bytes32 = self.w3.to_bytes(hexstr=self.account.address).rjust(32, b'\0')
             
+            send_param = (
+                dst_eid,
+                to_bytes32,
+                amount_wei,
+                amount_wei, # minAmount
+                b"", # extraOptions
+                b"", # composeMsg
+                b""  # oftCmd
+            )
+
             # Estimate fees
-            fees = oft_contract.functions.estimateSendFee(dst_chain_id, to_bytes32, amount_wei, False, b"").call()
+            fees = oft_contract.functions.quoteSend(send_param, False).call()
             native_fee = fees[0]
 
             nonce = self.w3.eth.get_transaction_count(self.account.address)
             
-            tx = oft_contract.functions.sendFrom(
-                self.account.address,
-                dst_chain_id,
-                to_bytes32,
-                amount_wei,
-                self.account.address, # refundAddress
-                "0x0000000000000000000000000000000000000000", # zroPaymentAddress
-                b"" # adapterParams
+            tx = oft_contract.functions.send(
+                send_param,
+                (native_fee, 0), # MessagingFee
+                self.account.address # refundAddress
             ).build_transaction({
                 'from': self.account.address,
                 'nonce': nonce,
@@ -377,8 +383,8 @@ class ChainManager:
             receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
             
             if receipt.status == 1:
-                logger.success(f"kUSD bridged to chain {dst_chain_id}: {tx_hash.hex()}")
+                logger.success(f"kUSD V2 bridged to EID {dst_eid}: {tx_hash.hex()}")
             return tx_hash.hex()
         except Exception as e:
-            logger.error(f"Error bridging kUSD: {e}")
+            logger.error(f"Error bridging kUSD V2: {e}")
             raise

@@ -156,10 +156,53 @@ class RiskEngine:
             
         return max(0.0, min(100.0, score))
 
+    def adjust_vault_caps(self, vault_address: str, available_margin_usd: float):
+        """
+        Sentinel Guardian: Proactively adjusts vault deposit caps based on available hedging margin.
+        """
+        if not self.w3 or not self.private_key:
+            return
+
+        try:
+            account = self.w3.eth.account.from_key(self.private_key)
+            # Minimal ABI for setMaxTotalAssets
+            cap_abi = [{"inputs":[{"name":"_maxTotalAssets","type":"uint256"}],"name":"setMaxTotalAssets","outputs":[],"stateMutability":"nonpayable","type":"function"}]
+            vault_contract = self.w3.eth.contract(address=Web3.to_checksum_address(vault_address), abi=cap_abi)
+            
+            # Calculate safe cap (e.g., 90% of available margin to allow for price fluctuations)
+            # Assuming 1:1 hedging for simplicity here
+            safe_cap_usd = available_margin_usd * 0.9
+            
+            # In production, convert USD to asset units using an oracle
+            # For now, we assume asset is WETH and price is $2500
+            eth_price = 2500 
+            safe_cap_eth = safe_cap_usd / eth_price
+            safe_cap_wei = int(safe_cap_eth * 1e18)
+
+            tx = vault_contract.functions.setMaxTotalAssets(safe_cap_wei).build_transaction({
+                'from': account.address,
+                'nonce': self.w3.eth.get_transaction_count(account.address),
+                'gas': 100000,
+                'gasPrice': self.w3.eth.gas_price,
+                'chainId': self.w3.eth.chain_id
+            })
+            
+            signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            
+            logger.info(f"Guardian: Adjusted cap for {vault_address} to {safe_cap_eth:.2f} ETH. TX: {tx_hash.hex()}")
+            return tx_hash.hex()
+        except Exception as e:
+            logger.error(f"Guardian failed to adjust cap for {vault_address}: {e}")
+
     def analyze_vault(self, vault_data: Dict) -> VaultRiskProfile:
         """
         Performs a full risk analysis on a single vault.
         """
+        # Guardian: Proactive Cap Management
+        if "available_margin_usd" in vault_data:
+            self.adjust_vault_caps(vault_data["address"], vault_data["available_margin_usd"])
+
         net_delta = self.calculate_vault_delta(
             vault_data["onchain_collateral"], 
             vault_data["cex_short_position"]

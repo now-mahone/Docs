@@ -6,6 +6,10 @@ import { Clones } from "@openzeppelin/contracts/proxy/Clones.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { KerneVault } from "./KerneVault.sol";
 
+interface IKerneVaultRegistry {
+    function registerVault(address vault, address asset, string calldata metadata) external;
+}
+
 /**
  * @title KerneVaultFactory
  * @author Kerne Protocol
@@ -13,6 +17,7 @@ import { KerneVault } from "./KerneVault.sol";
  */
 contract KerneVaultFactory is Ownable {
     address public immutable implementation;
+    address public registry;
     address[] public allVaults;
 
     enum VaultTier { BASIC, PRO, INSTITUTIONAL }
@@ -21,6 +26,7 @@ contract KerneVaultFactory is Ownable {
         uint256 deploymentFee;
         uint256 protocolFounderFeeBps;
         bool complianceRequired;
+        address complianceHook;
     }
 
     mapping(VaultTier => TierConfig) public tierConfigs;
@@ -34,17 +40,20 @@ contract KerneVaultFactory is Ownable {
     event VaultDeployed(address indexed vault, address indexed admin, string name, string symbol, VaultTier tier);
     event TierConfigUpdated(VaultTier tier, uint256 fee, uint256 founderFeeBps, bool compliance);
     event FeeRecipientUpdated(address newRecipient);
+    event RegistryUpdated(address newRegistry);
 
     constructor(
-        address _implementation
+        address _implementation,
+        address _registry
     ) Ownable(msg.sender) {
         implementation = _implementation;
+        registry = _registry;
         feeRecipient = msg.sender;
 
         // Initialize default tiers
-        tierConfigs[VaultTier.BASIC] = TierConfig(0.05 ether, 1000, false); // 10% of performance fee
-        tierConfigs[VaultTier.PRO] = TierConfig(0.2 ether, 750, true);      // 7.5% of performance fee
-        tierConfigs[VaultTier.INSTITUTIONAL] = TierConfig(1 ether, 500, true); // 5% of performance fee
+        tierConfigs[VaultTier.BASIC] = TierConfig(0.05 ether, 1000, false, address(0)); // 10% of performance fee
+        tierConfigs[VaultTier.PRO] = TierConfig(0.2 ether, 750, true, address(0));      // 7.5% of performance fee
+        tierConfigs[VaultTier.INSTITUTIONAL] = TierConfig(1 ether, 500, true, address(0)); // 5% of performance fee
     }
 
     /**
@@ -92,12 +101,20 @@ contract KerneVaultFactory is Ownable {
             whitelistEnabled || config.complianceRequired
         );
 
+        if (config.complianceHook != address(0)) {
+            KerneVault(clone).setComplianceHook(config.complianceHook);
+        }
+
         if (maxTotalAssets > 0) {
             KerneVault(clone).setMaxTotalAssets(maxTotalAssets);
         }
 
         allVaults.push(clone);
         vaultsByDeployer[msg.sender].push(clone);
+
+        if (registry != address(0)) {
+            try IKerneVaultRegistry(registry).registerVault(clone, asset, name) {} catch {}
+        }
         
         emit VaultDeployed(clone, admin, name, symbol, tier);
 
@@ -111,9 +128,10 @@ contract KerneVaultFactory is Ownable {
         VaultTier tier,
         uint256 deploymentFee,
         uint256 protocolFounderFeeBps,
-        bool complianceRequired
+        bool complianceRequired,
+        address complianceHook
     ) external onlyOwner {
-        tierConfigs[tier] = TierConfig(deploymentFee, protocolFounderFeeBps, complianceRequired);
+        tierConfigs[tier] = TierConfig(deploymentFee, protocolFounderFeeBps, complianceRequired, complianceHook);
         emit TierConfigUpdated(tier, deploymentFee, protocolFounderFeeBps, complianceRequired);
     }
 
@@ -123,6 +141,14 @@ contract KerneVaultFactory is Ownable {
     function setFeeRecipient(address _newRecipient) external onlyOwner {
         feeRecipient = _newRecipient;
         emit FeeRecipientUpdated(_newRecipient);
+    }
+
+    /**
+     * @notice Allows owner to update the registry.
+     */
+    function setRegistry(address _newRegistry) external onlyOwner {
+        registry = _newRegistry;
+        emit RegistryUpdated(_newRegistry);
     }
 
     /**

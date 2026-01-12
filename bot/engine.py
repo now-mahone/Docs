@@ -211,6 +211,16 @@ class HedgingEngine:
             # 4.7 Update Yield Oracle (TWAY)
             self.chain.update_yield_oracle()
 
+            # 4.7.5 Sentinel Guardian: Proactive Cap Management
+            try:
+                from bot.sentinel.risk_engine import RiskEngine
+                risk_engine = RiskEngine(self.chain.w3, self.chain.private_key)
+                # In production, fetch actual available margin from CEX
+                available_margin_usd = collateral_usdt * 0.8 
+                risk_engine.adjust_vault_caps(self.chain.vault_address, available_margin_usd)
+            except Exception as e:
+                logger.error(f"Sentinel Guardian failed: {e}")
+
             # 4.8 Calculate and Update APY (Legacy/Fallback)
             self._update_calculated_apy()
 

@@ -18,6 +18,7 @@ contract KernePrime is Ownable, ReentrancyGuard {
         uint256 balance;
         uint256 debt; // kUSD debt for leveraged trading
         uint256 collateral; // Additional collateral if any
+        uint256 creditLine; // Maximum kUSD debt allowed
         uint256 lastTradeTimestamp;
         address vault;
     }
@@ -37,17 +38,55 @@ contract KernePrime is Ownable, ReentrancyGuard {
     /**
      * @notice Initializes a Prime Brokerage account for a partner.
      */
-    function createPrimeAccount(address _partner, address _vault) external onlyOwner {
+    function createPrimeAccount(address _partner, address _vault, uint256 _creditLine) external onlyOwner {
         require(!primeAccounts[_partner].active, "Account already exists");
         primeAccounts[_partner] = PrimeAccount({
             active: true,
             balance: 0,
             debt: 0,
             collateral: 0,
+            creditLine: _creditLine,
             lastTradeTimestamp: block.timestamp,
             vault: _vault
         });
         emit PrimeAccountCreated(_partner, _vault);
+    }
+
+    /**
+     * @notice Updates the credit line for a Prime account.
+     */
+    function setCreditLine(address _partner, uint256 _newCreditLine) external onlyOwner {
+        require(primeAccounts[_partner].active, "Account not active");
+        primeAccounts[_partner].creditLine = _newCreditLine;
+    }
+
+    /**
+     * @notice Borrows kUSD against the Prime account's credit line.
+     */
+    function borrow(uint256 _amount) external nonReentrant {
+        PrimeAccount storage account = primeAccounts[msg.sender];
+        require(account.active, "Not a Prime partner");
+        require(account.debt + _amount <= account.creditLine, "Credit line exceeded");
+        
+        account.debt += _amount;
+        account.lastTradeTimestamp = block.timestamp;
+        
+        require(getHealthFactor(msg.sender) >= 1e18, "Unsafe health factor after borrow");
+        
+        // In production, this would mint kUSD or transfer from a pool
+        // For now, we assume the Prime contract holds kUSD or has minting rights
+    }
+
+    /**
+     * @notice Repays kUSD debt.
+     */
+    function repay(uint256 _amount) external nonReentrant {
+        PrimeAccount storage account = primeAccounts[msg.sender];
+        require(account.active, "Not a Prime partner");
+        if (_amount > account.debt) _amount = account.debt;
+        
+        account.debt -= _amount;
+        // Transfer kUSD from partner to Prime contract
     }
 
     /**

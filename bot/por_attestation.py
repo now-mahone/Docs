@@ -77,6 +77,23 @@ def generate_por_attestation():
 
     logger.success(f"PoR Attestation generated and signed: {output_path}")
     logger.info(f"Total Verified Assets: {total_assets_eth:.4f} ETH")
+
+    # Merkle-Based Proof-of-Yield (Yield Attestation)
+    # Format: [vault_address, yield_amount_wei, cycle_index, timestamp]
+    yield_amount_wei = Web3.to_wei(0.01, 'ether') # Example yield for this cycle
+    cycle_index = 42 # Example cycle
+    
+    yield_leaf = Web3.solidity_keccak(
+        ['address', 'uint256', 'uint256', 'uint256'],
+        [vault_address, yield_amount_wei, cycle_index, timestamp]
+    )
+    
+    # In a real scenario, we'd aggregate multiple leaves into a Merkle Tree
+    # For now, we use the single leaf as the root for demonstration
+    merkle_root = yield_leaf
+    
+    logger.info(f"Yield Merkle Root: {merkle_root.hex()}")
+    
     return attestation
 
 if __name__ == "__main__":

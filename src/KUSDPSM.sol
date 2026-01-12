@@ -45,6 +45,10 @@ contract KUSDPSM is AccessControl, ReentrancyGuard {
      * @notice Calculates the fee for a given amount and stablecoin.
      */
     function getFee(address stable, uint256 amount) public view returns (uint256) {
+        if (virtualPegEnabled) {
+            return (amount * virtualPegFeeBps) / 10000;
+        }
+
         uint256 feeBps = swapFees[stable];
         TieredFee[] storage tiers = tieredFees[stable];
         
@@ -57,6 +61,13 @@ contract KUSDPSM is AccessControl, ReentrancyGuard {
         }
         return (amount * feeBps) / 10000;
     }
+
+    function setVirtualPeg(bool _enabled, uint256 _feeBps) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        virtualPegEnabled = _enabled;
+        virtualPegFeeBps = _feeBps;
+    }
+>>>>+++ REPLACE
+
 
     /**
      * @notice Swaps a supported stablecoin for kUSD 1:1.
