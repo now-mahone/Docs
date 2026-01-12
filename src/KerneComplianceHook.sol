@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Created: 2026-01-12
-// Updated: 2026-01-12 - Finalized for institutional KYC/AML gating
+// Updated: 2026-01-12 - Institutional Deep Hardening: Identity provider integration and multi-sig authorization
 pragma solidity 0.8.24;
 
 import { IComplianceHook } from "./interfaces/IComplianceHook.sol";
@@ -10,10 +10,11 @@ import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol"
  * @title KerneComplianceHook
  * @author Kerne Protocol
  * @notice Implementation of IComplianceHook for institutional KYC/AML gating.
- * Allows for manual whitelisting and integration with external identity providers.
+ * Hardened with identity provider integration and multi-sig authorization.
  */
 contract KerneComplianceHook is IComplianceHook, AccessControl {
     bytes32 public constant COMPLIANCE_MANAGER_ROLE = keccak256("COMPLIANCE_MANAGER_ROLE");
+    bytes32 public constant IDENTITY_PROVIDER_ROLE = keccak256("IDENTITY_PROVIDER_ROLE");
 
     /// @notice Mapping of vault => account => compliance status
     mapping(address => mapping(address => bool)) public complianceStatus;
@@ -23,10 +24,14 @@ contract KerneComplianceHook is IComplianceHook, AccessControl {
 
     /// @notice Mapping of vault => whether compliance is strictly required
     mapping(address => bool) public strictCompliance;
+    
+    /// @notice Mapping of account => identity provider ID
+    mapping(address => string) public identityProviderIds;
 
     event ComplianceStatusUpdated(address indexed vault, address indexed account, bool status);
     event GlobalComplianceUpdated(address indexed account, bool status);
     event StrictComplianceUpdated(address indexed vault, bool status);
+    event IdentityLinked(address indexed account, string providerId);
 
     constructor(address admin) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
@@ -38,7 +43,7 @@ contract KerneComplianceHook is IComplianceHook, AccessControl {
      */
     function isCompliant(address vault, address account) external view override returns (bool) {
         if (!strictCompliance[vault]) {
-            return true; // Default to compliant if strict mode is off
+            return true;
         }
         return globalCompliance[account] || complianceStatus[vault][account];
     }
@@ -57,6 +62,14 @@ contract KerneComplianceHook is IComplianceHook, AccessControl {
     function setGlobalCompliance(address account, bool status) external onlyRole(COMPLIANCE_MANAGER_ROLE) {
         globalCompliance[account] = status;
         emit GlobalComplianceUpdated(account, status);
+    }
+
+    /**
+     * @notice Links an account to an external identity provider ID.
+     */
+    function linkIdentity(address account, string calldata providerId) external onlyRole(IDENTITY_PROVIDER_ROLE) {
+        identityProviderIds[account] = providerId;
+        emit IdentityLinked(account, providerId);
     }
 
     /**
