@@ -5,8 +5,10 @@ pragma solidity ^0.8.20;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import { OApp, Origin, MessagingFee } from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
-import { OptionsBuilder } from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
+import { OApp, Origin, MessagingFee } from "@layerzerolabs/oapp-evm/oapp/OApp.sol";
+import { OptionsBuilder } from "@layerzerolabs/oapp-evm/oapp/libs/OptionsBuilder.sol";
+
+import { MessagingParams, MessagingReceipt } from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroEndpointV2.sol";
 
 /**
  * @title KerneYieldAttestation

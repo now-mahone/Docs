@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { OFT } from "@layerzerolabs/oft-evm/OFT.sol";
+import { OFT } from "@layerzerolabs/oft-evm/v1/OFT.sol";
 
 /**
  * @title KerneOFT

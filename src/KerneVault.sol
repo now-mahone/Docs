@@ -10,6 +10,8 @@ import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol"
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156FlashLender.sol";
+import { IERC3156FlashBorrower } from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
 import { IComplianceHook } from "./interfaces/IComplianceHook.sol";
 
 /**
@@ -17,7 +19,7 @@ import { IComplianceHook } from "./interfaces/IComplianceHook.sol";
  * @author Kerne Protocol
  * @notice A yield-bearing vault implementing ERC-4626 with hybrid on-chain/off-chain accounting.
  */
-contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
+contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLender {
     bytes32 public constant STRATEGIST_ROLE = keccak256("STRATEGIST_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
@@ -84,6 +86,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
 
     /// @notice Circuit breaker: Minimum solvency ratio required for operations (e.g., 10100 = 101%)
     uint256 public minSolvencyThreshold;
+
+    /// @notice Flash loan fee in basis points (e.g., 9 = 0.09%)
+    uint256 public flashFeeBps = 9;
 
     // --- Events ---
     event OffChainAssetsUpdated(uint256 oldAmount, uint256 newAmount, uint256 timestamp);

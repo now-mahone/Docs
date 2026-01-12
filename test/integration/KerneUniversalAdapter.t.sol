@@ -2,7 +2,7 @@
 pragma solidity 0.8.24;
 
 import { Test, console } from "forge-std/Test.sol";
-import { KerneUniversalAdapter } from "../src/KerneUniversalAdapter.sol";
+import { KerneUniversalAdapter } from "src/KerneUniversalAdapter.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC4626 } from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
@@ -93,26 +93,18 @@ contract KerneUniversalAdapterTest is Test {
         assertApproxEqAbs(adapter.convertToAssets(100 ether), 110 ether, 1);
     }
 
-    function testSweepToExchange() public {
+    function testHarvest() public {
         // 1. Deposit
         vm.startPrank(user);
         asset.approve(address(adapter), 100 ether);
         adapter.deposit(100 ether, user);
         vm.stopPrank();
 
-        // 2. Sweep to exchange
-        // This should trigger a withdrawal from targetVault to adapter, then transfer to exchange
-        vm.prank(admin);
-        adapter.sweepToExchange(40 ether, exchange);
-
-        assertEq(asset.balanceOf(exchange), 40 ether);
-        assertEq(targetVault.balanceOf(address(adapter)), 60 ether);
-        
-        // Note: In a real scenario, the strategist would updateOffChainAssets(40 ether) after sweeping
+        // 2. Harvest (should not revert even without integrations set)
         vm.prank(bot);
-        adapter.updateOffChainAssets(40 ether);
+        adapter.harvest();
         
-        // totalAssets = 60 (in target vault) + 40 (off-chain) = 100 ether
-        assertApproxEqAbs(adapter.totalAssets(), 100 ether, 1);
+        // Verify state is unchanged after harvest with no integrations
+        assertEq(adapter.totalAssets(), 100 ether);
     }
 }

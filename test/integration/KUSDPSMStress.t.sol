@@ -3,7 +3,7 @@
 pragma solidity 0.8.24;
 
 import "forge-std/Test.sol";
-import { KUSDPSM } from "../src/KUSDPSM.sol";
+import { KUSDPSM } from "src/KUSDPSM.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
@@ -28,7 +28,7 @@ contract KUSDPSMStressTest is Test {
         psm = new KUSDPSM(address(kUSD), admin);
 
         vm.startPrank(admin);
-        psm.addStable(address(usdc), 10); // 10 bps fee
+        psm.addStable(address(usdc), 10, type(uint256).max); // 10 bps fee, unlimited cap
         vm.stopPrank();
 
         kUSD.mint(address(psm), 1_000_000 * 1e18);

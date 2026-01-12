@@ -1,4 +1,13 @@
 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
 forge-std/=lib/forge-std/src/
 solidity-examples/=lib/solidity-examples/contracts/
-@layerzerolabs/oft-evm/=lib/solidity-examples/contracts/token/oft/v1/
+@layerzerolabs/oft-evm/v1/=lib/solidity-examples/contracts/token/oft/v1/
+@layerzerolabs/oft-evm/v2/=lib/solidity-examples/contracts/token/oft/v2/
+@layerzerolabs/oapp-evm/=lib/LayerZero-v2/packages/layerzero-v2/evm/oapp/contracts/
+@layerzerolabs/lz-evm-protocol-v2/=lib/LayerZero-v2/packages/layerzero-v2/evm/protocol/
+@layerzerolabs/lz-evm-messagelib-v2/=lib/LayerZero-v2/packages/layerzero-v2/evm/messagelib/
+solidity-bytes-utils/=lib/solidity-bytes-utils/
+src/=src/
+test/=test/
+@layerzerolabs/lz-evm-protocol-v2/=lib/LayerZero-v2/packages/layerzero-v2/evm/protocol/
+@layerzerolabs/lz-evm-messagelib-v2/=lib/LayerZero-v2/packages/layerzero-v2/evm/messagelib/

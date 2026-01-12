@@ -3,8 +3,8 @@
 pragma solidity 0.8.24;
 
 import "forge-std/Test.sol";
-import "../src/KerneVaultFactory.sol";
-import "../src/KerneVault.sol";
+import "src/KerneVaultFactory.sol";
+import "src/KerneVault.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockAsset is ERC20 {
@@ -32,7 +32,7 @@ contract KernePermissionlessTest is Test {
             address(this),
             address(0)
         );
-        factory = new KerneVaultFactory(address(implementation));
+        factory = new KerneVaultFactory(address(implementation), address(0));
         vm.stopPrank();
     }
 
@@ -40,10 +40,11 @@ contract KernePermissionlessTest is Test {
         vm.deal(partner, 1 ether);
         vm.startPrank(partner);
 
-        (uint256 fee, , ) = factory.tierConfigs(KerneVaultFactory.VaultTier.BASIC);
+        // TierConfig has 5 fields: deploymentFee, protocolFounderFeeBps, complianceRequired, complianceHook, maxTotalAssets
+        (uint256 fee, , , , ) = factory.tierConfigs(KerneVaultFactory.VaultTier.BASIC);
 
         address vaultAddr = factory.deployVault{ value: fee }(
-            address(asset), "Partner Vault", "PVT", partner, 1500, false, 0, KerneVaultFactory.VaultTier.BASIC
+            address(asset), "Partner Vault", "PVT", partner, 1500, false, KerneVaultFactory.VaultTier.BASIC
         );
 
         assertTrue(vaultAddr != address(0));
@@ -52,9 +53,9 @@ contract KernePermissionlessTest is Test {
         assertEq(vault.symbol(), "PVT");
         assertEq(vault.founder(), owner);
         
-        address[] memory partnerVaults = factory.getUserVaults(partner);
-        assertEq(partnerVaults.length, 1);
-        assertEq(partnerVaults[0], vaultAddr);
+        // vaultsByDeployer is a mapping, access via index
+        address partnerVault = factory.vaultsByDeployer(partner, 0);
+        assertEq(partnerVault, vaultAddr);
         
         vm.stopPrank();
     }
@@ -65,7 +66,7 @@ contract KernePermissionlessTest is Test {
 
         vm.expectRevert("Insufficient deployment fee");
         factory.deployVault{ value: 0.01 ether }(
-            address(asset), "Fail Vault", "FAIL", partner, 1500, false, 0, KerneVaultFactory.VaultTier.BASIC
+            address(asset), "Fail Vault", "FAIL", partner, 1500, false, KerneVaultFactory.VaultTier.BASIC
         );
         vm.stopPrank();
     }

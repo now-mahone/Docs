@@ -3,8 +3,8 @@
 pragma solidity 0.8.24;
 
 import "forge-std/Test.sol";
-import "../src/KerneVault.sol";
-import "../src/KerneYieldOracle.sol";
+import "src/KerneVault.sol";
+import "src/KerneYieldOracle.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockAsset is ERC20 {

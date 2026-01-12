@@ -3,7 +3,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../../src/KerneOFTV2.sol";
+import "src/KerneOFTV2.sol";
 
 contract KerneCrossChainTest is Test {
     KerneOFTV2 kusdBase;
@@ -14,8 +14,8 @@ contract KerneCrossChainTest is Test {
     address user = address(0x3);
 
     function setUp() public {
-        kusdBase = new KerneOFTV2("kUSD", "kUSD", lzEndpointBase);
-        kusdArb = new KerneOFTV2("kUSD", "kUSD", lzEndpointArb);
+        kusdBase = new KerneOFTV2("kUSD", "kUSD", 6, lzEndpointBase);
+        kusdArb = new KerneOFTV2("kUSD", "kUSD", 6, lzEndpointArb);
         
         vm.label(address(kusdBase), "kUSD_Base");
         vm.label(address(kusdArb), "kUSD_Arb");

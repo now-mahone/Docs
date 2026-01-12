@@ -3,8 +3,8 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../src/KerneVaultFactory.sol";
-import "../src/KerneVault.sol";
+import "src/KerneVaultFactory.sol";
+import "src/KerneVault.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockERC20 is ERC20 {
@@ -27,7 +27,7 @@ contract KerneVaultFactoryTest is Test {
     function setUp() public {
         asset = new MockERC20();
         implementation = new KerneVault(asset, "Implementation", "IMP", admin, admin, admin);
-        factory = new KerneVaultFactory(address(implementation));
+        factory = new KerneVaultFactory(address(implementation), address(0));
     }
 
     function testDeployVault() public {
@@ -39,7 +39,6 @@ contract KerneVaultFactoryTest is Test {
             partner,
             1500,
             true,
-            1000e18,
             KerneVaultFactory.VaultTier.INSTITUTIONAL
         );
         vm.stopPrank();
@@ -49,7 +48,7 @@ contract KerneVaultFactoryTest is Test {
         assertEq(vault.symbol(), "PVT");
         assertEq(vault.founder(), factory.owner());
         assertEq(vault.founderFeeBps(), 500);
-        assertEq(vault.maxTotalAssets(), 1000e18);
+        // maxTotalAssets is now set from TierConfig, not passed as argument
         assertTrue(vault.hasRole(vault.DEFAULT_ADMIN_ROLE(), partner));
     }
 
@@ -59,7 +58,7 @@ contract KerneVaultFactoryTest is Test {
         // Non-owner can deploy if they pay the fee
         // Note: feeRecipient is address(this) in setUp because factory is deployed by address(this)
         address vaultAddr = factory.deployVault{ value: 0.05 ether }(
-            address(asset), "Partner Vault", "PVT", partner, 1500, true, 0, KerneVaultFactory.VaultTier.BASIC
+            address(asset), "Partner Vault", "PVT", partner, 1500, true, KerneVaultFactory.VaultTier.BASIC
         );
         assertTrue(vaultAddr != address(0));
         vm.stopPrank();

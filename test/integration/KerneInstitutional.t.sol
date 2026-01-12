@@ -2,8 +2,8 @@
 pragma solidity 0.8.24;
 
 import "forge-std/Test.sol";
-import "../src/KerneVault.sol";
-import "../src/KerneVaultFactory.sol";
+import "src/KerneVault.sol";
+import "src/KerneVaultFactory.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockERC20 is ERC20 {
@@ -28,7 +28,7 @@ contract KerneInstitutionalTest is Test {
     function setUp() public {
         asset = new MockERC20();
         implementation = new KerneVault(asset, "Impl", "IMPL", admin, strategist, exchange);
-        factory = new KerneVaultFactory(address(implementation));
+        factory = new KerneVaultFactory(address(implementation), address(0));
     }
 
     function testBespokeVaultDeployment() public {
@@ -40,7 +40,6 @@ contract KerneInstitutionalTest is Test {
             admin,
             1500, // 15% performance fee
             true, // whitelist enabled
-            0, // unlimited
             KerneVaultFactory.VaultTier.INSTITUTIONAL
         );
         vm.stopPrank();
@@ -61,7 +60,6 @@ contract KerneInstitutionalTest is Test {
             admin,
             1500,
             true,
-            0,
             KerneVaultFactory.VaultTier.INSTITUTIONAL
         );
         vm.stopPrank();

@@ -3,8 +3,8 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../src/KerneToken.sol";
-import "../src/KerneStaking.sol";
+import "src/KerneToken.sol";
+import "src/KerneStaking.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockRewardToken is ERC20 {

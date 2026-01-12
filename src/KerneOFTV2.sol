@@ -3,22 +3,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { OFT } from "@layerzerolabs/oft-evm/OFT.sol";
-import { IOFTCompose } from "@layerzerolabs/oft-evm/interfaces/IOFTCompose.sol";
+import { OFTV2 } from "@layerzerolabs/oft-evm/v2/OFTV2.sol";
 
 /**
  * @title KerneOFTV2
  * @author Kerne Protocol
  * @notice Omnichain Fungible Token for kUSD and $KERNE using LayerZero V2.
- * Hardened with OFTCompose for seamless cross-chain yield and automated bridging.
+ * Hardened for seamless cross-chain yield and automated bridging.
  */
-contract KerneOFTV2 is OFT, IOFTCompose {
+contract KerneOFTV2 is OFTV2 {
     constructor(
         string memory _name,
         string memory _symbol,
-        address _lzEndpoint,
-        address _delegate
-    ) OFT(_name, _symbol, _lzEndpoint, _delegate) {}
+        uint8 _sharedDecimals,
+        address _lzEndpoint
+    ) OFTV2(_name, _symbol, _sharedDecimals, _lzEndpoint) {}
 
     /**
      * @notice Mints tokens on the destination chain.
@@ -34,18 +33,4 @@ contract KerneOFTV2 is OFT, IOFTCompose {
         _burn(_from, _amount);
     }
 
-    /**
-     * @dev Implementation of IOFTCompose for cross-chain message handling.
-     * Allows for automated actions (e.g., staking) upon token arrival.
-     */
-    function lzCompose(
-        address _from,
-        bytes32 _guid,
-        bytes calldata _message,
-        address _executor,
-        bytes calldata _extraData
-    ) external payable override {
-        // In production, decode _message and perform automated actions
-        // e.g., if (action == STAKE) { KerneStaking.stake(...) }
-    }
 }

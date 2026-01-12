@@ -3,9 +3,9 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "../src/KerneVault.sol";
-import "../src/KernePrime.sol";
-import "../src/KerneInsuranceFund.sol";
+import "src/KerneVault.sol";
+import "src/KernePrime.sol";
+import "src/KerneInsuranceFund.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockAsset is ERC20 {
@@ -45,7 +45,8 @@ contract KerneSecuritySuite is Test {
     function testPrimeLiquidation() public {
         // 1. Setup Prime Account
         vm.startPrank(admin);
-        prime.createPrimeAccount(partner, address(vault));
+        // createPrimeAccount now requires an explicit credit line
+        prime.createPrimeAccount(partner, address(vault), 100_000e18);
         vm.stopPrank();
 
         // 2. Allocate funds to Prime
