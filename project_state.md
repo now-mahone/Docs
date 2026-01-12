@@ -332,4 +332,5 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 - [2026-01-12 12:46] - Dockerized Sentinel: Finalized `bot/Dockerfile` and `bot/docker-compose.yml` with health checks and multi-service support. - Status: SUCCESS.
 - [2026-01-12 12:47] - Documentation Sync: Updated `docs/mechanism_spec.md` to reflect compliance hooks and emergency unwind logic. - Status: SUCCESS.
 - [2026-01-12 13:06] - OFT V1 Compilation Fix: Fixed `KerneOFT.sol` inheritance error (removed duplicate Ownable since OFT V1 already inherits it via NonblockingLzApp). Updated `DeployOFT.s.sol` with correct LayerZero V1 endpoint addresses. All 117 contracts compile successfully with via-ir. - Status: SUCCESS.
+- [2026-01-12 13:31] - Irreversible Task Protocol: Updated `.clinerules` to include "Rule 0" for irreversible tasks (DefiLlama, Mainnet, etc.), requiring extra care and double-audits. Audited DefiLlama adapter and listing docs for "fishy" indicators. - Status: SUCCESS.
 >>>>+++ REPLACE

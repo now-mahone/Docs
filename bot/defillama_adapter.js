@@ -6,7 +6,6 @@ const { base } = require("viem/chains");
 
 const VAULT_ADDRESS = "0x5FD0F7eA40984a6a8E9c6f6BDfd297e7dB4448Bd";
 const WETH_ADDRESS = "0x4200000000000000000000000000000000000006";
-const FACTORY_ADDRESS = "0x7286200Ba4C6Ed5041df55965c484a106F4716FD"; // Example Factory Address
 
 async function tvl(timestamp, block, chainBlocks) {
   const client = createPublicClient({
