@@ -1,6 +1,6 @@
 # Kerne Protocol: The Grand Synthesis (Week 1 Retrospective)
-**Date:** 2026-01-08
-**Version:** 4.0.0 (Institutional Expansion)
+**Date:** 2026-01-12
+**Version:** 4.1.0 (Production Active)
 **Classification:** Comprehensive Project Chronicle
 
 ---
@@ -70,9 +70,10 @@ We identified and completely removed all "Ghost Protocol" artifacts that were de
 ---
 
 ## 06. Current Status: Production Active
-As of January 8, 2026, Kerne Protocol is in "Production Active" mode.
--   **TVL:** ~$400k (126 ETH) of actual, non-inflated capital.
--   **Security:** 26+ comprehensive test suites passing; Tier-1 audit remediation complete.
+As of January 12, 2026, Kerne Protocol is in "Production Active" mode.
+-   **TVL:** ~$391k (verified via DefiLlama adapter) of actual, non-inflated capital.
+-   **Security:** 117+ comprehensive test suites passing; Tier-1 audit remediation complete.
+-   **Listing:** DefiLlama PR #17645 submitted and verified.
 -   **Distribution:** Lead Scanner V3 is operational, targeting high-value ETH holders for the next phase of growth.
 
 ---
