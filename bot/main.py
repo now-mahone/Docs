@@ -7,6 +7,7 @@ from chain_manager import ChainManager
 from engine import HedgingEngine
 from liquidity_manager import LiquidityManager
 from alerts import send_discord_alert
+from sentinel.risk_engine import RiskEngine
 
 # Created: 2025-12-28
 
@@ -29,6 +30,7 @@ def main():
         # Initialize Engine
         engine = HedgingEngine(exchange, chain)
         liquidity = LiquidityManager()
+        risk_engine = RiskEngine(w3=chain.w3, private_key=chain.private_key)
         
         if args.seed_only:
             logger.info("GENESIS MODE: Executing seed TVL update...")
@@ -49,10 +51,21 @@ def main():
 
     while True:
         try:
-            # 1. Execute one hedging and reporting cycle
+            # 1. Risk Analysis & Sentinel Defense
+            # Fetch latest vault data for risk analysis
+            vault_data = {
+                "address": chain.vault_address,
+                "onchain_collateral": chain.get_vault_tvl(),
+                "cex_short_position": exchange.get_total_short_position(),
+                "liq_onchain": 0.5, # Placeholder: 50% distance to liquidation
+                "liq_cex": 0.3      # Placeholder: 30% distance to liquidation
+            }
+            risk_engine.analyze_vault(vault_data)
+
+            # 2. Execute one hedging and reporting cycle
             engine.run_cycle(dry_run=DRY_RUN)
             
-            # 2. Execute liquidity management cycle
+            # 3. Execute liquidity management cycle
             if not args.seed_only:
                 liquidity.check_peg()
                 liquidity.manage_lp_positions()
