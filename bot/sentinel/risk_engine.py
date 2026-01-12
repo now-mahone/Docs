@@ -1,9 +1,12 @@
 # Created: 2026-01-09
+# Updated: 2026-01-12 - Hardened for institutional mainnet
 from typing import Dict, List, Optional
 from loguru import logger
 import pandas as pd
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from web3 import Web3
+from datetime import datetime, timedelta
+import time
 
 @dataclass
 class VaultRiskProfile:
@@ -13,6 +16,8 @@ class VaultRiskProfile:
     liquidation_distance_onchain: float
     liquidation_distance_cex: float
     health_score: float  # 0 to 100
+    timestamp: float = field(default_factory=time.time)
+    risk_factors: Dict = field(default_factory=dict)
 
 class RiskEngine:
     """

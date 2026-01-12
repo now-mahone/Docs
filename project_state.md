@@ -314,4 +314,7 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 - [2026-01-10 23:21] - Prime & Multi-Chain Hardening: Hardened `KerneVault.sol` Prime Brokerage hooks with solvency checks. Updated `bot/chain_manager.py` to use LayerZero V1 `sendFrom` for multi-chain kUSD bridging. - Status: SUCCESS.
 - [2026-01-12 11:45] - Institutional Sprint: Finalized DefiLlama TVL adapter ($390k verified), operationalized Sentinel Autonomous Defense in bot main loop, and verified Recursive Leverage stress tests. - Status: SUCCESS.
 - [2026-01-12 11:47] - kUSD Stability: Deployed `KUSDPSM` to Base Mainnet at `0x7286200Ba4C6Ed5041df55965c484a106F4716FD`. Initialized with USDC support (10 bps fee). - Status: SUCCESS.
+- [2026-01-12 12:12] - DefiLlama PR Submitted: PR #17645 created and passing automated checks (llamabutler verified $391.42k TVL). Awaiting human reviewer merge. - Status: SUCCESS.
+- [2026-01-12 12:13] - Yield Oracle Hardening: Enhanced `KerneYieldOracle.sol` with aggregator integration features (staleness checks, batch updates, historical APY, vault registry). Compiles successfully. - Status: SUCCESS.
+- [2026-01-12 12:14] - Sentinel Risk Engine Hardening: Updated `risk_engine.py` with timestamp tracking and risk factor metadata for institutional reporting. - Status: SUCCESS.
 >>>>+++ REPLACE
