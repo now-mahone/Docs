@@ -328,6 +328,17 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable {
         whitelisted[account] = status;
     }
 
+    /**
+     * @notice Batch sets the whitelisted status for multiple accounts.
+     * @param accounts Array of addresses to update.
+     * @param status True to whitelist, false to remove.
+     */
+    function batchSetWhitelisted(address[] calldata accounts, bool status) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 i = 0; i < accounts.length; i++) {
+            whitelisted[accounts[i]] = status;
+        }
+    }
+
     function setComplianceHook(address _hook) external onlyRole(DEFAULT_ADMIN_ROLE) {
         address oldHook = address(complianceHook);
         complianceHook = IComplianceHook(_hook);

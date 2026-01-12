@@ -18,6 +18,13 @@ class HedgingEngine:
         self.chain = chain
         self.credits = credits or CreditsManager()
         
+        # Multi-Venue Support
+        self.exchanges = {
+            "binance": exchange,
+            "bybit": ExchangeManager("bybit"),
+            "okx": ExchangeManager("okx")
+        }
+        
         # Hysteresis threshold to prevent over-trading
         self.THRESHOLD_ETH = 0.1 # Reduced for institutional precision
         self.SYMBOL = 'ETH/USDT:USDT'
@@ -83,19 +90,30 @@ class HedgingEngine:
                 collateral_usdt = mock_balance * market_price
                 logger.warning(f"DRY RUN: Simulating profit. Off-chain value: {offchain_value_eth} ETH")
             else:
-                short_pos, pnl = self.exchange.get_short_position(self.SYMBOL)
-                market_price = self.exchange.get_market_price(self.SYMBOL)
-                collateral_usdt = self.exchange.get_collateral_balance('USDT')
+                # Multi-Venue Data Fetching
+                short_pos = 0.0
+                pnl = 0.0
+                collateral_usdt = 0.0
+                venue_funding_rates = {}
                 
-                try:
-                    ticker = self.exchange.exchange.fetch_ticker(self.SYMBOL)
-                    funding_rate = ticker.get('info', {}).get('lastFundingRate', 0.0)
-                    if not funding_rate:
-                        funding_rate = ticker.get('fundingRate', 0.0)
-                    funding_rate = float(funding_rate)
-                except Exception as e:
-                    logger.error(f"Failed to fetch funding rate: {e}")
-                    funding_rate = 0.0
+                for ex_id, ex_manager in self.exchanges.items():
+                    try:
+                        pos, upnl = ex_manager.get_short_position(self.SYMBOL)
+                        short_pos += pos
+                        pnl += upnl
+                        collateral_usdt += ex_manager.get_collateral_balance('USDT')
+                        
+                        ticker = ex_manager.exchange.fetch_ticker(self.SYMBOL)
+                        fr = ticker.get('info', {}).get('lastFundingRate', 0.0)
+                        if not fr:
+                            fr = ticker.get('fundingRate', 0.0)
+                        venue_funding_rates[ex_id] = float(fr)
+                    except Exception as e:
+                        logger.error(f"Failed to fetch data from {ex_id}: {e}")
+
+                market_price = self.exchange.get_market_price(self.SYMBOL)
+                funding_rate = sum(venue_funding_rates.values()) / len(venue_funding_rates) if venue_funding_rates else 0.0
+                self.venue_funding_rates = venue_funding_rates
             
             logger.info(f"Vault TVL: {vault_tvl:.4f} ETH")
             logger.info(f"Current Short: {short_pos:.4f} ETH")
@@ -127,19 +145,26 @@ class HedgingEngine:
                         except Exception as e:
                             logger.error(f"Failed to draw from insurance fund: {e}")
             
-            # 3. Rebalance Logic
+            # 3. Rebalance Logic (Multi-Venue Optimized)
             if not dry_run and not seed_only:
-                if delta > self.THRESHOLD_ETH:
-                    logger.info(f"Under-hedged by {delta:.4f} ETH. Executing SHORT.")
-                    success = self.exchange.execute_short(self.SYMBOL, delta)
+                if abs(delta) > self.THRESHOLD_ETH:
+                    # Find venue with best funding rate for the required action
+                    # If delta > 0 (need to SHORT), pick venue with HIGHEST funding rate
+                    # If delta < 0 (need to BUY), pick venue with LOWEST funding rate
+                    
+                    best_venue = "binance"
+                    if delta > 0:
+                        best_venue = max(self.venue_funding_rates, key=self.venue_funding_rates.get)
+                        logger.info(f"Under-hedged by {delta:.4f} ETH. Executing SHORT on {best_venue} (Funding: {self.venue_funding_rates[best_venue]:.6%})")
+                        success = self.exchanges[best_venue].execute_short(self.SYMBOL, delta)
+                    else:
+                        buy_amount = abs(delta)
+                        best_venue = min(self.venue_funding_rates, key=self.venue_funding_rates.get)
+                        logger.info(f"Over-hedged by {buy_amount:.4f} ETH. Executing BUY on {best_venue} (Funding: {self.venue_funding_rates[best_venue]:.6%})")
+                        success = self.exchanges[best_venue].execute_buy(self.SYMBOL, buy_amount)
+                    
                     if not success:
-                        logger.error("Failed to execute short order.")
-                elif delta < -self.THRESHOLD_ETH:
-                    buy_amount = abs(delta)
-                    logger.info(f"Over-hedged by {buy_amount:.4f} ETH. Executing BUY.")
-                    success = self.exchange.execute_buy(self.SYMBOL, buy_amount)
-                    if not success:
-                        logger.error("Failed to execute buy order.")
+                        logger.error(f"Failed to execute order on {best_venue}.")
                 else:
                     logger.info("Delta within limits. No trade required.")
             

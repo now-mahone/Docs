@@ -1,4 +1,5 @@
 // Created: 2026-01-06
+// Updated: 2026-01-12 - Fixed LayerZero V1 endpoint addresses
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -15,40 +16,41 @@ contract DeployOFT is Script {
         }
         address lzEndpoint;
 
-        // LayerZero V2 Endpoints
-        // Base: 0x1a44076050125825900e736c501f859c50fE728c
-        // Arbitrum: 0x1a44076050125825900e736c501f859c50fE728c
-        // (Note: LZ V2 often uses the same address across many chains)
+        // LayerZero V1 Endpoints (using V1 for compatibility)
+        // Base: 0xb6319cC6c8c27A8F5dAF0dD3DF91EA35C4720dd7
+        // Arbitrum: 0x3c2269811836af69497E5F486A85D7316753cf62
 
         if (block.chainid == 8453) {
-            lzEndpoint = 0x1a44076050125825900e736c501f859c50fE728c;
+            // Base Mainnet - LayerZero V1 Endpoint
+            lzEndpoint = 0xb6319cC6c8c27A8F5dAF0dD3DF91EA35C4720dd7;
         } else if (block.chainid == 42161) {
-            lzEndpoint = 0x1a44076050125825900e736c501f859c50fE728c;
+            // Arbitrum One - LayerZero V1 Endpoint
+            lzEndpoint = 0x3c2269811836af69497E5F486A85D7316753cf62;
         } else {
             lzEndpoint = vm.envAddress("LZ_ENDPOINT");
         }
 
         vm.startBroadcast(deployerPrivateKey);
 
-        address delegate = vm.addr(deployerPrivateKey);
+        address deployer = vm.addr(deployerPrivateKey);
 
         // Deploy kUSD OFT
         KerneOFT kusdOFT = new KerneOFT(
             "Kerne Synthetic Dollar",
             "kUSD",
-            lzEndpoint,
-            delegate
+            lzEndpoint
         );
 
         // Deploy KERNE OFT
         KerneOFT kerneOFT = new KerneOFT(
             "Kerne Governance Token",
             "KERNE",
-            lzEndpoint,
-            delegate
+            lzEndpoint
         );
 
         console.log("Chain ID:", block.chainid);
+        console.log("Deployer:", deployer);
+        console.log("LayerZero Endpoint:", lzEndpoint);
         console.log("kUSD OFT deployed at:", address(kusdOFT));
         console.log("KERNE OFT deployed at:", address(kerneOFT));
 
