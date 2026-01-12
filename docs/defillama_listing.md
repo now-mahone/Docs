@@ -28,7 +28,7 @@ async function tvl(api) {
 }
 
 module.exports = {
-  methodology: "TVL is calculated by calling totalAssets() on the KerneVault ERC-4626 contract, which returns the total WETH held including both on-chain collateral and off-chain hedging positions reported by the protocol strategist.",
+  methodology: "TVL is calculated by calling totalAssets() on the KerneVault ERC-4626 contract. This includes on-chain WETH collateral and off-chain hedging reserves attested on-chain via the KerneVerificationNode.",
   base: {
     tvl,
   },
@@ -106,7 +106,7 @@ git push origin main
 
 - **Name:** Kerne Protocol
 - **Website:** https://kerne.ai
-- **Twitter:** https://twitter.com/kerneprotocol
+- **Twitter:** https://x.com/KerneProtocol
 - **Category:** Yield
 - **Chain:** Base
 

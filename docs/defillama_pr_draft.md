@@ -15,7 +15,7 @@ TVL is calculated by calling `totalAssets()` on the `KerneVault` contract. This 
 
 ### Links
 - **Website:** https://kerne.ai
-- **Twitter:** https://x.com/kerne_protocol
+- **Twitter:** https://x.com/KerneProtocol
 - **Docs:** https://kerne.ai/docs
 - **Vault Address (Base):** `0x5FD0F7eA40984a6a8E9c6f6BDfd297e7dB4448Bd`
 

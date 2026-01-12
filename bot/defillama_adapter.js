@@ -60,6 +60,7 @@ async function apy() {
 }
 
 module.exports = {
+  methodology: "TVL is calculated by calling totalAssets() on the KerneVault ERC-4626 contract. This includes on-chain WETH collateral and off-chain hedging reserves attested on-chain via the KerneVerificationNode.",
   timetravel: true,
   misrepresentedTokens: false,
   base: {
