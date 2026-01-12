@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from web3 import Web3
 from datetime import datetime, timedelta
 import time
+import os
 
 @dataclass
 class VaultRiskProfile:
@@ -155,6 +156,40 @@ class RiskEngine:
             score -= (self.risk_thresholds["min_liquidation_distance"] - liq_dist) * 200
             
         return max(0.0, min(100.0, score))
+
+    def auto_deleverage(self, vault_address: str, current_hf: float):
+        """
+        Sentinel: Automatically triggers deleveraging if health factor drops below threshold.
+        """
+        if not self.w3 or not self.private_key:
+            return
+
+        if current_hf < 1.15: # 1.15x threshold for auto-deleverage
+            logger.warning(f"Health Factor low ({current_hf:.2f}) for {vault_address}. Triggering auto-deleverage...")
+            try:
+                account = self.w3.eth.account.from_key(self.private_key)
+                # Minimal ABI for rebalance (deleverage)
+                minter_abi = [{"inputs":[],"name":"rebalance","outputs":[],"stateMutability":"nonpayable","type":"function"}]
+                # In production, we'd fetch the minter address from the vault or env
+                minter_address = os.getenv("KUSD_MINTER_ADDRESS")
+                if not minter_address: return
+                
+                minter_contract = self.w3.eth.contract(address=Web3.to_checksum_address(minter_address), abi=minter_abi)
+                
+                tx = minter_contract.functions.rebalance().build_transaction({
+                    'from': account.address,
+                    'nonce': self.w3.eth.get_transaction_count(account.address),
+                    'gas': 200000,
+                    'gasPrice': self.w3.eth.gas_price,
+                    'chainId': self.w3.eth.chain_id
+                })
+                
+                signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
+                tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+                logger.success(f"Auto-deleverage triggered: {tx_hash.hex()}")
+                return tx_hash.hex()
+            except Exception as e:
+                logger.error(f"Auto-deleverage failed: {e}")
 
     def adjust_vault_caps(self, vault_address: str, available_margin_usd: float):
         """

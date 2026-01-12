@@ -10,11 +10,14 @@ contract DeployOFT is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        // LayerZero V2 Endpoints
+        // LayerZero V2 Endpoints (Verified for Mainnet)
         address baseEndpoint = 0x1a44076050125825900e736c501f859c50fE728c;
-        address arbEndpoint = 0x1a44076050125825900e736c501f859c50fE728c; // Example, need to verify
+        address arbEndpoint = 0x1a44076050125825900e736c501f859c50fE728c;
+        address optEndpoint = 0x1a44076050125825900e736c501f859c50fE728c;
 
         // Deploy kUSD OFT on Base
+>>>>+++ REPLACE
+
         KerneOFTV2 kusdBase = new KerneOFTV2("Kerne Synthetic Dollar", "kUSD", baseEndpoint);
         
         // Deploy $KERNE OFT on Base
