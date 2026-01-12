@@ -11,7 +11,7 @@ from sentinel.risk_engine import RiskEngine
 
 # Created: 2025-12-28
 
-DRY_RUN = True
+DRY_RUN = False
 
 def main():
     parser = argparse.ArgumentParser(description="Kerne Bot")
