@@ -6,6 +6,7 @@ const { base } = require("viem/chains");
 
 const VAULT_ADDRESS = "0x5FD0F7eA40984a6a8E9c6f6BDfd297e7dB4448Bd";
 const WETH_ADDRESS = "0x4200000000000000000000000000000000000006";
+const FACTORY_ADDRESS = "0x7286200Ba4C6Ed5041df55965c484a106F4716FD"; // Example Factory Address
 
 async function tvl(timestamp, block, chainBlocks) {
   const client = createPublicClient({
@@ -36,22 +37,27 @@ async function tvl(timestamp, block, chainBlocks) {
 async function apy() {
   // This function is used by DefiLlama Yields to track APY over time
   // It pulls from our public stats API which reflects the bot's actual performance
-  const response = await fetch("https://kerne.finance/api/stats");
-  const data = await response.json();
-  
-  return [
-    {
-      pool: `${VAULT_ADDRESS}-base`,
-      chain: "Base",
-      project: "kerne-protocol",
-      symbol: "kLP",
-      tvlUsd: parseFloat(data.tvl_usd),
-      apyBase: parseFloat(data.current_apy),
-      underlyingTokens: [WETH_ADDRESS],
-      rewardTokens: [], // Kerne yield is auto-compounding in kLP price
-      url: "https://kerne.finance/terminal"
-    }
-  ];
+  try {
+    const response = await fetch("https://kerne.finance/api/stats");
+    const data = await response.json();
+    
+    return [
+      {
+        pool: `${VAULT_ADDRESS}-base`,
+        chain: "Base",
+        project: "kerne-protocol",
+        symbol: "kLP",
+        tvlUsd: parseFloat(data.tvl_usd) || 0,
+        apyBase: parseFloat(data.current_apy) || 0,
+        underlyingTokens: [WETH_ADDRESS],
+        rewardTokens: [], // Kerne yield is auto-compounding in kLP price
+        url: "https://kerne.finance/terminal"
+      }
+    ];
+  } catch (e) {
+    console.error("Failed to fetch APY stats:", e);
+    return [];
+  }
 }
 
 module.exports = {
