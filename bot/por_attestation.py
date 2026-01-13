@@ -1,100 +1,98 @@
-# Created: 2026-01-12
-# Updated: 2026-01-12 - Institutional Deep Hardening: Multi-venue equity verification and cryptographic attestation
 import os
 import json
 import time
-import asyncio
-import hmac
-import hashlib
-from eth_account import Account
-from eth_account.messages import encode_defunct
 from web3 import Web3
+from eth_account.messages import encode_defunct
+from dotenv import load_dotenv
 from loguru import logger
-from exchange_manager import ExchangeManager
 
-class PoRManager:
+# Created: 2026-01-12
+
+class PoRAttestationBot:
     """
-    Institutional Proof of Reserve Manager.
-    Handles multi-venue equity verification and cryptographic signing.
+    Automated Proof of Reserve (PoR) Attestation Bot.
+    Signs off-chain reserve data and publishes it for institutional transparency.
     """
     def __init__(self):
-        self.private_key = os.getenv("STRATEGIST_PRIVATE_KEY")
-        self.vault_address = os.getenv("VAULT_ADDRESS", "0x5FD0F7eA40984a6a8E9c6f6BDfd297e7dB4448Bd")
-        self.exchanges = ["binance", "bybit", "okx"]
-        self.symbol = "ETH/USDT:USDT"
-
-    async def fetch_venue_equity(self, ex_id: str) -> Dict:
-        """
-        Fetches total equity (collateral + unrealized PnL) from a venue.
-        """
-        try:
-            manager = ExchangeManager(ex_id)
-            # Concurrent fetching of balance and positions
-            collateral = manager.get_collateral_balance("USDT")
-            pos, pnl = manager.get_short_position(self.symbol)
-            price = manager.get_market_price(self.symbol)
-            
-            equity_usdt = collateral + pnl
-            equity_eth = equity_usdt / price if price > 0 else 0.0
-            
-            return {
-                "venue": ex_id,
-                "equity_usdt": equity_usdt,
-                "equity_eth": equity_eth,
-                "timestamp": time.time(),
-                "status": "VERIFIED"
-            }
-        except Exception as e:
-            logger.error(f"PoR fetch failed for {ex_id}: {e}")
-            return {"venue": ex_id, "status": "FAILED", "error": str(e)}
-
-    async def generate_attestation(self):
-        """
-        Generates a signed multi-venue attestation.
-        """
-        if not self.private_key:
-            logger.error("STRATEGIST_PRIVATE_KEY not found.")
-            return
-
-        logger.info("Initiating multi-venue PoR attestation...")
-        tasks = [self.fetch_venue_equity(ex_id) for ex_id in self.exchanges]
-        results = await asyncio.gather(*tasks)
+        load_dotenv()
+        self.rpc_url = os.getenv("RPC_URL")
+        self.private_key = os.getenv("PRIVATE_KEY")
+        self.vault_address = os.getenv("VAULT_ADDRESS")
+        self.verification_node_address = os.getenv("VERIFICATION_NODE_ADDRESS")
         
-        total_eth = sum(r.get("equity_eth", 0) for r in results if r["status"] == "VERIFIED")
-        total_wei = Web3.to_wei(total_eth, 'ether')
-        timestamp = int(time.time())
+        if not all([self.rpc_url, self.private_key, self.vault_address]):
+            logger.error("Missing environment variables for PoRAttestationBot.")
+            raise ValueError("Missing RPC_URL, PRIVATE_KEY, or VAULT_ADDRESS")
 
-        # Cryptographic Message: [vault, total_assets, timestamp, venue_hash]
-        venue_json = json.dumps(results, sort_keys=True)
-        venue_hash = hashlib.sha256(venue_json.encode()).digest()
+        self.w3 = Web3(Web3.HTTPProvider(self.rpc_url))
+        self.account = self.w3.eth.account.from_key(self.private_key)
         
+        # Load VerificationNode ABI
+        abi_path = os.path.join(os.path.dirname(__file__), "..", "out", "KerneVerificationNode.sol", "KerneVerificationNode.json")
+        if os.path.exists(abi_path):
+            with open(abi_path, "r") as f:
+                self.abi = json.load(f)["abi"]
+        else:
+            # Fallback or mock ABI for testing
+            self.abi = []
+            
+        if self.verification_node_address:
+            self.node = self.w3.eth.contract(address=self.verification_node_address, abi=self.abi)
+        else:
+            self.node = None
+
+    def sign_attestation(self, total_assets_eth: float, timestamp: int):
+        """
+        Signs the reserve data using the bot's private key.
+        """
         message_hash = Web3.solidity_keccak(
-            ['address', 'uint256', 'uint256', 'bytes32'],
-            [self.vault_address, total_wei, timestamp, venue_hash]
+            ['address', 'uint256', 'uint256'],
+            [self.vault_address, self.w3.to_wei(total_assets_eth, 'ether'), timestamp]
         )
+        encoded_message = encode_defunct(hexstr=message_hash.hex())
+        signed_message = self.w3.eth.account.sign_message(encoded_message, private_key=self.private_key)
+        return signed_message.signature.hex()
+
+    def publish_attestation(self, total_assets_eth: float):
+        """
+        Publishes the signed attestation to the on-chain VerificationNode.
+        """
+        if not self.node:
+            logger.warning("VerificationNode address not set. Skipping on-chain publication.")
+            return None
+
+        timestamp = int(time.time())
+        signature = self.sign_attestation(total_assets_eth, timestamp)
         
-        account = Account.from_key(self.private_key)
-        signature = account.sign_message(encode_defunct(primitive=message_hash))
+        try:
+            nonce = self.w3.eth.get_transaction_count(self.account.address)
+            tx = self.node.functions.submitAttestation(
+                self.vault_address,
+                self.w3.to_wei(total_assets_eth, 'ether'),
+                timestamp,
+                signature
+            ).build_transaction({
+                'from': self.account.address,
+                'nonce': nonce,
+                'gasPrice': self.w3.eth.gas_price
+            })
+            
+            signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            logger.success(f"PoR Attestation published: {tx_hash.hex()}")
+            return tx_hash.hex()
+        except Exception as e:
+            logger.error(f"Failed to publish PoR attestation: {e}")
+            return None
 
-        attestation = {
-            "vault": self.vault_address,
-            "total_assets_eth": total_eth,
-            "total_assets_wei": total_wei,
-            "timestamp": timestamp,
-            "venue_hash": venue_hash.hex(),
-            "signature": signature.signature.hex(),
-            "signer": account.address,
-            "venues": results
-        }
-
-        output_path = "bot/analysis/por_attestation_v2.json"
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        with open(output_path, "w") as f:
-            json.dump(attestation, f, indent=4)
-
-        logger.success(f"Institutional PoR Attestation generated: {total_eth:.4f} ETH")
-        return attestation
+    def run_cycle(self, current_assets_eth: float):
+        """
+        Runs a single attestation cycle.
+        """
+        logger.info(f"Starting PoR Attestation cycle for {current_assets_eth} ETH...")
+        return self.publish_attestation(current_assets_eth)
 
 if __name__ == "__main__":
-    manager = PoRManager()
-    asyncio.run(manager.generate_attestation())
+    # Example usage
+    bot = PoRAttestationBot()
+    bot.run_cycle(126.5)

@@ -1,8 +1,8 @@
 # Kerne Protocol
 
-**Primary Objective:** Establish Kerne as the premier institutional liquidity layer on Base.
+**Primary Objective:** Make Mr. Scofield as much money as possible, as quickly as possible, and as easily as possible.
 
-Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveraging LST collateral and CEX-based hedging to achieve its primary objective.
+Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveraging LST collateral and CEX-based hedging to achieve its primary objective of maximizing Scofield's wealth.
 
 ## Core Premise
 The protocol is engineered for maximum capital efficiency and institutional-grade security. All architectural decisions, features, and strategies are evaluated based on their contribution to the protocol's long-term stability and growth.

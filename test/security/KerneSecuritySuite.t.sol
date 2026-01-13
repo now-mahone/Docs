@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 import "src/KerneVault.sol";
 import "src/KernePrime.sol";
 import "src/KerneInsuranceFund.sol";
+import "src/KerneYieldOracle.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockAsset is ERC20 {
@@ -92,5 +93,110 @@ contract KerneSecuritySuite is Test {
         vm.stopPrank();
 
         assertEq(asset.balanceOf(address(vault)), amount);
+    }
+
+    /**
+     * @notice Invariant: Total Assets >= Total Liabilities (Solvency)
+     */
+    function testSolvencyInvariant() public {
+        // Initial state: 1000 dead shares minted to admin
+        // totalAssets() = 0
+        // totalSupply() = 1000
+        
+        // Back the dead shares first to ensure 1:1 exchange rate
+        asset.transfer(address(vault), 1000);
+        
+        uint256 depositAmount = 100 * 1e18;
+        asset.approve(address(vault), depositAmount);
+        vault.deposit(depositAmount, user);
+
+        uint256 assets = vault.totalAssets();
+        uint256 supply = vault.totalSupply();
+        
+        // Solvency ratio: (assets * 10000) / supply
+        // With 1000 dead shares backed and 100e18 deposit, assets should be 100e18 + 1000
+        // and supply should be 100e18 + 1000.
+        
+        assertTrue(assets >= supply, "Assets must cover supply");
+        assertTrue(vault.getSolvencyRatio() >= 10000, "Solvency ratio must be >= 100%");
+    }
+
+    /**
+     * @notice Invariant: Oracle updates must be bounded by maxPriceDeviationBps
+     */
+    function testOracleDeviationInvariant() public {
+        KerneYieldOracle oracle = new KerneYieldOracle(admin);
+        vm.startPrank(admin);
+        oracle.grantRole(oracle.UPDATER_ROLE(), strategist);
+        oracle.grantRole(oracle.UPDATER_ROLE(), admin); // Grant to admin for multi-sig simulation
+        oracle.grantRole(oracle.UPDATER_ROLE(), address(this));
+        vault.setYieldOracle(address(oracle));
+        vm.stopPrank();
+
+        // Initial observation - needs requiredConfirmations (default 3)
+        vm.startPrank(strategist);
+        oracle.updateYield(address(vault));
+        vm.stopPrank();
+        
+        vm.startPrank(admin);
+        oracle.updateYield(address(vault));
+        vm.stopPrank();
+        
+        oracle.updateYield(address(vault));
+
+        // Simulate massive profit (outlier)
+        asset.transfer(address(vault), 1000 * 1e18);
+        
+        vm.startPrank(strategist);
+        vm.expectRevert("Outlier rejected: Price deviation too high");
+        oracle.updateYield(address(vault));
+        vm.stopPrank();
+    }
+
+    /**
+     * @notice Invariant: Minimum solvency threshold enforcement
+     */
+    function testMinSolvencyThresholdInvariant() public {
+        vm.startPrank(admin);
+        vault.setCircuitBreakers(0, 0, 10100); // 101% min solvency
+        vm.stopPrank();
+
+        uint256 depositAmount = 100 * 1e18;
+        asset.approve(address(vault), depositAmount);
+        vault.deposit(depositAmount, user);
+
+        // Simulate loss (off-chain assets drop)
+        vm.startPrank(strategist);
+        vault.updateOffChainAssets(0); 
+        vm.stopPrank();
+
+        // If assets < liabilities * 1.01, deposit should fail
+        vm.expectRevert("Solvency below threshold");
+        vault.deposit(10 * 1e18, user);
+    }
+
+    /**
+     * @notice Invariant: Redemption liquidity buffer
+     */
+    function testRedemptionLiquidityInvariant() public {
+        // Set exchange deposit address to avoid "No sweep destination"
+        vm.startPrank(admin);
+        vault.setTreasury(address(0x6));
+        vm.stopPrank();
+
+        uint256 depositAmount = 100 * 1e18;
+        asset.approve(address(vault), depositAmount);
+        vault.deposit(depositAmount, user);
+
+        // Sweep 95% to exchange
+        vm.startPrank(admin);
+        vault.sweepToExchange(95 * 1e18);
+        vm.stopPrank();
+
+        // Try to withdraw 10 ETH (only 5 ETH left on-chain)
+        vm.startPrank(user);
+        vm.expectRevert("Insufficient liquid buffer");
+        vault.withdraw(10 * 1e18, user, user);
+        vm.stopPrank();
     }
 }
