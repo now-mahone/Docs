@@ -7,6 +7,8 @@ class MultiChainConfig:
     Unified configuration layer for multi-chain solver operations.
     """
     def __init__(self):
+        self.max_position_usd = float(os.getenv("MAX_POSITION_USD", "15.0")) # Safety cap for $20 balance
+        self.min_profit_bps = float(os.getenv("MIN_PROFIT_BPS", "2.0"))
         self.chains = {
             "base": {
                 "chain_id": 8453,

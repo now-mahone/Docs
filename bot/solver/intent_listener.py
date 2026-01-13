@@ -49,6 +49,14 @@ class IntentListener:
     async def process_order(self, order, venue="CowSwap"):
         buy_token = order.get('buyToken', '').lower()
         
+        # Micro-scale safety check
+        account_summary = await self.hl_provider.get_account_summary()
+        if account_summary:
+            margin_available = float(account_summary.get('withdrawable', 0))
+            if margin_available < 5.0:
+                logger.error(f"Micro-scale Safety: Insufficient margin (${margin_available}). Need at least $5.")
+                return
+
         # LST Targets on Base
         lst_targets = {
             "0xc1cba3fc4d133901b3e238628f5514533683e0bf": "ETH", # wstETH
@@ -82,6 +90,13 @@ class IntentListener:
                 daily_funding = funding_rate / 365
                 profit_bps = (daily_funding * 10000) - (hedging_cost * 10000) - 1
                 
+                # Micro-scale position cap
+                eth_price = await self.pricing_engine.get_dex_price("0x4200000000000000000000000000000000000006", 1e18)
+                position_usd = buy_amount * eth_price
+                if position_usd > 15.0:
+                    logger.warning(f"Micro-scale Safety: Position size ${position_usd:.2f} exceeds $15 cap. Scaling down.")
+                    buy_amount = 15.0 / eth_price
+
                 logger.success(f"WINNING BID CALCULATED: {offer_price}")
                 if self.is_live:
                     success = await self.hl_provider.open_short(coin, buy_amount, leverage=3)

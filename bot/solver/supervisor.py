@@ -2,6 +2,7 @@
 import asyncio
 import subprocess
 import sys
+import os
 from loguru import logger
 import time
 
@@ -21,7 +22,12 @@ class SolverSupervisor:
     def start_process(self, name, path):
         logger.info(f"Supervisor: Starting {name} ({path})...")
         try:
-            proc = subprocess.Popen([sys.executable, path])
+            # Set PYTHONPATH to include the current working directory
+            # This allows sub-processes to find the 'bot' module
+            env = os.environ.copy()
+            env["PYTHONPATH"] = os.getcwd()
+            
+            proc = subprocess.Popen([sys.executable, path], env=env)
             self.running_processes[name] = proc
             return True
         except Exception as e:
