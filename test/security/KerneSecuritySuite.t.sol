@@ -82,7 +82,10 @@ contract KerneSecuritySuite is Test {
 
     function testInsuranceFundClaim() public {
         uint256 amount = 5 * 1e18;
-        asset.transfer(address(insurance), amount);
+        asset.transfer(address(insurance), amount * 2); // Deposit 10 ETH to allow 5 ETH claim (50% limit)
+
+        // Move time forward to bypass cooldown
+        vm.warp(block.timestamp + 2 hours);
 
         vm.startPrank(strategist);
         vault.drawFromInsuranceFund(amount);

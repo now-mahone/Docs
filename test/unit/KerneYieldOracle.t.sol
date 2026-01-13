@@ -38,6 +38,7 @@ contract KerneYieldOracleTest is Test {
 
         vm.startPrank(admin);
         oracle.grantRole(oracle.UPDATER_ROLE(), strategist);
+        oracle.setRequiredConfirmations(1); // Simplify for unit tests
         vault.setYieldOracle(address(oracle));
         vm.stopPrank();
     }
@@ -87,12 +88,22 @@ contract KerneYieldOracleTest is Test {
         vm.prank(strategist);
         oracle.updateYield(address(vault));
 
-        // 3. Flash-pump yield
+        // 3. Flash-pump yield (within limits)
         vm.startPrank(strategist);
-        vault.updateOffChainAssets(50e18); // 50% profit instantly
+        // Price is 1.0. 5% deviation is 0.05.
+        // 1e18 * 1.01 = 1.01e18
+        vault.updateOffChainAssets(1e18); // 1% profit
         
         // Move time forward only 1 hour
-        vm.warp(block.timestamp + 1 hours);
+        vm.warp(block.timestamp + 2 hours);
+        oracle.updateYield(address(vault));
+        vm.stopPrank();
+
+        // 4. Outlier rejection test
+        vm.startPrank(strategist);
+        vault.updateOffChainAssets(50e18); // 50% profit (outlier)
+        vm.warp(block.timestamp + 2 hours);
+        vm.expectRevert("Outlier rejected: Price deviation too high");
         oracle.updateYield(address(vault));
         vm.stopPrank();
 

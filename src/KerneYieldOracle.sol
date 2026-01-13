@@ -58,13 +58,20 @@ contract KerneYieldOracle is AccessControl {
         YieldObservation[] storage obs = observations[vault];
         if (obs.length > 0) {
             uint256 lastPrice = obs[obs.length - 1].sharePrice;
-            uint256 deviation = price > lastPrice ? (price - lastPrice) * 10000 / lastPrice : (lastPrice - price) * 10000 / lastPrice;
-            require(deviation <= maxPriceDeviationBps, "Outlier rejected: Price deviation too high");
+            if (lastPrice > 0) {
+                uint256 diff = price > lastPrice ? price - lastPrice : lastPrice - price;
+                // deviation = (diff * 10000) / lastPrice
+                // To avoid overflow: diff <= (maxPriceDeviationBps * lastPrice) / 10000
+                if (diff > (maxPriceDeviationBps * lastPrice) / 10000) {
+                    revert("Outlier rejected: Price deviation too high");
+                }
+            }
         }
 
         Proposal storage prop = pendingProposals[vault];
         
-        if (prop.timestamp < block.timestamp - 1 hours) {
+        // Safe check to avoid underflow when block.timestamp < 1 hours or prop.timestamp == 0
+        if (prop.timestamp == 0 || block.timestamp > prop.timestamp + 1 hours) {
             prop.sharePrice = price;
             prop.timestamp = block.timestamp;
             prop.confirmations = 1;
@@ -106,9 +113,14 @@ contract KerneYieldOracle is AccessControl {
         uint256 timeDiff = latest.timestamp - oldest.timestamp;
         if (timeDiff == 0 || latest.sharePrice <= oldest.sharePrice) return 0;
 
-        uint256 growth = ((latest.sharePrice * 1e27) / oldest.sharePrice) - 1e27;
-        uint256 annualizedGrowth = (growth * 365 days) / timeDiff;
-        apyBps = (annualizedGrowth * 10000) / 1e27;
+        // Simplified APY calculation to avoid overflow
+        // (latest / oldest - 1) * (365 days / timeDiff) * 10000
+        // We use 1e10 as a multiplier for precision
+        uint256 growth = (latest.sharePrice * 1e10) / oldest.sharePrice;
+        if (growth <= 1e10) return 0;
+        
+        uint256 netGrowth = growth - 1e10;
+        apyBps = (netGrowth * 365 days * 10000) / (timeDiff * 1e10);
     }
 
     function setRequiredConfirmations(uint256 _count) external onlyRole(DEFAULT_ADMIN_ROLE) {
