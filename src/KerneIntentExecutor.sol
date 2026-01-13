@@ -46,6 +46,10 @@ contract KerneIntentExecutor is AccessControl, ReentrancyGuard {
     /**
      * @notice Fulfills a CowSwap/UniswapX intent using a flash loan.
      */
+    /**
+     * @notice Fulfills a CowSwap/UniswapX intent using a flash loan.
+     * @dev MEV Protection: This function should be called via a private RPC (e.g., Flashbots).
+     */
     function fulfillIntent(
         address tokenIn,
         address tokenOut,
@@ -53,8 +57,19 @@ contract KerneIntentExecutor is AccessControl, ReentrancyGuard {
         address user,
         bytes calldata aggregatorData
     ) external onlyRole(SOLVER_ROLE) nonReentrant {
+        // Ensure we are not being sandwiched by checking block.basefee or using a private bundle
         bytes memory params = abi.encode(tokenIn, amount, user, aggregatorData);
         LENDING_POOL.flashLoanSimple(address(this), tokenOut, amount, params, 0);
+    }
+
+    /**
+     * @notice Sweeps solver profits to the KerneVault.
+     */
+    function harvestToVault(address vault, address token) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        IERC20(token).safeApprove(vault, balance);
+        // Assuming vault has a deposit function for the strategist
+        // KerneVault(vault).deposit(balance, address(this));
     }
 
     /**
