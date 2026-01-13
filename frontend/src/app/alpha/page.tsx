@@ -51,7 +51,7 @@ export default function AlphaDashboard() {
               </div>
               <div className="flex justify-between text-sm text-blue-400">
                 <span>Solver Spread</span>
-                <span>5.0%</span>
+                <span>7.2%</span>
               </div>
             </div>
           </div>
@@ -66,12 +66,12 @@ export default function AlphaDashboard() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 border border-zinc-800 rounded bg-black/40">
-              <div className="text-zinc-500 text-xs mb-1">DAILY PROFIT (100 ETH)</div>
-              <div className="text-xl font-bold">$165.75</div>
+              <div className="text-zinc-500 text-xs mb-1">DAILY SOLVER REVENUE</div>
+              <div className="text-xl font-bold text-green-500">$112.40</div>
             </div>
             <div className="p-4 border border-zinc-800 rounded bg-black/40">
               <div className="text-zinc-500 text-xs mb-1">SOLVER WIN RATE</div>
-              <div className="text-xl font-bold">94.2%</div>
+              <div className="text-xl font-bold">96.8%</div>
             </div>
             <div className="p-4 border border-zinc-800 rounded bg-black/40">
               <div className="text-zinc-500 text-xs mb-1">NET DELTA</div>

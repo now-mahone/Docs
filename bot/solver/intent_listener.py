@@ -53,6 +53,8 @@ class IntentListener:
         lst_targets = {
             "0xc1cba3fc4d133901b3e238628f5514533683e0bf": "ETH", # wstETH
             "0x2ae3f1ec7f1f5012cfeab2295b6240137331713f": "ETH", # cbETH
+            "0x2416092f14337c05d1e22757d24c3e1749e03b44": "ETH", # rETH
+            "0x9e5aac1ba1a2e6aed6b32689dfcf62a509ca96f3": "ETH", # stEUR (Hedge with ETH for now or EUR perps)
         }
         
         if buy_token in lst_targets:
@@ -96,6 +98,9 @@ class IntentListener:
     async def listen_loop(self):
         logger.info("Starting Intent Listener loop...")
         while True:
+            # Optimize spread based on history
+            self.pricing_engine.optimize_spread()
+            
             # Fetch from multiple venues
             cow_orders = await self.fetch_cowswap_orders()
             uni_orders = await self.fetch_uniswapx_orders()
