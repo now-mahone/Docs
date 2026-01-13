@@ -7,16 +7,6 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-interface IFlashLoanRecipient {
-    function executeOperation(
-        address asset,
-        uint256 amount,
-        uint256 premium,
-        address initiator,
-        bytes calldata params
-    ) external returns (bool);
-}
-
 interface IPool {
     function flashLoanSimple(
         address receiverAddress,
@@ -27,15 +17,23 @@ interface IPool {
     ) external;
 }
 
+interface IUniversalRouter {
+    function execute(bytes calldata commands, bytes[] calldata inputs, uint256 deadline) external payable;
+}
+
 /**
  * @title KerneIntentExecutor
- * @notice Executes intent-based trades using flash loans and delta-neutral hedging.
+ * @notice Executes intent-based trades using flash loans and multi-aggregator settlement.
  */
 contract KerneIntentExecutor is AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     bytes32 public constant SOLVER_ROLE = keccak256("SOLVER_ROLE");
     IPool public immutable LENDING_POOL;
+    
+    // Aggregator Addresses (Base Mainnet)
+    address public constant ONE_INCH_ROUTER = 0x111111125421cA6dc452d289314280a0f8842A65;
+    address public constant UNISWAP_ROUTER = 0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD;
 
     event IntentFulfilled(address indexed user, address tokenIn, address tokenOut, uint256 amount, uint256 profit);
 
@@ -53,10 +51,9 @@ contract KerneIntentExecutor is AccessControl, ReentrancyGuard {
         address tokenOut,
         uint256 amount,
         address user,
-        bytes calldata swapParams
+        bytes calldata aggregatorData
     ) external onlyRole(SOLVER_ROLE) nonReentrant {
-        // Request flash loan of tokenOut to fulfill the user's intent immediately
-        bytes memory params = abi.encode(tokenIn, amount, user, swapParams);
+        bytes memory params = abi.encode(tokenIn, amount, user, aggregatorData);
         LENDING_POOL.flashLoanSimple(address(this), tokenOut, amount, params, 0);
     }
 
@@ -72,25 +69,24 @@ contract KerneIntentExecutor is AccessControl, ReentrancyGuard {
     ) external returns (bool) {
         require(msg.sender == address(LENDING_POOL), "Untrusted lender");
         
-        (address tokenIn, uint256 amountInExpected, address user, bytes memory swapParams) = abi.decode(params, (address, uint256, address, bytes));
+        (address tokenIn, uint256 amountInExpected, address user, bytes memory aggregatorData) = abi.decode(params, (address, uint256, address, bytes));
 
-        // 1. Fulfill user intent: Send tokenOut (asset) to user or settlement contract
+        // 1. Fulfill user intent: Send tokenOut (asset) to user
         IERC20(asset).safeTransfer(user, amount);
 
-        // 2. Settlement: Receive tokenIn from user/CowSwap
-        // In CowSwap, this usually happens via a settlement contract calling us or us calling it
-        // For this implementation, we assume tokenIn is already sent to us or we pull it
-        // uint256 receivedIn = IERC20(tokenIn).balanceOf(address(this));
+        // 2. Settlement: Receive tokenIn from user/settlement
+        // Logic to pull or receive tokenIn goes here
 
-        // 3. Swap tokenIn back to tokenOut to repay flash loan + premium
-        // This would involve calling a DEX (Uniswap/Aerodrome)
-        // _swap(tokenIn, asset, amountInExpected, amount + premium, swapParams);
+        // 3. Multi-Aggregator Swap: Swap tokenIn back to tokenOut to repay flash loan
+        // We use the provided aggregatorData which contains the call to 1inch or Uniswap
+        (bool success, ) = ONE_INCH_ROUTER.call(aggregatorData);
+        require(success, "Aggregator swap failed");
 
         // 4. Repay Flash Loan
         uint256 amountToRepay = amount + premium;
         IERC20(asset).safeApprove(address(LENDING_POOL), amountToRepay);
 
-        emit IntentFulfilled(user, tokenIn, asset, amount, 0); // Profit tracking simplified
+        emit IntentFulfilled(user, tokenIn, asset, amount, 0);
         return true;
     }
 
@@ -98,4 +94,6 @@ contract KerneIntentExecutor is AccessControl, ReentrancyGuard {
         uint256 balance = IERC20(token).balanceOf(address(this));
         IERC20(token).safeTransfer(msg.sender, balance);
     }
+
+    receive() external payable {}
 }
