@@ -67,7 +67,7 @@ contract KerneIntentExecutor is AccessControl, ReentrancyGuard {
      */
     function harvestToVault(address vault, address token) external onlyRole(DEFAULT_ADMIN_ROLE) {
         uint256 balance = IERC20(token).balanceOf(address(this));
-        IERC20(token).safeApprove(vault, balance);
+        IERC20(token).forceApprove(vault, balance);
         // Assuming vault has a deposit function for the strategist
         // KerneVault(vault).deposit(balance, address(this));
     }
@@ -99,7 +99,7 @@ contract KerneIntentExecutor is AccessControl, ReentrancyGuard {
 
         // 4. Repay Flash Loan
         uint256 amountToRepay = amount + premium;
-        IERC20(asset).safeApprove(address(LENDING_POOL), amountToRepay);
+        IERC20(asset).forceApprove(address(LENDING_POOL), amountToRepay);
 
         emit IntentFulfilled(user, tokenIn, asset, amount, 0);
         return true;

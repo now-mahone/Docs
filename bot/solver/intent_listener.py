@@ -82,7 +82,7 @@ class IntentListener:
             hedging_cost = 0.0005 # 5 bps
             
             offer_price, is_profitable = self.pricing_engine.calculate_intent_price(
-                market_price, funding_rate, hedging_cost
+                market_price, funding_rate, hedging_cost, buy_amount
             )
             
             if is_profitable:
@@ -91,7 +91,12 @@ class IntentListener:
                 profit_bps = (daily_funding * 10000) - (hedging_cost * 10000) - 1
                 
                 # Micro-scale position cap
-                eth_price = await self.pricing_engine.get_dex_price("0x4200000000000000000000000000000000000006", 1e18)
+                # WETH address on Base, using a dummy to_token for price fetch
+                eth_price = await self.pricing_engine.get_dex_price(
+                    "0x4200000000000000000000000000000000000006",  # WETH
+                    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",  # USDC on Base
+                    int(1e18)
+                )
                 position_usd = buy_amount * eth_price
                 if position_usd > 15.0:
                     logger.warning(f"Micro-scale Safety: Position size ${position_usd:.2f} exceeds $15 cap. Scaling down.")
