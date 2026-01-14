@@ -127,7 +127,7 @@ class ExchangeManager:
             logger.error(f"Failed to execute buy on {symbol}: {e}")
             return False
 
-    def get_collateral_balance(self) -> float:
+    def get_collateral_balance(self, symbol: str = "USDC") -> float:
         """
         Fetches the available USDC margin balance on Hyperliquid.
         """

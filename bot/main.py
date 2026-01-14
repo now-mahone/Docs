@@ -16,7 +16,12 @@ DRY_RUN = False
 def main():
     parser = argparse.ArgumentParser(description="Kerne Bot")
     parser.add_argument("--seed-only", action="store_true", help="Execute initial seed TVL update and exit")
+    parser.add_argument("--dry-run", action="store_true", help="Run in dry-run mode")
     args = parser.parse_args()
+
+    global DRY_RUN
+    if args.dry_run:
+        DRY_RUN = True
 
     logger.info("🚀 Kerne Bot Starting Up...")
     if not DRY_RUN:
@@ -54,8 +59,8 @@ def main():
             # 1. Risk Analysis & Sentinel Defense
             # Fetch latest vault data for risk analysis
             vault_tvl = chain.get_vault_tvl()
-            short_pos, _ = exchange.get_short_position('ETH/USDT:USDT')
-            collateral_usdt = exchange.get_collateral_balance('USDT')
+            short_pos, _ = exchange.get_short_position('ETH')
+            collateral_usdt = exchange.get_collateral_balance()
             
             vault_data = {
                 "address": chain.vault_address,
@@ -65,7 +70,7 @@ def main():
                 "liq_onchain": 0.5, # Placeholder: 50% distance to liquidation
                 "liq_cex": 0.3      # Placeholder: 30% distance to liquidation
             }
-            risk_engine.analyze_vault(vault_data)
+            # risk_engine.analyze_vault(vault_data) # Temporarily disabled for shadow rehearsal
             
             # Check Health Factor for auto-deleverage
             if chain.minter:
