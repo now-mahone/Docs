@@ -13,6 +13,10 @@ contract MockAsset is ERC20 {
     constructor() ERC20("Mock Asset", "MOCK") {
         _mint(msg.sender, 1000000 * 1e18);
     }
+
+    function mint(address to, uint256 amount) public {
+        _mint(to, amount);
+    }
 }
 
 contract KerneSecuritySuite is Test {
@@ -97,12 +101,9 @@ contract KerneSecuritySuite is Test {
 
     /**
      * @notice Invariant: Total Assets >= Total Liabilities (Solvency)
+     * This is the core "Anti-Luna" check.
      */
     function testSolvencyInvariant() public {
-        // Initial state: 1000 dead shares minted to admin
-        // totalAssets() = 0
-        // totalSupply() = 1000
-        
         // Back the dead shares first to ensure 1:1 exchange rate
         asset.transfer(address(vault), 1000);
         
@@ -110,15 +111,58 @@ contract KerneSecuritySuite is Test {
         asset.approve(address(vault), depositAmount);
         vault.deposit(depositAmount, user);
 
+        _checkSolvencyInvariant();
+    }
+
+    function _checkSolvencyInvariant() internal {
         uint256 assets = vault.totalAssets();
         uint256 supply = vault.totalSupply();
         
         // Solvency ratio: (assets * 10000) / supply
-        // With 1000 dead shares backed and 100e18 deposit, assets should be 100e18 + 1000
-        // and supply should be 100e18 + 1000.
+        assertTrue(assets >= supply, "CRITICAL: Assets must cover supply (Solvency Invariant Broken)");
+        assertTrue(vault.getSolvencyRatio() >= 10000, "CRITICAL: Solvency ratio must be >= 100%");
+    }
+
+    /**
+     * @notice Fuzz test for solvency across various deposit/withdraw/yield scenarios
+     */
+    function testFuzz_Solvency(uint256 amount, uint256 offChain, uint256 reserve) public {
+        // Bound to realistic values to avoid overflow in totalAssets()
+        // Max supply of most tokens is < 1e38
+        amount = bound(amount, 1e6, 1e27);
         
-        assertTrue(assets >= supply, "Assets must cover supply");
-        assertTrue(vault.getSolvencyRatio() >= 10000, "Solvency ratio must be >= 100%");
+        // Ensure offChain + reserve >= amount to maintain solvency
+        // In a real scenario, the strategist would only report what exists.
+        // Here we simulate the strategist reporting enough to cover the deposit.
+        offChain = bound(offChain, amount, 1e27);
+        reserve = bound(reserve, 0, 1e27);
+
+        // Back the dead shares first to ensure 1:1 exchange rate
+        asset.transfer(address(vault), 1000);
+
+        // 1. Deposit
+        asset.mint(address(this), amount);
+        asset.approve(address(vault), amount);
+        vault.deposit(amount, user);
+
+        // 2. Update off-chain assets (Strategist)
+        vm.startPrank(strategist);
+        vault.updateOffChainAssets(offChain);
+        vault.updateHedgingReserve(reserve);
+        vm.stopPrank();
+
+        // 3. Check Invariant
+        _checkSolvencyInvariant();
+
+        // 4. Partial Withdraw (if liquid)
+        uint256 liquid = asset.balanceOf(address(vault));
+        if (liquid > 1e6) {
+            uint256 withdrawAmount = bound(amount / 2, 1, liquid);
+            vm.startPrank(user);
+            vault.withdraw(withdrawAmount, user, user);
+            vm.stopPrank();
+            _checkSolvencyInvariant();
+        }
     }
 
     /**
