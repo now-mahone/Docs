@@ -24,6 +24,7 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, IERC3156FlashLender {
     bytes32 public constant ARBITRAGEUR_ROLE = keccak256("ARBITRAGEUR_ROLE");
 
     IERC20 public immutable kUSD;
+    address public insuranceFund;
     
     mapping(address => uint256) public swapFees;
     mapping(address => bool) public supportedStables;
@@ -85,14 +86,41 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, IERC3156FlashLender {
         emit ExposureUpdated(stable, currentExposure[stable]);
     }
 
+    /**
+     * @notice Swaps kUSD for a supported stablecoin.
+     * @dev Peg Defense: If PSM reserves are insufficient, it attempts to draw from the Insurance Fund.
+     */
     function swapKUSDForStable(address stable, uint256 amount) external nonReentrant {
         require(supportedStables[stable], "Stable not supported");
-        require(currentExposure[stable] >= amount, "Insufficient stable exposure");
         
         uint256 fee = getFee(stable, amount);
         uint256 amountAfterFee = amount - fee;
 
-        currentExposure[stable] -= amount;
+        uint256 psmBalance = IERC20(stable).balanceOf(address(this));
+        
+        if (psmBalance < amountAfterFee && insuranceFund != address(0)) {
+            // Attempt to draw the deficit from the Insurance Fund
+            uint256 deficit = amountAfterFee - psmBalance;
+            // We use a low-level call to avoid reverting if the insurance fund claim fails (e.g. cooldown or limit)
+            (bool success, bytes memory returnData) = insuranceFund.call(
+                abi.encodeWithSignature("claim(address,uint256)", address(this), deficit)
+            );
+            // If successful, deficit is now in this contract
+            if (success) {
+                psmBalance = IERC20(stable).balanceOf(address(this));
+            } else {
+                // Log or handle failure if needed
+            }
+        }
+
+        require(psmBalance >= amountAfterFee, "Insufficient stable reserves (Peg Defense Failed)");
+
+        if (currentExposure[stable] >= amount) {
+            currentExposure[stable] -= amount;
+        } else {
+            currentExposure[stable] = 0;
+        }
+
         kUSD.safeTransferFrom(msg.sender, address(this), amount);
         IERC20(stable).safeTransfer(msg.sender, amountAfterFee);
 
@@ -126,6 +154,10 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, IERC3156FlashLender {
     function setFlashFee(uint256 bps) external onlyRole(MANAGER_ROLE) {
         require(bps <= 100, "Fee too high");
         flashFeeBps = bps;
+    }
+
+    function setInsuranceFund(address _insuranceFund) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        insuranceFund = _insuranceFund;
     }
 
     // --- IERC3156FlashLender Implementation ---

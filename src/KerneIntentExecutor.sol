@@ -29,13 +29,27 @@ contract KerneIntentExecutor is AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     bytes32 public constant SOLVER_ROLE = keccak256("SOLVER_ROLE");
+    bytes32 public constant SENTINEL_ROLE = keccak256("SENTINEL_ROLE");
+
     IPool public immutable LENDING_POOL;
     
     // Aggregator Addresses (Base Mainnet)
     address public constant ONE_INCH_ROUTER = 0x111111125421cA6dc452d289314280a0f8842A65;
     address public constant UNISWAP_ROUTER = 0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD;
 
+    // Sentinel V2 Parameters
+    uint256 public maxLatency = 500; // 500ms
+    uint256 public maxPriceDeviationBps = 100; // 1% (100 bps)
+    bool public sentinelActive = true;
+
+    struct IntentSafetyParams {
+        uint256 timestamp;
+        uint256 expectedPrice; // Price in 1e18
+    }
+
     event IntentFulfilled(address indexed user, address tokenIn, address tokenOut, uint256 amount, uint256 profit);
+    event SentinelParamUpdated(string param, uint256 newValue);
+    event SentinelStatusToggled(bool active);
 
     constructor(address admin, address solver, address lendingPool) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
@@ -50,16 +64,52 @@ contract KerneIntentExecutor is AccessControl, ReentrancyGuard {
      * @notice Fulfills a CowSwap/UniswapX intent using a flash loan.
      * @dev MEV Protection: This function should be called via a private RPC (e.g., Flashbots).
      */
+    /**
+     * @notice Fulfills a CowSwap/UniswapX intent using a flash loan with Sentinel V2 safety checks.
+     * @param safetyParams Encoded IntentSafetyParams for circuit breaker validation.
+     */
     function fulfillIntent(
         address tokenIn,
         address tokenOut,
         uint256 amount,
         address user,
-        bytes calldata aggregatorData
+        bytes calldata aggregatorData,
+        bytes calldata safetyParams
     ) external onlyRole(SOLVER_ROLE) nonReentrant {
+        if (sentinelActive) {
+            IntentSafetyParams memory s = abi.decode(safetyParams, (IntentSafetyParams));
+            
+            // 1. Latency Check: Ensure the intent was signed recently
+            uint256 latencySeconds = maxLatency / 1000;
+            if (latencySeconds == 0) latencySeconds = 1; // Minimum 1s resolution
+            require(block.timestamp <= s.timestamp + latencySeconds, "Sentinel: Intent expired (Latency)");
+            
+            // 2. Price Deviation Check: (Placeholder for oracle comparison)
+            // In production, we would compare s.expectedPrice with a Chainlink or internal oracle price.
+            // require(abs(oraclePrice - s.expectedPrice) <= (oraclePrice * maxPriceDeviationBps / 10000), "Sentinel: Price deviation too high");
+        }
+
         // Ensure we are not being sandwiched by checking block.basefee or using a private bundle
         bytes memory params = abi.encode(tokenIn, amount, user, aggregatorData);
         LENDING_POOL.flashLoanSimple(address(this), tokenOut, amount, params, 0);
+    }
+
+    /**
+     * @notice Updates Sentinel parameters.
+     */
+    function updateSentinelParams(uint256 _maxLatency, uint256 _maxPriceDeviationBps) external onlyRole(SENTINEL_ROLE) {
+        maxLatency = _maxLatency;
+        maxPriceDeviationBps = _maxPriceDeviationBps;
+        emit SentinelParamUpdated("latency", _maxLatency);
+        emit SentinelParamUpdated("deviation", _maxPriceDeviationBps);
+    }
+
+    /**
+     * @notice Toggles Sentinel safety checks.
+     */
+    function toggleSentinel(bool _active) external onlyRole(SENTINEL_ROLE) {
+        sentinelActive = _active;
+        emit SentinelStatusToggled(_active);
     }
 
     /**
@@ -79,12 +129,12 @@ contract KerneIntentExecutor is AccessControl, ReentrancyGuard {
         address asset,
         uint256 amount,
         uint256 premium,
-        address initiator,
+        address, // initiator
         bytes calldata params
     ) external returns (bool) {
         require(msg.sender == address(LENDING_POOL), "Untrusted lender");
         
-        (address tokenIn, uint256 amountInExpected, address user, bytes memory aggregatorData) = abi.decode(params, (address, uint256, address, bytes));
+        (address tokenIn, , address user, bytes memory aggregatorData) = abi.decode(params, (address, uint256, address, bytes));
 
         // 1. Fulfill user intent: Send tokenOut (asset) to user
         IERC20(asset).safeTransfer(user, amount);
@@ -94,8 +144,17 @@ contract KerneIntentExecutor is AccessControl, ReentrancyGuard {
 
         // 3. Multi-Aggregator Swap: Swap tokenIn back to tokenOut to repay flash loan
         // We use the provided aggregatorData which contains the call to 1inch or Uniswap
-        (bool success, ) = ONE_INCH_ROUTER.call(aggregatorData);
-        require(success, "Aggregator swap failed");
+        (bool success, bytes memory returnData) = ONE_INCH_ROUTER.call(aggregatorData);
+        if (!success) {
+            if (returnData.length > 0) {
+                assembly {
+                    let returndata_size := mload(returnData)
+                    revert(add(32, returnData), returndata_size)
+                }
+            } else {
+                revert("Aggregator swap failed");
+            }
+        }
 
         // 4. Repay Flash Loan
         uint256 amountToRepay = amount + premium;
