@@ -5,11 +5,37 @@ from loguru import logger
 from bot.solver.pricing_engine import PricingEngine
 from bot.solver.hyperliquid_provider import HyperliquidProvider
 import os
-import json
 import time
 
 COW_SWAP_API_BASE = "https://api.cow.fi/base/api/v1"
-UNISWAP_X_API_BASE = "https://api.uniswap.org/v2/uniswapx/orders" # Example endpoint
+
+# UniswapX API endpoints per chain
+UNISWAPX_API_CONFIG = {
+    "base": {
+        "api_url": "https://api.uniswap.org/v2/orders",
+        "chain_id": 8453,
+        "order_type": "Priority",  # Base uses Priority Orders
+        "reactor": "0x000000001Ec5656dcdB24D90DFa42742738De729"
+    },
+    "unichain": {
+        "api_url": "https://api.uniswap.org/v2/orders",
+        "chain_id": 130,
+        "order_type": "Priority",  # Unichain uses Priority Orders
+        "reactor": "0x00000006021a6Bce796be7ba509BBBA71e956e37"
+    },
+    "arbitrum": {
+        "api_url": "https://api.uniswap.org/v2/orders",
+        "chain_id": 42161,
+        "order_type": "Dutch_V2",  # Arbitrum uses Dutch V2
+        "reactor": "0x1bd1aAdc9E230626C44a139d7E70d842749351eb"
+    },
+    "mainnet": {
+        "api_url": "https://api.uniswap.org/v2/orders",
+        "chain_id": 1,
+        "order_type": "Dutch_V2",  # Mainnet uses Dutch V2 with RFQ
+        "reactor": "0x6000da47483062A0D734Ba3dc7576Ce6A0B645C4"
+    }
+}
 
 class IntentListener:
     def __init__(self):
@@ -17,8 +43,10 @@ class IntentListener:
         self.hl_provider = HyperliquidProvider()
         self.is_live = os.getenv("SOLVER_LIVE", "false").lower() == "true"
         self.profit_log_path = "bot/solver/profit_log.csv"
+        self.active_chain = os.getenv("ACTIVE_CHAIN", "base").lower()
+        self.uniswapx_config = UNISWAPX_API_CONFIG.get(self.active_chain, UNISWAPX_API_CONFIG["base"])
         self._init_log()
-        logger.info(f"Kerne Intent Listener initialized (LIVE={self.is_live})")
+        logger.info(f"Kerne Intent Listener initialized (LIVE={self.is_live}, Chain={self.active_chain})")
         
     def _init_log(self):
         if not os.path.exists(self.profit_log_path):
@@ -42,9 +70,129 @@ class IntentListener:
                 return []
 
     async def fetch_uniswapx_orders(self):
-        # UniswapX integration placeholder
-        # In production, we'd poll their orderbook API
-        return []
+        """
+        Fetches open orders from the UniswapX API for the active chain.
+        Supports Priority Orders (Base/Unichain) and Dutch V2 (Arbitrum/Mainnet).
+        
+        API Docs: https://api.uniswap.org/v2/uniswapx/docs
+        """
+        config = self.uniswapx_config
+        api_url = config["api_url"]
+        chain_id = config["chain_id"]
+        order_type = config["order_type"]
+        
+        params = {
+            "orderStatus": "open",
+            "chainId": chain_id,
+            "orderType": order_type,
+            "limit": 100,  # Max orders per request
+        }
+        
+        headers = {
+            "Accept": "application/json",
+            "Origin": "https://app.uniswap.org"
+        }
+        
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(api_url, params=params, headers=headers) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        orders = data.get('orders', [])
+                        
+                        if orders:
+                            logger.info(f"UniswapX: Fetched {len(orders)} open orders on chain {chain_id}")
+                        
+                        # Normalize UniswapX orders to match CowSwap format for unified processing
+                        normalized_orders = []
+                        for order in orders:
+                            normalized = self._normalize_uniswapx_order(order)
+                            if normalized:
+                                normalized_orders.append(normalized)
+                        
+                        return normalized_orders
+                    elif resp.status == 429:
+                        logger.warning("UniswapX: Rate limited (429). Backing off...")
+                        return []
+                    else:
+                        logger.debug(f"UniswapX: API returned status {resp.status}")
+                        return []
+            except aiohttp.ClientError as e:
+                logger.error(f"UniswapX: Network error fetching orders: {e}")
+                return []
+            except Exception as e:
+                logger.error(f"UniswapX: Unexpected error fetching orders: {e}")
+                return []
+    
+    def _normalize_uniswapx_order(self, uniswapx_order: dict) -> dict:
+        """
+        Normalizes UniswapX order format to match the internal format used by process_order().
+        
+        UniswapX Order Structure (Priority/Dutch):
+        {
+            "orderHash": "0x...",
+            "orderStatus": "open",
+            "chainId": 8453,
+            "input": {"token": "0x...", "amount": "1000000000000000000"},
+            "outputs": [{"token": "0x...", "amount": "..."}],
+            "swapper": "0x...",
+            "createdAt": 1234567890,
+            "encodedOrder": "0x..."
+        }
+        
+        Internal format (CowSwap-like):
+        {
+            "orderHash": "0x...",
+            "buyToken": "0x...",
+            "buyAmount": "...",
+            "sellToken": "0x...",
+            "sellAmount": "...",
+            "_raw": {...}  # Original order for submission
+        }
+        """
+        try:
+            order_hash = uniswapx_order.get('orderHash', '')
+            
+            # Extract input (what the user is selling)
+            input_data = uniswapx_order.get('input', {})
+            sell_token = input_data.get('token', '').lower()
+            sell_amount = input_data.get('amount', '0')
+            
+            # Extract outputs (what the user wants to buy)
+            # UniswapX can have multiple outputs, we take the primary one
+            outputs = uniswapx_order.get('outputs', [])
+            if not outputs:
+                return None
+            
+            primary_output = outputs[0]
+            buy_token = primary_output.get('token', '').lower()
+            buy_amount = primary_output.get('amount', '0')
+            
+            # Skip if missing critical data
+            if not buy_token or not buy_amount or buy_amount == '0':
+                return None
+            
+            normalized = {
+                "orderHash": order_hash,
+                "uid": order_hash,  # Alias for compatibility
+                "buyToken": buy_token,
+                "buyAmount": buy_amount,
+                "sellToken": sell_token,
+                "sellAmount": sell_amount,
+                "swapper": uniswapx_order.get('swapper', ''),
+                "chainId": uniswapx_order.get('chainId', 8453),
+                "createdAt": uniswapx_order.get('createdAt', 0),
+                "encodedOrder": uniswapx_order.get('encodedOrder', ''),
+                "_venue": "UniswapX",
+                "_order_type": uniswapx_order.get('type', 'Priority'),
+                "_raw": uniswapx_order  # Keep raw for submission
+            }
+            
+            return normalized
+            
+        except Exception as e:
+            logger.error(f"UniswapX: Error normalizing order: {e}")
+            return None
 
     async def process_order(self, order, venue="CowSwap"):
         buy_token = order.get('buyToken', '').lower()
