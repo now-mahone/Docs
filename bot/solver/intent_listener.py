@@ -45,6 +45,7 @@ class IntentListener:
         self.profit_log_path = "bot/solver/profit_log.csv"
         self.active_chain = os.getenv("ACTIVE_CHAIN", "base").lower()
         self.uniswapx_config = UNISWAPX_API_CONFIG.get(self.active_chain, UNISWAPX_API_CONFIG["base"])
+        self._uniswapx_health_logged = False
         self._init_log()
         logger.info(f"Kerne Intent Listener initialized (LIVE={self.is_live}, Chain={self.active_chain})")
         
@@ -96,6 +97,25 @@ class IntentListener:
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(api_url, params=params, headers=headers) as resp:
+                    if not self._uniswapx_health_logged:
+                        self._uniswapx_health_logged = True
+                        if resp.status == 200:
+                            logger.info(
+                                "UniswapX: API reachable (chainId={}, orderType={}, endpoint={})".format(
+                                    chain_id,
+                                    order_type,
+                                    api_url
+                                )
+                            )
+                        else:
+                            logger.warning(
+                                "UniswapX: API health check failed (status={}, chainId={}, endpoint={})".format(
+                                    resp.status,
+                                    chain_id,
+                                    api_url
+                                )
+                            )
+
                     if resp.status == 200:
                         data = await resp.json()
                         orders = data.get('orders', [])
