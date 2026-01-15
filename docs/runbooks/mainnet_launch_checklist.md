@@ -4,6 +4,8 @@
 - [ ] **Yield Oracle:** Deploy `KerneYieldOracle.sol` using `script/DeployYieldOracle.s.sol`.
 - [ ] **OFT V2 (Base):** Deploy kUSD and $KERNE OFT V2 using `script/DeployOFT.s.sol`.
 - [ ] **OFT V2 (Arbitrum):** Deploy kUSD and $KERNE OFT V2 on Arbitrum.
+- [ ] **OFT V2 (Optimism):** Deploy kUSD and $KERNE OFT V2 on Optimism.
+- [ ] **OFT Peer Wiring:** Configure LayerZero peers between Base, Arbitrum, and Optimism (kUSD + KERNE).
 - [ ] **Compliance Hook:** Deploy `KerneComplianceHook.sol` using `script/DeployCompliance.s.sol`.
 - [ ] **Vault Factory Update:** Ensure `KerneVaultFactory` tiers are updated with the compliance hook address.
 

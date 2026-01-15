@@ -7,31 +7,51 @@ import { console } from "forge-std/console.sol";
 import { KerneOFTV2 } from "../src/KerneOFTV2.sol";
 
 contract DeployOFT is Script {
+    uint256 private constant BASE_CHAIN_ID = 8453;
+    uint256 private constant ARBITRUM_CHAIN_ID = 42161;
+    uint256 private constant OPTIMISM_CHAIN_ID = 10;
+
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        // LayerZero V2 Endpoints (Verified for Mainnet)
-        address baseEndpoint = 0x1a44076050125825900e736c501f859c50fE728c;
-        // address arbEndpoint = 0x1a44076050125825900e736c501f859c50fE728c;
+        address lzEndpoint = _resolveEndpoint(block.chainid);
+        string memory chainName = _resolveChainName(block.chainid);
 
         // Shared decimals for cross-chain compatibility (6 for USDC-like precision)
         uint8 sharedDecimals = 6;
 
-        // Deploy kUSD OFT on Base
-        KerneOFTV2 kusdBase = new KerneOFTV2("Kerne Synthetic Dollar", "kUSD", sharedDecimals, baseEndpoint);
-        console.log("kUSD OFT deployed at:", address(kusdBase));
-        
-        // Deploy $KERNE OFT on Base (18 decimals for governance token)
-        KerneOFTV2 kerneBase = new KerneOFTV2("Kerne", "KERNE", 8, baseEndpoint);
-        console.log("KERNE OFT deployed at:", address(kerneBase));
+        console.log("Deploying OFTs on:", chainName);
+        console.log("LayerZero Endpoint:", lzEndpoint);
 
-        // Deploy kUSD OFT on Arbitrum (uncomment when deploying to Arbitrum)
-        // KerneOFTV2 kusdArb = new KerneOFTV2("Kerne Synthetic Dollar", "kUSD", sharedDecimals, arbEndpoint);
-        
-        // Deploy $KERNE OFT on Arbitrum (uncomment when deploying to Arbitrum)
-        // KerneOFTV2 kerneArb = new KerneOFTV2("Kerne", "KERNE", 8, arbEndpoint);
+        KerneOFTV2 kusd = new KerneOFTV2("Kerne Synthetic Dollar", "kUSD", sharedDecimals, lzEndpoint);
+        console.log("kUSD OFT deployed at:", address(kusd));
+
+        KerneOFTV2 kerne = new KerneOFTV2("Kerne", "KERNE", 8, lzEndpoint);
+        console.log("KERNE OFT deployed at:", address(kerne));
 
         vm.stopBroadcast();
+    }
+
+    function _resolveEndpoint(uint256 chainId) internal pure returns (address) {
+        if (chainId == BASE_CHAIN_ID || chainId == ARBITRUM_CHAIN_ID || chainId == OPTIMISM_CHAIN_ID) {
+            return 0x1a44076050125825900e736c501f859c50fE728c;
+        }
+
+        revert("Unsupported chain for Kerne OFT deployment");
+    }
+
+    function _resolveChainName(uint256 chainId) internal pure returns (string memory) {
+        if (chainId == BASE_CHAIN_ID) {
+            return "Base";
+        }
+        if (chainId == ARBITRUM_CHAIN_ID) {
+            return "Arbitrum";
+        }
+        if (chainId == OPTIMISM_CHAIN_ID) {
+            return "Optimism";
+        }
+
+        return "Unknown";
     }
 }

@@ -31,11 +31,13 @@ A backend service (integrated into the bot) that:
 
 ### Phase 2: Arbitrum Expansion (Week 2)
 - Deploy `kUSD_OFT` and `KERNE_OFT` on Arbitrum.
+- Configure LayerZero V2 peers with Base and Optimism.
 - Deploy Bespoke Arbitrum Vault (LST-collateralized).
 - Integrate Arbitrum TVL into the Global Dashboard.
 
 ### Phase 3: Optimism & Mantle (Week 3)
-- Standardized deployment of OFT contracts.
+- Deploy `kUSD_OFT` and `KERNE_OFT` on Optimism.
+- Configure LayerZero V2 peers with Base and Arbitrum.
 - Liquidity seeding on Aerodrome (Base) and Velodrome (Optimism).
 
 ## 4. Security Considerations
