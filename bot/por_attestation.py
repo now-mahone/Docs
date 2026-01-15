@@ -5,7 +5,7 @@ from web3 import Web3
 from eth_account.messages import encode_defunct
 from dotenv import load_dotenv
 from loguru import logger
-from bot.exchange_manager import ExchangeManager
+from exchange_manager import ExchangeManager
 
 # Created: 2026-01-12
 # Updated: 2026-01-13 (Automated Solvency Pulse)

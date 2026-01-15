@@ -31,12 +31,13 @@ contract KernePegDefenseTest is Test {
         kUSD = new KerneToken(address(this));
         usdc = new MockStable("USD Coin", "USDC");
         psm = new KUSDPSM(address(kUSD), address(this));
-        insurance = new KerneInsuranceFund(address(usdc));
+        insurance = new KerneInsuranceFund(address(usdc), address(this));
 
         // Setup roles and config
         psm.addStable(address(usdc), 10, 1000000 * 1e18); // 10 bps fee
         psm.setInsuranceFund(address(insurance));
         insurance.setAuthorization(address(psm), true);
+
         kUSD.grantRole(kUSD.MINTER_ROLE(), address(this)); // Allow test to mint kUSD for simulation
         
         // Grant admin roles to the admin address for completeness

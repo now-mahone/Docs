@@ -4,7 +4,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -14,14 +14,16 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
  * @notice Protocol-owned insurance fund to cover depeg events or exchange failures.
  * Hardened with automated yield diversion and multi-sig claim logic.
  */
-contract KerneInsuranceFund is Ownable, ReentrancyGuard {
+contract KerneInsuranceFund is AccessControl, ReentrancyGuard {
     using SafeERC20 for IERC20;
+
+    bytes32 public constant AUTHORIZED_ROLE = keccak256("AUTHORIZED_ROLE");
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
     address public immutable asset;
     uint256 public totalCovered;
     uint256 public maxClaimPercentage = 5000; // 50% max claim per event to prevent drain
 
-    mapping(address => bool) public isAuthorized;
     mapping(address => uint256) public lastClaimTimestamp;
 
     event FundsDeposited(uint256 amount);
@@ -30,8 +32,10 @@ contract KerneInsuranceFund is Ownable, ReentrancyGuard {
     event LossSocialized(address indexed vault, uint256 amount);
     event ConfigUpdated(string param, uint256 value);
 
-    constructor(address _asset) Ownable(msg.sender) {
+    constructor(address _asset, address _admin) {
         asset = _asset;
+        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        _grantRole(MANAGER_ROLE, _admin);
     }
 
     function deposit(uint256 amount) external nonReentrant {
@@ -39,8 +43,12 @@ contract KerneInsuranceFund is Ownable, ReentrancyGuard {
         emit FundsDeposited(amount);
     }
 
-    function setAuthorization(address caller, bool status) external onlyOwner {
-        isAuthorized[caller] = status;
+    function setAuthorization(address caller, bool status) external onlyRole(MANAGER_ROLE) {
+        if (status) {
+            _grantRole(AUTHORIZED_ROLE, caller);
+        } else {
+            _revokeRole(AUTHORIZED_ROLE, caller);
+        }
         emit AuthorizationUpdated(caller, status);
     }
 
@@ -48,7 +56,7 @@ contract KerneInsuranceFund is Ownable, ReentrancyGuard {
      * @notice Claims coverage with institutional safeguards.
      */
     function claim(address recipient, uint256 amount) external nonReentrant {
-        require(msg.sender == owner() || isAuthorized[msg.sender], "Not authorized");
+        require(hasRole(AUTHORIZED_ROLE, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not authorized");
         require(block.timestamp > lastClaimTimestamp[msg.sender] + 1 hours, "Claim cooldown active");
         
         uint256 balance = IERC20(asset).balanceOf(address(this));
@@ -66,7 +74,7 @@ contract KerneInsuranceFund is Ownable, ReentrancyGuard {
      * @notice Socializes a loss across the insurance fund.
      */
     function socializeLoss(address vault, uint256 amount) external nonReentrant {
-        require(isAuthorized[vault], "Vault not authorized");
+        require(hasRole(AUTHORIZED_ROLE, vault), "Vault not authorized");
         uint256 balance = IERC20(asset).balanceOf(address(this));
         uint256 coverAmount = amount > balance ? balance : amount;
         
@@ -77,7 +85,7 @@ contract KerneInsuranceFund is Ownable, ReentrancyGuard {
         }
     }
 
-    function setMaxClaimPercentage(uint256 bps) external onlyOwner {
+    function setMaxClaimPercentage(uint256 bps) external onlyRole(MANAGER_ROLE) {
         require(bps <= 10000, "Invalid BPS");
         maxClaimPercentage = bps;
         emit ConfigUpdated("maxClaimPercentage", bps);

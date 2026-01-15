@@ -7,17 +7,19 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156FlashLender.sol";
 import { IERC3156FlashBorrower } from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
+import { IAggregatorV3 } from "./interfaces/IAggregatorV3.sol";
 
 /**
  * @title KUSDPSM
  * @author Kerne Protocol
  * @notice Peg Stability Module for kUSD.
  * Allows 1:1 swaps between kUSD and other major stables to maintain the peg.
- * Hardened with flash loans and tiered institutional fees.
+ * Hardened with flash loans, tiered institutional fees, and Oracle-guarded circuit breakers.
  */
-contract KUSDPSM is AccessControl, ReentrancyGuard, IERC3156FlashLender {
+contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLender {
     using SafeERC20 for IERC20;
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
@@ -25,9 +27,16 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, IERC3156FlashLender {
 
     IERC20 public immutable kUSD;
     address public insuranceFund;
+    address public vault;
     
     mapping(address => uint256) public swapFees;
     mapping(address => bool) public supportedStables;
+    mapping(address => address) public oracles;
+    mapping(address => uint256) public maxDepegBps;
+
+    uint256 public constant DEFAULT_MAX_DEPEG_BPS = 200; // 2%
+    uint256 public minSolvencyThreshold = 10100; // 101%
+
 
     struct TieredFee {
         uint256 threshold;
@@ -54,7 +63,35 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, IERC3156FlashLender {
         _grantRole(MANAGER_ROLE, _admin);
     }
 
+    function _checkDepeg(address stable) internal view {
+        address oracle = oracles[stable];
+        if (oracle == address(0)) return;
+
+        (, int256 price, , uint256 updatedAt, ) = IAggregatorV3(oracle).latestRoundData();
+        require(price > 0, "Invalid oracle price");
+        require(block.timestamp <= updatedAt + 24 hours, "Oracle price stale");
+
+        // Assume oracle price is in 8 decimals (standard for USD pairs)
+        // Normalized price should be around 1.0 (1e8)
+        uint256 uPrice = uint256(price);
+        uint256 threshold = maxDepegBps[stable] == 0 ? DEFAULT_MAX_DEPEG_BPS : maxDepegBps[stable];
+        
+        // 1e8 is 1.0 USD
+        uint256 deviation = uPrice > 1e8 ? uPrice - 1e8 : 1e8 - uPrice;
+        require((deviation * 10000) / 1e8 <= threshold, "Stable depegged: Circuit breaker triggered");
+    }
+
+    function _checkSolvency() internal view {
+        if (vault == address(0)) return;
+        (bool success, bytes memory data) = vault.staticcall(abi.encodeWithSignature("getSolvencyRatio()"));
+        if (success && data.length == 32) {
+            uint256 ratio = abi.decode(data, (uint256));
+            require(ratio >= minSolvencyThreshold, "Protocol insolvency: PSM operations halted");
+        }
+    }
+
     function getFee(address stable, uint256 amount) public view returns (uint256) {
+
         if (virtualPegEnabled) {
             return (amount * virtualPegFeeBps) / 10000;
         }
@@ -71,7 +108,9 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, IERC3156FlashLender {
         return (amount * feeBps) / 10000;
     }
 
-    function swapStableForKUSD(address stable, uint256 amount) external nonReentrant {
+    function swapStableForKUSD(address stable, uint256 amount) external nonReentrant whenNotPaused {
+        _checkDepeg(stable);
+        _checkSolvency();
         require(supportedStables[stable], "Stable not supported");
         require(currentExposure[stable] + amount <= stableCaps[stable], "Stable cap exceeded");
         
@@ -90,7 +129,9 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, IERC3156FlashLender {
      * @notice Swaps kUSD for a supported stablecoin.
      * @dev Peg Defense: If PSM reserves are insufficient, it attempts to draw from the Insurance Fund.
      */
-    function swapKUSDForStable(address stable, uint256 amount) external nonReentrant {
+    function swapKUSDForStable(address stable, uint256 amount) external nonReentrant whenNotPaused {
+        _checkDepeg(stable);
+        _checkSolvency();
         require(supportedStables[stable], "Stable not supported");
         
         uint256 fee = getFee(stable, amount);
@@ -102,18 +143,17 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, IERC3156FlashLender {
             // Attempt to draw the deficit from the Insurance Fund
             uint256 deficit = amountAfterFee - psmBalance;
             // We use a low-level call to avoid reverting if the insurance fund claim fails (e.g. cooldown or limit)
-            (bool success, bytes memory returnData) = insuranceFund.call(
+            (bool success, ) = insuranceFund.call(
                 abi.encodeWithSignature("claim(address,uint256)", address(this), deficit)
             );
             // If successful, deficit is now in this contract
             if (success) {
                 psmBalance = IERC20(stable).balanceOf(address(this));
-            } else {
-                // Log or handle failure if needed
             }
         }
 
         require(psmBalance >= amountAfterFee, "Insufficient stable reserves (Peg Defense Failed)");
+
 
         if (currentExposure[stable] >= amount) {
             currentExposure[stable] -= amount;
@@ -159,6 +199,32 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, IERC3156FlashLender {
     function setInsuranceFund(address _insuranceFund) external onlyRole(DEFAULT_ADMIN_ROLE) {
         insuranceFund = _insuranceFund;
     }
+
+    function setVault(address _vault) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        vault = _vault;
+    }
+
+    function setOracle(address stable, address oracle) external onlyRole(MANAGER_ROLE) {
+        oracles[stable] = oracle;
+    }
+
+    function setMaxDepegBps(address stable, uint256 bps) external onlyRole(MANAGER_ROLE) {
+        require(bps <= 1000, "BPS too high");
+        maxDepegBps[stable] = bps;
+    }
+
+    function setMinSolvencyThreshold(uint256 threshold) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        minSolvencyThreshold = threshold;
+    }
+
+    function pause() external onlyRole(MANAGER_ROLE) {
+        _pause();
+    }
+
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _unpause();
+    }
+
 
     // --- IERC3156FlashLender Implementation ---
 

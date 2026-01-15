@@ -36,15 +36,18 @@ contract KerneSecuritySuite is Test {
         vault = new KerneVault(asset, "Kerne Vault", "kVault", admin, strategist, address(0x5));
 
         prime = new KernePrime();
-        insurance = new KerneInsuranceFund(address(asset));
+        insurance = new KerneInsuranceFund(address(asset), address(this));
 
         prime.transferOwnership(admin);
-        insurance.transferOwnership(admin);
+        // insurance.transferOwnership(admin); // No longer needed as insurance uses AccessControl
 
         vm.startPrank(admin);
         vault.setInsuranceFund(address(insurance));
-        insurance.setAuthorization(address(vault), true);
         vm.stopPrank();
+        
+        insurance.grantRole(insurance.DEFAULT_ADMIN_ROLE(), admin);
+        insurance.grantRole(keccak256("MANAGER_ROLE"), admin);
+        insurance.setAuthorization(address(vault), true);
     }
 
     function testPrimeLiquidation() public {

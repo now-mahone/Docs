@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 import { KUSDPSM } from "src/KUSDPSM.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { IAggregatorV3 } from "src/interfaces/IAggregatorV3.sol";
 
 contract MockERC20 is ERC20 {
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
@@ -14,10 +15,30 @@ contract MockERC20 is ERC20 {
     }
 }
 
+contract MockOracle is IAggregatorV3 {
+    int256 public price;
+    uint256 public updatedAt;
+
+    function setPrice(int256 _price) external {
+        price = _price;
+        updatedAt = block.timestamp;
+    }
+
+    function latestRoundData() external view override returns (uint80, int256, uint256, uint256, uint80) {
+        return (0, price, 0, updatedAt, 0);
+    }
+    
+    function decimals() external pure override returns (uint8) { return 8; }
+    function description() external pure override returns (string memory) { return "Mock Oracle"; }
+    function version() external pure override returns (uint256) { return 1; }
+    function getRoundData(uint80) external pure override returns (uint80, int256, uint256, uint256, uint80) { return (0,0,0,0,0); }
+}
+
 contract KUSDPSMStressTest is Test {
     KUSDPSM public psm;
     MockERC20 public kUSD;
     MockERC20 public usdc;
+    MockOracle public oracle;
     
     address public admin = address(0xAD);
     address public user = address(0xDE);
@@ -26,17 +47,75 @@ contract KUSDPSMStressTest is Test {
         kUSD = new MockERC20("Kerne USD", "kUSD");
         usdc = new MockERC20("USD Coin", "USDC");
         psm = new KUSDPSM(address(kUSD), admin);
+        oracle = new MockOracle();
+        oracle.setPrice(1e8); // $1.00
 
         vm.startPrank(admin);
         psm.addStable(address(usdc), 10, type(uint256).max); // 10 bps fee, unlimited cap
+        psm.setOracle(address(usdc), address(oracle));
         vm.stopPrank();
 
         kUSD.mint(address(psm), 1_000_000 * 1e18);
         usdc.mint(user, 100_000 * 1e18);
     }
 
+
+    /**
+     * @notice Stress Test: Verify depeg circuit breaker.
+     */
+    function testDepegCircuitBreaker() public {
+        // Drop price to $0.97 (3% depeg, default limit is 2%)
+        oracle.setPrice(0.97e8);
+        
+        vm.startPrank(user);
+        usdc.approve(address(psm), 1000 * 1e18);
+        
+        vm.expectRevert("Stable depegged: Circuit breaker triggered");
+        psm.swapStableForKUSD(address(usdc), 1000 * 1e18);
+        vm.stopPrank();
+    }
+
+    /**
+     * @notice Stress Test: Verify solvency circuit breaker.
+     */
+    function testInsolvencyCircuitBreaker() public {
+        address mockVault = address(0xCAFE);
+        vm.startPrank(admin);
+        psm.setVault(mockVault);
+        vm.stopPrank();
+
+        // Mock solvency ratio < 101%
+        vm.mockCall(
+            mockVault,
+            abi.encodeWithSignature("getSolvencyRatio()"),
+            abi.encode(10050) // 100.5%
+        );
+
+        vm.startPrank(user);
+        usdc.approve(address(psm), 1000 * 1e18);
+        vm.expectRevert("Protocol insolvency: PSM operations halted");
+        psm.swapStableForKUSD(address(usdc), 1000 * 1e18);
+        vm.stopPrank();
+    }
+
+    /**
+     * @notice Test pausing functionality.
+     */
+    function testPauseCircuitBreaker() public {
+        vm.startPrank(admin);
+        psm.pause();
+        vm.stopPrank();
+
+        vm.startPrank(user);
+        usdc.approve(address(psm), 1000 * 1e18);
+        vm.expectRevert(abi.encodeWithSignature("EnforcedPause()"));
+        psm.swapStableForKUSD(address(usdc), 1000 * 1e18);
+        vm.stopPrank();
+    }
+
     /**
      * @notice Test standard swap under normal conditions.
+
      */
     function testNormalSwap() public {
         vm.startPrank(user);
