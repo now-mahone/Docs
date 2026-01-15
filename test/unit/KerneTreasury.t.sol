@@ -54,7 +54,8 @@ contract KerneTreasuryTest is Test {
         usdc = new MockERC20("USD Coin", "USDC");
         
         // Deploy mock router
-        router = new MockAerodromeRouter(address(weth));
+        router = new MockAerodromeRouter();
+        router.setWeth(address(weth));
         
         // Fund router with KERNE for swaps
         kerne.mint(address(router), INITIAL_BALANCE * 10);

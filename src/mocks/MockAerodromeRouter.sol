@@ -17,6 +17,9 @@ contract MockAerodromeRouter is IAerodromeRouter {
     // Exchange rate: how much output per input (in basis points, 10000 = 1:1)
     uint256 public exchangeRateBps = 10000;
     
+    // Per-pair exchange rates (in 1e18 precision for flexibility)
+    mapping(address => mapping(address => uint256)) public mockRates;
+    
     // Track swap calls for assertions
     uint256 public swapCallCount;
     address public lastSwapToken;
@@ -25,13 +28,21 @@ contract MockAerodromeRouter is IAerodromeRouter {
     // Configurable failure
     bool public shouldFail;
     
-    constructor(address _weth) {
-        weth = _weth;
+    constructor() {
         defaultFactory = address(this); // Self as factory for simplicity
+    }
+    
+    function setWeth(address _weth) external {
+        weth = _weth;
     }
     
     function setExchangeRate(uint256 _rateBps) external {
         exchangeRateBps = _rateBps;
+    }
+    
+    /// @notice Set mock exchange rate between tokens (1e18 = 1:1)
+    function setMockRate(address tokenIn, address tokenOut, uint256 rate) external {
+        mockRates[tokenIn][tokenOut] = rate;
     }
     
     function setShouldFail(bool _fail) external {
@@ -83,7 +94,12 @@ contract MockAerodromeRouter is IAerodromeRouter {
         
         uint256 currentAmount = amountIn;
         for (uint256 i = 0; i < routes.length; i++) {
-            currentAmount = (currentAmount * exchangeRateBps) / 10000;
+            uint256 rate = mockRates[routes[i].from][routes[i].to];
+            if (rate > 0) {
+                currentAmount = (currentAmount * rate) / 1e18;
+            } else {
+                currentAmount = (currentAmount * exchangeRateBps) / 10000;
+            }
             amounts[i + 1] = currentAmount;
         }
     }
@@ -110,7 +126,12 @@ contract MockAerodromeRouter is IAerodromeRouter {
         // Calculate output
         uint256 currentAmount = amountIn;
         for (uint256 i = 0; i < routes.length; i++) {
-            currentAmount = (currentAmount * exchangeRateBps) / 10000;
+            uint256 rate = mockRates[routes[i].from][routes[i].to];
+            if (rate > 0) {
+                currentAmount = (currentAmount * rate) / 1e18;
+            } else {
+                currentAmount = (currentAmount * exchangeRateBps) / 10000;
+            }
             amounts[i + 1] = currentAmount;
         }
         
