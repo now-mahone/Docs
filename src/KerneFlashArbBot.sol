@@ -11,8 +11,14 @@ import { IERC3156FlashBorrower } from "@openzeppelin/contracts/interfaces/IERC31
 import { IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156FlashLender.sol";
 import { IAerodromeRouter } from "./interfaces/IAerodromeRouter.sol";
 import { IUniswapV3Router } from "./interfaces/IUniswapV3Router.sol";
+import { IUniswapV2Router } from "./interfaces/IUniswapV2Router.sol";
+import { IMaverickRouter } from "./interfaces/IMaverickRouter.sol";
+import { IKerneVault } from "./interfaces/IKerneVault.sol";
 
 /**
+
+
+
  * @title KerneFlashArbBot
  * @author Kerne Protocol
  * @notice Zero-capital arbitrage executor using internal flash loans
@@ -30,6 +36,7 @@ import { IUniswapV3Router } from "./interfaces/IUniswapV3Router.sol";
  *   - PSM stable coin depegs (kUSD arbitrage)
  *   - LST/ETH rate discrepancies (stETH, cbETH, rETH)
  *   - Triangular arbitrage (A → B → C → A)
+ *   - Maverick and Velocimeter integration
  */
 contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashBorrower {
     using SafeERC20 for IERC20;
@@ -62,6 +69,9 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
     
     /// @notice Uniswap V3 Router
     IUniswapV3Router public uniswapRouter;
+
+    /// @notice Maverick V1 Router
+    IMaverickRouter public maverickRouter;
     
     /// @notice Aerodrome factory for pool lookups
     address public aerodromeFactory;
@@ -88,18 +98,20 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
     // STRUCTS
     // ═══════════════════════════════════════════════════════════════════════════════
     
-    enum DEX { Aerodrome, UniswapV3 }
+    enum DEX { Aerodrome, UniswapV3, UniswapV2, Maverick, PancakeV3 }
     
     struct SwapParams {
         DEX dex;
+        address router;        // For DEX.UniswapV2 or DEX.Maverick, specify router address
         address tokenIn;
         address tokenOut;
         uint256 amountIn;
         uint256 minAmountOut;
         bool stable;           // For Aerodrome pools
         uint24 fee;            // For Uniswap V3 pools (500, 3000, 10000)
-        bytes extraData;       // For multi-hop paths
+        bytes extraData;       // For multi-hop paths or Maverick pool address
     }
+
     
     struct ArbParams {
         address lender;        // Flash loan source (PSM or Vault)
@@ -150,7 +162,8 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
         address _vault,
         address _psm,
         address _aerodromeRouter,
-        address _uniswapRouter
+        address _uniswapRouter,
+        address _maverickRouter
     ) {
         if (_admin == address(0)) revert ZeroAddress();
         if (_treasury == address(0)) revert ZeroAddress();
@@ -172,15 +185,21 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
         if (_uniswapRouter != address(0)) {
             uniswapRouter = IUniswapV3Router(_uniswapRouter);
         }
+
+        if (_maverickRouter != address(0)) {
+            maverickRouter = IMaverickRouter(_maverickRouter);
+        }
         
         // Approve internal lenders by default
         if (_psm != address(0)) approvedLenders[_psm] = true;
         if (_vault != address(0)) approvedLenders[_vault] = true;
     }
+
     
     // ═══════════════════════════════════════════════════════════════════════════════
     // CORE ARBITRAGE FUNCTIONS
     // ═══════════════════════════════════════════════════════════════════════════════
+
     
     /**
      * @notice Execute a complete arbitrage cycle using flash loan
@@ -232,52 +251,71 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
         // Decode and execute swap sequence
         SwapParams[] memory swaps = abi.decode(data, (SwapParams[]));
         
-        for (uint8 i = 0; i < swaps.length; i++) {
+        uint256 len = swaps.length;
+        for (uint8 i = 0; i < len; ) {
             _executeSwap(swaps[i], i);
+            unchecked { ++i; }
         }
         
         uint256 balanceAfter = IERC20(token).balanceOf(address(this));
-        uint256 repayAmount = amount + fee;
+        uint256 repayAmount;
+        unchecked { repayAmount = amount + fee; }
         
         // Validate profitability
         if (balanceAfter < balanceBefore + fee) {
             revert ArbNotProfitable(balanceBefore + fee, balanceAfter);
         }
         
-        uint256 grossProfit = balanceAfter - balanceBefore;
+        uint256 grossProfit;
+        unchecked { grossProfit = balanceAfter - balanceBefore; }
         
         // Verify minimum profit threshold
-        uint256 minProfit = (amount * minProfitBps) / 10000;
+        uint256 minProfit;
+        unchecked { minProfit = (amount * minProfitBps) / 10000; }
         if (grossProfit < minProfit) {
             revert ArbNotProfitable(minProfit, grossProfit);
         }
         
         // Calculate and distribute profits
-        uint256 netProfit = grossProfit - fee;
+        uint256 netProfit;
+        unchecked { netProfit = grossProfit - fee; }
         _distributeProfits(token, netProfit);
         
         // Approve repayment
         IERC20(token).forceApprove(msg.sender, repayAmount);
         
-        emit ArbExecuted(token, amount, grossProfit, netProfit, 
-            (netProfit * (10000 - insuranceSplitBps)) / 10000,
-            (netProfit * insuranceSplitBps) / 10000
-        );
+        unchecked {
+            uint256 insSplit = insuranceSplitBps;
+            emit ArbExecuted(token, amount, grossProfit, netProfit, 
+                (netProfit * (10000 - insSplit)) / 10000,
+                (netProfit * insSplit) / 10000
+            );
+        }
         
         return keccak256("ERC3156FlashBorrower.onFlashLoan");
     }
+
     
     /**
      * @notice Execute a single swap on the specified DEX
      */
     function _executeSwap(SwapParams memory params, uint8 index) internal {
+        // If amountIn is 0, use the full balance of tokenIn
+        if (params.amountIn == 0) {
+            params.amountIn = IERC20(params.tokenIn).balanceOf(address(this));
+        }
+        
         uint256 balanceBefore = IERC20(params.tokenOut).balanceOf(address(this));
         
         // Approve the router
         if (params.dex == DEX.Aerodrome) {
             _executeAerodromeSwap(params);
-        } else if (params.dex == DEX.UniswapV3) {
+        } else if (params.dex == DEX.UniswapV3 || params.dex == DEX.PancakeV3) {
             _executeUniswapSwap(params);
+        } else if (params.dex == DEX.UniswapV2) {
+            _executeUniswapV2Swap(params);
+        } else if (params.dex == DEX.Maverick) {
+            _executeMaverickSwap(params);
         }
         
         uint256 balanceAfter = IERC20(params.tokenOut).balanceOf(address(this));
@@ -288,6 +326,65 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
         }
         
         emit SwapExecuted(params.dex, params.tokenIn, params.tokenOut, params.amountIn, amountOut);
+    }
+
+    /**
+     * @notice Execute swap on Maverick V1
+     */
+    function _executeMaverickSwap(SwapParams memory params) internal {
+        address routerToUse = params.router != address(0) ? params.router : address(maverickRouter);
+        require(routerToUse != address(0), "Invalid Maverick router");
+        
+        IERC20(params.tokenIn).forceApprove(routerToUse, params.amountIn);
+        
+        // extraData can contain the pool address for Maverick
+        address pool = address(0);
+        if (params.extraData.length == 32) {
+            pool = abi.decode(params.extraData, (address));
+        }
+
+        if (pool != address(0)) {
+            IMaverickRouter(routerToUse).exactInputSingle(IMaverickRouter.ExactInputSingleParams({
+                tokenIn: params.tokenIn,
+                tokenOut: params.tokenOut,
+                pool: pool,
+                recipient: address(this),
+                deadline: block.timestamp + 300,
+                amountIn: params.amountIn,
+                amountOutMinimum: params.minAmountOut,
+                sqrtPriceLimitX96: 0
+            }));
+        } else {
+            // Default to path-based swap if pool not provided
+            IMaverickRouter(routerToUse).exactInput(IMaverickRouter.ExactInputParams({
+                path: abi.encodePacked(params.tokenIn, params.tokenOut), // Simplified path
+                recipient: address(this),
+                deadline: block.timestamp + 300,
+                amountIn: params.amountIn,
+                amountOutMinimum: params.minAmountOut
+            }));
+        }
+    }
+
+    /**
+     * @notice Execute swap on standard Uniswap V2 fork
+     */
+    function _executeUniswapV2Swap(SwapParams memory params) internal {
+        address routerToUse = params.router != address(0) ? params.router : address(aerodromeRouter); // Placeholder or specific V2 router
+        require(routerToUse != address(0), "Invalid V2 router");
+        IERC20(params.tokenIn).forceApprove(routerToUse, params.amountIn);
+        
+        address[] memory path = new address[](2);
+        path[0] = params.tokenIn;
+        path[1] = params.tokenOut;
+        
+        IUniswapV2Router(routerToUse).swapExactTokensForTokens(
+            params.amountIn,
+            params.minAmountOut,
+            path,
+            address(this),
+            block.timestamp + 300
+        );
     }
     
     /**
@@ -314,10 +411,13 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
     }
     
     /**
-     * @notice Execute swap on Uniswap V3
+     * @notice Execute swap on Uniswap V3 (or compatible like PancakeSwap V3)
      */
     function _executeUniswapSwap(SwapParams memory params) internal {
-        IERC20(params.tokenIn).forceApprove(address(uniswapRouter), params.amountIn);
+        address routerToUse = params.router != address(0) ? params.router : address(uniswapRouter);
+        require(routerToUse != address(0), "Invalid Uniswap router");
+        
+        IERC20(params.tokenIn).forceApprove(routerToUse, params.amountIn);
         
         IUniswapV3Router.ExactInputSingleParams memory uniParams = IUniswapV3Router.ExactInputSingleParams({
             tokenIn: params.tokenIn,
@@ -329,8 +429,9 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
             sqrtPriceLimitX96: 0
         });
         
-        uniswapRouter.exactInputSingle(uniParams);
+        IUniswapV3Router(routerToUse).exactInputSingle(uniParams);
     }
+
     
     /**
      * @notice Distribute profits to treasury and insurance fund
@@ -338,15 +439,27 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
     function _distributeProfits(address token, uint256 profit) internal {
         if (profit == 0) return;
         
-        uint256 insuranceAmount = (profit * insuranceSplitBps) / 10000;
-        uint256 treasuryAmount = profit - insuranceAmount;
+        uint256 insSplit = insuranceSplitBps;
+        uint256 insuranceAmount;
+        uint256 treasuryAmount;
         
-        if (insuranceAmount > 0 && insuranceFund != address(0)) {
-            IERC20(token).safeTransfer(insuranceFund, insuranceAmount);
+        unchecked {
+            insuranceAmount = (profit * insSplit) / 10000;
+            treasuryAmount = profit - insuranceAmount;
         }
         
-        if (treasuryAmount > 0 && treasury != address(0)) {
-            IERC20(token).safeTransfer(treasury, treasuryAmount);
+        if (insuranceAmount > 0) {
+            address insFund = insuranceFund;
+            if (insFund != address(0)) {
+                IERC20(token).safeTransfer(insFund, insuranceAmount);
+            }
+        }
+        
+        if (treasuryAmount > 0) {
+            address trsury = treasury;
+            if (trsury != address(0)) {
+                IERC20(token).safeTransfer(trsury, treasuryAmount);
+            }
         }
     }
     
@@ -385,11 +498,17 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
         
         uint256 balanceAfter = IERC20(stableToken).balanceOf(address(this));
         
-        require(balanceAfter > balanceBefore + minProfit, "PSM arb not profitable");
+        uint256 profit;
+        unchecked {
+            if (balanceAfter < balanceBefore + minProfit) {
+                revert ArbNotProfitable(balanceBefore + minProfit, balanceAfter);
+            }
+            profit = balanceAfter - balanceBefore;
+        }
         
-        uint256 profit = balanceAfter - balanceBefore;
         _distributeProfits(stableToken, profit);
     }
+
     
     /**
      * @notice Execute triangular arbitrage
@@ -416,6 +535,7 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
         // Leg 1: A → B
         swaps[0] = SwapParams({
             dex: dexAB,
+            router: address(0),
             tokenIn: tokenA,
             tokenOut: tokenB,
             amountIn: amountA,
@@ -428,6 +548,7 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
         // Leg 2: B → C (amount will be updated dynamically)
         swaps[1] = SwapParams({
             dex: dexBC,
+            router: address(0),
             tokenIn: tokenB,
             tokenOut: tokenC,
             amountIn: 0, // Will use full balance
@@ -440,6 +561,7 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
         // Leg 3: C → A
         swaps[2] = SwapParams({
             dex: dexCA,
+            router: address(0),
             tokenIn: tokenC,
             tokenOut: tokenA,
             amountIn: 0, // Will use full balance
@@ -485,40 +607,32 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
      * @return buyDex Which DEX to buy on
      */
     function checkArbOpportunity(
-        address tokenA,
-        address tokenB,
-        uint256 amountIn,
-        bool aeroStable,
-        uint24 uniFee
-    ) external view returns (bool profitable, uint256 profit, DEX buyDex) {
-        // Get Aerodrome price
-        uint256 aeroOut = this.getAerodromeQuote(tokenA, tokenB, amountIn, aeroStable);
-        
-        // For Uniswap, we'd need to call quoter (not available as view)
-        // This is a simplified check - real implementation uses off-chain quoter
-        
-        // Placeholder logic - real implementation compares both prices
+        address /* tokenA */,
+        address /* tokenB */,
+        uint256 /* amountIn */,
+        bool /* aeroStable */,
+        uint24 /* uniFee */
+    ) external pure returns (bool profitable, uint256 profit, DEX buyDex) {
+        // Placeholder logic - real implementation compares prices off-chain
         return (false, 0, DEX.Aerodrome);
     }
+
     
     // ═══════════════════════════════════════════════════════════════════════════════
     // SAFETY CHECKS
     // ═══════════════════════════════════════════════════════════════════════════════
     
     function _checkSolvency() internal view {
-        if (!sentinelActive || vault == address(0)) return;
+        if (!sentinelActive) return;
+        address v = vault;
+        if (v == address(0)) return;
         
-        (bool success, bytes memory data) = vault.staticcall(
-            abi.encodeWithSignature("getSolvencyRatio()")
-        );
-        
-        if (success && data.length == 32) {
-            uint256 ratio = abi.decode(data, (uint256));
-            if (ratio < minSolvencyThreshold) {
-                revert SolvencyCheckFailed(ratio);
-            }
+        uint256 ratio = IKerneVault(v).getSolvencyRatio();
+        if (ratio < minSolvencyThreshold) {
+            revert SolvencyCheckFailed(ratio);
         }
     }
+
     
     // ═══════════════════════════════════════════════════════════════════════════════
     // ADMIN FUNCTIONS
@@ -542,6 +656,14 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
     function setInsuranceFund(address _insuranceFund) external onlyRole(DEFAULT_ADMIN_ROLE) {
         insuranceFund = _insuranceFund;
     }
+
+    function setVault(address _vault) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        vault = _vault;
+    }
+
+    function setPsm(address _psm) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        psm = _psm;
+    }
     
     function setInsuranceSplit(uint256 bps) external onlyRole(SENTINEL_ROLE) {
         require(bps <= 5000, "Max 50%");
@@ -564,7 +686,7 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
         emit SentinelToggled(active);
     }
     
-    function setRouters(address _aerodrome, address _uniswap) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setRouters(address _aerodrome, address _uniswap, address _maverick) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (_aerodrome != address(0)) {
             aerodromeRouter = IAerodromeRouter(_aerodrome);
             aerodromeFactory = aerodromeRouter.defaultFactory();
@@ -572,7 +694,11 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
         if (_uniswap != address(0)) {
             uniswapRouter = IUniswapV3Router(_uniswap);
         }
+        if (_maverick != address(0)) {
+            maverickRouter = IMaverickRouter(_maverick);
+        }
     }
+
     
     function pause() external onlyRole(SENTINEL_ROLE) {
         _pause();

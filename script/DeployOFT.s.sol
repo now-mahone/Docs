@@ -13,6 +13,7 @@ contract DeployOFT is Script {
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        address admin = vm.addr(deployerPrivateKey);
         vm.startBroadcast(deployerPrivateKey);
 
         address lzEndpoint = _resolveEndpoint(block.chainid);
@@ -23,11 +24,12 @@ contract DeployOFT is Script {
 
         console.log("Deploying OFTs on:", chainName);
         console.log("LayerZero Endpoint:", lzEndpoint);
+        console.log("Delegate (Admin):", admin);
 
-        KerneOFTV2 kusd = new KerneOFTV2("Kerne Synthetic Dollar", "kUSD", sharedDecimals, lzEndpoint);
+        KerneOFTV2 kusd = new KerneOFTV2("Kerne Synthetic Dollar", "kUSD", lzEndpoint, admin);
         console.log("kUSD OFT deployed at:", address(kusd));
 
-        KerneOFTV2 kerne = new KerneOFTV2("Kerne", "KERNE", 8, lzEndpoint);
+        KerneOFTV2 kerne = new KerneOFTV2("Kerne", "KERNE", lzEndpoint, admin);
         console.log("KERNE OFT deployed at:", address(kerne));
 
         vm.stopBroadcast();

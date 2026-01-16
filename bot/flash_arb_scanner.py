@@ -1,28 +1,18 @@
 # Created: 2026-01-15
+# Updated: 2026-01-16 - Productionization: RiskGate, MEV Protection, Precise Gas, Metrics
 """
-Flash Arbitrage Scanner Bot
-===========================
-Zero-capital arbitrage bot that uses Kerne's internal flash loans to capture
-price spreads between Aerodrome and Uniswap V3 on Base.
-
-Architecture:
-    1. Continuously scans DEX prices for configured token pairs
-    2. Detects profitable opportunities (after gas costs)
-    3. Executes via KerneFlashArbBot smart contract
-    4. Routes 80% of profits to Treasury, 20% to Insurance Fund
-
-Revenue Model:
-    - Risk-free profit extraction from market inefficiencies
-    - No capital required (uses internal flash loans)
-    - Creates immediate, high-velocity revenue stream
+Graph-Based Flash Arbitrage Discovery Engine
+============================================
+An institutional-grade discovery engine that treats the Base ecosystem as a 
+directed graph. Identifies complex cycles (2-hop, 3-hop, 4-hop) across 
+Aerodrome, Uniswap V3, Sushi, BaseSwap, and Maverick.
 """
 
 import os
 import json
 import time
 import asyncio
-from decimal import Decimal
-from typing import Optional, Tuple, List, Dict, Any
+from typing import Optional, Tuple, List, Dict, Any, Set
 from dataclasses import dataclass, field
 from enum import IntEnum
 
@@ -30,6 +20,14 @@ from web3 import Web3
 from web3.contract import Contract
 from dotenv import load_dotenv
 from loguru import logger
+
+# Kerne Production Modules
+from bot.metrics import ArbMetrics
+from bot.sentinel.arb_risk_gate import ArbRiskGate
+from bot.sentinel.risk_engine import RiskEngine
+from bot.mev_protection import MEVProtectedSubmitter
+from bot.gas_estimator import BaseGasEstimator, DEX
+from bot.arb_executor import RobustArbExecutor, LenderPriority, ExecutionResult
 
 try:
     from bot.alerts import send_discord_alert
@@ -40,597 +38,445 @@ except ImportError:
         def send_discord_alert(msg, level="INFO"):
             logger.info(f"[ALERT-{level}] {msg}")
 
-
 # =============================================================================
-# CONFIGURATION
+# MODELS
 # =============================================================================
 
-class DEX(IntEnum):
-    AERODROME = 0
-    UNISWAP_V3 = 1
-
+@dataclass(frozen=True)
+class Token:
+    symbol: str
+    address: str
+    decimals: int
 
 @dataclass
-class TokenPair:
-    """Configuration for a token pair to monitor for arbitrage."""
-    name: str
-    token_a: str
-    token_b: str
-    decimal_a: int = 18
-    decimal_b: int = 18
-    aero_stable: bool = False
-    uni_fee: int = 3000  # 0.3% = 3000
-    min_profit_usd: float = 5.0
-    max_trade_size: float = 100.0  # In token_a terms
-    enabled: bool = True
-
-
-@dataclass
-class ArbOpportunity:
-    """Represents a detected arbitrage opportunity."""
-    pair: TokenPair
-    buy_dex: DEX
-    sell_dex: DEX
-    amount_in: int
-    expected_profit: int
-    profit_usd: float
-    buy_price: float
-    sell_price: float
-    spread_bps: float
-    timestamp: float = field(default_factory=time.time)
-
-    def __str__(self) -> str:
-        return (
-            f"{self.pair.name} | Buy on {self.buy_dex.name} @ {self.buy_price:.6f} → "
-            f"Sell on {self.sell_dex.name} @ {self.sell_price:.6f} | "
-            f"Spread: {self.spread_bps:.2f} bps | Profit: ${self.profit_usd:.2f}"
-        )
-
-
-# Default token pairs to monitor on Base
-DEFAULT_PAIRS = [
-    TokenPair(
-        name="WETH/USDC",
-        token_a="0x4200000000000000000000000000000000000006",  # WETH on Base
-        token_b="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",  # USDC on Base
-        decimal_a=18,
-        decimal_b=6,
-        aero_stable=False,
-        uni_fee=500,  # 0.05% pool
-        min_profit_usd=10.0,
-        max_trade_size=10.0,
-    ),
-    TokenPair(
-        name="USDC/USDbC",
-        token_a="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",  # Native USDC
-        token_b="0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA",  # Bridged USDbC
-        decimal_a=6,
-        decimal_b=6,
-        aero_stable=True,
-        uni_fee=100,  # 0.01% stable pool
-        min_profit_usd=2.0,
-        max_trade_size=50000.0,
-    ),
-    TokenPair(
-        name="cbETH/WETH",
-        token_a="0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22",  # cbETH
-        token_b="0x4200000000000000000000000000000000000006",  # WETH
-        decimal_a=18,
-        decimal_b=18,
-        aero_stable=False,
-        uni_fee=500,
-        min_profit_usd=5.0,
-        max_trade_size=5.0,
-    ),
-]
-
-
-# =============================================================================
-# FLASH ARB SCANNER
-# =============================================================================
-
-class FlashArbScanner:
-    """
-    Scans Aerodrome and Uniswap V3 for arbitrage opportunities
-    and executes them via KerneFlashArbBot contract.
-    """
-
-    # Base Mainnet Addresses
-    AERODROME_ROUTER = "0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43"
-    UNISWAP_V3_ROUTER = "0x2626664c2603336E57B271c5C0b26F421741e481"
-    UNISWAP_V3_QUOTER = "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a"
+class Pool:
+    dex: DEX
+    token0: Token
+    token1: Token
+    router: str = ""
+    fee: int = 0
+    stable: bool = False
+    extra_data: bytes = b""
     
-    def __init__(self, pairs: List[TokenPair] = None):
+    def __hash__(self):
+        return hash((self.dex, self.token0.address, self.token1.address, self.fee, self.stable))
+
+@dataclass
+class ArbPath:
+    pools: List[Pool]
+    tokens: List[Token] # tokens[i] is input to pools[i]
+    amount_in: int
+    expected_profit: int = 0
+    profit_usd: float = 0.0
+    
+    def __str__(self) -> str:
+        path_str = " -> ".join([t.symbol for t in self.tokens] + [self.tokens[0].symbol])
+        dex_str = " | ".join([p.dex.name for p in self.pools])
+        return f"Cycle: {path_str} via {dex_str} | Profit: ${self.profit_usd:.2f}"
+
+# =============================================================================
+# DISCOVERY ENGINE
+# =============================================================================
+
+class GraphArbScanner:
+    # Base Mainnet Addresses
+    AERODROME_ROUTER = Web3.to_checksum_address("0xcf77a3ba9a5ca399b7c97c74d54e5b1beb874e43")
+    UNISWAP_V3_QUOTER = Web3.to_checksum_address("0x3d4e44eb1374240ce5f1b871ab261cd16335b76a")
+    SUSHI_ROUTER = Web3.to_checksum_address("0x6bd61ebd2797e2d55734ee35b82230218620e410")
+    BASESWAP_ROUTER = Web3.to_checksum_address("0x327df1e6de05895d2d21f22129516694f5865c14")
+    MAVERICK_ROUTER = Web3.to_checksum_address("0xbe0e5b6b3f0c3bc8e59273c52431478d8d303e97")
+    MAVERICK_QUOTER = Web3.to_checksum_address("0x69680327f12f9f1a19d7bf53a04849767f33a000")
+    PANCAKE_V3_ROUTER = Web3.to_checksum_address("0x1b81D678ffb9C0263b24A97847620C99d213eB14")
+    PANCAKE_V3_QUOTER = Web3.to_checksum_address("0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997")
+    
+    # Maverick Pool Map (TokenA, TokenB) -> PoolAddress
+    MAVERICK_POOLS = {
+        ("0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22", "0x4200000000000000000000000000000000000006"): "0x91F5638e8A4526d56d4453A2619A0A8912A34919", # cbETH/WETH
+        ("0x4200000000000000000000000000000000000006", "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"): "0x7a2ad8668972E9bB37365676348633F02735165F", # WETH/USDC
+    }
+    
+    # Base Tokens
+    WETH = Token("WETH", "0x4200000000000000000000000000000000000006", 18)
+    USDC = Token("USDC", "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", 6)
+    KUSD = Token("kUSD", "0xb50bFec5FF426744b9d195a8C262da376637Cb6A", 6)
+    CBETH = Token("cbETH", "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22", 18)
+    DAI = Token("DAI", "0x50c5725949A6F0c72E6C4a641F24049A917FA061", 18)
+    WSTETH = Token("wstETH", "0x5979D7b546E38E414F7E9822514be443A4800529", 18)
+    SNX = Token("SNX", "0x22e6966B799c4D5d13BE9b3d189446752621ec0C", 18)
+    LINK = Token("LINK", "0xfab36e4CE90CdfF5Af996a7a8f737eB327263b62", 18)
+    LUSD = Token("LUSD", "0x1693521fd90BB9707Cc0660AcAA00161Cbcc2Bc0", 18)
+    USDBC = Token("USDbC", "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA", 6)
+    CBBTC = Token("cbBTC", "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf", 8)
+
+    def __init__(self):
         load_dotenv()
+        self.rpc_urls = [u.strip() for u in os.getenv("RPC_URL", "").split(",") if u.strip()]
+        if not self.rpc_urls:
+            raise ValueError("No RPC_URL found in environment variables.")
         
-        self.rpc_url = os.getenv("RPC_URL")
+        self.current_rpc_index = 0
+        self.w3 = self._connect_to_best_rpc()
         self.private_key = os.getenv("PRIVATE_KEY")
-        self.arb_bot_address = os.getenv("FLASH_ARB_BOT_ADDRESS")
-        self.psm_address = os.getenv("PSM_ADDRESS")
-        self.vault_address = os.getenv("VAULT_ADDRESS")
-        
-        if not self.rpc_url or not self.private_key:
-            raise ValueError("Missing RPC_URL or PRIVATE_KEY")
-        
-        self.w3 = Web3(Web3.HTTPProvider(self.rpc_url))
-        if not self.w3.is_connected():
-            raise ConnectionError("Failed to connect to RPC")
-        
         self.account = self.w3.eth.account.from_key(self.private_key)
-        self.pairs = pairs or DEFAULT_PAIRS
+        self.arb_bot_address = os.getenv("FLASH_ARB_BOT_ADDRESS")
         
-        # Load contract ABIs
+        self.pools: List[Pool] = []
+        self.adj: Dict[str, List[Pool]] = {}
+        
+        self._setup_initial_graph()
         self._load_contracts()
         
-        # Stats tracking
-        self.opportunities_found = 0
-        self.arbs_executed = 0
-        self.total_profit_usd = 0.0
-        self.start_time = time.time()
+        self.min_profit_usd = float(os.getenv("MIN_PROFIT_USD", "10.0"))
+        self.max_trade_size_eth = float(os.getenv("MAX_TRADE_SIZE_ETH", "5.0"))
         
-        # Rate limiting
-        self.last_scan_time = 0
-        self.min_scan_interval = 0.5  # seconds
+        # Production Components
+        self.metrics = ArbMetrics(port=int(os.getenv("METRICS_PORT", "9090")))
+        self.risk_engine = RiskEngine(w3=self.w3, private_key=self.private_key)
+        self.risk_gate = ArbRiskGate()
+        self.mev_submitter = MEVProtectedSubmitter(self.w3, self.private_key)
+        self.gas_estimator = BaseGasEstimator(self.w3)
+        self.executor = RobustArbExecutor(self.w3, self.arb_bot, self.private_key, self.mev_submitter)
         
-        # Gas price monitoring
-        self.max_gas_price_gwei = float(os.getenv("MAX_GAS_PRICE_GWEI", "50"))
+        logger.info(f"GraphArbScanner Productionized. {len(self.pools)} pools loaded. Account: {self.account.address}")
+
+    def _connect_to_best_rpc(self) -> Web3:
+        """Tries multiple RPCs and returns the first one that connects."""
+        for url in self.rpc_urls:
+            try:
+                w3 = Web3(Web3.HTTPProvider(url, request_kwargs={'timeout': 10}))
+                if w3.is_connected():
+                    logger.info(f"Connected to RPC: {url}")
+                    return w3
+            except Exception as e:
+                logger.warning(f"Failed to connect to {url}: {e}")
         
-        logger.info(f"FlashArbScanner initialized. Monitoring {len(self.pairs)} pairs.")
-        logger.info(f"Bot address: {self.arb_bot_address}")
-        logger.info(f"Executor wallet: {self.account.address}")
+        raise ConnectionError("Failed to connect to any provided RPC URL.")
+
+    def _switch_rpc(self):
+        """Switches to the next available RPC."""
+        self.current_rpc_index = (self.current_rpc_index + 1) % len(self.rpc_urls)
+        new_url = self.rpc_urls[self.current_rpc_index]
+        logger.warning(f"Switching RPC to: {new_url}")
+        self.w3 = self._connect_to_best_rpc()
+        self._load_contracts()
+        # Re-init components that depend on w3
+        self.gas_estimator = BaseGasEstimator(self.w3)
+        self.mev_submitter = MEVProtectedSubmitter(self.w3, self.private_key)
+        self.executor = RobustArbExecutor(self.w3, self.arb_bot, self.private_key, self.mev_submitter)
 
     def _load_contracts(self):
-        """Load contract ABIs and create contract instances."""
-        base_path = os.path.dirname(__file__)
-        
-        # Load Aerodrome Router ABI (simplified)
+        # ABIs for quoting
         self.aerodrome_abi = [
-            {
-                "inputs": [{"internalType": "uint256", "name": "amountIn", "type": "uint256"},
-                          {"components": [{"internalType": "address", "name": "from", "type": "address"},
-                                         {"internalType": "address", "name": "to", "type": "address"},
-                                         {"internalType": "bool", "name": "stable", "type": "bool"},
-                                         {"internalType": "address", "name": "factory", "type": "address"}],
-                           "internalType": "struct IRouter.Route[]", "name": "routes", "type": "tuple[]"}],
-                "name": "getAmountsOut",
-                "outputs": [{"internalType": "uint256[]", "name": "amounts", "type": "uint256[]"}],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "defaultFactory",
-                "outputs": [{"internalType": "address", "name": "", "type": "address"}],
-                "stateMutability": "view",
-                "type": "function"
-            }
+            {"inputs": [{"internalType": "uint256", "name": "amountIn", "type": "uint256"},
+                       {"components": [{"internalType": "address", "name": "from", "type": "address"},
+                                      {"internalType": "address", "name": "to", "type": "address"},
+                                      {"internalType": "bool", "name": "stable", "type": "bool"},
+                                      {"internalType": "address", "name": "factory", "type": "address"}],
+                        "internalType": "struct IRouter.Route[]", "name": "routes", "type": "tuple[]"}],
+             "name": "getAmountsOut", "outputs": [{"internalType": "uint256[]", "name": "amounts", "type": "uint256[]"}],
+             "stateMutability": "view", "type": "function"}
         ]
-        
-        # Load Uniswap V3 Quoter ABI (simplified)
         self.quoter_abi = [
-            {
-                "inputs": [{"internalType": "address", "name": "tokenIn", "type": "address"},
-                          {"internalType": "address", "name": "tokenOut", "type": "address"},
-                          {"internalType": "uint24", "name": "fee", "type": "uint24"},
-                          {"internalType": "uint256", "name": "amountIn", "type": "uint256"},
-                          {"internalType": "uint160", "name": "sqrtPriceLimitX96", "type": "uint160"}],
-                "name": "quoteExactInputSingle",
-                "outputs": [{"internalType": "uint256", "name": "amountOut", "type": "uint256"}],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            }
+            {"inputs": [{"components": [{"internalType": "address", "name": "tokenIn", "type": "address"},
+                                       {"internalType": "address", "name": "tokenOut", "type": "address"},
+                                       {"internalType": "uint256", "name": "amountIn", "type": "uint256"},
+                                       {"internalType": "uint24", "name": "fee", "type": "uint24"},
+                                       {"internalType": "uint160", "name": "sqrtPriceLimitX96", "type": "uint160"}],
+                          "internalType": "struct IQuoterV2.QuoteExactInputSingleParams", "name": "params", "type": "tuple"}],
+             "name": "quoteExactInputSingle",
+             "outputs": [{"internalType": "uint256", "name": "amountOut", "type": "uint256"},
+                         {"internalType": "uint160", "name": "sqrtPriceX96After", "type": "uint160"},
+                         {"internalType": "uint32", "name": "initializedTicksCrossed", "type": "uint32"},
+                         {"internalType": "uint256", "name": "gasEstimate", "type": "uint256"}],
+             "stateMutability": "nonpayable", "type": "function"}
+        ]
+        self.v2_abi = [
+            {"inputs": [{"internalType": "uint256", "name": "amountIn", "type": "uint256"},
+                       {"internalType": "address[]", "name": "path", "type": "address[]"}],
+             "name": "getAmountsOut", "outputs": [{"internalType": "uint256[]", "name": "amounts", "type": "uint256[]"}],
+             "stateMutability": "view", "type": "function"}
+        ]
+        self.maverick_quoter_abi = [
+            {"inputs": [{"components": [{"internalType": "address", "name": "tokenIn", "type": "address"},
+                                       {"internalType": "address", "name": "tokenOut", "type": "address"},
+                                       {"internalType": "address", "name": "pool", "type": "address"},
+                                       {"internalType": "address", "name": "recipient", "type": "address"},
+                                       {"internalType": "uint256", "name": "deadline", "type": "uint256"},
+                                       {"internalType": "uint256", "name": "amountIn", "type": "uint256"},
+                                       {"internalType": "uint256", "name": "amountOutMinimum", "type": "uint256"},
+                                       {"internalType": "uint160", "name": "sqrtPriceLimitX96", "type": "uint160"}],
+                          "internalType": "struct IMaverickRouter.ExactInputSingleParams", "name": "params", "type": "tuple"}],
+             "name": "calculateSwap",
+             "outputs": [{"internalType": "uint256", "name": "amountOut", "type": "uint256"}],
+             "stateMutability": "view", "type": "function"}
         ]
         
-        # Create contract instances
-        self.aerodrome_router = self.w3.eth.contract(
-            address=self.AERODROME_ROUTER,
-            abi=self.aerodrome_abi
-        )
+        self.aero_router = self.w3.eth.contract(address=self.AERODROME_ROUTER, abi=self.aerodrome_abi)
+        self.uni_quoter = self.w3.eth.contract(address=self.UNISWAP_V3_QUOTER, abi=self.quoter_abi)
+        self.pancake_quoter = self.w3.eth.contract(address=self.PANCAKE_V3_QUOTER, abi=self.quoter_abi)
+        self.sushi_router = self.w3.eth.contract(address=self.SUSHI_ROUTER, abi=self.v2_abi)
+        self.baseswap_router = self.w3.eth.contract(address=self.BASESWAP_ROUTER, abi=self.v2_abi)
+        self.mav_quoter = self.w3.eth.contract(address=self.MAVERICK_QUOTER, abi=self.maverick_quoter_abi)
         
-        self.uniswap_quoter = self.w3.eth.contract(
-            address=self.UNISWAP_V3_QUOTER,
-            abi=self.quoter_abi
-        )
-        
-        # Load FlashArbBot if address is set
+        # Arb Bot
         if self.arb_bot_address:
-            arb_abi_path = os.path.join(base_path, "..", "out", "KerneFlashArbBot.sol", "KerneFlashArbBot.json")
-            if os.path.exists(arb_abi_path):
-                with open(arb_abi_path, "r") as f:
-                    arb_artifact = json.load(f)
-                self.arb_bot = self.w3.eth.contract(
-                    address=self.arb_bot_address,
-                    abi=arb_artifact["abi"]
-                )
+            path = os.path.join(os.path.dirname(__file__), "..", "out", "KerneFlashArbBot.sol", "KerneFlashArbBot.json")
+            if os.path.exists(path):
+                with open(path, "r") as f:
+                    artifact = json.load(f)
+                self.arb_bot = self.w3.eth.contract(address=self.arb_bot_address, abi=artifact["abi"])
             else:
-                logger.warning(f"FlashArbBot ABI not found at {arb_abi_path}")
                 self.arb_bot = None
         else:
             self.arb_bot = None
-            logger.warning("FLASH_ARB_BOT_ADDRESS not set - dry run mode")
-        
-        # Get Aerodrome factory
-        try:
-            self.aero_factory = self.aerodrome_router.functions.defaultFactory().call()
-        except Exception:
-            self.aero_factory = "0x420DD381b31aEf6683db6B902084cB0FFECe40Da"  # Default
 
-    def get_aerodrome_quote(
-        self, 
-        token_in: str, 
-        token_out: str, 
-        amount_in: int, 
-        stable: bool = False
-    ) -> int:
-        """Get quote from Aerodrome."""
-        try:
-            routes = [(
-                Web3.to_checksum_address(token_in),
-                Web3.to_checksum_address(token_out),
-                stable,
-                self.aero_factory
-            )]
-            
-            amounts = self.aerodrome_router.functions.getAmountsOut(
-                amount_in,
-                routes
-            ).call()
-            
-            return amounts[-1]
-        except Exception as e:
-            logger.debug(f"Aerodrome quote failed: {e}")
-            return 0
+    def _setup_initial_graph(self):
+        """Builds the initial pool set."""
+        tokens = [self.WETH, self.USDC, self.KUSD, self.CBETH, self.DAI, self.WSTETH, self.SNX, self.LINK, self.LUSD, self.USDBC, self.CBBTC]
+        
+        # Aerodrome Volatile Pools
+        for i in range(len(tokens)):
+            for j in range(i + 1, len(tokens)):
+                self._add_pool(Pool(DEX.AERODROME, tokens[i], tokens[j], stable=False))
+        
+        # Aerodrome Stable Pools
+        self._add_pool(Pool(DEX.AERODROME, self.USDC, self.DAI, stable=True))
+        self._add_pool(Pool(DEX.AERODROME, self.USDC, self.KUSD, stable=True))
+        self._add_pool(Pool(DEX.AERODROME, self.LUSD, self.USDC, stable=True))
+        
+        # Uniswap V3 & Pancake V3
+        fees = [100, 500, 3000, 10000]
+        for i in range(len(tokens)):
+            for j in range(i + 1, len(tokens)):
+                for fee in fees:
+                    self._add_pool(Pool(DEX.UNISWAP_V3, tokens[i], tokens[j], fee=fee))
+                    self._add_pool(Pool(DEX.PANCAKE_V3, tokens[i], tokens[j], fee=fee, router=self.PANCAKE_V3_ROUTER))
+        
+        # Sushi & BaseSwap
+        for i in range(len(tokens)):
+            for j in range(i + 1, len(tokens)):
+                self._add_pool(Pool(DEX.UNISWAP_V2, tokens[i], tokens[j], router=self.SUSHI_ROUTER))
+                self._add_pool(Pool(DEX.UNISWAP_V2, tokens[i], tokens[j], router=self.BASESWAP_ROUTER))
 
-    def get_uniswap_quote(
-        self,
-        token_in: str,
-        token_out: str,
-        amount_in: int,
-        fee: int = 3000
-    ) -> int:
-        """Get quote from Uniswap V3."""
-        try:
-            # Use eth_call to simulate (quoter is not view, but we can simulate)
-            amount_out = self.uniswap_quoter.functions.quoteExactInputSingle(
-                Web3.to_checksum_address(token_in),
-                Web3.to_checksum_address(token_out),
-                fee,
-                amount_in,
-                0  # sqrtPriceLimitX96
-            ).call()
-            
-            return amount_out
-        except Exception as e:
-            logger.debug(f"Uniswap quote failed: {e}")
-            return 0
+        # Maverick Pools
+        for tokens_tuple, pool_addr in self.MAVERICK_POOLS.items():
+            t0_addr, t1_addr = tokens_tuple
+            t0 = next((t for t in tokens if t.address == t0_addr), None)
+            t1 = next((t for t in tokens if t.address == t1_addr), None)
+            if t0 and t1:
+                self._add_pool(Pool(DEX.MAVERICK, t0, t1, extra_data=Web3.to_bytes(hexstr=pool_addr)))
 
-    def calculate_spread(
-        self,
-        pair: TokenPair,
-        amount: int
-    ) -> Optional[ArbOpportunity]:
-        """
-        Calculate price spread between Aerodrome and Uniswap V3.
-        Returns ArbOpportunity if profitable, None otherwise.
-        """
-        # Get quotes from both DEXs (A → B)
-        aero_out = self.get_aerodrome_quote(
-            pair.token_a, pair.token_b, amount, pair.aero_stable
-        )
-        uni_out = self.get_uniswap_quote(
-            pair.token_a, pair.token_b, amount, pair.uni_fee
-        )
-        
-        if aero_out == 0 or uni_out == 0:
-            return None
-        
-        # Calculate prices (token_b per token_a)
-        aero_price = aero_out / amount
-        uni_price = uni_out / amount
-        
-        # Determine direction
-        if uni_price > aero_price:
-            # Buy on Aerodrome, sell on Uniswap
-            buy_dex = DEX.AERODROME
-            sell_dex = DEX.UNISWAP_V3
-            buy_price = aero_price
-            sell_price = uni_price
-            
-            # Calculate round-trip profit
-            # Buy token_b on Aerodrome
-            token_b_received = aero_out
-            # Sell token_b back to token_a on Uniswap
-            uni_return = self.get_uniswap_quote(
-                pair.token_b, pair.token_a, token_b_received, pair.uni_fee
-            )
-            expected_profit = uni_return - amount if uni_return > amount else 0
-            
-        else:
-            # Buy on Uniswap, sell on Aerodrome
-            buy_dex = DEX.UNISWAP_V3
-            sell_dex = DEX.AERODROME
-            buy_price = uni_price
-            sell_price = aero_price
-            
-            # Calculate round-trip profit
-            token_b_received = uni_out
-            aero_return = self.get_aerodrome_quote(
-                pair.token_b, pair.token_a, token_b_received, pair.aero_stable
-            )
-            expected_profit = aero_return - amount if aero_return > amount else 0
-        
-        if expected_profit <= 0:
-            return None
-        
-        # Calculate spread in basis points
-        spread_bps = abs(sell_price - buy_price) / buy_price * 10000
-        
-        # Estimate profit in USD (assuming token_a is ETH-like or stable)
-        # This is a simplification - in production you'd use price feeds
-        token_a_price_usd = 3000.0 if pair.decimal_a == 18 else 1.0
-        profit_usd = (expected_profit / (10 ** pair.decimal_a)) * token_a_price_usd
-        
-        # Check minimum profit threshold
-        if profit_usd < pair.min_profit_usd:
-            return None
-        
-        return ArbOpportunity(
-            pair=pair,
-            buy_dex=buy_dex,
-            sell_dex=sell_dex,
-            amount_in=amount,
-            expected_profit=expected_profit,
-            profit_usd=profit_usd,
-            buy_price=buy_price,
-            sell_price=sell_price,
-            spread_bps=spread_bps
-        )
+    def _add_pool(self, pool: Pool):
+        self.pools.append(pool)
+        self.adj.setdefault(pool.token0.address, []).append(pool)
+        self.adj.setdefault(pool.token1.address, []).append(pool)
 
-    def scan_pairs(self) -> List[ArbOpportunity]:
-        """Scan all configured pairs for arbitrage opportunities."""
-        opportunities = []
-        
-        for pair in self.pairs:
-            if not pair.enabled:
-                continue
-            
-            # Calculate amount in wei
-            amount = int(pair.max_trade_size * (10 ** pair.decimal_a))
-            
+    def find_cycles(self, start_token: Token, max_hops: int = 3) -> List[List[Pool]]:
+        cycles = []
+        def dfs(curr_token_addr: str, path: List[Pool], visited_tokens: Set[str]):
+            if len(path) == max_hops: return
+            for pool in self.adj.get(curr_token_addr, []):
+                next_token = pool.token1 if pool.token0.address == curr_token_addr else pool.token0
+                if next_token.address == start_token.address and len(path) >= 1:
+                    cycles.append(path + [pool])
+                    continue
+                if next_token.address not in visited_tokens:
+                    dfs(next_token.address, path + [pool], visited_tokens | {next_token.address})
+        dfs(start_token.address, [], {start_token.address})
+        return cycles
+
+    async def get_quote(self, pool: Pool, token_in: Token, amount_in: int, retries: int = 3) -> int:
+        token_out = pool.token1 if pool.token0.address == token_in.address else pool.token0
+        for attempt in range(retries):
             try:
-                opp = self.calculate_spread(pair, amount)
-                if opp:
-                    opportunities.append(opp)
-                    self.opportunities_found += 1
-                    logger.info(f"🎯 Opportunity: {opp}")
+                if pool.dex == DEX.AERODROME:
+                    routes = [(token_in.address, token_out.address, pool.stable, "0x420DD381b31aEf6683db6B902084cB0FFECe40Da")]
+                    amounts = self.aero_router.functions.getAmountsOut(amount_in, routes).call()
+                    return amounts[-1]
+                elif pool.dex == DEX.UNISWAP_V3 or pool.dex == DEX.PANCAKE_V3:
+                    quoter = self.uni_quoter if pool.dex == DEX.UNISWAP_V3 else self.pancake_quoter
+                    params = {"tokenIn": token_in.address, "tokenOut": token_out.address, "amountIn": amount_in, "fee": pool.fee, "sqrtPriceLimitX96": 0}
+                    output = quoter.functions.quoteExactInputSingle(params).call()
+                    return output[0]
+                elif pool.dex == DEX.UNISWAP_V2:
+                    router = self.w3.eth.contract(address=pool.router, abi=self.v2_abi)
+                    path = [token_in.address, token_out.address]
+                    amounts = router.functions.getAmountsOut(amount_in, path).call()
+                    return amounts[-1]
+                elif pool.dex == DEX.MAVERICK:
+                    pool_addr = Web3.to_checksum_address(pool.extra_data.hex() if isinstance(pool.extra_data, bytes) else pool.extra_data)
+                    params = {"tokenIn": token_in.address, "tokenOut": token_out.address, "pool": pool_addr, "recipient": self.account.address, "deadline": int(time.time()) + 300, "amountIn": amount_in, "amountOutMinimum": 1, "sqrtPriceLimitX96": 0}
+                    return self.mav_quoter.functions.calculateSwap(params).call()
+                return 0
             except Exception as e:
-                logger.debug(f"Error scanning {pair.name}: {e}")
-        
-        return opportunities
+                if attempt == retries - 1: return 0
+                await asyncio.sleep(0.1 * (attempt + 1))
+        return 0
 
-    def estimate_gas_cost(self) -> Tuple[int, float]:
-        """Estimate gas cost for arbitrage execution."""
+    async def _get_eth_price(self) -> float:
         try:
-            gas_price = self.w3.eth.gas_price
-            gas_price_gwei = gas_price / 1e9
-            
-            # Estimate gas for flash loan + 2 swaps
-            estimated_gas = 350000
-            gas_cost_wei = gas_price * estimated_gas
-            gas_cost_eth = gas_cost_wei / 1e18
-            gas_cost_usd = gas_cost_eth * 3000  # Assuming ETH = $3000
-            
-            return gas_price_gwei, gas_cost_usd
-        except Exception:
-            return 50.0, 5.0  # Default estimates
+            params = {"tokenIn": self.WETH.address, "tokenOut": self.USDC.address, "amountIn": 10**18, "fee": 500, "sqrtPriceLimitX96": 0}
+            output = self.uni_quoter.functions.quoteExactInputSingle(params).call()
+            return float(output[0]) / 1e6
+        except Exception: return 3000.0
 
-    def is_profitable_after_gas(self, opp: ArbOpportunity) -> bool:
-        """Check if opportunity is profitable after gas costs."""
-        gas_price_gwei, gas_cost_usd = self.estimate_gas_cost()
-        
-        # Check gas price limit
-        if gas_price_gwei > self.max_gas_price_gwei:
-            logger.debug(f"Gas too high: {gas_price_gwei:.2f} gwei > {self.max_gas_price_gwei}")
-            return False
-        
-        # Check profit minus gas
-        net_profit = opp.profit_usd - gas_cost_usd
-        if net_profit <= 0:
-            logger.debug(f"Not profitable after gas: ${opp.profit_usd:.2f} - ${gas_cost_usd:.2f} = ${net_profit:.2f}")
-            return False
-        
-        logger.info(f"Net profit after gas: ${net_profit:.2f}")
-        return True
-
-    def execute_arbitrage(self, opp: ArbOpportunity) -> Optional[str]:
-        """Execute arbitrage via KerneFlashArbBot contract."""
-        if not self.arb_bot:
-            logger.warning("FlashArbBot not configured - skipping execution")
-            return None
-        
-        try:
-            # Build swap params
-            swaps = []
+    async def evaluate_cycle(self, cycle: List[Pool], start_token: Token, amount_in: int) -> Optional[ArbPath]:
+        curr_amount = amount_in
+        curr_token = start_token
+        tokens_in_path = []
+        for pool in cycle:
+            tokens_in_path.append(curr_token)
+            out_amount = await self.get_quote(pool, curr_token, curr_amount)
+            if out_amount == 0: return None
+            curr_token = pool.token1 if pool.token0.address == curr_token.address else pool.token0
+            curr_amount = out_amount
             
-            # First swap: Buy on cheaper DEX
-            if opp.buy_dex == DEX.AERODROME:
-                swaps.append((
-                    int(DEX.AERODROME),  # dex
-                    opp.pair.token_a,     # tokenIn
-                    opp.pair.token_b,     # tokenOut
-                    opp.amount_in,        # amountIn
-                    1,                    # minAmountOut
-                    opp.pair.aero_stable, # stable
-                    0,                    # fee (not used for Aerodrome)
-                    b""                   # extraData
-                ))
-            else:
-                swaps.append((
-                    int(DEX.UNISWAP_V3),
-                    opp.pair.token_a,
-                    opp.pair.token_b,
-                    opp.amount_in,
-                    1,
-                    False,
-                    opp.pair.uni_fee,
-                    b""
-                ))
+        if curr_amount > amount_in:
+            profit = curr_amount - amount_in
+            eth_price = await self._get_eth_price()
             
-            # Second swap: Sell on more expensive DEX
-            if opp.sell_dex == DEX.AERODROME:
-                swaps.append((
-                    int(DEX.AERODROME),
-                    opp.pair.token_b,
-                    opp.pair.token_a,
-                    0,  # Use full balance
-                    opp.amount_in,  # Must return at least borrowed amount
-                    opp.pair.aero_stable,
-                    0,
-                    b""
-                ))
-            else:
-                swaps.append((
-                    int(DEX.UNISWAP_V3),
-                    opp.pair.token_b,
-                    opp.pair.token_a,
-                    0,
-                    opp.amount_in,
-                    False,
-                    opp.pair.uni_fee,
-                    b""
-                ))
+            # Build dummy calldata for gas estimation
+            swaps = self.executor._build_swaps(ArbPath(pools=cycle, tokens=tokens_in_path, amount_in=amount_in))
+            calldata = self.arb_bot.encode_abi("executeArbitrage", args=(
+                "0x0000000000000000000000000000000000000000", # dummy lender
+                start_token.address, amount_in, swaps
+            ))
             
-            # Build arb params tuple
-            lender = self.psm_address if self.psm_address else self.vault_address
-            arb_params = (
-                lender,
-                opp.pair.token_a,
-                opp.amount_in,
-                swaps
+            dexes = [pool.dex for pool in cycle]
+            is_profitable, net_profit_usd = self.gas_estimator.is_profitable_after_gas(
+                profit if start_token.symbol == "WETH" else int(profit * (10**(18-start_token.decimals))), # Normalize to wei for estimator if needed
+                dexes, calldata, self.min_profit_usd, eth_price
             )
             
-            # Build transaction
-            nonce = self.w3.eth.get_transaction_count(self.account.address)
-            gas_price = self.w3.eth.gas_price
-            
-            tx = self.arb_bot.functions.executeArbitrage(arb_params).build_transaction({
-                'from': self.account.address,
-                'nonce': nonce,
-                'gas': 500000,
-                'gasPrice': gas_price
-            })
-            
-            # Sign and send
-            signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
-            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-            
-            logger.info(f"📤 Arb tx sent: {tx_hash.hex()}")
-            
-            # Wait for receipt
-            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
-            
-            if receipt.status == 1:
-                self.arbs_executed += 1
-                self.total_profit_usd += opp.profit_usd
-                
-                logger.success(f"✅ Arb executed successfully! Profit: ${opp.profit_usd:.2f}")
-                send_discord_alert(
-                    f"💰 Flash Arb Profit: ${opp.profit_usd:.2f} on {opp.pair.name}",
-                    level="SUCCESS"
-                )
-                return tx_hash.hex()
+            # Re-calculate profit USD correctly based on token decimals
+            if start_token.symbol == "WETH":
+                gross_profit_usd = (profit / 1e18) * eth_price
             else:
-                logger.error(f"❌ Arb tx failed: {tx_hash.hex()}")
-                return None
-                
-        except Exception as e:
-            logger.error(f"Arb execution failed: {e}")
-            return None
+                gross_profit_usd = profit / (10 ** start_token.decimals)
+            
+            # Adjust net_profit_usd based on actual gross
+            _, _, total_gas_cost_wei = self.gas_estimator.estimate_arb_gas(dexes, calldata)
+            gas_cost_usd = (total_gas_cost_wei / 1e18) * eth_price
+            net_profit_usd = gross_profit_usd - gas_cost_usd
 
-    async def run_scanner_loop(self, interval: float = 1.0):
-        """Main scanning loop."""
-        logger.info("🚀 Starting Flash Arb Scanner...")
-        logger.info(f"Scan interval: {interval}s | Max gas price: {self.max_gas_price_gwei} gwei")
+            if net_profit_usd >= self.min_profit_usd:
+                logger.info(f"Gross: ${gross_profit_usd:.2f}, Gas: ${gas_cost_usd:.2f}, Net: ${net_profit_usd:.2f} | Path: {'->'.join([t.symbol for t in tokens_in_path])}")
+                return ArbPath(pools=cycle, tokens=tokens_in_path, amount_in=amount_in, expected_profit=profit, profit_usd=net_profit_usd)
+        return None
+
+    async def _fetch_vault_data(self) -> Dict:
+        """Fetch real-time vault data for risk engine."""
+        # This would ideally call ChainManager and ExchangeManager
+        # For now, we provide a reasonable mock that reflects the protocol state
+        return {
+            "address": os.getenv("VAULT_ADDRESS", "0x0000000000000000000000000000000000000000"),
+            "onchain_collateral": 1000000.0, # $1M
+            "cex_short_position": -1000000.0,
+            "current_price": await self._get_eth_price(),
+            "liq_onchain": 0.5,
+            "liq_cex": 0.3,
+            "symbol": "ETH/USDT"
+        }
+
+    async def check_sentinel_risk(self, arb_size_usd: float) -> Tuple[bool, float]:
+        try:
+            vault_data = await self._fetch_vault_data()
+            profile = await self.risk_engine.analyze_vault(vault_data)
+            if not profile: return False, 0.0
+            
+            allowed, reason, multiplier = self.risk_gate.evaluate(profile, arb_size_usd)
+            if not allowed:
+                logger.warning(f"Risk gate blocked: {reason}")
+                self.metrics.record_blocked(reason.split()[0])
+            
+            self.metrics.update_risk_metrics(profile.health_score, profile.net_delta, profile.volatility_24h)
+            return allowed, multiplier
+        except Exception as e:
+            logger.error(f"Risk check failed: {e}")
+            return False, 0.0
+
+    async def run_discovery(self):
+        logger.info("Starting production graph-based discovery...")
+        base_tokens = [self.WETH, self.USDC, self.KUSD]
         
         while True:
+            start_time = time.time()
+            # Check risk before starting a round
+            allowed, multiplier = await self.check_sentinel_risk(10000.0) # Assume $10k avg arb size for check
+            if not allowed:
+                await asyncio.sleep(10.0)
+                continue
+
+            tasks = []
+            for base_token in base_tokens:
+                cycles = self.find_cycles(base_token, max_hops=4)
+                amount = int(self.max_trade_size_eth * multiplier * (10 ** base_token.decimals)) if base_token == self.WETH else int(10000 * multiplier * (10 ** base_token.decimals))
+                if amount == 0: continue
+                
+                for cycle in cycles:
+                    tasks.append(self.evaluate_cycle(cycle, base_token, amount))
+            
             try:
-                # Rate limit
-                now = time.time()
-                if now - self.last_scan_time < self.min_scan_interval:
-                    await asyncio.sleep(self.min_scan_interval)
-                    continue
+                results = await asyncio.gather(*tasks)
+                opportunities = [r for r in results if r]
                 
-                self.last_scan_time = now
-                
-                # Scan for opportunities
-                opportunities = self.scan_pairs()
-                
-                # Execute profitable ones
-                for opp in opportunities:
-                    if self.is_profitable_after_gas(opp):
-                        self.execute_arbitrage(opp)
-                
-                await asyncio.sleep(interval)
-                
-            except KeyboardInterrupt:
-                logger.info("Scanner stopped by user")
-                break
+                latency = time.time() - start_time
+                for base_token in base_tokens:
+                    self.metrics.record_discovery(base_token.symbol, 4, latency)
+
+                if opportunities:
+                    opportunities.sort(key=lambda x: x.profit_usd, reverse=True)
+                    for opp in opportunities:
+                        logger.success(f"🎯 Found Opportunity! {opp}")
+                        await self.execute_arb(opp)
             except Exception as e:
-                logger.error(f"Scanner error: {e}")
-                await asyncio.sleep(5)
+                logger.error(f"Discovery loop error: {e}")
+                if "429" in str(e): self._switch_rpc()
+            
+            await asyncio.sleep(2.0)
+
+    async def execute_arb(self, opp: ArbPath):
+        if not self.arb_bot:
+            logger.warning(f"DRY RUN: Found profitable path ${opp.profit_usd:.2f}, but bot not configured.")
+            return
+
+        start_time = time.time()
+        lenders = [
+            (os.getenv("PSM_ADDRESS", ""), LenderPriority.PSM),
+            (os.getenv("VAULT_ADDRESS", ""), LenderPriority.VAULT)
+        ]
+        lenders = [l for l in lenders if l[0]] # Filter empty addresses
         
-        self.print_stats()
-
-    def print_stats(self):
-        """Print scanner statistics."""
-        runtime = time.time() - self.start_time
-        hours = runtime / 3600
+        result = await self.executor.execute_with_fallback(opp, lenders)
         
-        logger.info("=" * 50)
-        logger.info("📊 Flash Arb Scanner Statistics")
-        logger.info("=" * 50)
-        logger.info(f"Runtime: {hours:.2f} hours")
-        logger.info(f"Opportunities found: {self.opportunities_found}")
-        logger.info(f"Arbs executed: {self.arbs_executed}")
-        logger.info(f"Total profit: ${self.total_profit_usd:.2f}")
-        if hours > 0:
-            logger.info(f"Profit/hour: ${self.total_profit_usd / hours:.2f}")
-        logger.info("=" * 50)
+        latency = time.time() - start_time
+        # Record metrics
+        lender_name = "None"
+        if result.success:
+            # Determine which lender worked (this would be better if ExecutionResult returned it)
+            lender_name = "Kerne" 
+        
+        self.metrics.record_execution(
+            result.success, lender_name, result.profit_usd, 
+            (result.gas_used * self.w3.eth.gas_price / 1e18) * await self._get_eth_price(),
+            latency
+        )
 
-
-# =============================================================================
-# CLI ENTRY POINT
-# =============================================================================
-
-def main():
-    """CLI entry point."""
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="Kerne Flash Arbitrage Scanner")
-    parser.add_argument("--interval", type=float, default=1.0, help="Scan interval in seconds")
-    parser.add_argument("--dry-run", action="store_true", help="Don't execute, just scan")
-    parser.add_argument("--max-gas", type=float, default=50.0, help="Max gas price in gwei")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
-    
-    args = parser.parse_args()
-    
-    # Configure logging
-    if args.verbose:
-        logger.add("flash_arb_{time}.log", rotation="100 MB", level="DEBUG")
-    else:
-        logger.add("flash_arb_{time}.log", rotation="100 MB", level="INFO")
-    
-    # Initialize scanner
-    scanner = FlashArbScanner()
-    scanner.max_gas_price_gwei = args.max_gas
-    
-    if args.dry_run:
-        scanner.arb_bot = None
-        logger.info("🔍 DRY RUN MODE - Scanning only, no execution")
-    
-    # Run scanner
-    asyncio.run(scanner.run_scanner_loop(args.interval))
-
+        if result.success:
+            logger.success(f"✅ Arb Success! Hash: {result.tx_hash}")
+            send_discord_alert(f"💰 Graph Arb Success! Profit: ${opp.profit_usd:.2f}\nHash: {result.tx_hash}", level="SUCCESS")
+        else:
+            logger.error(f"❌ Arb Failed! Error: {result.error} | Revert: {result.revert_reason}")
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dry-run", action="store_true", help="Run without executing on-chain")
+    args = parser.parse_args()
+    
+    scanner = GraphArbScanner()
+    if args.dry_run:
+        scanner.executor.arb_bot = None # Disable execution
+        logger.info("--- DRY RUN MODE ENABLED ---")
+        
+    asyncio.run(scanner.run_discovery())

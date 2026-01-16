@@ -383,6 +383,17 @@ contract KerneTreasury is Ownable, ReentrancyGuard, Pausable {
     }
 
     /**
+     * @notice Update KERNE token address
+     * @param _kerneToken New KERNE token address
+     */
+    function setKerneToken(address _kerneToken) external onlyOwner {
+        if (_kerneToken == address(0)) revert ZeroAddress();
+        address oldToken = kerneToken;
+        kerneToken = _kerneToken;
+        // No event for this yet, but we could add one
+    }
+
+    /**
      * @notice Update Aerodrome router address
      * @param newRouter New router address
      */

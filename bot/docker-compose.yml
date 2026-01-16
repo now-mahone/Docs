@@ -82,3 +82,30 @@ services:
       options:
         max-size: "50m"
         max-file: "5"
+
+  kerne-flash-arb:
+    build: .
+    container_name: kerne-flash-arb
+    restart: always
+    command: ["python", "flash_arb_scanner.py", "--interval", "2.0"]
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env
+      - ../out:/app/out
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; exit(0 if os.path.exists('flash_arb_scanner.py') else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+

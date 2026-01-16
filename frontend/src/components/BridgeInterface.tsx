@@ -2,8 +2,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useAccount } from 'wagmi';
-import { formatUnits, parseUnits } from 'viem';
+import { useAccount, useWriteContract, usePublicClient, useReadContract } from 'wagmi';
+import { formatUnits, parseUnits, zeroAddress, pad } from 'viem';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -12,9 +12,19 @@ import { toast } from 'sonner';
 import { useKUSD } from '../hooks/useKUSD';
 import { useToken } from '../hooks/useToken';
 import { KUSD_ADDRESS, KERNE_ADDRESS } from '../constants/addresses';
+import { OFT_ABI } from '../constants/abis';
+
+const EID_MAP: Record<string, number> = {
+  base: 30184,
+  arbitrum: 30110,
+  optimism: 30111,
+  mantle: 30181
+};
 
 export function BridgeInterface() {
   const { address } = useAccount();
+  const publicClient = usePublicClient();
+  const { writeContractAsync } = useWriteContract();
   const { kusdBalance } = useKUSD();
   const { balance: kerneBalance } = useToken(address as `0x${string}`, address as `0x${string}`, KERNE_ADDRESS as `0x${string}`);
 
@@ -23,20 +33,51 @@ export function BridgeInterface() {
   const [destinationChain, setDestinationChain] = useState('arbitrum');
   const [isBridging, setIsBridging] = useState(false);
 
+  const tokenAddress = token === 'kUSD' ? KUSD_ADDRESS : KERNE_ADDRESS;
   const currentBalance = token === 'kUSD' ? kusdBalance : kerneBalance;
 
   const handleBridge = async () => {
-    if (!amount || !address) return;
+    if (!amount || !address || !publicClient) return;
     setIsBridging(true);
-    const toastId = toast.loading(`BRIDGING ${amount} ${token} TO ${destinationChain.toUpperCase()}...`);
+    const toastId = toast.loading(`INITIATING ${amount} ${token} BRIDGE TO ${destinationChain.toUpperCase()}...`);
     
     try {
-      // Simulation of LayerZero OFT bridge call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      toast.success("BRIDGE TRANSACTION BROADCAST", { id: toastId });
+      const dstEid = EID_MAP[destinationChain];
+      const amountRaw = parseUnits(amount, 18);
+      const toBytes32 = pad(address, { size: 32 });
+      
+      const sendParam = {
+        dstEid,
+        to: toBytes32,
+        amountLD: amountRaw,
+        minAmountLD: amountRaw * 995n / 1000n, // 0.5% slippage
+        extraOptions: '0x00030100110100000000000000000000000000030d40', // Gas limit 200k
+        composeMsg: '0x',
+        oftCmd: '0x'
+      };
+
+      // 1. Get Quote
+      const quote = await publicClient.readContract({
+        address: tokenAddress as `0x${string}`,
+        abi: OFT_ABI,
+        functionName: 'quoteSend',
+        args: [sendParam, false]
+      }) as { nativeFee: bigint, lzTokenFee: bigint };
+
+      // 2. Execute Send
+      const tx = await writeContractAsync({
+        address: tokenAddress as `0x${string}`,
+        abi: OFT_ABI,
+        functionName: 'send',
+        args: [sendParam, quote, address],
+        value: quote.nativeFee
+      });
+
+      toast.success(`BRIDGE TRANSACTION BROADCAST: ${tx.slice(0, 10)}...`, { id: toastId });
       setAmount('');
-    } catch (e) {
-      toast.error("BRIDGE FAILED", { id: toastId });
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e.message || "BRIDGE FAILED", { id: toastId });
     } finally {
       setIsBridging(false);
     }

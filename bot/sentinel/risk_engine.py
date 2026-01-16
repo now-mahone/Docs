@@ -2,6 +2,7 @@
 # Updated: 2026-01-12 - Institutional Deep Hardening: Volatility-adjusted thresholds & multi-factor risk scoring
 import os
 import time
+import json
 import asyncio
 import numpy as np
 import pandas as pd
@@ -21,6 +22,7 @@ class VaultRiskProfile:
     liquidation_distance_cex: float
     volatility_24h: float
     health_score: float  # 0 to 100
+    daily_pnl_usd: float = 0.0
     timestamp: float = field(default_factory=time.time)
     risk_factors: Dict = field(default_factory=dict)
 
@@ -29,18 +31,69 @@ class RiskEngine:
     Kerne Sentinel Risk Engine - Institutional Grade
     Calculates real-time risk metrics using volatility-adjusted thresholds.
     """
-    def __init__(self, w3: Optional[Web3] = None, private_key: Optional[str] = None):
+    def __init__(self, w3: Optional[Web3] = None, private_key: Optional[str] = None, pnl_state_path: str = "bot/data/pnl_state.json"):
         self.w3 = w3
         self.private_key = private_key
+        self.pnl_state_path = pnl_state_path
         self.base_thresholds = {
             "delta_limit": 0.02,  # 2% base limit
             "min_health_score": 80.0,
             "critical_health_score": 60.0,
             "max_slippage_allowed": 0.003, # 0.3%
             "min_liquidation_distance": 0.30, # 30% buffer
-            "min_liquidity_depth_usd": 2000000 # $2M
+            "min_liquidity_depth_usd": 2000000, # $2M
+            "daily_loss_limit_usd": 50000, # $50k hard stop
+            "max_drawdown_pct": 0.02 # 2% max daily drawdown
         }
         self.price_history = {} # symbol -> list of prices
+        self.pnl_state = self.load_pnl_state()
+
+    def load_pnl_state(self) -> Dict:
+        if os.path.exists(self.pnl_state_path):
+            try:
+                with open(self.pnl_state_path, 'r') as f:
+                    state = json.load(f)
+                    # Reset if older than 24h
+                    if time.time() - state.get("last_reset", 0) > 86400:
+                        return self._reset_pnl_state()
+                    return state
+            except Exception as e:
+                logger.error(f"Failed to load PnL state: {e}")
+        return self._reset_pnl_state()
+
+    def _reset_pnl_state(self) -> Dict:
+        state = {
+            "daily_realized_pnl": 0.0,
+            "starting_equity": 0.0,
+            "last_reset": time.time()
+        }
+        self.save_pnl_state(state)
+        return state
+
+    def save_pnl_state(self, state: Dict = None):
+        if state: self.pnl_state = state
+        os.makedirs(os.path.dirname(self.pnl_state_path), exist_ok=True)
+        try:
+            with open(self.pnl_state_path, 'w') as f:
+                json.dump(self.pnl_state, f)
+        except Exception as e:
+            logger.error(f"Failed to save PnL state: {e}")
+
+    def track_pnl(self, current_equity: float):
+        if self.pnl_state["starting_equity"] == 0:
+            self.pnl_state["starting_equity"] = current_equity
+            self.save_pnl_state()
+        
+        # Check for reset
+        if time.time() - self.pnl_state["last_reset"] > 86400:
+            self.pnl_state["starting_equity"] = current_equity
+            self.pnl_state["daily_realized_pnl"] = 0.0
+            self.pnl_state["last_reset"] = time.time()
+            self.save_pnl_state()
+
+    def get_daily_pnl(self, current_equity: float) -> float:
+        return current_equity - self.pnl_state["starting_equity"]
+
 
     def calculate_volatility(self, symbol: str) -> float:
         """
@@ -105,28 +158,69 @@ class RiskEngine:
             logger.error(f"Deep liquidity check failed: {e}")
             return False
 
+    def calculate_var(self, symbol: str, portfolio_value: float, confidence_level: float = 0.99) -> float:
+        """
+        Calculates Parametric Value at Risk (VaR).
+        """
+        prices = self.price_history.get(symbol, [])
+        if len(prices) < 20:
+            return portfolio_value * 0.05 # Default 5% risk
+        
+        returns = np.diff(np.log(prices))
+        mu = np.mean(returns)
+        sigma = np.std(returns)
+        
+        from scipy.stats import norm
+        z_score = norm.ppf(confidence_level)
+        
+        # VaR = Portfolio Value * (mu - z * sigma)
+        # We use absolute value for loss
+        var_pct = abs(mu - z_score * sigma)
+        return portfolio_value * var_pct
+
     def calculate_health_score(self, profile: VaultRiskProfile) -> float:
         """
         Multi-factor health score calculation.
-        Factors: Delta, Liquidation Distance, Volatility, Liquidity.
+        Factors: Delta, Liquidation Distance, Volatility, VaR, PnL.
         """
         score = 100.0
+        risk_factors = {}
         
         # 1. Delta Penalty (Exponential)
         thresholds = self.get_volatility_adjusted_thresholds("ETH/USDT")
-        delta_excess = max(0, abs(profile.net_delta) - thresholds["delta_limit"])
-        score -= (delta_excess * 1000) ** 1.2
+        delta_limit = thresholds["delta_limit"]
+        if abs(profile.net_delta) > delta_limit:
+            delta_excess = abs(profile.net_delta) - delta_limit
+            penalty = (delta_excess * 1000) ** 1.2
+            score -= penalty
+            risk_factors["delta"] = penalty
         
         # 2. Liquidation Penalty
         liq_dist = min(profile.liquidation_distance_onchain, profile.liquidation_distance_cex)
-        if liq_dist < thresholds["min_liquidation_distance"]:
-            score -= (thresholds["min_liquidation_distance"] - liq_dist) * 300
+        min_liq_dist = thresholds["min_liquidation_distance"]
+        if liq_dist < min_liq_dist:
+            penalty = (min_liq_dist - liq_dist) * 300
+            score -= penalty
+            risk_factors["liquidation"] = penalty
             
         # 3. Volatility Penalty
         if profile.volatility_24h > 0.10: # >10% daily vol
-            score -= (profile.volatility_24h - 0.10) * 500
+            penalty = (profile.volatility_24h - 0.10) * 500
+            score -= penalty
+            risk_factors["volatility"] = penalty
             
+        # 4. PnL / Drawdown Penalty
+        daily_pnl = profile.daily_pnl_usd
+        if daily_pnl < 0:
+            drawdown_pct = abs(daily_pnl) / (self.pnl_state["starting_equity"] or 1.0)
+            if drawdown_pct > self.base_thresholds["max_drawdown_pct"] / 2: # Start penalizing at half the limit
+                penalty = (drawdown_pct * 100) * 10
+                score -= penalty
+                risk_factors["drawdown"] = penalty
+
+        profile.risk_factors = risk_factors
         return max(0.0, min(100.0, score))
+
 
     async def analyze_vault(self, vault_data: Dict) -> VaultRiskProfile:
         """
@@ -140,7 +234,20 @@ class RiskEngine:
         
         vol = self.calculate_volatility(symbol)
         
-        net_delta = (vault_data["onchain_collateral"] + vault_data["cex_short_position"]) / vault_data["onchain_collateral"]
+        # Track PnL
+        current_equity = vault_data.get("available_margin_usd", 0)
+        self.track_pnl(current_equity)
+        daily_pnl = self.get_daily_pnl(current_equity)
+        
+        # Net Delta: (Collateral + Short Position) / Collateral
+        # Should be ~0 for delta-neutral
+        onchain_collateral = vault_data["onchain_collateral"]
+        if onchain_collateral == 0: return None
+        
+        net_delta = (onchain_collateral + vault_data["cex_short_position"]) / onchain_collateral
+        
+        # VaR Calculation
+        var_99 = self.calculate_var(symbol, onchain_collateral, 0.99)
         
         profile = VaultRiskProfile(
             vault_address=vault_data["address"],
@@ -150,17 +257,36 @@ class RiskEngine:
             liquidation_distance_onchain=vault_data["liq_onchain"],
             liquidation_distance_cex=vault_data["liq_cex"],
             volatility_24h=vol,
-            health_score=0.0 # Calculated below
+            health_score=0.0,
+            daily_pnl_usd=daily_pnl,
+            risk_factors={"VaR_99": var_99}
         )
         
         profile.health_score = self.calculate_health_score(profile)
         
+        # Log profile
+        logger.info(f"Vault {profile.vault_address} | Health: {profile.health_score:.2f} | Delta: {profile.net_delta:.4f} | Daily PnL: ${daily_pnl:.2f}")
+        
         # Circuit Breaker Logic
+        # 1. Health Score Breaker
         if profile.health_score < self.base_thresholds["critical_health_score"]:
-            logger.critical(f"CRITICAL RISK: Vault {profile.vault_address} Health {profile.health_score:.2f}")
-            await self.trigger_circuit_breaker(profile.vault_address, f"Health Score {profile.health_score:.2f}")
+            logger.critical(f"CRITICAL RISK: Health Score {profile.health_score:.2f}")
+            await self.trigger_circuit_breaker(profile.vault_address, f"Health Score {profile.health_score:.2f} | Risk Factors: {profile.risk_factors}")
+        
+        # 2. Hard Daily Loss Breaker
+        if daily_pnl < -self.base_thresholds["daily_loss_limit_usd"]:
+            logger.critical(f"CRITICAL LOSS: Daily PnL ${daily_pnl:.2f} exceeds limit")
+            await self.trigger_circuit_breaker(profile.vault_address, f"Daily Loss Limit Exceeded: ${daily_pnl:.2f}")
+
+        # 3. Max Drawdown Breaker
+        drawdown_pct = abs(daily_pnl) / (self.pnl_state["starting_equity"] or 1.0)
+        if daily_pnl < 0 and drawdown_pct > self.base_thresholds["max_drawdown_pct"]:
+            logger.critical(f"CRITICAL DRAWDOWN: {drawdown_pct:.2%} exceeds limit")
+            await self.trigger_circuit_breaker(profile.vault_address, f"Max Drawdown Exceeded: {drawdown_pct:.2%}")
             
         return profile
+
+
 
     async def trigger_circuit_breaker(self, vault_address: str, reason: str):
         """

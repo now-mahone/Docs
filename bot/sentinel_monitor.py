@@ -18,7 +18,12 @@ class SentinelMonitor:
         self.exchange = ExchangeManager()
         self.risk_engine = RiskEngine(w3=self.chain.w3, private_key=self.chain.private_key)
         
+        # Alert Manager
+        from bot.alert_manager import AlertManager
+        self.alert_manager = AlertManager("SentinelMonitor")
+        
         # Multi-venue support
+
         self.venues = {
             "binance": self.exchange,
             "bybit": ExchangeManager("bybit"),
@@ -45,15 +50,28 @@ class SentinelMonitor:
         """
         Checks health factors and triggers rebalancing if necessary.
         """
-        vault_tvl = self.chain.get_vault_tvl()
-        price = self.exchange.get_market_price('ETH/USDT')
+        try:
+            vault_tvl = self.chain.get_vault_tvl()
+            price = self.exchange.get_market_price('ETH/USDT')
+        except Exception as e:
+            logger.error(f"Failed to fetch global market data: {e}")
+            return
         
         total_short = 0.0
         venue_data = {}
         
         for name, ex in self.venues.items():
+            log = logger.bind(venue=name)
             try:
-                pos, pnl = ex.get_short_position('ETH/USDT:USDT')
+                # Add retry logic for exchange calls
+                pos, pnl = 0.0, 0.0
+                for _ in range(3):
+                    try:
+                        pos, pnl = ex.get_short_position('ETH/USDT:USDT')
+                        break
+                    except:
+                        await asyncio.sleep(1)
+                
                 collateral = ex.get_collateral_balance('USDT')
                 total_short += pos
                 
@@ -61,19 +79,29 @@ class SentinelMonitor:
                 venue_data[name] = {"pos": pos, "cr": cr}
                 
                 if cr < self.CRITICAL_CR:
-                    logger.critical(f"CRITICAL HEALTH on {name}: CR {cr:.2f}. Triggering Flash-Rebalance.")
+                    log.critical(f"CRITICAL HEALTH: CR {cr:.2f}. Triggering Flash-Rebalance.")
                     await self.flash_rebalance(name)
+                else:
+                    log.debug(f"Health OK: CR {cr:.2f}")
+                    
             except Exception as e:
-                logger.error(f"Failed to fetch health for {name}: {e}")
+                log.error(f"Failed to fetch health data: {e}")
 
         # Global Delta Check
-        delta = vault_tvl - total_short
-        if abs(delta) / vault_tvl > self.REBALANCE_THRESHOLD:
-            logger.warning(f"Global Delta Deviation: {delta:.4f} ETH ({abs(delta)/vault_tvl:.2%}). Triggering rebalance.")
-            # Rebalancing logic is handled by the main engine, but Sentinel can trigger it
-            from engine import HedgingEngine
-            engine = HedgingEngine(self.exchange, self.chain)
-            engine.run_cycle()
+        if vault_tvl > 0:
+            delta = vault_tvl - total_short
+            deviation = abs(delta) / vault_tvl
+            if deviation > self.REBALANCE_THRESHOLD:
+                logger.warning(f"Global Delta Deviation: {delta:.4f} ETH ({deviation:.2%}). Triggering rebalance.")
+                try:
+                    from engine import HedgingEngine
+                    engine = HedgingEngine(self.exchange, self.chain)
+                    engine.run_cycle()
+                except ImportError:
+                    logger.error("HedgingEngine not found. Cannot rebalance global delta.")
+                except Exception as e:
+                    logger.error(f"Rebalance execution failed: {e}")
+
 
     async def flash_rebalance(self, failing_venue: str):
         """

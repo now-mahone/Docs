@@ -75,6 +75,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     /// @notice The address of the yield oracle for TWAY reporting
     address public yieldOracle;
 
+    /// @notice The address of the trust anchor for solvency verification
+    address public trustAnchor;
+
     /// @notice The treasury address for fee collection
     address public treasury;
 
@@ -86,6 +89,12 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
 
     /// @notice Circuit breaker: Minimum solvency ratio required for operations (e.g., 10100 = 101%)
     uint256 public minSolvencyThreshold;
+
+    /// @notice The timestamp when the vault first became insolvent
+    uint256 public insolventSince;
+
+    /// @notice The grace period before automatic pausing (default 4 hours)
+    uint256 public constant GRACE_PERIOD = 4 hours;
 
     /// @notice Flash loan fee in basis points (e.g., 9 = 0.09%)
     uint256 public flashFeeBps = 9;
@@ -118,7 +127,8 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         address strategist_,
         address exchangeDepositAddress_
     ) ERC4626(asset_) ERC20(name_, symbol_) {
-        _initialize(asset_, name_, symbol_, admin_, strategist_, exchangeDepositAddress_, address(0), 0, 1000, false);
+        exchangeDepositAddress = exchangeDepositAddress_;
+        _initialize(name_, symbol_, admin_, strategist_, address(0), 0, 1000, false);
     }
 
     /**
@@ -136,12 +146,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     ) external {
         require(founder == address(0), "Already initialized");
         _initialize(
-            IERC20(asset_),
             name_,
             symbol_,
             admin_,
             msg.sender,
-            address(0),
             founder_,
             founderFeeBps_,
             performanceFeeBps_,
@@ -161,12 +169,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     }
 
     function _initialize(
-        IERC20 asset_,
         string memory name_,
         string memory symbol_,
         address admin_,
         address strategist_,
-        address exchangeDepositAddress_,
         address founder_,
         uint256 founderFeeBps_,
         uint256 performanceFeeBps_,
@@ -234,11 +240,46 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         return (assets * 10000) / liabilities;
     }
 
-    function _checkSolvency() internal view {
+    function checkAndPause() external {
+        _updateSolvency(false);
+    }
+
+    function _checkSolvency() internal {
+        _updateSolvency(true);
+    }
+
+    function _updateSolvency(bool revertOnInsolvent) internal {
+        bool currentlySolvent = true;
         if (minSolvencyThreshold > 0 && totalSupply() > 1000) {
             uint256 ratio = getSolvencyRatio();
-            require(ratio >= minSolvencyThreshold, "Solvency below threshold");
+            if (ratio < minSolvencyThreshold) currentlySolvent = false;
         }
+
+        if (currentlySolvent && trustAnchor != address(0) && totalSupply() > 1000) {
+            (bool success, bytes memory data) = trustAnchor.staticcall(
+                abi.encodeWithSignature("isSolvent(address)", address(this))
+            );
+            if (success && data.length == 32) {
+                currentlySolvent = abi.decode(data, (bool));
+            } else {
+                currentlySolvent = false;
+            }
+        }
+
+        if (!currentlySolvent) {
+            if (insolventSince == 0) {
+                insolventSince = block.timestamp;
+            } else if (block.timestamp - insolventSince > GRACE_PERIOD) {
+                if (!paused()) _pause();
+            }
+            if (revertOnInsolvent) revert("Vault: Insolvent");
+        } else {
+            insolventSince = 0;
+        }
+    }
+
+    function setTrustAnchor(address _anchor) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        trustAnchor = _anchor;
     }
 
     // --- Strategist Functions ---

@@ -90,7 +90,70 @@ class ChainManager:
         else:
             self.minter = None
 
+        # Load Treasury ABI
+        treasury_address = os.getenv("TREASURY_ADDRESS")
+        if treasury_address:
+            treasury_abi_path = os.path.join(os.path.dirname(__file__), "..", "out", "KerneTreasury.sol", "KerneTreasury.json")
+            if not os.path.exists(treasury_abi_path):
+                treasury_abi_path = os.path.join(os.path.dirname(__file__), "out", "KerneTreasury.sol", "KerneTreasury.json")
+            
+            with open(treasury_abi_path, "r", encoding="utf-8") as f:
+                treasury_artifact = json.load(f)
+                self.treasury_abi = treasury_artifact["abi"]
+            self.treasury = self.w3.eth.contract(address=treasury_address, abi=self.treasury_abi)
+        else:
+            self.treasury = None
+
         logger.info(f"ChainManager initialized. Connected to {self.rpc_url}. Vault: {self.vault_address}")
+
+    def get_treasury_balance(self, token_address: str) -> float:
+        """
+        Returns the balance of a specific token in the treasury.
+        """
+        if not self.treasury:
+            return 0.0
+        try:
+            erc20_abi = [{"inputs":[{"name":"account","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}, {"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"stateMutability":"view","type":"function"}]
+            token = self.w3.eth.contract(address=token_address, abi=erc20_abi)
+            balance = token.functions.balanceOf(self.treasury.address).call()
+            decimals = token.functions.decimals().call()
+            return balance / (10 ** decimals)
+        except Exception as e:
+            logger.error(f"Error getting treasury balance: {e}")
+            return 0.0
+
+    def execute_buyback(self, token_address: str, amount_eth: float) -> str:
+        """
+        Executes a buyback of KERNE tokens on Aerodrome via KerneTreasury.
+        """
+        if not self.treasury:
+            return ""
+        try:
+            # Get decimals for the token
+            erc20_abi = [{"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"stateMutability":"view","type":"function"}]
+            token = self.w3.eth.contract(address=token_address, abi=erc20_abi)
+            decimals = token.functions.decimals().call()
+            
+            amount_raw = int(amount_eth * (10 ** decimals))
+            nonce = self.w3.eth.get_transaction_count(self.account.address)
+            
+            # minKerneOut = 0 means use calculated slippage in contract
+            tx = self.treasury.functions.executeBuyback(token_address, amount_raw, 0).build_transaction({
+                'from': self.account.address,
+                'nonce': nonce,
+                'gasPrice': self.w3.eth.gas_price
+            })
+            
+            signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+            
+            if receipt.status == 1:
+                logger.success(f"Buyback executed: {tx_hash.hex()}")
+            return tx_hash.hex()
+        except Exception as e:
+            logger.error(f"Error executing buyback: {e}")
+            raise
 
     def get_total_kusd_debt(self) -> float:
         """

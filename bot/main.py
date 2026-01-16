@@ -59,18 +59,27 @@ def main():
             # 1. Risk Analysis & Sentinel Defense
             # Fetch latest vault data for risk analysis
             vault_tvl = chain.get_vault_tvl()
-            short_pos, _ = exchange.get_short_position('ETH')
-            collateral_usdt = exchange.get_collateral_balance()
+            agg_pos = exchange.get_aggregate_position('ETH')
+            short_pos = agg_pos["size"]
+            collateral_usdt = exchange.get_total_equity()
+
             
             vault_data = {
                 "address": chain.vault_address,
                 "onchain_collateral": vault_tvl,
                 "cex_short_position": short_pos,
                 "available_margin_usd": collateral_usdt,
+                "current_price": exchange.get_market_price('ETH'),
                 "liq_onchain": 0.5, # Placeholder: 50% distance to liquidation
                 "liq_cex": 0.3      # Placeholder: 30% distance to liquidation
             }
-            # risk_engine.analyze_vault(vault_data) # Temporarily disabled for shadow rehearsal
+            
+            import asyncio
+            try:
+                asyncio.run(risk_engine.analyze_vault(vault_data))
+            except Exception as e:
+                logger.error(f"Risk analysis failed: {e}")
+
             
             # Check Health Factor for auto-deleverage
             if chain.minter:

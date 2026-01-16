@@ -1,158 +1,106 @@
 import os
-import time
-from dotenv import load_dotenv
+from typing import List, Dict
 from loguru import logger
-from hyperliquid.utils import constants
-from hyperliquid.exchange import Exchange
-from hyperliquid.info import Info
-import eth_account
-
-# Created: 2025-12-28
-# Updated: 2026-01-13 (Hyperliquid Integration)
+from exchanges.base import BaseExchange
+from exchanges.hyperliquid import HyperliquidExchange
+from exchanges.binance import BinanceExchange
+from exchanges.bybit import BybitExchange
 
 class ExchangeManager:
     """
-    Handles interactions with Hyperliquid (DeFi Perp) for delta-neutral hedging.
+    Factory and Aggregator for multiple exchanges.
+    Manages a collection of BaseExchange implementations.
     """
     def __init__(self, use_testnet: bool = False):
-        load_dotenv()
+        self.exchanges: Dict[str, BaseExchange] = {}
         
-        self.private_key = os.getenv("HYPERLIQUID_PRIVATE_KEY") or os.getenv("STRATEGIST_PRIVATE_KEY")
-        if not self.private_key:
-            logger.error("HYPERLIQUID_PRIVATE_KEY not found in .env")
-            raise ValueError("Missing Hyperliquid Private Key")
+        # Initialize Hyperliquid (Primary)
+        try:
+            self.exchanges["hyperliquid"] = HyperliquidExchange(use_testnet)
+        except Exception as e:
+            logger.warning(f"Could not initialize Hyperliquid: {e}")
 
-        self.account = eth_account.Account.from_key(self.private_key)
-        self.address = self.account.address
-        
-        self.base_url = constants.TESTNET_API_URL if use_testnet else constants.MAINNET_API_URL
-        self.info = Info(self.base_url, skip_ws=True)
-        self.exchange = Exchange(self.account, self.base_url)
-        
-        logger.info(f"ExchangeManager initialized for Hyperliquid. Address: {self.address}")
+        # Initialize Binance (Optional)
+        if os.getenv("BINANCE_API_KEY"):
+            try:
+                self.exchanges["binance"] = BinanceExchange()
+            except Exception as e:
+                logger.warning(f"Could not initialize Binance: {e}")
+
+        # Initialize Bybit (Optional)
+        if os.getenv("BYBIT_API_KEY"):
+            try:
+                self.exchanges["bybit"] = BybitExchange()
+            except Exception as e:
+                logger.warning(f"Could not initialize Bybit: {e}")
+
+        if not self.exchanges:
+            logger.error("No exchanges initialized!")
+            raise ValueError("No valid exchange configurations found")
+
+    def get_exchange(self, name: str) -> BaseExchange:
+        return self.exchanges.get(name.lower())
 
     def get_market_price(self, symbol: str = "ETH") -> float:
-        """
-        Fetches the current Mark Price for a given symbol on Hyperliquid.
-        """
-        try:
-            all_mids = self.info.all_mids()
-            price = all_mids.get(symbol)
-            if not price:
-                # Try to find the symbol in the list if not exact match
-                logger.warning(f"Symbol {symbol} not found in mids, searching...")
-                return 0.0
-            return float(price)
-        except Exception as e:
-            logger.error(f"Error fetching market price for {symbol}: {e}")
-            return 0.0
+        """Returns the average market price across all active exchanges."""
+        prices = []
+        for name, ex in self.exchanges.items():
+            # Handle symbol mapping if needed (e.g. ETH vs ETH/USDT:USDT)
+            ex_symbol = self._map_symbol(name, symbol)
+            price = ex.get_market_price(ex_symbol)
+            if price > 0:
+                prices.append(price)
+        
+        return sum(prices) / len(prices) if prices else 0.0
 
-    def get_short_position(self, symbol: str = "ETH"):
-        """
-        Fetches the current open position for a symbol.
-        Returns (contracts, unrealizedPnl).
-        """
-        try:
-            user_state = self.info.user_state(self.address)
-            positions = user_state.get("assetPositions", [])
-            
-            for pos_wrapper in positions:
-                pos = pos_wrapper["position"]
-                if pos["coin"] == symbol:
-                    szi = float(pos["szi"]) # Signed size
-                    unrealized_pnl = float(pos["unrealizedPnl"])
-                    
-                    # If szi is negative, it's a short
-                    if szi < 0:
-                        return abs(szi), unrealized_pnl
-            
-            return 0.0, 0.0
-        except Exception as e:
-            logger.error(f"Error fetching position for {symbol}: {e}")
-            return 0.0, 0.0
+    def get_total_equity(self) -> float:
+        """Returns the aggregate equity (USD) across all exchanges."""
+        total = 0.0
+        for ex in self.exchanges.values():
+            total += ex.get_total_equity()
+        return total
 
-    def execute_short(self, symbol: str, amount_eth: float) -> bool:
-        """
-        Places a MARKET SELL order to open or increase a short position.
-        """
-        try:
-            logger.info(f"Executing SHORT on {symbol} for {amount_eth} ETH")
-            # Hyperliquid uses 'is_buy=False' for sell
-            # We use a large slippage (e.g. 5%) for market orders to ensure fill
-            price = self.get_market_price(symbol)
-            slippage_price = price * 0.95 
+    def get_aggregate_position(self, symbol: str = "ETH") -> Dict:
+        """Returns the total short position and aggregate unrealized PnL."""
+        total_size = 0.0
+        total_upnl = 0.0
+        
+        for name, ex in self.exchanges.items():
+            ex_symbol = self._map_symbol(name, symbol)
+            size, upnl = ex.get_position(ex_symbol)
+            total_size += size
+            total_upnl += upnl
             
-            order_result = self.exchange.market_open(
-                name=symbol,
-                is_buy=False,
-                sz=amount_eth,
-                px=slippage_price,
-                slippage=0.05
-            )
-            
-            if order_result["status"] == "ok":
-                logger.success(f"Short order executed on Hyperliquid.")
-                return True
-            else:
-                logger.error(f"Hyperliquid order failed: {order_result}")
-                return False
-        except Exception as e:
-            logger.error(f"Failed to execute short on {symbol}: {e}")
-            return False
+        return {
+            "size": total_size,
+            "upnl": total_upnl
+        }
 
-    def execute_buy(self, symbol: str, amount_eth: float) -> bool:
-        """
-        Places a MARKET BUY order to close or reduce a short position.
-        """
-        try:
-            logger.info(f"Executing BUY on {symbol} for {amount_eth} ETH")
-            price = self.get_market_price(symbol)
-            slippage_price = price * 1.05
-            
-            order_result = self.exchange.market_open(
-                name=symbol,
-                is_buy=True,
-                sz=amount_eth,
-                px=slippage_price,
-                slippage=0.05
-            )
-            
-            if order_result["status"] == "ok":
-                logger.success(f"Buy order executed on Hyperliquid.")
-                return True
-            else:
-                logger.error(f"Hyperliquid order failed: {order_result}")
-                return False
-        except Exception as e:
-            logger.error(f"Failed to execute buy on {symbol}: {e}")
-            return False
+    def execute_short(self, symbol: str, amount_eth: float, preferred_exchange: str = "hyperliquid") -> bool:
+        """Executes a short on the preferred exchange or the one with most collateral."""
+        ex = self.get_exchange(preferred_exchange) or list(self.exchanges.values())[0]
+        ex_symbol = self._map_symbol(preferred_exchange, symbol)
+        return ex.execute_order(ex_symbol, amount_eth, "sell")
 
-    def get_collateral_balance(self, symbol: str = "USDC") -> float:
-        """
-        Fetches the available USDC margin balance on Hyperliquid.
-        """
-        try:
-            user_state = self.info.user_state(self.address)
-            return float(user_state.get("withdrawable", 0.0))
-        except Exception as e:
-            logger.error(f"Error fetching collateral balance: {e}")
-            return 0.0
+    def execute_buy(self, symbol: str, amount_eth: float, preferred_exchange: str = "hyperliquid") -> bool:
+        """Executes a buy on the preferred exchange."""
+        ex = self.get_exchange(preferred_exchange) or list(self.exchanges.values())[0]
+        ex_symbol = self._map_symbol(preferred_exchange, symbol)
+        return ex.execute_order(ex_symbol, amount_eth, "buy")
 
     def get_funding_rate(self, symbol: str = "ETH") -> float:
-        """
-        Fetches the current hourly funding rate for a symbol.
-        """
-        try:
-            meta = self.info.meta_and_asset_ctxs()
-            # meta[0] is universe, meta[1] is asset contexts
-            universe = meta[0]["universe"]
-            asset_ctxs = meta[1]
-            
-            for i, asset in enumerate(universe):
-                if asset["name"] == symbol:
-                    funding = float(asset_ctxs[i]["funding"])
-                    return funding
-            return 0.0
-        except Exception as e:
-            logger.error(f"Error fetching funding rate for {symbol}: {e}")
-            return 0.0
+        """Returns the average funding rate."""
+        rates = []
+        for name, ex in self.exchanges.items():
+            ex_symbol = self._map_symbol(name, symbol)
+            rate = ex.get_funding_rate(ex_symbol)
+            rates.append(rate)
+        return sum(rates) / len(rates) if rates else 0.0
+
+    def _map_symbol(self, exchange_name: str, symbol: str) -> str:
+        """Maps generic symbols like 'ETH' to exchange-specific formats."""
+        if exchange_name == "hyperliquid":
+            return symbol
+        if exchange_name in ["binance", "bybit"]:
+            return f"{symbol}/USDT:USDT"
+        return symbol

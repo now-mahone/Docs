@@ -6,23 +6,28 @@ from loguru import logger
 from web3 import Web3
 from eth_account import Account
 from dotenv import load_dotenv
+try:
+    from bot.chain_manager import ChainManager
+except ImportError:
+    from chain_manager import ChainManager
 
 load_dotenv()
 
 class LiquidityManager:
-    def __init__(self):
-        self.w3 = Web3(Web3.HTTPProvider(os.getenv("RPC_URL")))
-        self.account = Account.from_key(os.getenv("STRATEGIST_PRIVATE_KEY"))
+    def __init__(self, chain_manager=None):
+        self.chain = chain_manager or ChainManager()
+        self.w3 = self.chain.w3
+        self.account = self.chain.account
         
-        # Contract Addresses (Placeholders)
+        # Contract Addresses
         self.kusd_address = os.getenv("KUSD_ADDRESS")
-        self.usdc_address = os.getenv("USDC_ADDRESS")
+        self.usdc_address = os.getenv("USDC_ADDRESS", "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913")
         self.aero_address = os.getenv("AERO_ADDRESS", "0x940181a94A35A4569E4529A3CDfB74e38FD98631")
         self.weth_address = os.getenv("WETH_ADDRESS", "0x4200000000000000000000000000000000000006")
         self.stability_module_address = os.getenv("STABILITY_MODULE_ADDRESS")
         self.insurance_fund_address = os.getenv("INSURANCE_FUND_ADDRESS")
-        self.aerodrome_router_address = "0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43" # Base Aerodrome Router
-        self.aerodrome_voter_address = "0x16613524e02ad97eDfeF371bC883F2F5d6C480A5"
+        self.treasury_address = os.getenv("TREASURY_ADDRESS")
+        self.aerodrome_router_address = "0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43" 
         
         logger.info(f"LiquidityManager initialized for {self.account.address}")
 
@@ -204,27 +209,28 @@ class LiquidityManager:
         """
         logger.info("Checking Treasury for reflexive buyback [WEALTH_MAXIMIZER]...")
         
-        # 1. Fetch actual fee balance from Treasury
-        try:
-            # In production, we'd call treasury.get_balance()
-            # For now, we use the actual harvested fees from the last cycle
-            buyback_amount_eth = 0.12 # Placeholder for real balance
+        # 1. Fetch actual fee balance from Treasury for WETH and USDC
+        for token_address in [self.weth_address, self.usdc_address]:
+            if not token_address: continue
             
-            if buyback_amount_eth > 0.01:
-                logger.info(f"Executing reflexive buyback: {buyback_amount_eth} ETH -> $KERNE")
+            try:
+                buyback_amount = self.chain.get_treasury_balance(token_address)
                 
-                # 2. Execute Swap on Aerodrome
-                # Path: WETH -> USDC -> KERNE (or direct if pool exists)
-                # success = self.chain.swap_eth_for_kerne(buyback_amount_eth)
+                # Minimum threshold to avoid gas waste (e.g. 0.01 ETH or 25 USDC)
+                threshold = 0.01 if token_address == self.weth_address else 25.0
                 
-                # 3. Distribute to Staking & Burn
-                # self.chain.distribute_buyback_rewards()
-                
-                kerne_bought = buyback_amount_eth * 50000 
-                logger.success(f"Buyback SUCCESS: {kerne_bought:,.2f} $KERNE removed from circulation.")
-                logger.info("Founder Equity Value: +0.42% (Actual Execution Path)")
-        except Exception as e:
-            logger.error(f"Reflexive buyback failed: {e}")
+                if buyback_amount >= threshold:
+                    logger.info(f"Executing reflexive buyback: {buyback_amount} {token_address} -> $KERNE")
+                    
+                    # 2. Execute Swap on Aerodrome via Treasury
+                    tx_hash = self.chain.execute_buyback(token_address, buyback_amount)
+                    
+                    logger.success(f"Buyback SUCCESS: {tx_hash}")
+                    logger.info("Founder Equity Value: +REACTIONARY_PULSE")
+                else:
+                    logger.info(f"Insufficient {token_address} for buyback: {buyback_amount} < {threshold}")
+            except Exception as e:
+                logger.error(f"Reflexive buyback failed for {token_address}: {e}")
 
     def run(self):
         while True:
