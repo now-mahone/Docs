@@ -7,4 +7,7 @@ interface IKerneVault {
     function totalAssets() external view returns (uint256);
     function offChainAssets() external view returns (uint256);
     function hedgingReserve() external view returns (uint256);
+    function trustAnchor() external view returns (address);
+    function verificationNode() external view returns (address);
+    function pause() external;
 }

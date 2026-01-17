@@ -57,8 +57,9 @@ class HedgingEngine:
             
             # 0. Health Check
             if not dry_run and self.chain.vault.functions.paused().call():
-                logger.critical("VAULT IS PAUSED. Triggering panic mode.")
-                self._trigger_panic("Vault Paused")
+                logger.warning("VAULT IS PAUSED. Rebalancing suspended to maintain delta-neutrality.")
+                # We do NOT close shorts automatically, as that would leave the protocol long ETH.
+                # Only alert and wait for manual intervention or unpause.
                 return
 
             # 1. Fetch Data

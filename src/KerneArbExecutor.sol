@@ -76,13 +76,13 @@ contract KerneArbExecutor is AccessControl, IERC3156FlashBorrower {
      * @notice IERC3156 Callback
      */
     function onFlashLoan(
-        address,
+        address initiator,
         address token,
         uint256 amount,
         uint256 fee,
         bytes calldata data
     ) external override returns (bytes32) {
-        require(hasRole(SOLVER_ROLE, tx.origin) || hasRole(DEFAULT_ADMIN_ROLE, tx.origin), "Unauthorized origin");
+        require(initiator == address(this), "Unauthorized initiator");
         
         uint256 balanceBefore = IERC20(token).balanceOf(address(this));
         

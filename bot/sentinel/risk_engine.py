@@ -43,10 +43,70 @@ class RiskEngine:
             "min_liquidation_distance": 0.30, # 30% buffer
             "min_liquidity_depth_usd": 2000000, # $2M
             "daily_loss_limit_usd": 50000, # $50k hard stop
+            "hourly_loss_limit_usd": 10000, # $10k hourly stop
             "max_drawdown_pct": 0.02 # 2% max daily drawdown
         }
         self.price_history = {} # symbol -> list of prices
+        self.pnl_snapshots = [] # List of (timestamp, equity)
         self.pnl_state = self.load_pnl_state()
+
+    def track_pnl(self, current_equity: float):
+        now = time.time()
+        if self.pnl_state["starting_equity"] == 0:
+            self.pnl_state["starting_equity"] = current_equity
+            self.save_pnl_state()
+        
+        # Add snapshot
+        self.pnl_snapshots.append((now, current_equity))
+        # Keep only last 24h of snapshots (assuming 5 min intervals, ~288 snapshots)
+        self.pnl_snapshots = [s for s in self.pnl_snapshots if now - s[0] <= 86400]
+
+        # Check for reset
+        if now - self.pnl_state["last_reset"] > 86400:
+            self.pnl_state["starting_equity"] = current_equity
+            self.pnl_state["daily_realized_pnl"] = 0.0
+            self.pnl_state["last_reset"] = now
+            self.save_pnl_state()
+
+    def get_pnl_window(self, window_seconds: int) -> float:
+        """Returns PnL over the specified window in seconds."""
+        if not self.pnl_snapshots: return 0.0
+        now = time.time()
+        start_equity = self.pnl_snapshots[0][1]
+        for ts, equity in reversed(self.pnl_snapshots):
+            if now - ts >= window_seconds:
+                start_equity = equity
+                break
+        return self.pnl_snapshots[-1][1] - start_equity
+
+    async def emergency_unwind(self, vault_address: str, symbol: str = "ETH"):
+        """
+        Institutional Emergency Unwind:
+        1. Close all CEX positions for the symbol.
+        2. Pause the on-chain vault.
+        """
+        logger.critical(f"!!! EMERGENCY UNWIND INITIATED FOR {vault_address} !!!")
+        
+        try:
+            from exchange_manager import ExchangeManager
+            exchange = ExchangeManager()
+            
+            # 1. Close CEX Positions
+            agg_pos = exchange.get_aggregate_position(symbol)
+            size = agg_pos["size"]
+            if size > 0:
+                logger.warning(f"Closing {size} {symbol} short position...")
+                success = exchange.execute_buy(symbol, size)
+                if success:
+                    logger.success(f"CEX position closed for {symbol}")
+                else:
+                    logger.error(f"FAILED to close CEX position for {symbol}")
+            
+            # 2. Pause Vault
+            await self.trigger_circuit_breaker(vault_address, "EMERGENCY UNWIND")
+            
+        except Exception as e:
+            logger.error(f"Emergency unwind failed: {e}")
 
     def load_pnl_state(self) -> Dict:
         if os.path.exists(self.pnl_state_path):
@@ -79,21 +139,8 @@ class RiskEngine:
         except Exception as e:
             logger.error(f"Failed to save PnL state: {e}")
 
-    def track_pnl(self, current_equity: float):
-        if self.pnl_state["starting_equity"] == 0:
-            self.pnl_state["starting_equity"] = current_equity
-            self.save_pnl_state()
-        
-        # Check for reset
-        if time.time() - self.pnl_state["last_reset"] > 86400:
-            self.pnl_state["starting_equity"] = current_equity
-            self.pnl_state["daily_realized_pnl"] = 0.0
-            self.pnl_state["last_reset"] = time.time()
-            self.save_pnl_state()
-
     def get_daily_pnl(self, current_equity: float) -> float:
         return current_equity - self.pnl_state["starting_equity"]
-
 
     def calculate_volatility(self, symbol: str) -> float:
         """
@@ -221,15 +268,16 @@ class RiskEngine:
         profile.risk_factors = risk_factors
         return max(0.0, min(100.0, score))
 
-
     async def analyze_vault(self, vault_data: Dict) -> VaultRiskProfile:
         """
         Performs a deep institutional risk analysis.
         """
         symbol = vault_data.get("symbol", "ETH/USDT")
+        current_price = vault_data["current_price"]
+        
         # Update price history
         if symbol not in self.price_history: self.price_history[symbol] = []
-        self.price_history[symbol].append(vault_data["current_price"])
+        self.price_history[symbol].append(current_price)
         if len(self.price_history[symbol]) > 100: self.price_history[symbol].pop(0)
         
         vol = self.calculate_volatility(symbol)
@@ -238,6 +286,7 @@ class RiskEngine:
         current_equity = vault_data.get("available_margin_usd", 0)
         self.track_pnl(current_equity)
         daily_pnl = self.get_daily_pnl(current_equity)
+        hourly_pnl = self.get_pnl_window(3600)
         
         # Net Delta: (Collateral + Short Position) / Collateral
         # Should be ~0 for delta-neutral
@@ -245,6 +294,18 @@ class RiskEngine:
         if onchain_collateral == 0: return None
         
         net_delta = (onchain_collateral + vault_data["cex_short_position"]) / onchain_collateral
+        
+        # Liquidation Distance Calculations
+        # On-chain: Based on Health Factor (HF)
+        hf = vault_data.get("health_factor", 2.0) # Default to safe 2.0
+        liq_dist_onchain = max(0.0, hf - 1.0)
+        
+        # CEX: Based on Liquidation Price
+        liq_price_cex = vault_data.get("liq_price_cex", 0.0)
+        if liq_price_cex > current_price:
+            liq_dist_cex = (liq_price_cex - current_price) / current_price
+        else:
+            liq_dist_cex = vault_data.get("liq_cex", 0.3) # Fallback to placeholder if not provided
         
         # VaR Calculation
         var_99 = self.calculate_var(symbol, onchain_collateral, 0.99)
@@ -254,35 +315,43 @@ class RiskEngine:
             net_delta=net_delta,
             gamma_exposure=vault_data.get("gamma", 0.0),
             vega_exposure=vault_data.get("vega", 0.0),
-            liquidation_distance_onchain=vault_data["liq_onchain"],
-            liquidation_distance_cex=vault_data["liq_cex"],
+            liquidation_distance_onchain=liq_dist_onchain,
+            liquidation_distance_cex=liq_dist_cex,
             volatility_24h=vol,
             health_score=0.0,
             daily_pnl_usd=daily_pnl,
-            risk_factors={"VaR_99": var_99}
+            risk_factors={"VaR_99": var_99, "HF": hf, "LiqPriceCEX": liq_price_cex, "HourlyPnL": hourly_pnl}
         )
         
         profile.health_score = self.calculate_health_score(profile)
         
         # Log profile
-        logger.info(f"Vault {profile.vault_address} | Health: {profile.health_score:.2f} | Delta: {profile.net_delta:.4f} | Daily PnL: ${daily_pnl:.2f}")
+        logger.info(f"Vault {profile.vault_address} | Health: {profile.health_score:.2f} | Delta: {profile.net_delta:.4f} | Daily PnL: ${daily_pnl:.2f} | Hourly PnL: ${hourly_pnl:.2f}")
         
         # Circuit Breaker Logic
         # 1. Health Score Breaker
         if profile.health_score < self.base_thresholds["critical_health_score"]:
             logger.critical(f"CRITICAL RISK: Health Score {profile.health_score:.2f}")
-            await self.trigger_circuit_breaker(profile.vault_address, f"Health Score {profile.health_score:.2f} | Risk Factors: {profile.risk_factors}")
+            await self.emergency_unwind(profile.vault_address, symbol.split('/')[0])
         
         # 2. Hard Daily Loss Breaker
         if daily_pnl < -self.base_thresholds["daily_loss_limit_usd"]:
             logger.critical(f"CRITICAL LOSS: Daily PnL ${daily_pnl:.2f} exceeds limit")
-            await self.trigger_circuit_breaker(profile.vault_address, f"Daily Loss Limit Exceeded: ${daily_pnl:.2f}")
+            await self.emergency_unwind(profile.vault_address, symbol.split('/')[0])
 
-        # 3. Max Drawdown Breaker
+        # 3. Hourly Loss Breaker
+        if hourly_pnl < -self.base_thresholds["hourly_loss_limit_usd"]:
+            logger.critical(f"CRITICAL LOSS: Hourly PnL ${hourly_pnl:.2f} exceeds limit")
+            await self.emergency_unwind(profile.vault_address, symbol.split('/')[0])
+
+        # 4. Max Drawdown Breaker
         drawdown_pct = abs(daily_pnl) / (self.pnl_state["starting_equity"] or 1.0)
         if daily_pnl < 0 and drawdown_pct > self.base_thresholds["max_drawdown_pct"]:
             logger.critical(f"CRITICAL DRAWDOWN: {drawdown_pct:.2%} exceeds limit")
-            await self.trigger_circuit_breaker(profile.vault_address, f"Max Drawdown Exceeded: {drawdown_pct:.2%}")
+            await self.emergency_unwind(profile.vault_address, symbol.split('/')[0])
+            
+        return profile
+
             
         return profile
 

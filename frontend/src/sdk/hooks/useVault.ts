@@ -30,12 +30,44 @@ const VAULT_ABI = [
     inputs: [{ name: 'account', type: 'address' }],
     outputs: [{ name: '', type: 'uint256' }],
   },
+  {
+    name: 'asset',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'address' }],
+  },
+] as const;
+
+const ERC20_ABI = [
+  {
+    name: 'decimals',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint8' }],
+  },
 ] as const;
 
 export function useVault() {
   const { vaultAddress } = useWhiteLabel();
   const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
+
+  const { data: assetAddress } = useReadContract({
+    address: vaultAddress,
+    abi: VAULT_ABI,
+    functionName: 'asset',
+  });
+
+  const { data: decimals } = useReadContract({
+    address: assetAddress,
+    abi: ERC20_ABI,
+    functionName: 'decimals',
+    query: {
+        enabled: !!assetAddress
+    }
+  });
 
   const { data: totalAssets, refetch: refetchTotalAssets } = useReadContract({
     address: vaultAddress,
@@ -54,8 +86,8 @@ export function useVault() {
   });
 
   const deposit = async (amount: string) => {
-    if (!address) return;
-    const assets = parseUnits(amount, 18); // Assuming 18 decimals for now
+    if (!address || decimals === undefined) return;
+    const assets = parseUnits(amount, decimals);
     return writeContractAsync({
       address: vaultAddress,
       abi: VAULT_ABI,
@@ -65,12 +97,14 @@ export function useVault() {
   };
 
   return {
-    totalAssets: totalAssets ? formatUnits(totalAssets, 18) : '0',
-    userBalance: userBalance ? formatUnits(userBalance, 18) : '0',
+    totalAssets: totalAssets && decimals !== undefined ? formatUnits(totalAssets, decimals) : '0',
+    userBalance: userBalance && decimals !== undefined ? formatUnits(userBalance, decimals) : '0',
     deposit,
+    decimals: decimals ?? 18,
     refetch: () => {
       refetchTotalAssets();
       refetchUserBalance();
     },
   };
 }
+

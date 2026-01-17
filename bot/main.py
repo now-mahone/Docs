@@ -8,8 +8,11 @@ from engine import HedgingEngine
 from liquidity_manager import LiquidityManager
 from alerts import send_discord_alert
 from sentinel.risk_engine import RiskEngine
+from por_attestation import PoRAttestationBot
+from reporting_service import ReportingService
 
 # Created: 2025-12-28
+# Updated: 2026-01-16 (Institutional Solvency Reporting)
 
 DRY_RUN = False
 
@@ -37,6 +40,10 @@ def main():
         liquidity = LiquidityManager()
         risk_engine = RiskEngine(w3=chain.w3, private_key=chain.private_key)
         
+        # Initialize Solvency Reporting
+        por_bot = PoRAttestationBot()
+        reporting = ReportingService(chain)
+        
         if args.seed_only:
             logger.info("GENESIS MODE: Executing seed TVL update...")
             # We call run_cycle with seed_only=True to bypass CEX API
@@ -54,57 +61,82 @@ def main():
         send_discord_alert(f"CRITICAL: Bot failed to initialize: {e}", level="CRITICAL")
         return
 
+    last_solvency_pulse = 0
+
     while True:
         try:
-            # 1. Risk Analysis & Sentinel Defense
-            # Fetch latest vault data for risk analysis
-            vault_tvl = chain.get_vault_tvl()
-            agg_pos = exchange.get_aggregate_position('ETH')
-            short_pos = agg_pos["size"]
-            collateral_usdt = exchange.get_total_equity()
+            for v_config in chain.vaults:
+                vault_address = v_config["address"]
+                chain_name = v_config["chain"]
+                
+                logger.info(f"--- Processing Vault: {vault_address} ({chain_name}) ---")
+                chain.set_active_vault(vault_address, chain_name)
+                
+                # 1. Risk Analysis & Sentinel Defense
+                vault_tvl = chain.get_vault_assets(vault_address, chain_name)
+                
+                # We assume for now that each vault hedges ETH
+                symbol = "ETH"
+                agg_pos = exchange.get_aggregate_position(symbol)
+                short_pos = agg_pos["size"]
+                collateral_usdt = exchange.get_total_equity()
+                liq_price_cex = exchange.get_liquidation_price(symbol)
+                current_price = exchange.get_market_price(symbol)
 
-            
-            vault_data = {
-                "address": chain.vault_address,
-                "onchain_collateral": vault_tvl,
-                "cex_short_position": short_pos,
-                "available_margin_usd": collateral_usdt,
-                "current_price": exchange.get_market_price('ETH'),
-                "liq_onchain": 0.5, # Placeholder: 50% distance to liquidation
-                "liq_cex": 0.3      # Placeholder: 30% distance to liquidation
-            }
-            
-            import asyncio
-            try:
-                asyncio.run(risk_engine.analyze_vault(vault_data))
-            except Exception as e:
-                logger.error(f"Risk analysis failed: {e}")
-
-            
-            # Check Health Factor for auto-deleverage
-            if chain.minter:
+                hf = 2.0 # Default
+                if chain.minter and chain_name == "Base":
+                    try:
+                        hf = chain.minter.functions.getHealthFactor(vault_address).call() / 1e18
+                    except Exception as e:
+                        logger.error(f"Failed to check health factor for {vault_address}: {e}")
+                
+                vault_data = {
+                    "address": vault_address,
+                    "onchain_collateral": vault_tvl,
+                    "cex_short_position": short_pos,
+                    "available_margin_usd": collateral_usdt,
+                    "current_price": current_price,
+                    "liq_price_cex": liq_price_cex,
+                    "health_factor": hf,
+                    "symbol": f"{symbol}/USDT"
+                }
+                
+                import asyncio
                 try:
-                    hf = chain.minter.functions.getHealthFactor(chain.vault_address).call() / 1e18
-                    risk_engine.auto_deleverage(chain.vault_address, hf)
+                    asyncio.run(risk_engine.analyze_vault(vault_data))
                 except Exception as e:
-                    logger.error(f"Failed to check health factor: {e}")
+                    logger.error(f"Risk analysis failed for {vault_address}: {e}")
 
-            # 2. Execute one hedging and reporting cycle
-            engine.run_cycle(dry_run=DRY_RUN)
-            
-            # 3. Execute liquidity management cycle
-            if not args.seed_only:
-                liquidity.check_peg()
-                liquidity.manage_lp_positions()
-                liquidity.rebalance_pools()
+                # Auto-deleverage check
+                if hf < 1.1: # Critical threshold
+                    risk_engine.auto_deleverage(vault_address, hf)
+
+                # 2. Execute one hedging and reporting cycle
+                # Note: engine.run_cycle currently uses global vault_address from ChainManager
+                # We might need to update HedgingEngine to support per-vault cycles
+                engine.run_cycle(dry_run=DRY_RUN)
+                
+                # 3. Execute liquidity management cycle (Base only for now)
+                if not args.seed_only and chain_name == "Base":
+                    liquidity.check_peg()
+                    liquidity.manage_lp_positions()
+                    liquidity.rebalance_pools()
+
+                # 4. Institutional Solvency Reporting (Every 1 hour)
+                if time.time() - last_solvency_pulse > 3600:
+                    logger.info(f"Running Institutional Solvency Pulse for {vault_address}...")
+                    por_bot.run_cycle()
+                    reporting.generate_solvency_certificate(vault_address)
+                    last_solvency_pulse = time.time()
 
             if DRY_RUN:
                 logger.info("Dry run cycle complete. Exiting.")
                 break
             
             # Sleep for 5 minutes
-            logger.info("Cycle complete. Sleeping for 300 seconds...")
+            logger.info("All vaults processed. Sleeping for 300 seconds...")
             time.sleep(300)
+
             
         except Exception as e:
             error_msg = f"CRITICAL ERROR in main loop: {e}\n{traceback.format_exc()}"

@@ -45,3 +45,11 @@ class BaseExchange(ABC):
     def get_funding_rate(self, symbol: str) -> float:
         """Returns the current hourly funding rate."""
         pass
+
+    @abstractmethod
+    def get_liquidation_price(self, symbol: str) -> float:
+        """
+        Returns the liquidation price for the current position of a symbol.
+        Returns 0.0 if no position exists.
+        """
+        pass

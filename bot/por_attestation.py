@@ -65,10 +65,10 @@ class PoRAttestationBot:
         off_chain_equity = 0
         short_size = 0
         if self.exchange:
-            # Equity = Margin Balance + Unrealized PnL
-            margin = self.exchange.get_collateral_balance()
-            short_size, pnl = self.exchange.get_short_position("ETH")
-            off_chain_equity = margin + pnl
+            # Equity = Aggregate Equity across all exchanges
+            off_chain_equity = self.exchange.get_total_equity()
+            pos = self.exchange.get_aggregate_position("ETH")
+            short_size = abs(pos["size"]) # Position size is negative for shorts
             
         net_delta = 0
         if on_chain_assets > 0:
@@ -115,18 +115,19 @@ class PoRAttestationBot:
         logger.success(f"Solvency report generated: {report_path}")
         return total_assets, off_chain_equity, net_delta
 
-    def sign_attestation(self, total_assets: float, net_delta: float, exchange_equity: float, timestamp: int):
+    def sign_attestation(self, off_chain_equity: float, net_delta: float, exchange_equity: float, timestamp: int):
         """
         Signs the reserve data using the bot's private key.
         Matches KerneVerificationNode.submitVerifiedAttestation signature.
         """
-        assets_wei = self.w3.to_wei(total_assets, 'ether')
+        assets_wei = self.w3.to_wei(off_chain_equity, 'ether')
         delta_wei = int(net_delta * 1e18)
         equity_wei = self.w3.to_wei(exchange_equity, 'ether')
+        chain_id = self.w3.eth.chain_id
 
         message_hash = Web3.solidity_keccak(
-            ['address', 'uint256', 'uint256', 'uint256', 'uint256'],
-            [self.vault_address, assets_wei, delta_wei, equity_wei, timestamp]
+            ['uint256', 'address', 'address', 'uint256', 'uint256', 'uint256', 'uint256'],
+            [chain_id, self.verification_node_address, self.vault_address, assets_wei, delta_wei, equity_wei, timestamp]
         )
         encoded_message = encode_defunct(hexstr=message_hash.hex())
         signed_message = self.w3.eth.account.sign_message(encoded_message, private_key=self.private_key)
@@ -134,38 +135,74 @@ class PoRAttestationBot:
 
     def run_cycle(self):
         """
-        Runs a single attestation cycle: Report -> Sign -> Publish.
+        Runs a single attestation cycle: Report -> Sign -> Publish -> Sync.
         """
         logger.info("Starting Institutional Solvency Pulse...")
         total_assets, off_chain_equity, net_delta = self.generate_solvency_report()
         
         timestamp = int(time.time())
-        sig = self.sign_attestation(total_assets, net_delta, off_chain_equity, timestamp)
+        sig = self.sign_attestation(off_chain_equity, net_delta, off_chain_equity, timestamp)
         logger.info(f"Attestation Signed: {sig[:10]}...")
 
         if self.verification_node_address:
             try:
                 # Load VerificationNode ABI
-                node_abi = [{
-                    "inputs": [
-                        {"internalType": "address", "name": "vault", "type": "address"},
-                        {"internalType": "uint256", "name": "amount", "type": "uint256"},
-                        {"internalType": "uint256", "name": "netDelta", "type": "uint256"},
-                        {"internalType": "uint256", "name": "exchangeEquity", "type": "uint256"},
-                        {"internalType": "uint256", "name": "timestamp", "type": "uint256"},
-                        {"internalType": "bytes", "name": "signature", "type": "bytes"}
-                    ],
-                    "name": "submitVerifiedAttestation",
-                    "outputs": [],
-                    "stateMutability": "nonpayable",
-                    "type": "function"
-                }]
+                node_abi = [
+                    {
+                        "inputs": [
+                            {"internalType": "address", "name": "vault", "type": "address"},
+                            {"internalType": "uint256", "name": "offChainAssets", "type": "uint256"},
+                            {"internalType": "uint256", "name": "netDelta", "type": "uint256"},
+                            {"internalType": "uint256", "name": "exchangeEquity", "type": "uint256"},
+                            {"internalType": "uint256", "name": "timestamp", "type": "uint256"},
+                            {"internalType": "bytes", "name": "signature", "type": "bytes"}
+                        ],
+                        "name": "submitVerifiedAttestation",
+                        "outputs": [],
+                        "stateMutability": "nonpayable",
+                        "type": "function"
+                    },
+                    {
+                        "inputs": [
+                            {"internalType": "uint32", "name": "_dstEid", "type": "uint32"},
+                            {"internalType": "address", "name": "_vault", "type": "address"},
+                            {"internalType": "bytes", "name": "_options", "type": "bytes"}
+                        ],
+                        "name": "syncAttestation",
+                        "outputs": [],
+                        "stateMutability": "payable",
+                        "type": "function"
+                    },
+                    {
+                        "inputs": [
+                            {"internalType": "uint32", "name": "_dstEid", "type": "uint32"},
+                            {"internalType": "address", "name": "_vault", "type": "address"},
+                            {"internalType": "bytes", "name": "_options", "type": "bytes"},
+                            {"internalType": "bool", "name": "_payInLzToken", "type": "bool"}
+                        ],
+                        "name": "quote",
+                        "outputs": [
+                            {
+                                "components": [
+                                    {"internalType": "uint256", "name": "nativeFee", "type": "uint256"},
+                                    {"internalType": "uint256", "name": "lzTokenFee", "type": "uint256"}
+                                ],
+                                "internalType": "struct MessagingFee",
+                                "name": "fee",
+                                "type": "tuple"
+                            }
+                        ],
+                        "stateMutability": "view",
+                        "type": "function"
+                    }
+                ]
                 node = self.w3.eth.contract(address=self.verification_node_address, abi=node_abi)
                 
-                assets_wei = self.w3.to_wei(total_assets, 'ether')
+                assets_wei = self.w3.to_wei(off_chain_equity, 'ether')
                 delta_wei = int(net_delta * 1e18)
                 equity_wei = self.w3.to_wei(off_chain_equity, 'ether')
 
+                # 1. Publish on Source Chain
                 tx = node.functions.submitVerifiedAttestation(
                     self.vault_address,
                     assets_wei,
@@ -183,8 +220,39 @@ class PoRAttestationBot:
                 signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
                 tx_hash = self.w3.eth.send_raw_transaction(signed_tx.rawTransaction)
                 logger.success(f"Attestation published on-chain: {tx_hash.hex()}")
+
+                # 2. Sync to Arbitrum if on Base
+                chain_id = self.w3.eth.chain_id
+                if chain_id == 8453: # Base
+                    arb_eid = 30110
+                    # Standard options for LZ V2 (executor gas limit)
+                    # 0x00030100110100000000000000000000000000030d40 = 200k gas
+                    options = bytes.fromhex("00030100110100000000000000000000000000030d40")
+                    
+                    # Wait a bit for the first tx to be indexed if needed, 
+                    # but usually nonce management is enough.
+                    
+                    fee = node.functions.quote(arb_eid, self.vault_address, options, False).call()
+                    native_fee = fee[0]
+                    
+                    sync_tx = node.functions.syncAttestation(
+                        arb_eid,
+                        self.vault_address,
+                        options
+                    ).build_transaction({
+                        'from': self.account.address,
+                        'nonce': self.w3.eth.get_transaction_count(self.account.address),
+                        'value': native_fee,
+                        'gas': 500000,
+                        'gasPrice': self.w3.eth.gas_price
+                    })
+                    
+                    signed_sync_tx = self.w3.eth.account.sign_transaction(sync_tx, self.private_key)
+                    sync_tx_hash = self.w3.eth.send_raw_transaction(signed_sync_tx.rawTransaction)
+                    logger.success(f"Attestation synced to Arbitrum: {sync_tx_hash.hex()}")
+
             except Exception as e:
-                logger.error(f"Failed to publish attestation: {e}")
+                logger.error(f"Failed to publish or sync attestation: {e}")
         
         return total_assets
 

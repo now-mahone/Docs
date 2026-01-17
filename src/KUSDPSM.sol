@@ -71,14 +71,14 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
         require(price > 0, "Invalid oracle price");
         require(block.timestamp <= updatedAt + 24 hours, "Oracle price stale");
 
-        // Assume oracle price is in 8 decimals (standard for USD pairs)
-        // Normalized price should be around 1.0 (1e8)
-        uint256 uPrice = uint256(price);
+        uint8 decimals = IAggregatorV3(oracle).decimals();
+        uint256 normalizedPrice = uint256(price) * (10 ** (18 - decimals));
+        uint256 targetPrice = 1e18; // 1.0 USD in 18 decimals
+
         uint256 threshold = maxDepegBps[stable] == 0 ? DEFAULT_MAX_DEPEG_BPS : maxDepegBps[stable];
         
-        // 1e8 is 1.0 USD
-        uint256 deviation = uPrice > 1e8 ? uPrice - 1e8 : 1e8 - uPrice;
-        require((deviation * 10000) / 1e8 <= threshold, "Stable depegged: Circuit breaker triggered");
+        uint256 deviation = normalizedPrice > targetPrice ? normalizedPrice - targetPrice : targetPrice - normalizedPrice;
+        require((deviation * 10000) / targetPrice <= threshold, "Stable depegged: Circuit breaker triggered");
     }
 
     function _checkSolvency() internal view {
@@ -108,6 +108,12 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
         return (amount * feeBps) / 10000;
     }
 
+    bool public mintingEnabled;
+
+    function setMintingEnabled(bool enabled) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        mintingEnabled = enabled;
+    }
+
     function swapStableForKUSD(address stable, uint256 amount) external nonReentrant whenNotPaused {
         _checkDepeg(stable);
         _checkSolvency();
@@ -119,7 +125,16 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
 
         currentExposure[stable] += amount;
         IERC20(stable).safeTransferFrom(msg.sender, address(this), amount);
-        kUSD.safeTransfer(msg.sender, amountAfterFee);
+        
+        if (mintingEnabled) {
+            // Attempt to mint kUSD if enabled
+            (bool success, ) = address(kUSD).call(
+                abi.encodeWithSignature("mint(address,uint256)", msg.sender, amountAfterFee)
+            );
+            require(success, "kUSD minting failed");
+        } else {
+            kUSD.safeTransfer(msg.sender, amountAfterFee);
+        }
 
         emit Swap(msg.sender, stable, address(kUSD), amount, fee);
         emit ExposureUpdated(stable, currentExposure[stable]);

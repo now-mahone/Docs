@@ -76,3 +76,15 @@ class BybitExchange(BaseExchange):
         except Exception as e:
             logger.error(f"Bybit Error funding: {e}")
             return 0.0
+
+    def get_liquidation_price(self, symbol: str) -> float:
+        try:
+            positions = self.exchange.fetch_positions([symbol])
+            if not positions:
+                return 0.0
+            pos = positions[0]
+            liq_price = pos.get('liquidationPrice')
+            return float(liq_price) if liq_price else 0.0
+        except Exception as e:
+            logger.error(f"Bybit Error liquidation price: {e}")
+            return 0.0

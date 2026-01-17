@@ -98,7 +98,7 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
     // STRUCTS
     // ═══════════════════════════════════════════════════════════════════════════════
     
-    enum DEX { Aerodrome, UniswapV3, UniswapV2, Maverick, PancakeV3 }
+    enum DEX { Aerodrome, UniswapV3, UniswapV2, Maverick, PancakeV3, KUSDPSM }
     
     struct SwapParams {
         DEX dex;
@@ -316,6 +316,8 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
             _executeUniswapV2Swap(params);
         } else if (params.dex == DEX.Maverick) {
             _executeMaverickSwap(params);
+        } else if (params.dex == DEX.KUSDPSM) {
+            _executePsmSwap(params);
         }
         
         uint256 balanceAfter = IERC20(params.tokenOut).balanceOf(address(this));
@@ -410,6 +412,28 @@ contract KerneFlashArbBot is AccessControl, ReentrancyGuard, Pausable, IERC3156F
         );
     }
     
+    /**
+     * @notice Execute swap on KUSDPSM
+     */
+    function _executePsmSwap(SwapParams memory params) internal {
+        require(psm != address(0), "PSM not set");
+        IERC20(params.tokenIn).forceApprove(psm, params.amountIn);
+        
+        (bool success, bytes memory data) = psm.staticcall(abi.encodeWithSignature("kUSD()"));
+        require(success, "Failed to get kUSD address");
+        address kUSD = abi.decode(data, (address));
+        
+        if (params.tokenOut == kUSD) {
+            (bool swapSuccess, ) = psm.call(abi.encodeWithSignature("swapStableForKUSD(address,uint256)", params.tokenIn, params.amountIn));
+            require(swapSuccess, "PSM swapStableForKUSD failed");
+        } else if (params.tokenIn == kUSD) {
+            (bool swapSuccess, ) = psm.call(abi.encodeWithSignature("swapKUSDForStable(address,uint256)", params.tokenOut, params.amountIn));
+            require(swapSuccess, "PSM swapKUSDForStable failed");
+        } else {
+            revert("Invalid PSM tokens");
+        }
+    }
+
     /**
      * @notice Execute swap on Uniswap V3 (or compatible like PancakeSwap V3)
      */

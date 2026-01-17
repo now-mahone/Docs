@@ -5,6 +5,8 @@ pragma solidity 0.8.24;
 import "forge-std/Test.sol";
 import "src/KerneIntentExecutor.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/interfaces/IERC3156FlashLender.sol";
+import "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
 
 contract MockERC20 is ERC20 {
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
@@ -16,16 +18,29 @@ contract MockERC20 is ERC20 {
     }
 }
 
-contract MockLendingPool {
-    function flashLoanSimple(
-        address receiverAddress,
-        address asset,
+contract MockLendingPool is IERC3156FlashLender {
+    function maxFlashLoan(address token) external view override returns (uint256) {
+        return type(uint256).max;
+    }
+
+    function flashFee(address token, uint256 amount) external view override returns (uint256) {
+        return 0;
+    }
+
+    function flashLoan(
+        IERC3156FlashBorrower receiver,
+        address token,
         uint256 amount,
-        bytes calldata params,
-        uint16 referralCode
-    ) external {
-        // Mock flash loan: just call executeOperation back
-        KerneIntentExecutor(payable(receiverAddress)).executeOperation(asset, amount, 0, msg.sender, params);
+        bytes calldata data
+    ) external override returns (bool) {
+        // Mock flash loan: just call onFlashLoan back
+        ERC20(token).transfer(address(receiver), amount);
+        require(
+            receiver.onFlashLoan(msg.sender, token, amount, 0, data) == keccak256("ERC3156FlashBorrower.onFlashLoan"),
+            "Flash loan callback failed"
+        );
+        ERC20(token).transferFrom(address(receiver), address(this), amount);
+        return true;
     }
 }
 
@@ -45,7 +60,7 @@ contract KerneSentinelTest is Test {
         tokenOut = new MockERC20("Token Out", "TOUT");
         lendingPool = new MockLendingPool();
 
-        executor = new KerneIntentExecutor(admin, solver, address(lendingPool));
+        executor = new KerneIntentExecutor(admin, solver);
 
         vm.startPrank(admin);
         executor.grantRole(executor.SENTINEL_ROLE(), sentinel);
@@ -70,6 +85,7 @@ contract KerneSentinelTest is Test {
 
         vm.startPrank(solver);
         executor.fulfillIntent(
+            address(lendingPool),
             address(tokenIn),
             address(tokenOut),
             100 * 1e18,
@@ -93,6 +109,7 @@ contract KerneSentinelTest is Test {
         vm.startPrank(solver);
         vm.expectRevert("Sentinel: Intent expired (Latency)");
         executor.fulfillIntent(
+            address(lendingPool),
             address(tokenIn),
             address(tokenOut),
             100 * 1e18,
@@ -125,6 +142,7 @@ contract KerneSentinelTest is Test {
 
         vm.startPrank(solver);
         executor.fulfillIntent(
+            address(lendingPool),
             address(tokenIn),
             address(tokenOut),
             100 * 1e18,
@@ -134,6 +152,7 @@ contract KerneSentinelTest is Test {
         );
         vm.stopPrank();
     }
+
 
     function testUpdateSentinelParams() public {
         vm.startPrank(sentinel);

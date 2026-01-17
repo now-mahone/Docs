@@ -28,3 +28,9 @@ int_types = "long"
 multiline_func_header = "params_first"
 quote_style = "double"
 number_underscore = "preserve"
+
+[invariant]
+runs = 512
+depth = 128
+fail_on_revert = false
+

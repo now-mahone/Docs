@@ -27,8 +27,11 @@ contract KerneSolvencyHardeningTest is Test {
         asset = new MockERC20();
         verifier = vm.addr(verifierKey);
         
+        address lzEndpoint = 0x1a44076050125825900e736c501f859c50fE728c;
+        vm.etch(lzEndpoint, hex"00");
+
         vault = new KerneVault(asset, "KUSD Vault", "kUSD", admin, admin, address(0x4));
-        node = new KerneVerificationNode(admin);
+        node = new KerneVerificationNode(lzEndpoint, admin);
         anchor = new KerneTrustAnchor(admin);
 
         vm.startPrank(admin);
@@ -37,6 +40,10 @@ contract KerneSolvencyHardeningTest is Test {
         vault.setTrustAnchor(address(anchor));
         vault.setFounder(admin);
         vault.updateHedgingReserve(1000); // Match dead shares to keep 1:1 ratio
+        
+        // Satisfy auditor pulse
+        anchor.grantRole(anchor.AUDITOR_ROLE(), admin);
+        anchor.submitAuditorPulse(address(vault));
         vm.stopPrank();
 
         asset.mint(user, 100 ether);
@@ -49,7 +56,15 @@ contract KerneSolvencyHardeningTest is Test {
     }
 
     function _signAttestation(uint256 amount, uint256 delta, uint256 equity, uint256 timestamp) internal view returns (bytes memory) {
-        bytes32 messageHash = keccak256(abi.encodePacked(address(vault), amount, delta, equity, timestamp));
+        bytes32 messageHash = keccak256(abi.encodePacked(
+            block.chainid,
+            address(node),
+            address(vault), 
+            amount, 
+            delta, 
+            equity, 
+            timestamp
+        ));
         bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(verifierKey, ethSignedMessageHash);
         return abi.encodePacked(r, s, v);

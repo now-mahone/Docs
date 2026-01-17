@@ -64,6 +64,7 @@ contract KerneFlashArbBotTest is Test {
         arbBot.setTokenApproval(address(kUSD), true);
         arbBot.setTokenApproval(address(usdc), true);
         arbBot.setTokenApproval(address(weth), true);
+        arbBot.toggleSentinel(false);
         
         vm.stopPrank();
         

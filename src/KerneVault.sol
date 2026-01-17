@@ -135,7 +135,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
      * @notice Initializer for white-label clones.
      */
     function initialize(
-        address asset_,
+        address,
         string memory name_,
         string memory symbol_,
         address admin_,
@@ -195,10 +195,13 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
             grossPerformanceFeeBps = performanceFeeBps_;
         }
         whitelistEnabled = whitelistEnabled_;
+    }
 
-        if (totalSupply() == 0) {
-            _mint(admin_, 1000);
-        }
+    /**
+     * @dev See {ERC4626-_decimalsOffset}.
+     */
+    function _decimalsOffset() internal view virtual override returns (uint8) {
+        return 3;
     }
 
     /**
@@ -225,9 +228,13 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
             }
         }
 
-        // Use verified assets if available, otherwise fallback to reported hedgingReserve
-        uint256 reserve = verifiedAssets > 0 ? verifiedAssets : hedgingReserve;
-        return super.totalAssets() + offChainAssets + reserve;
+        // If verified assets are available, they represent the total off-chain value (including reserve)
+        if (verifiedAssets > 0) {
+            return super.totalAssets() + verifiedAssets;
+        }
+
+        // Fallback to reported off-chain assets and hedging reserve
+        return super.totalAssets() + offChainAssets + hedgingReserve;
     }
 
     /**
@@ -236,7 +243,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     function getSolvencyRatio() public view returns (uint256) {
         uint256 assets = totalAssets();
         uint256 liabilities = totalSupply();
-        if (liabilities <= 1000) return 20000; // Account for dead shares
+        if (liabilities == 0) return 20000;
         return (assets * 10000) / liabilities;
     }
 
@@ -244,11 +251,11 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         _updateSolvency(false);
     }
 
-    function _checkSolvency() internal {
-        _updateSolvency(true);
+    function _checkSolvency(bool strict) internal {
+        _updateSolvency(strict);
     }
 
-    function _updateSolvency(bool revertOnInsolvent) internal {
+    function _updateSolvency(bool strict) internal {
         bool currentlySolvent = true;
         if (minSolvencyThreshold > 0 && totalSupply() > 1000) {
             uint256 ratio = getSolvencyRatio();
@@ -272,7 +279,8 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
             } else if (block.timestamp - insolventSince > GRACE_PERIOD) {
                 if (!paused()) _pause();
             }
-            if (revertOnInsolvent) revert("Vault: Insolvent");
+            // Revert on strict operations (withdrawals) or if already paused
+            if (strict || paused()) revert("Vault: Insolvent");
         } else {
             insolventSince = 0;
         }
@@ -357,6 +365,19 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not authorized");
         require(bps <= 2000, "Fee too high");
         founderFeeBps = bps;
+    }
+
+    function setPrimeAccount(address account, bool active) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        primeAccounts[account].active = active;
+    }
+
+    /**
+     * @notice Batch sets the prime status for multiple accounts.
+     */
+    function batchSetPrimeAccounts(address[] calldata accounts, bool status) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 i = 0; i < accounts.length; i++) {
+            primeAccounts[accounts[i]].active = status;
+        }
     }
 
     function setTreasury(
@@ -543,7 +564,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         SafeERC20.safeTransferFrom(IERC20(token), address(receiver), address(this), amount + fee);
         
         // Ensure solvency is maintained after fee collection
-        _checkSolvency();
+        _checkSolvency(false);
         
         return true;
     }
@@ -605,7 +626,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         if (maxDepositLimit > 0) {
             require(assets <= maxDepositLimit, "Deposit limit exceeded");
         }
-        _checkSolvency();
+        _checkSolvency(false);
         return super.deposit(assets, receiver);
     }
 
@@ -624,7 +645,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         if (maxDepositLimit > 0) {
             require(assets <= maxDepositLimit, "Deposit limit exceeded");
         }
-        _checkSolvency();
+        _checkSolvency(false);
         return super.mint(shares, receiver);
     }
 
@@ -637,7 +658,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         if (maxWithdrawLimit > 0) {
             require(assets <= maxWithdrawLimit, "Withdraw limit exceeded");
         }
-        _checkSolvency();
+        _checkSolvency(true);
         return super.withdraw(assets, receiver, owner);
     }
 
@@ -651,7 +672,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         if (maxWithdrawLimit > 0) {
             require(assets <= maxWithdrawLimit, "Withdraw limit exceeded");
         }
-        _checkSolvency();
+        _checkSolvency(true);
         return super.redeem(shares, receiver, owner);
     }
 
@@ -671,7 +692,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     function transferToPrime(address prime, uint256 amount) external nonReentrant {
         require(hasRole(STRATEGIST_ROLE, msg.sender) || msg.sender == prime, "Not authorized");
         require(prime != address(0), "Invalid prime address");
-        _checkSolvency();
+        _checkSolvency(true);
         SafeERC20.safeTransfer(IERC20(asset()), prime, amount);
     }
 
@@ -680,7 +701,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     ) external nonReentrant {
         require(hasRole(STRATEGIST_ROLE, msg.sender) || primeAccounts[msg.sender].active, "Not authorized");
         SafeERC20.safeTransferFrom(IERC20(asset()), msg.sender, address(this), amount);
-        _checkSolvency();
+        _checkSolvency(false);
     }
 
     struct PrimeInfo {

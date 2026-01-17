@@ -92,3 +92,17 @@ class HyperliquidExchange(BaseExchange):
         except Exception as e:
             logger.error(f"HL Error funding: {e}")
             return 0.0
+
+    def get_liquidation_price(self, symbol: str) -> float:
+        try:
+            user_state = self.info.user_state(self.address)
+            positions = user_state.get("assetPositions", [])
+            for pos_wrapper in positions:
+                pos = pos_wrapper["position"]
+                if pos["coin"] == symbol:
+                    liq_px = pos.get("liquidationPx")
+                    return float(liq_px) if liq_px else 0.0
+            return 0.0
+        except Exception as e:
+            logger.error(f"HL Error liquidation price: {e}")
+            return 0.0

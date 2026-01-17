@@ -37,147 +37,93 @@ class ChainManager:
 
         self.account = self.w3.eth.account.from_key(self.private_key)
         
-        # Load ABI from Foundry output
-        abi_path = os.path.join(os.path.dirname(__file__), "..", "out", "KerneVault.sol", "KerneVault.json")
-        if not os.path.exists(abi_path):
-            abi_path = os.path.join(os.path.dirname(__file__), "out", "KerneVault.sol", "KerneVault.json")
-        
-        with open(abi_path, "r", encoding="utf-8") as f:
-            artifact = json.load(f)
-            self.abi = artifact["abi"]
+        # Load ABIs
+        self.abi = self._load_abi("KerneVault")
+        self.reg_abi = self._load_abi("KerneVaultRegistry")
+        self.oracle_abi = self._load_abi("KerneYieldOracle")
+        self.minter_abi = self._load_abi("kUSDMinter")
+        self.treasury_abi = self._load_abi("KerneTreasury")
 
         self.vault = self.w3.eth.contract(address=self.vault_address, abi=self.abi)
 
-        # Load Registry ABI
+        # Multi-vault configuration
+        self.vaults = [
+            {"address": self.vault_address, "chain": "Base", "w3": self.w3}
+        ]
+        
+        arb_vault = os.getenv("ARB_VAULT_ADDRESS")
+        if arb_vault and self.arb_w3:
+            self.vaults.append({"address": arb_vault, "chain": "Arbitrum", "w3": self.arb_w3})
+            
+        opt_vault = os.getenv("OPT_VAULT_ADDRESS")
+        if opt_vault and self.opt_w3:
+            self.vaults.append({"address": opt_vault, "chain": "Optimism", "w3": self.opt_w3})
+
+        # Contracts
         registry_address = os.getenv("VAULT_REGISTRY_ADDRESS")
-        if registry_address:
-            reg_abi_path = os.path.join(os.path.dirname(__file__), "..", "out", "KerneVaultRegistry.sol", "KerneVaultRegistry.json")
-            if not os.path.exists(reg_abi_path):
-                reg_abi_path = os.path.join(os.path.dirname(__file__), "out", "KerneVaultRegistry.sol", "KerneVaultRegistry.json")
-            
-            with open(reg_abi_path, "r", encoding="utf-8") as f:
-                reg_artifact = json.load(f)
-                self.reg_abi = reg_artifact["abi"]
-            self.registry = self.w3.eth.contract(address=registry_address, abi=self.reg_abi)
-        else:
-            self.registry = None
+        self.registry = self.w3.eth.contract(address=registry_address, abi=self.reg_abi) if registry_address else None
 
-        # Load Yield Oracle ABI
         oracle_address = os.getenv("YIELD_ORACLE_ADDRESS")
-        if oracle_address:
-            oracle_abi_path = os.path.join(os.path.dirname(__file__), "..", "out", "KerneYieldOracle.sol", "KerneYieldOracle.json")
-            if not os.path.exists(oracle_abi_path):
-                oracle_abi_path = os.path.join(os.path.dirname(__file__), "out", "KerneYieldOracle.sol", "KerneYieldOracle.json")
-            
-            with open(oracle_abi_path, "r", encoding="utf-8") as f:
-                oracle_artifact = json.load(f)
-                self.oracle_abi = oracle_artifact["abi"]
-            self.oracle = self.w3.eth.contract(address=oracle_address, abi=self.oracle_abi)
-        else:
-            self.oracle = None
+        self.oracle = self.w3.eth.contract(address=oracle_address, abi=self.oracle_abi) if oracle_address else None
 
-        # Load kUSDMinter ABI
         minter_address = os.getenv("KUSD_MINTER_ADDRESS")
-        if minter_address:
-            minter_abi_path = os.path.join(os.path.dirname(__file__), "..", "out", "kUSDMinter.sol", "kUSDMinter.json")
-            if not os.path.exists(minter_abi_path):
-                minter_abi_path = os.path.join(os.path.dirname(__file__), "out", "kUSDMinter.sol", "kUSDMinter.json")
-            
-            with open(minter_abi_path, "r", encoding="utf-8") as f:
-                minter_artifact = json.load(f)
-                self.minter_abi = minter_artifact["abi"]
-            self.minter = self.w3.eth.contract(address=minter_address, abi=self.minter_abi)
-        else:
-            self.minter = None
+        self.minter = self.w3.eth.contract(address=minter_address, abi=self.minter_abi) if minter_address else None
 
-        # Load Treasury ABI
         treasury_address = os.getenv("TREASURY_ADDRESS")
-        if treasury_address:
-            treasury_abi_path = os.path.join(os.path.dirname(__file__), "..", "out", "KerneTreasury.sol", "KerneTreasury.json")
-            if not os.path.exists(treasury_abi_path):
-                treasury_abi_path = os.path.join(os.path.dirname(__file__), "out", "KerneTreasury.sol", "KerneTreasury.json")
-            
-            with open(treasury_abi_path, "r", encoding="utf-8") as f:
-                treasury_artifact = json.load(f)
-                self.treasury_abi = treasury_artifact["abi"]
-            self.treasury = self.w3.eth.contract(address=treasury_address, abi=self.treasury_abi)
-        else:
-            self.treasury = None
+        self.treasury = self.w3.eth.contract(address=treasury_address, abi=self.treasury_abi) if treasury_address else None
 
-        logger.info(f"ChainManager initialized. Connected to {self.rpc_url}. Vault: {self.vault_address}")
+        logger.info(f"ChainManager initialized. Registered {len(self.vaults)} vaults.")
 
-    def get_treasury_balance(self, token_address: str) -> float:
-        """
-        Returns the balance of a specific token in the treasury.
-        """
-        if not self.treasury:
-            return 0.0
-        try:
-            erc20_abi = [{"inputs":[{"name":"account","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"}, {"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"stateMutability":"view","type":"function"}]
-            token = self.w3.eth.contract(address=token_address, abi=erc20_abi)
-            balance = token.functions.balanceOf(self.treasury.address).call()
-            decimals = token.functions.decimals().call()
-            return balance / (10 ** decimals)
-        except Exception as e:
-            logger.error(f"Error getting treasury balance: {e}")
-            return 0.0
+    def _load_abi(self, name: str) -> list:
+        abi_path = os.path.join(os.path.dirname(__file__), "..", "out", f"{name}.sol", f"{name}.json")
+        if not os.path.exists(abi_path):
+            abi_path = os.path.join(os.path.dirname(__file__), "out", f"{name}.sol", f"{name}.json")
+        
+        if os.path.exists(abi_path):
+            with open(abi_path, "r", encoding="utf-8") as f:
+                artifact = json.load(f)
+                return artifact["abi"]
+        return []
 
-    def execute_buyback(self, token_address: str, amount_eth: float) -> str:
-        """
-        Executes a buyback of KERNE tokens on Aerodrome via KerneTreasury.
-        """
-        if not self.treasury:
-            return ""
-        try:
-            # Get decimals for the token
-            erc20_abi = [{"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"stateMutability":"view","type":"function"}]
-            token = self.w3.eth.contract(address=token_address, abi=erc20_abi)
-            decimals = token.functions.decimals().call()
-            
-            amount_raw = int(amount_eth * (10 ** decimals))
-            nonce = self.w3.eth.get_transaction_count(self.account.address)
-            
-            # minKerneOut = 0 means use calculated slippage in contract
-            tx = self.treasury.functions.executeBuyback(token_address, amount_raw, 0).build_transaction({
-                'from': self.account.address,
-                'nonce': nonce,
-                'gasPrice': self.w3.eth.gas_price
-            })
-            
-            signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
-            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
-            
-            if receipt.status == 1:
-                logger.success(f"Buyback executed: {tx_hash.hex()}")
-            return tx_hash.hex()
-        except Exception as e:
-            logger.error(f"Error executing buyback: {e}")
-            raise
+    def get_vault_contract(self, vault_address: str, chain_name: str = "Base"):
+        w3 = self.w3
+        if chain_name == "Arbitrum": w3 = self.arb_w3
+        elif chain_name == "Optimism": w3 = self.opt_w3
+        
+        return w3.eth.contract(address=Web3.to_checksum_address(vault_address), abi=self.abi)
 
-    def get_total_kusd_debt(self) -> float:
+    def set_active_vault(self, vault_address: str, chain_name: str = "Base"):
         """
-        Returns the total kUSD debt across all positions in the minter.
+        Sets the active vault for contract interactions.
         """
-        if not self.minter:
-            return 0.0
-        try:
-            total_debt_wei = self.minter.functions.totalDebt().call()
-            return float(self.w3.from_wei(total_debt_wei, 'ether'))
-        except Exception as e:
-            logger.error(f"Error getting kUSD debt: {e}")
-            return 0.0
+        self.vault_address = vault_address
+        w3 = self.w3
+        if chain_name == "Arbitrum": w3 = self.arb_w3
+        elif chain_name == "Optimism": w3 = self.opt_w3
+        
+        self.w3 = w3 
+        self.vault = w3.eth.contract(address=Web3.to_checksum_address(vault_address), abi=self.abi)
+        logger.info(f"Active vault set to {vault_address} on {chain_name}")
 
-    def get_vault_assets(self) -> float:
+    def get_vault_assets(self, vault_address: str = None, chain_name: str = "Base") -> float:
         """
-        Calls totalAssets() on the vault and returns the value in ETH.
+        Calls totalAssets() on the specified vault and returns the value in ETH.
         """
         try:
-            total_assets_wei = self.vault.functions.totalAssets().call()
-            return float(self.w3.from_wei(total_assets_wei, 'ether'))
+            addr = vault_address or self.vault_address
+            w3 = self.w3
+            if chain_name == "Arbitrum": w3 = self.arb_w3
+            elif chain_name == "Optimism": w3 = self.opt_w3
+            
+            if not w3: return 0.0
+            
+            vault = w3.eth.contract(address=Web3.to_checksum_address(addr), abi=self.abi)
+            total_assets_wei = vault.functions.totalAssets().call()
+            return float(w3.from_wei(total_assets_wei, 'ether'))
         except Exception as e:
-            logger.error(f"Error calling totalAssets: {e}")
-            raise
+            logger.error(f"Error calling totalAssets on {chain_name}: {e}")
+            return 0.0
+
 
     def get_vault_tvl(self) -> float:
         """
@@ -293,10 +239,16 @@ class ChainManager:
                 
                 if prev_offchain_eth > 0:
                     deviation = abs(amount_eth - prev_offchain_eth) / prev_offchain_eth
-                    if deviation > 0.05:
+                    if deviation > 0.20:
+                        msg = f"CRITICAL: Extreme deviation in off-chain report. Prev: {prev_offchain_eth}, New: {amount_eth} ({deviation*100:.2f}%). BLOCKING UPDATE."
+                        logger.critical(msg)
+                        send_discord_alert(msg, level="CRITICAL")
+                        return "DEVIATION_BLOCKED"
+                    elif deviation > 0.05:
                         msg = f"WARNING: High deviation in off-chain report. Prev: {prev_offchain_eth}, New: {amount_eth} ({deviation*100:.2f}%)"
                         logger.warning(msg)
                         send_discord_alert(msg, level="WARNING")
+
             except Exception as e:
                 logger.error(f"Failed to perform deviation check: {e}")
 
@@ -376,20 +328,15 @@ class ChainManager:
 
     def get_multi_chain_tvl(self) -> dict:
         """
-        Aggregates TVL across all connected chains.
+        Aggregates TVL across all connected chains using the registered vaults.
         """
-        tvl_data = {"Base": self.get_vault_assets()}
-        
-        # In a real multi-chain setup, we'd have vault addresses for each chain
-        # For now, we simulate or use placeholders if addresses aren't in env
-        if self.arb_w3:
-            # Placeholder for Arbitrum vault assets
-            tvl_data["Arbitrum"] = 0.0 
-        if self.opt_w3:
-            # Placeholder for Optimism vault assets
-            tvl_data["Optimism"] = 0.0
+        tvl_data = {}
+        for v in self.vaults:
+            tvl = self.get_vault_assets(v["address"], v["chain"])
+            tvl_data[v["chain"]] = tvl
             
         return tvl_data
+
 
     def draw_from_insurance_fund(self, amount_eth: float) -> str:
         """
