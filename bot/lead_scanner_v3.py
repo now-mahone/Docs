@@ -82,8 +82,8 @@ def get_institutional_leads():
                 while retries > 0:
                     try:
                         chunk_events = contract.events.Transfer.get_logs(
-                            from_block=start,
-                            to_block=end
+                            fromBlock=start,
+                            toBlock=end
                         )
                         events.extend(chunk_events)
                         break

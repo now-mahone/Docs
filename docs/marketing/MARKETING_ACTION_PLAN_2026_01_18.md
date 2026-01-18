@@ -1,11 +1,11 @@
 // Created: 2026-01-18
+// Updated: 2026-01-18 - Focus on non-DefiLlama strategies
 
 # Kerne Marketing Action Plan - January 18, 2026
 
 ## Current State
 - **TVL:** ~$327 total protocol capital
 - **ZIN Pool:** ~$79 liquidity (seeded)
-- **DefiLlama:** Adapter ready, PR status unknown
 - **Leads:** 16 USDC whales identified ($800k - $12k balances)
 - **Outreach Templates:** Ready (Twitter DM, Telegram, Email)
 
@@ -13,92 +13,178 @@
 
 ## 🎯 IMMEDIATE ACTIONS (Today/This Week)
 
-### 1. DefiLlama PR - RESPOND NOW! 🚨
-**Priority: CRITICAL** - This is the #1 inbound funnel
-
-**STATUS:**
-- PR #17648: **CLOSED** (reviewer said yields go to separate repo)
-- PR #17645: **OPEN** ✅ - Waiting for YOUR response!
-
-**BLOCKER:** Reviewer `waynebruce0x` asked 5 days ago:
-> "Where can I see an example of a WETH deposit tx?"
-
-**ACTION REQUIRED:**
-1. Go to: https://github.com/DefiLlama/DefiLlama-Adapters/pull/17645
-2. Make a small WETH deposit to the vault (even 0.001 WETH works)
-3. Reply with the transaction hash
-
-**Vault Address:** `0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695`
-**BaseScan:** https://basescan.org/address/0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695
-
-**Sample Response:**
-```
-Here's an example WETH deposit transaction:
-https://basescan.org/tx/[YOUR_TX_HASH]
-
-The vault uses standard ERC-4626 deposit() function.
-```
-
-⚠️ **NOTE:** The PR uses OLD vault address `0x5FD0F7eA40984a6a8E9c6f6BDfd297e7dB4448Bd`
-You may need to update the PR with the new address OR deposit to the old vault.
-
-### 2. Twitter/X Presence
+### 1. Twitter/X Presence - ZIN Launch Announcement
 **Priority: HIGH**
 
 **Action Items:**
-- [ ] Post about ZIN (Zero-Fee Intent Network) launch
+- [ ] Post ZIN launch announcement thread
 - [ ] Share the "Filled by Kerne" narrative
-- [ ] Engage with Base ecosystem accounts
+- [ ] Engage with Base ecosystem accounts (@base, @jessepollak)
+- [ ] Quote-tweet relevant DeFi discussions
 
-**Sample Tweet:**
+**Sample Thread:**
 ```
-🚀 Kerne's ZIN (Zero-Fee Intent Network) is LIVE on Base
+🧵 We just shipped something big on @base
 
-We're now filling intents from UniswapX & CowSwap with:
-✅ Zero fees for solvers
+Introducing ZIN - Zero-Fee Intent Network
+
+Kerne is now filling intents from @UniswapX & @CoWSwap with:
+✅ Zero fees for authorized solvers
 ✅ 0.30% for public flash loans
 ✅ All profits flow to vault LPs
 
-Every trade shows "Filled by Kerne" 🔵
-
-https://kerne.ai/terminal
+1/5
 ```
 
-### 3. Whale Outreach (Top 5 USDC Holders)
+```
+How it works:
+
+1. User submits intent (swap ETH → USDC)
+2. ZIN Solver detects profitable opportunity
+3. Kerne fills using internal liquidity
+4. Spread captured → distributed to LPs
+
+Every trade shows "Filled by Kerne" 🔵
+
+2/5
+```
+
+```
+Why this matters:
+
+Traditional solvers compete on speed.
+Kerne competes on CAPITAL EFFICIENCY.
+
+Our delta-neutral vault gives us an edge:
+- We can hold inventory without directional risk
+- We capture funding rates while waiting
+- Zero opportunity cost
+
+3/5
+```
+
+```
+Live on Base Mainnet:
+- ZIN Pool: 0xB9BdF6F3Fc3819b61f6fE799bE1395501822d0c7
+- ZIN Executor: 0x04F52F9F4dAb1ba2330841Af85dAeeB8eaC9E995
+
+Contracts verified on Blockscout ✅
+
+4/5
+```
+
+```
+What's next:
+- Arbitrum deployment (3-5x higher intent volume)
+- More token pairs
+- Solver partnerships
+
+Try it: https://kerne.ai/terminal
+
+Built different. Built on @base.
+
+5/5
+```
+
+---
+
+### 2. Whale Outreach Campaign
 **Priority: HIGH**
 
-| Rank | Address | Balance | Action |
-|------|---------|---------|--------|
-| 1 | 0x2d56...beC7 | $803k | Research & DM |
-| 2 | 0xCBBF...eC7C | $360k | Research & DM |
-| 3 | 0x42f3...2273 | $327k | Research & DM |
-| 4 | 0x33bD...281E | $157k | Research & DM |
-| 5 | 0xC16D...6624 | $52k | Research & DM |
+**Top 5 USDC Whale Targets on Base:**
 
-**Research Steps:**
-1. Check if address has ENS/social links on Etherscan
-2. Look up on DeBank/Zapper for activity patterns
-3. Check if they're active in any DAOs
-4. Craft personalized outreach
+| Rank | Address | Balance | Research Link |
+|------|---------|---------|---------------|
+| 1 | 0x2d5663DDb22972f53A6FDaDEC0ec9Df9ccFe96A3 | $803k | [DeBank](https://debank.com/profile/0x2d5663DDb22972f53A6FDaDEC0ec9Df9ccFe96A3) |
+| 2 | 0xCBBFEce866A198f01EbD93B4EbE2D674542beC7C | $360k | [DeBank](https://debank.com/profile/0xCBBFEce866A198f01EbD93B4EbE2D674542beC7C) |
+| 3 | 0x42f35f00803403f848CBDdAE208e41B0FC12A273 | $327k | [DeBank](https://debank.com/profile/0x42f35f00803403f848CBDdAE208e41B0FC12A273) |
+| 4 | 0x33bDd13485dC254fC63445cdDE6047Bf325c281E | $157k | [DeBank](https://debank.com/profile/0x33bDd13485dC254fC63445cdDE6047Bf325c281E) |
+| 5 | 0xC16D900d638bbD4C89fB371ebb9b207985786624 | $52k | [DeBank](https://debank.com/profile/0xC16D900d638bbD4C89fB371ebb9b207985786624) |
+
+**Research Workflow:**
+1. Open DeBank profile - check if they have social links
+2. Check ENS name on Etherscan
+3. Look at their DeFi activity (are they yield farmers?)
+4. Check if they're in any DAOs (Snapshot voting)
+5. Find their Twitter/Telegram if possible
+
+**DM Template (Twitter):**
+```
+Hey! Noticed you're active in the Base ecosystem with significant USDC holdings.
+
+We just launched Kerne - a delta-neutral yield protocol on Base. Currently seeing ~15-20% APY on ETH with zero directional exposure.
+
+Would love to get your feedback: https://kerne.ai/terminal
+
+No pressure, just building in public 🔵
+```
+
+---
+
+### 3. Base Ecosystem Engagement
+**Priority: MEDIUM**
+
+**Action Items:**
+- [ ] Join Base Discord and introduce Kerne in #builders channel
+- [ ] Apply for "Built on Base" directory: https://base.org/ecosystem
+- [ ] Follow and engage with @base, @jessepollak, @brianjcho
+- [ ] Look for Base ecosystem grants/accelerator programs
+
+**Base Discord Introduction:**
+```
+👋 Hey Base builders!
+
+Just shipped Kerne Protocol - a delta-neutral yield infrastructure on Base.
+
+What we built:
+- ERC-4626 vault for ETH yield (delta-neutral hedging)
+- ZIN (Zero-Fee Intent Network) - filling UniswapX/CowSwap intents
+- kUSD synthetic dollar with PSM
+
+Live contracts:
+- Vault: 0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695
+- ZIN Pool: 0xB9BdF6F3Fc3819b61f6fE799bE1395501822d0c7
+
+Would love feedback from the community!
+https://kerne.ai
+```
+
+---
+
+### 4. Content Marketing Ideas
+**Priority: MEDIUM**
+
+**Blog Post Ideas:**
+1. "How Delta-Neutral Yield Works (And Why It's Safer Than Staking)"
+2. "ZIN: Building an Intent Solver on Base"
+3. "Kerne vs Ethena: A Technical Comparison"
+4. "The Math Behind 15% APY with Zero Directional Risk"
+
+**Where to Publish:**
+- Mirror.xyz (Web3 native)
+- Medium (broader reach)
+- Twitter threads (engagement)
+- Farcaster (Base community)
 
 ---
 
 ## 📊 MEDIUM-TERM ACTIONS (This Month)
 
-### 4. Base Ecosystem Integration
-- [ ] Apply for "Built on Base" directory listing
-- [ ] Engage with Base Discord community
-- [ ] Reach out to Base ecosystem fund
-
 ### 5. Yield Aggregator Integrations
 - [ ] Contact Beefy Finance for vault listing
 - [ ] Reach out to Yearn for strategy consideration
 - [ ] Submit to Zapper/DeBank earn tabs
+- [ ] Explore Sommelier integration
 
-### 6. Content Marketing
-- [ ] Write technical blog post about ZIN architecture
-- [ ] Create comparison chart: Kerne vs Ethena vs Pendle
-- [ ] Publish "How Delta-Neutral Works" explainer
+### 6. Partnership Outreach
+- [ ] Other Base protocols (Aerodrome, Extra Finance)
+- [ ] LST providers (Lido, Rocket Pool)
+- [ ] Wallet providers (Rabby, Rainbow)
+
+### 7. Community Building
+- [ ] Create Telegram group for Kerne
+- [ ] Set up Farcaster presence
+- [ ] Consider Discord server
 
 ---
 
@@ -108,9 +194,9 @@ https://kerne.ai/terminal
 |--------|---------|------------------|
 | TVL | $327 | $10,000 |
 | Twitter Followers | ? | 500 |
-| DefiLlama Listed | No | Yes |
 | Whale Deposits | 0 | 3 |
 | ZIN Fills | 0 | 50 |
+| Blog Posts | 0 | 2 |
 
 ---
 
@@ -123,8 +209,9 @@ https://kerne.ai/terminal
 
 ---
 
-## NEXT STEP RECOMMENDATION
+## TODAY'S PRIORITY
 
-**Start with DefiLlama** - Check PR status and resubmit if needed. This is passive inbound that works 24/7 once live.
-
-Then **do 2-3 whale DMs** using the Twitter template. Focus on addresses that show DeFi activity (not just holding).
+1. **Post the ZIN launch thread on Twitter** - This is free and immediate
+2. **Research top 2-3 whale addresses** - Find their socials
+3. **Send 2-3 personalized DMs** - Quality over quantity
+4. **Join Base Discord** - Introduce Kerne to builders
