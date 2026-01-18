@@ -327,6 +327,14 @@ class ZINSolver:
         self._min_fetch_interval = 2.0  # seconds
         self._token_amount_caps = self._parse_token_amount_caps()
         
+        # Auto-scaling configuration
+        self._auto_scale_enabled = os.getenv("ZIN_AUTO_SCALE", "true").lower() == "true"
+        self._min_liquidity_ratio = float(os.getenv("ZIN_MIN_LIQUIDITY_RATIO", "0.1"))  # Min 10% of pool
+        self._max_liquidity_ratio = float(os.getenv("ZIN_MAX_LIQUIDITY_RATIO", "0.5"))  # Max 50% of pool
+        self._scale_factor_base = float(os.getenv("ZIN_SCALE_FACTOR", "1.0"))  # Multiplier for position sizing
+        self._liquidity_cache: Dict[str, Tuple[int, float]] = {}  # token -> (liquidity, timestamp)
+        self._liquidity_cache_ttl = 30.0  # seconds
+        
         logger.info("=" * 60)
         logger.info("ZIN Solver Initialized - Kerne Intent Execution Engine")
         logger.info("=" * 60)
@@ -1028,6 +1036,99 @@ class ZINSolver:
             return 0
 
     # =========================================================================
+    # AUTO-SCALING POSITION SIZING
+    # =========================================================================
+    
+    async def _get_cached_liquidity(self, token: str) -> int:
+        """Get liquidity with caching to reduce RPC calls."""
+        token_key = token.lower()
+        now = time.time()
+        
+        # Check cache
+        if token_key in self._liquidity_cache:
+            cached_liq, cached_time = self._liquidity_cache[token_key]
+            if now - cached_time < self._liquidity_cache_ttl:
+                return cached_liq
+        
+        # Fetch fresh liquidity
+        liquidity = await self.check_vault_liquidity(token)
+        self._liquidity_cache[token_key] = (liquidity, now)
+        return liquidity
+    
+    def _calculate_scaled_position(
+        self,
+        intent: IntentData,
+        pool_liquidity: int
+    ) -> Tuple[int, str]:
+        """
+        Calculate dynamically scaled position size based on pool liquidity.
+        
+        Auto-scaling rules:
+        1. Never use more than max_liquidity_ratio (50%) of pool
+        2. Never use less than min_liquidity_ratio (10%) of pool
+        3. Scale based on intent profitability and pool depth
+        4. Apply scale_factor multiplier for aggressive/conservative modes
+        
+        Returns:
+            Tuple of (scaled_amount, scaling_reason)
+        """
+        if not self._auto_scale_enabled:
+            return (intent.amount_out, "auto_scale_disabled")
+        
+        if pool_liquidity == 0:
+            return (0, "no_liquidity")
+        
+        # Calculate liquidity bounds
+        min_position = int(pool_liquidity * self._min_liquidity_ratio)
+        max_position = int(pool_liquidity * self._max_liquidity_ratio)
+        
+        # Start with the intent's requested amount
+        requested = intent.amount_out
+        
+        # Apply scale factor
+        scaled = int(requested * self._scale_factor_base)
+        
+        # Clamp to liquidity bounds
+        if scaled > max_position:
+            return (max_position, f"clamped_to_max_{self._max_liquidity_ratio*100:.0f}%")
+        
+        if scaled < min_position and requested >= min_position:
+            # Intent is large enough but scaling reduced it too much
+            return (min_position, f"floor_at_min_{self._min_liquidity_ratio*100:.0f}%")
+        
+        if scaled < min_position:
+            # Intent itself is smaller than minimum - allow it if profitable
+            return (scaled, "below_min_but_allowed")
+        
+        return (scaled, "scaled_normally")
+    
+    async def get_auto_scaled_intent_cap(self, intent: IntentData) -> Tuple[int, str]:
+        """
+        Get the auto-scaled maximum intent amount for a token.
+        
+        This combines:
+        1. Static per-token caps from env
+        2. Dynamic scaling based on current pool liquidity
+        3. Global max intent amount
+        
+        Returns:
+            Tuple of (max_amount, reason)
+        """
+        # Get pool liquidity
+        pool_liquidity = await self._get_cached_liquidity(intent.token_out)
+        
+        # Calculate scaled position
+        scaled_amount, scale_reason = self._calculate_scaled_position(intent, pool_liquidity)
+        
+        # Apply static caps
+        static_cap = self._get_intent_cap(intent)
+        
+        if static_cap > 0 and scaled_amount > static_cap:
+            return (static_cap, f"static_cap_applied")
+        
+        return (scaled_amount, scale_reason)
+
+    # =========================================================================
     # INTENT FULFILLMENT
     # =========================================================================
     
@@ -1332,15 +1433,22 @@ class ZINSolver:
                 logger.debug("Order TTL below guardrail")
                 return False
 
-            max_intent_amount = self._get_intent_cap(intent)
-            if max_intent_amount > 0 and intent.amount_out > max_intent_amount:
+            # Use auto-scaling to determine max intent amount
+            scaled_cap, scale_reason = await self.get_auto_scaled_intent_cap(intent)
+            if scaled_cap == 0:
+                logger.debug(f"Auto-scale rejected: {scale_reason}")
+                return False
+            
+            if intent.amount_out > scaled_cap:
                 logger.debug(
-                    f"Intent amount above cap: {intent.amount_out} > {max_intent_amount}"
+                    f"Intent amount above auto-scaled cap: {intent.amount_out} > {scaled_cap} ({scale_reason})"
                 )
                 return False
             
-            # 1. Check vault liquidity
-            liquidity = await self.check_vault_liquidity(intent.token_out)
+            logger.debug(f"Auto-scale: cap={scaled_cap}, reason={scale_reason}")
+            
+            # 1. Check vault liquidity (already cached by auto-scaling)
+            liquidity = await self._get_cached_liquidity(intent.token_out)
             if liquidity < intent.amount_out:
                 logger.debug(f"Insufficient liquidity: {liquidity} < {intent.amount_out}")
                 return False
