@@ -48,6 +48,15 @@ ONE_INCH_API_KEY = os.getenv("ONE_INCH_API_KEY")
 ZIN_SOLVER_LIVE = os.getenv("ZIN_SOLVER_LIVE", "false").lower() == "true"
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
 
+# Micro-cap live-run guardrails
+ZIN_MIN_PROFIT_BPS = int(os.getenv("ZIN_MIN_PROFIT_BPS", "8"))
+ZIN_MAX_INTENT_AMOUNT = int(os.getenv("ZIN_MAX_INTENT_AMOUNT", "0"))
+ZIN_MAX_GAS_PRICE_GWEI = int(os.getenv("ZIN_MAX_GAS_PRICE_GWEI", "40"))
+ZIN_MAX_INTENTS_PER_CYCLE = int(os.getenv("ZIN_MAX_INTENTS_PER_CYCLE", "2"))
+ZIN_MIN_ORDER_TTL_SECONDS = int(os.getenv("ZIN_MIN_ORDER_TTL_SECONDS", "30"))
+ZIN_MAX_PRICE_IMPACT_BPS = int(os.getenv("ZIN_MAX_PRICE_IMPACT_BPS", "75"))
+ZIN_MAX_INTENT_AMOUNT_BY_TOKEN = os.getenv("ZIN_MAX_INTENT_AMOUNT_BY_TOKEN", "")
+
 # Chain Configuration
 CHAIN_ID = 8453  # Base Mainnet
 
@@ -288,6 +297,7 @@ class ZINSolver:
         self._last_cowswap_fetch = 0
         self._last_uniswapx_fetch = 0
         self._min_fetch_interval = 2.0  # seconds
+        self._token_amount_caps = self._parse_token_amount_caps()
         
         logger.info("=" * 60)
         logger.info("ZIN Solver Initialized - Kerne Intent Execution Engine")
@@ -298,6 +308,23 @@ class ZINSolver:
         logger.info(f"Profit Vault: {PROFIT_VAULT_ADDRESS}")
         logger.info(f"Live Mode: {self.live_mode}")
         logger.info(f"Active Chain: {self.active_chain}")
+        logger.info(
+            "Guardrails: min_profit_bps={} max_intent_amount={} max_gas_price_gwei={} max_intents_per_cycle={}"
+            .format(
+                ZIN_MIN_PROFIT_BPS,
+                ZIN_MAX_INTENT_AMOUNT,
+                ZIN_MAX_GAS_PRICE_GWEI,
+                ZIN_MAX_INTENTS_PER_CYCLE
+            )
+        )
+        logger.info(
+            "Guardrails: min_ttl_seconds={} max_price_impact_bps={} per_token_caps={}"
+            .format(
+                ZIN_MIN_ORDER_TTL_SECONDS,
+                ZIN_MAX_PRICE_IMPACT_BPS,
+                self._token_amount_caps
+            )
+        )
         logger.info("=" * 60)
     
     def _init_web3(self) -> Web3:
@@ -327,6 +354,19 @@ class ZINSolver:
             if not PROFIT_VAULT_ADDRESS:
                 missing.append("PROFIT_VAULT_ADDRESS")
         
+        if ZIN_MIN_PROFIT_BPS < 0:
+            missing.append("ZIN_MIN_PROFIT_BPS")
+        if ZIN_MAX_INTENT_AMOUNT < 0:
+            missing.append("ZIN_MAX_INTENT_AMOUNT")
+        if ZIN_MAX_GAS_PRICE_GWEI <= 0:
+            missing.append("ZIN_MAX_GAS_PRICE_GWEI")
+        if ZIN_MAX_INTENTS_PER_CYCLE <= 0:
+            missing.append("ZIN_MAX_INTENTS_PER_CYCLE")
+        if ZIN_MIN_ORDER_TTL_SECONDS < 0:
+            missing.append("ZIN_MIN_ORDER_TTL_SECONDS")
+        if ZIN_MAX_PRICE_IMPACT_BPS < 0:
+            missing.append("ZIN_MAX_PRICE_IMPACT_BPS")
+        
         if missing:
             raise ValueError(f"Missing required env vars: {', '.join(missing)}")
     
@@ -353,6 +393,65 @@ class ZINSolver:
         if not os.path.exists(self.profit_log_path):
             with open(self.profit_log_path, "w") as f:
                 f.write("timestamp,venue,order_id,token_in,token_out,amount_out,profit_bps,gas_used,tx_hash,status\n")
+
+    def _parse_token_amount_caps(self) -> Dict[str, int]:
+        """Parse per-token intent caps from env."""
+        caps: Dict[str, int] = {}
+        if not ZIN_MAX_INTENT_AMOUNT_BY_TOKEN:
+            return caps
+
+        symbol_to_address = {symbol.upper(): address for address, symbol in LST_TARGETS.items()}
+        entries = [item.strip() for item in ZIN_MAX_INTENT_AMOUNT_BY_TOKEN.split(",") if item.strip()]
+
+        for entry in entries:
+            if ":" in entry:
+                key, value = entry.split(":", 1)
+            elif "=" in entry:
+                key, value = entry.split("=", 1)
+            else:
+                logger.warning(f"Invalid token cap entry: {entry}")
+                continue
+
+            key = key.strip()
+            value = value.strip()
+            if not key or not value:
+                continue
+
+            try:
+                cap = int(value)
+            except ValueError:
+                logger.warning(f"Invalid cap value for {key}: {value}")
+                continue
+
+            token_key = key.lower()
+            if token_key in LST_TARGETS:
+                caps[token_key] = cap
+                continue
+
+            symbol_key = key.upper()
+            address = symbol_to_address.get(symbol_key)
+            if address:
+                caps[address] = cap
+            else:
+                logger.warning(f"Unknown token cap key: {key}")
+
+        return caps
+
+    def _get_intent_cap(self, intent: IntentData) -> int:
+        """Resolve the max allowed intent size for the token out."""
+        token_out_key = intent.token_out.lower()
+        if token_out_key in self._token_amount_caps:
+            return self._token_amount_caps[token_out_key]
+
+        return ZIN_MAX_INTENT_AMOUNT
+
+    def _is_gas_price_ok(self) -> bool:
+        """Check if current gas price is within guardrails."""
+        gas_price_gwei = self.w3.eth.gas_price / 1e9
+        if gas_price_gwei > ZIN_MAX_GAS_PRICE_GWEI:
+            logger.debug(f"Gas price too high: {gas_price_gwei:.2f} gwei")
+            return False
+        return True
 
     # =========================================================================
     # COWSWAP INTEGRATION
@@ -878,12 +977,8 @@ class ZINSolver:
         gas_price = self.w3.eth.gas_price
         gas_cost_wei = gas_price * quote.gas_estimate
         
-        # For simplicity, assume profit needs to cover at least 2x gas cost
-        # This is a conservative estimate
-        min_profit_wei = gas_cost_wei * 2
-        
-        # Check if profit exceeds minimum threshold (5 bps = 0.05%)
-        min_profit_bps = 5
+        # Check if profit exceeds minimum threshold
+        min_profit_bps = max(ZIN_MIN_PROFIT_BPS, 0)
         is_profitable = profit_bps >= min_profit_bps
         
         return (profit_amount, profit_bps, is_profitable)
@@ -1196,6 +1291,20 @@ class ZINSolver:
         """
         try:
             logger.info(f"Processing intent from {intent.venue.value}: {intent.order_id[:16]}...")
+
+            if not self._is_gas_price_ok():
+                return False
+
+            if intent.deadline - int(time.time()) < ZIN_MIN_ORDER_TTL_SECONDS:
+                logger.debug("Order TTL below guardrail")
+                return False
+
+            max_intent_amount = self._get_intent_cap(intent)
+            if max_intent_amount > 0 and intent.amount_out > max_intent_amount:
+                logger.debug(
+                    f"Intent amount above cap: {intent.amount_out} > {max_intent_amount}"
+                )
+                return False
             
             # 1. Check vault liquidity
             liquidity = await self.check_vault_liquidity(intent.token_out)
@@ -1213,11 +1322,21 @@ class ZINSolver:
             if not quote:
                 logger.debug("No quote available")
                 return False
+
+            if quote.price_impact_bps > ZIN_MAX_PRICE_IMPACT_BPS:
+                logger.debug(
+                    f"Price impact too high: {quote.price_impact_bps} bps"
+                )
+                return False
             
             # 3. Calculate profitability
             profit_amount, profit_bps, is_profitable = self.calculate_profit_potential(
                 intent, quote
             )
+            
+            if profit_bps < ZIN_MIN_PROFIT_BPS:
+                logger.debug(f"Profit below guardrail: {profit_bps} bps")
+                return False
             
             if not is_profitable:
                 logger.debug(f"Not profitable: {profit_bps} bps")
@@ -1247,6 +1366,8 @@ class ZINSolver:
         uniswapx_intents = await self.fetch_uniswapx_orders()
         
         all_intents = cowswap_intents + uniswapx_intents
+        if ZIN_MAX_INTENTS_PER_CYCLE > 0:
+            all_intents = all_intents[:ZIN_MAX_INTENTS_PER_CYCLE]
         
         if all_intents:
             logger.info(f"Found {len(all_intents)} potential intents "
