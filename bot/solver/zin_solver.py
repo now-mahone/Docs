@@ -1522,6 +1522,60 @@ class ZINSolver:
         
         return processed
     
+    def save_session_summary(self, start_time: float, cycle_count: int):
+        """Save session summary to file when shutting down."""
+        summary_path = "bot/solver/zin_session_summary.json"
+        end_time = time.time()
+        duration_minutes = (end_time - start_time) / 60
+        
+        summary = {
+            "session_id": f"session_{int(start_time)}",
+            "start_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time)),
+            "end_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(end_time)),
+            "duration_minutes": round(duration_minutes, 2),
+            "total_cycles": cycle_count,
+            "live_mode": self.live_mode,
+            "active_chain": self.active_chain,
+            "stats": {
+                "intents_processed": self.total_intents_processed,
+                "profit_captured": self.total_profit_captured,
+                "failed_intents": self.failed_intents,
+                "intents_by_venue": self.intents_by_venue,
+                "success_rate": (
+                    self.total_intents_processed / 
+                    (self.total_intents_processed + self.failed_intents) * 100
+                    if (self.total_intents_processed + self.failed_intents) > 0 
+                    else 0
+                )
+            },
+            "config": {
+                "executor_address": ZIN_EXECUTOR_ADDRESS,
+                "pool_address": ZIN_POOL_ADDRESS,
+                "min_profit_bps": ZIN_MIN_PROFIT_BPS,
+                "max_gas_gwei": ZIN_MAX_GAS_PRICE_GWEI
+            }
+        }
+        
+        try:
+            # Load existing summaries or create new list
+            existing = []
+            if os.path.exists(summary_path):
+                with open(summary_path, "r") as f:
+                    existing = json.load(f)
+            
+            existing.append(summary)
+            
+            with open(summary_path, "w") as f:
+                json.dump(existing, f, indent=2)
+            
+            logger.success(f"Session summary saved to {summary_path}")
+            logger.info(f"  Duration: {duration_minutes:.1f} minutes")
+            logger.info(f"  Cycles: {cycle_count}")
+            logger.info(f"  Intents Processed: {self.total_intents_processed}")
+            logger.info(f"  Profit Captured: {self.total_profit_captured}")
+        except Exception as e:
+            logger.error(f"Failed to save session summary: {e}")
+
     async def run(self, interval: float = 5.0):
         """
         Main solver loop.
@@ -1536,6 +1590,7 @@ class ZINSolver:
         cycle_count = 0
         metrics_interval = 60  # Log metrics every 60 seconds
         last_metrics_log = time.time()
+        start_time = time.time()
         
         while True:
             try:
@@ -1557,6 +1612,7 @@ class ZINSolver:
                 
             except KeyboardInterrupt:
                 logger.info("Shutting down ZIN Solver...")
+                self.save_session_summary(start_time, cycle_count)
                 break
             except Exception as e:
                 logger.error(f"Error in solver loop: {e}")

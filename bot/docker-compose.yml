@@ -109,3 +109,29 @@ services:
         max-size: "50m"
         max-file: "5"
 
+  kerne-zin-solver:
+    build: .
+    container_name: kerne-zin-solver
+    restart: always
+    command: ["python", "solver/zin_solver.py", "--interval", "5"]
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env
+      - ./solver:/app/solver
+      - ../out:/app/out
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; exit(0 if os.path.exists('solver/zin_solver.py') else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
