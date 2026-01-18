@@ -13,6 +13,34 @@ Every trade filled shows "Filled by Kerne" for organic awareness.
 """
 
 import os
+from pathlib import Path
+
+# Load .env file from bot directory
+def _load_env():
+    """Load environment variables from bot/.env file."""
+    # Try multiple possible locations for .env
+    possible_paths = [
+        Path(__file__).parent.parent / ".env",  # bot/.env from solver/
+        Path.cwd() / "bot" / ".env",            # bot/.env from project root
+        Path.cwd() / ".env",                     # .env in current dir
+    ]
+    
+    for env_path in possible_paths:
+        if env_path.exists():
+            with open(env_path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, _, value = line.partition('=')
+                        key = key.strip()
+                        value = value.strip()
+                        # Don't override existing env vars
+                        if key and key not in os.environ:
+                            os.environ[key] = value
+            return str(env_path)
+    return None
+
+_env_path = _load_env()
 import asyncio
 import json
 import time
@@ -349,8 +377,9 @@ class ZINSolver:
             missing.append("ZIN_EXECUTOR_ADDRESS")
         
         if self.live_mode:
+            # 1inch is OPTIONAL - Aerodrome on-chain quoting is the primary source
             if not ONE_INCH_API_KEY:
-                missing.append("ONE_INCH_API_KEY")
+                logger.info("Running in Aerodrome-only mode (no 1inch API key)")
             if not PROFIT_VAULT_ADDRESS:
                 missing.append("PROFIT_VAULT_ADDRESS")
         
@@ -485,6 +514,8 @@ class ZINSolver:
                         self._cowswap_health_logged = True
                         if resp.status == 200:
                             logger.info(f"CowSwap: API reachable (endpoint={COWSWAP_API_BASE})")
+                        elif resp.status == 403:
+                            logger.info("CowSwap: Auction API requires solver registration (403) - using UniswapX only")
                         else:
                             logger.warning(f"CowSwap: API health check failed (status={resp.status})")
                     
@@ -739,17 +770,19 @@ class ZINSolver:
         """
         Get the best quote from available aggregators.
         
-        Tries 1inch first (best liquidity), falls back to others.
+        Aerodrome-first mode: Uses on-chain quoting (no API key needed).
+        Falls back to 1inch only if configured and Aerodrome fails.
         """
-        # Try 1inch first
-        quote = await self._get_1inch_quote(token_in, token_out, amount_in)
-        if quote:
-            return quote
-        
-        # Fallback to Aerodrome for Base-native pairs
+        # Try Aerodrome first (on-chain, no API key needed)
         quote = await self._get_aerodrome_quote(token_in, token_out, amount_in)
         if quote:
             return quote
+        
+        # Fallback to 1inch if API key is configured
+        if ONE_INCH_API_KEY:
+            quote = await self._get_1inch_quote(token_in, token_out, amount_in)
+            if quote:
+                return quote
         
         logger.warning(f"No quote available for {token_in[:10]}... -> {token_out[:10]}...")
         return None
