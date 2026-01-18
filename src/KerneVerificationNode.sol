@@ -3,6 +3,7 @@
 pragma solidity 0.8.24;
 
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { OApp, Origin, MessagingFee } from "@layerzerolabs/oapp-evm/oapp/OApp.sol";
@@ -39,7 +40,7 @@ contract KerneVerificationNode is AccessControl, OApp {
     event ThresholdUpdated(uint256 newThreshold);
     event AttestationSynced(uint32 dstEid, address vault);
 
-    constructor(address _endpoint, address _delegate) OApp(_endpoint, _delegate) {
+    constructor(address _endpoint, address _delegate) OApp(_endpoint, _delegate) Ownable(_delegate) {
         _grantRole(DEFAULT_ADMIN_ROLE, _delegate);
         _grantRole(VERIFIER_ROLE, _delegate);
     }

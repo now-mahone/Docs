@@ -33,7 +33,7 @@ contract KerneYieldAttestation is OApp {
     event AttestationSynced(uint32 dstEid, bytes32 merkleRoot);
     event ProofVerified(bytes32 indexed proofHash);
 
-    constructor(address _endpoint, address _owner) OApp(_endpoint, _owner) {}
+    constructor(address _endpoint, address _owner) OApp(_endpoint, _owner) Ownable(_owner) {}
 
     /**
      * @notice Publishes a new yield attestation with optional ZK-proof hash.

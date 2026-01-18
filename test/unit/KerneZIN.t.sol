@@ -4,6 +4,7 @@ pragma solidity 0.8.24;
 
 import "forge-std/Test.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC3156FlashBorrower } from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
 import { KerneZINPool } from "../../src/KerneZINPool.sol";
 import { KerneZINRouter } from "../../src/KerneZINRouter.sol";
 import { KerneIntentExecutorV2 } from "../../src/KerneIntentExecutorV2.sol";
@@ -21,6 +22,25 @@ contract MockAggregator {
     ) external {
         IERC20(tokenIn).transferFrom(payer, address(this), amountIn);
         IERC20(tokenOut).transfer(recipient, amountOut);
+    }
+}
+
+contract MockFlashBorrower is IERC3156FlashBorrower {
+    IERC20 public immutable token;
+
+    constructor(IERC20 token_) {
+        token = token_;
+    }
+
+    function onFlashLoan(
+        address,
+        address,
+        uint256 amount,
+        uint256 fee,
+        bytes calldata
+    ) external override returns (bytes32) {
+        token.approve(msg.sender, amount + fee);
+        return keccak256("ERC3156FlashBorrower.onFlashLoan");
     }
 }
 
@@ -168,6 +188,57 @@ contract KerneZINTest is Test {
         assertEq(liquidityAfter, liquidityBefore - INITIAL_LIQUIDITY);
         vm.stopPrank();
     }
+
+    function test_ZINPool_FillIntentInternal_TracksProfitAndVolume() public {
+        uint256 amountOut = 10e18;
+        uint256 tokenInBalanceBefore = usdc.balanceOf(address(zinPool));
+        uint256 expectedProfit = (tokenInBalanceBefore * zinPool.zinFeeBps()) / 10000;
+        uint256 userBalanceBefore = weth.balanceOf(user);
+        uint256 profitRecipientBefore = usdc.balanceOf(treasury);
+        uint256 volumeBefore = zinPool.totalVolumeFilled(address(weth));
+        uint256 ordersBefore = zinPool.totalOrdersFilled();
+        uint256 profitBefore = zinPool.totalProfitCaptured(address(usdc));
+
+        vm.prank(solver);
+        uint256 profit = zinPool.fillIntentInternal(address(usdc), address(weth), amountOut, user);
+
+        assertEq(profit, expectedProfit);
+        assertEq(weth.balanceOf(user), userBalanceBefore + amountOut);
+        assertEq(usdc.balanceOf(treasury), profitRecipientBefore + expectedProfit);
+        assertEq(zinPool.totalVolumeFilled(address(weth)), volumeBefore + amountOut);
+        assertEq(zinPool.totalOrdersFilled(), ordersBefore + 1);
+        assertEq(zinPool.totalProfitCaptured(address(usdc)), profitBefore + expectedProfit);
+    }
+
+    function test_ZINPool_FillIntentInternal_NoProfitOnSameToken() public {
+        uint256 amountOut = 5e18;
+        uint256 profitRecipientBefore = weth.balanceOf(treasury);
+        uint256 profitBefore = zinPool.totalProfitCaptured(address(weth));
+
+        vm.prank(solver);
+        uint256 profit = zinPool.fillIntentInternal(address(weth), address(weth), amountOut, user);
+
+        assertEq(profit, 0);
+        assertEq(weth.balanceOf(treasury), profitRecipientBefore);
+        assertEq(zinPool.totalProfitCaptured(address(weth)), profitBefore);
+    }
+
+    function test_ZINPool_FlashLoan_CapturesFee() public {
+        MockFlashBorrower borrower = new MockFlashBorrower(IERC20(address(weth)));
+        uint256 amount = 100e18;
+        uint256 fee = zinPool.flashFee(address(weth), amount);
+
+        weth.mint(address(borrower), fee);
+
+        uint256 profitRecipientBefore = weth.balanceOf(treasury);
+        uint256 profitBefore = zinPool.totalProfitCaptured(address(weth));
+
+        bool success = zinPool.flashLoan(borrower, address(weth), amount, "");
+
+        assertTrue(success);
+        assertEq(weth.balanceOf(treasury), profitRecipientBefore + fee);
+        assertEq(zinPool.totalProfitCaptured(address(weth)), profitBefore + fee);
+    }
     
     // ============ ZIN Router Tests ============
     
@@ -224,6 +295,62 @@ contract KerneZINTest is Test {
         assertEq(profit, 0);
         assertEq(orders, 0);
         assertEq(currentTreasury, treasury);
+    }
+
+    function test_ZINRouter_ExecuteIntent_TracksProfitAndMetrics() public {
+        KerneZINRouter.Intent memory intent = KerneZINRouter.Intent({
+            user: user,
+            tokenIn: address(weth),
+            tokenOut: address(weth),
+            amountIn: 1e18,
+            minAmountOut: 1e18,
+            deadline: block.timestamp + 1 hours,
+            intentHash: keccak256("intent-1")
+        });
+
+        KerneZINRouter.Route[] memory routes = new KerneZINRouter.Route[](1);
+        routes[0] = KerneZINRouter.Route({
+            routeType: KerneZINRouter.RouteType.EXTERNAL_1INCH,
+            source: address(0),
+            percentage: 10000,
+            callData: ""
+        });
+
+        uint256 userBalanceBefore = weth.balanceOf(user);
+        uint256 treasuryBalanceBefore = weth.balanceOf(treasury);
+        uint256 volumeBefore = zinRouter.totalVolume();
+        uint256 profitBefore = zinRouter.totalProfit();
+        uint256 ordersBefore = zinRouter.totalOrdersFilled();
+        uint256 tokenVolumeBefore = zinRouter.tokenVolume(address(weth));
+        uint256 tokenProfitBefore = zinRouter.tokenProfit(address(weth));
+
+        bytes memory aggregatorData = abi.encodeWithSelector(
+            MockAggregator.swap.selector,
+            address(weth),
+            address(weth),
+            1e18,
+            2e18,
+            user,
+            address(zinRouter)
+        );
+
+        vm.startPrank(user);
+        weth.approve(zinExecutor.ONE_INCH_ROUTER(), 1e18);
+        vm.stopPrank();
+
+        vm.prank(solver);
+        KerneZINRouter.ExecutionResult memory result = zinRouter.executeIntent(intent, routes, aggregatorData);
+
+        assertTrue(result.success);
+        assertEq(result.amountOut, 2e18);
+        assertEq(result.profit, 1e18);
+        assertEq(weth.balanceOf(user), userBalanceBefore);
+        assertEq(weth.balanceOf(treasury), treasuryBalanceBefore + 1e18);
+        assertEq(zinRouter.totalVolume(), volumeBefore + 1e18);
+        assertEq(zinRouter.totalProfit(), profitBefore + 1e18);
+        assertEq(zinRouter.totalOrdersFilled(), ordersBefore + 1);
+        assertEq(zinRouter.tokenVolume(address(weth)), tokenVolumeBefore + 1e18);
+        assertEq(zinRouter.tokenProfit(address(weth)), tokenProfitBefore + 1e18);
     }
     
     // ============ ZIN Executor V2 Tests ============
