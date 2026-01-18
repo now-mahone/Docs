@@ -23,11 +23,12 @@ from eth_account import Account
 import aiohttp
 
 # Configuration
-RPC_URL = os.getenv("BASE_RPC_URL", "https://mainnet.base.org")
+RPC_URL = os.getenv("BASE_RPC_URL") or os.getenv("RPC_URL", "https://mainnet.base.org")
 PRIVATE_KEY = os.getenv("PRIVATE_KEY")
 ZIN_EXECUTOR_ADDRESS = os.getenv("ZIN_EXECUTOR_ADDRESS")
 PROFIT_VAULT_ADDRESS = os.getenv("PROFIT_VAULT_ADDRESS")
 ONE_INCH_API_KEY = os.getenv("ONE_INCH_API_KEY")
+ZIN_SOLVER_LIVE = os.getenv("ZIN_SOLVER_LIVE", "false").lower() == "true"
 
 # Constants
 ONE_INCH_ROUTER = "0x111111125421cA6dc452d289314280a0f8842A65"
@@ -108,6 +109,8 @@ class ZINSolver:
     def __init__(self):
         self.w3 = Web3(Web3.HTTPProvider(RPC_URL))
         self.account = Account.from_key(PRIVATE_KEY)
+        self.live_mode = ZIN_SOLVER_LIVE
+        self._validate_config()
         
         # Initialize contracts
         self.zin_executor = self.w3.eth.contract(
@@ -127,6 +130,7 @@ class ZINSolver:
         logger.info(f"ZIN Solver initialized. Account: {self.account.address}")
         logger.info(f"ZIN Executor: {ZIN_EXECUTOR_ADDRESS}")
         logger.info(f"Profit Vault: {PROFIT_VAULT_ADDRESS}")
+        logger.info(f"Live mode: {self.live_mode}")
     
     def _init_log(self):
         """Initialize profit log file."""
@@ -136,6 +140,21 @@ class ZINSolver:
         if not os.path.exists(self.profit_log_path):
             with open(self.profit_log_path, "w") as f:
                 f.write("timestamp,token_in,token_out,amount_out,profit_bps,gas_used,tx_hash\n")
+
+    def _validate_config(self):
+        """Validate required environment configuration."""
+        missing = []
+        if not PRIVATE_KEY:
+            missing.append("PRIVATE_KEY")
+        if not ZIN_EXECUTOR_ADDRESS:
+            missing.append("ZIN_EXECUTOR_ADDRESS")
+        if self.live_mode:
+            if not ONE_INCH_API_KEY:
+                missing.append("ONE_INCH_API_KEY")
+            if not PROFIT_VAULT_ADDRESS:
+                missing.append("PROFIT_VAULT_ADDRESS")
+        if missing:
+            raise ValueError(f"Missing required env vars: {', '.join(missing)}")
     
     async def check_vault_liquidity(self, vault_address: str, token: str) -> int:
         """
@@ -284,6 +303,10 @@ class ZINSolver:
             Transaction hash if successful, None otherwise
         """
         try:
+            if not self.live_mode:
+                logger.warning("ZIN solver running in dry-run mode. Skipping on-chain fulfillment.")
+                return None
+
             # Prepare safety parameters
             safety_params = self.w3.eth.codec.encode_abi(
                 ["uint256", "uint256", "uint256"],
