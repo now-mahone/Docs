@@ -4,7 +4,6 @@
 Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveraging LST collateral and CEX-based hedging to provide institutional-grade yield and capital efficiency.
 
 ## Log
-- [2026-01-19 14:39] - Status update provided to Scofield: reviewed latest milestones (ZIN pool seeded, ZIN solver live guardrails active, DefiLlama PR #17645 awaiting WETH deposit TX response) and outlined immediate next-step options (reply to DefiLlama reviewer with deposit TX, run ZIN micro-live fills, Arbitrum ZIN dry-run). - Status: SUCCESS.
 - [2026-01-18 15:13] - Marketing action plan created. CRITICAL FINDING: DefiLlama PR #17645 is OPEN and waiting for response (5 days). Reviewer asked for WETH deposit TX example. Action required: make deposit and reply to unblock listing. Marketing plan at docs/marketing/MARKETING_ACTION_PLAN_2026_01_18.md - Status: SUCCESS.
 - [2026-01-18 14:35] - Strategic next-step recommendation: prioritize Arbitrum omnichain expansion dry-run (OFT deploy + peer wiring rehearsal) to unblock rapid multi-chain TVL growth; non-frontend/DefiLlama/ZIN and no wait-time dependencies. - Status: SUCCESS.
 - [2026-01-18 14:23] - Strategic next-step recommendation: prioritize a micro-cap live Flash-Arb run on Base to validate immediate on-chain profit capture and Treasury/Insurance distribution; ZIN/DefiLlama/frontend excluded. - Status: SUCCESS.
@@ -406,3 +405,4 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 - [2025-12-28 15:06] - Foundry environment initialized and cleaned.
 - [2025-12-28 15:06] - Risk Policy defined (Liquidation, Depeg, Funding thresholds set).
 - [2025-12-28 14:59] - Architecture Phase Begun: Created `docs/mechanism_spec.md` and `docs/smart_contract_arch.md`. - Status: Active
+- [2026-01-19 15:30] - Strategic priority ranking delivered (top 12 with rationale/expected gains). - Status: SUCCESS.
