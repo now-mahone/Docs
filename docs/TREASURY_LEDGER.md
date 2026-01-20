@@ -44,6 +44,13 @@ This document tracks all capital movements, wallet balances, and protocol-owned 
 | KERNE Token | `0xfEA3D217F5f2304C8551dc9F5B5169F2c2d87340` | Governance token |
 | KERNE Staking | `0x032Af1631671126A689614c0c957De774b45D582` | Staking contract |
 
+### Protocol Contracts (Arbitrum One) - DEPLOYED 2026-01-20
+
+| Contract | Address | Purpose |
+|----------|---------|---------|
+| ZIN Executor | `0xbf039eB5CF2e1d0067C0918462fDd211e252Efdb` | Intent fulfillment contract |
+| ZIN Pool | `0x5D8ddE6264DF8A0963253693f32e057e1aA37aFD` | Intent execution liquidity |
+
 ---
 
 ## Capital Movements Log
