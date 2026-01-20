@@ -1,0 +1,39 @@
+{
+  "realized_apy": 0.24675735895172357,
+  "simple_apy": 0.26078134867740016,
+  "sharpe_ratio": 33.45721784590308,
+  "max_drawdown": 0.0014846619652701576,
+  "final_nav": 1385813.502152866,
+  "total_return": 0.385813502152866,
+  "num_periods": 1620,
+  "period_stats": {
+    "avg_period_return": 0.000201444084597028,
+    "std_period_return": 0.00015407581244808905,
+    "min_period_return": -0.0006578108833541199,
+    "max_period_return": 0.0014777590124813926,
+    "positive_periods": 1520,
+    "negative_periods": 100
+  },
+  "funding_stats": {
+    "avg_funding_rate": 5.79533888888889e-05,
+    "std_funding_rate": 6.06638009503003e-05,
+    "min_funding_rate": -0.00025121,
+    "max_funding_rate": 0.0005762,
+    "positive_funding_pct": 0.8629629629629629
+  },
+  "pnl_breakdown": {
+    "total_funding_pnl": 331050.6710971175,
+    "total_staking_pnl": 186278.989474826,
+    "total_spread_pnl": 18990.428174916222,
+    "total_costs": 150506.58659399656,
+    "total_insurance": 54155.53481931896,
+    "total_founder_fee": 48739.98133738706
+  },
+  "config": {
+    "leverage": 3.0,
+    "initial_nav": 1000000.0,
+    "lst_yield": 0.035,
+    "start_date": "2024-07-28T19:30:03.785555",
+    "end_date": "2026-01-19T19:30:03.785555"
+  }
+}
