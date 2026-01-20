@@ -32,6 +32,7 @@ class SentinelMonitor:
         
         self.REBALANCE_THRESHOLD = 0.05 # 5% deviation triggers rebalance
         self.CRITICAL_CR = 1.30 # 130% Collateral Ratio
+        self.DEPEG_THRESHOLD = 0.02 # 2% LST/ETH deviation
 
     async def monitor_loop(self):
         """
@@ -53,6 +54,7 @@ class SentinelMonitor:
         try:
             vault_tvl = self.chain.get_vault_tvl()
             price = self.exchange.get_market_price('ETH/USDT')
+            lst_eth_ratio = self.chain.get_lst_eth_ratio()
         except Exception as e:
             logger.error(f"Failed to fetch global market data: {e}")
             return
@@ -86,6 +88,12 @@ class SentinelMonitor:
                     
             except Exception as e:
                 log.error(f"Failed to fetch health data: {e}")
+
+        # LST/ETH Depeg Monitor
+        if lst_eth_ratio is not None:
+            deviation = abs(1.0 - lst_eth_ratio)
+            if deviation > self.DEPEG_THRESHOLD:
+                logger.warning(f"LST/ETH depeg detected: ratio={lst_eth_ratio:.4f} deviation={deviation:.2%}")
 
         # Global Delta Check
         if vault_tvl > 0:

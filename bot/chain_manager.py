@@ -145,6 +145,36 @@ class ChainManager:
             logger.error(f"Error getting on-chain assets: {e}")
             return 0.0
 
+    def get_lst_eth_ratio(self) -> float:
+        """
+        Returns the LST/ETH ratio for the vault's underlying asset.
+        Defaults to 1.0 if price feeds are unavailable.
+        """
+        try:
+            asset_address = self.vault.functions.asset().call()
+            if not asset_address:
+                return 1.0
+
+            # Chainlink-style feed lookup via env, fallback to 1.0
+            feed_address = os.getenv("LST_ETH_FEED")
+            if not feed_address:
+                return 1.0
+
+            feed_abi = [
+                {"inputs":[],"name":"latestAnswer","outputs":[{"name":"","type":"int256"}],"stateMutability":"view","type":"function"},
+                {"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"stateMutability":"view","type":"function"}
+            ]
+            feed = self.w3.eth.contract(address=Web3.to_checksum_address(feed_address), abi=feed_abi)
+            answer = feed.functions.latestAnswer().call()
+            decimals = feed.functions.decimals().call()
+            ratio = float(answer) / (10 ** decimals)
+            if ratio <= 0:
+                return 1.0
+            return ratio
+        except Exception as e:
+            logger.warning(f"Error getting LST/ETH ratio: {e}")
+            return 1.0
+
     def update_hedging_reserve(self, amount_eth: float) -> str:
         """
         Updates the hedging reserve in the KerneVault contract for institutional facade.

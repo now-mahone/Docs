@@ -49,6 +49,8 @@ class RiskEngine:
         self.price_history = {} # symbol -> list of prices
         self.pnl_snapshots = [] # List of (timestamp, equity)
         self.pnl_state = self.load_pnl_state()
+        self.ewma_state = {} # symbol -> {"mean": float, "variance": float}
+        self.depeg_state = {} # token -> {"last_ratio": float, "breach_count": int}
 
     def track_pnl(self, current_equity: float):
         now = time.time()
@@ -88,7 +90,16 @@ class RiskEngine:
         logger.critical(f"!!! EMERGENCY UNWIND INITIATED FOR {vault_address} !!!")
         
         try:
-            from exchange_manager import ExchangeManager
+            try:
+                from exchange_manager import ExchangeManager
+            except ImportError:
+                try:
+                    from bot.exchange_manager import ExchangeManager
+                except ImportError:
+                    try:
+                        from exchanges.exchange_manager import ExchangeManager
+                    except ImportError:
+                        from bot.exchanges.exchange_manager import ExchangeManager
             exchange = ExchangeManager()
             
             # 1. Close CEX Positions
@@ -144,16 +155,38 @@ class RiskEngine:
 
     def calculate_volatility(self, symbol: str) -> float:
         """
-        Calculates realized volatility using EWMA (Exponentially Weighted Moving Average).
+        Calculates realized volatility using adaptive EWMA (Exponentially Weighted Moving Average).
+        Higher recent volatility reduces the decay to react faster.
         """
         prices = self.price_history.get(symbol, [])
         if len(prices) < 20:
             return 0.05 # Default 5% if insufficient data
         
         returns = np.diff(np.log(prices))
-        # EWMA volatility calculation
-        alpha = 0.94 # Standard RiskMetrics lambda
-        vol = np.sqrt(np.sum([(alpha**i) * (returns[-(i+1)]**2) for i in range(len(returns))]) * (1-alpha))
+        baseline_vol = np.std(returns) if len(returns) > 1 else 0.0
+        
+        # Adaptive decay: higher volatility => lower alpha (faster reaction)
+        alpha = 0.94 - min(0.10, baseline_vol * 2.0)
+        alpha = max(0.80, min(0.94, alpha))
+
+        # Initialize EWMA state if needed
+        if symbol not in self.ewma_state:
+            variance = np.var(returns) if len(returns) > 1 else 0.0025
+            self.ewma_state[symbol] = {"mean": 0.0, "variance": variance}
+
+        state = self.ewma_state[symbol]
+        mean = state["mean"]
+        variance = state["variance"]
+
+        for r in returns[-50:]:
+            mean = alpha * mean + (1 - alpha) * r
+            variance = alpha * variance + (1 - alpha) * ((r - mean) ** 2)
+
+        state["mean"] = mean
+        state["variance"] = variance
+        self.ewma_state[symbol] = state
+
+        vol = np.sqrt(variance)
         return vol * np.sqrt(365 * 24 * 60) # Annualized
 
     def get_volatility_adjusted_thresholds(self, symbol: str) -> Dict:
@@ -268,10 +301,24 @@ class RiskEngine:
         profile.risk_factors = risk_factors
         return max(0.0, min(100.0, score))
 
+    def validate_vault_data(self, vault_data: Dict) -> bool:
+        """
+        Validates required vault data fields before analysis.
+        """
+        required_fields = ["address", "onchain_collateral", "cex_short_position", "current_price"]
+        missing = [field for field in required_fields if field not in vault_data]
+        if missing:
+            logger.warning(f"Vault data missing fields: {missing}")
+            return False
+        return True
+
     async def analyze_vault(self, vault_data: Dict) -> VaultRiskProfile:
         """
         Performs a deep institutional risk analysis.
         """
+        if not self.validate_vault_data(vault_data):
+            return None
+
         symbol = vault_data.get("symbol", "ETH/USDT")
         current_price = vault_data["current_price"]
         
@@ -328,6 +375,24 @@ class RiskEngine:
         # Log profile
         logger.info(f"Vault {profile.vault_address} | Health: {profile.health_score:.2f} | Delta: {profile.net_delta:.4f} | Daily PnL: ${daily_pnl:.2f} | Hourly PnL: ${hourly_pnl:.2f}")
         
+        # LST/ETH Depeg Monitoring
+        depeg_ratio = vault_data.get("lst_eth_ratio")
+        if depeg_ratio is not None:
+            depeg_state = self.depeg_state.get("LST/ETH", {"last_ratio": depeg_ratio, "breach_count": 0})
+            deviation = abs(1.0 - depeg_ratio)
+            if deviation > 0.02:  # >2% deviation
+                depeg_state["breach_count"] += 1
+                logger.warning(f"LST/ETH depeg detected: ratio={depeg_ratio:.4f} deviation={deviation:.2%}")
+            else:
+                depeg_state["breach_count"] = 0
+
+            depeg_state["last_ratio"] = depeg_ratio
+            self.depeg_state["LST/ETH"] = depeg_state
+
+            if depeg_state["breach_count"] >= 3:
+                logger.critical(f"CRITICAL DEPEG: LST/ETH ratio {depeg_ratio:.4f} sustained >2% deviation")
+                await self.emergency_unwind(profile.vault_address, symbol.split('/')[0])
+        
         # Circuit Breaker Logic
         # 1. Health Score Breaker
         if profile.health_score < self.base_thresholds["critical_health_score"]:
@@ -351,10 +416,6 @@ class RiskEngine:
             await self.emergency_unwind(profile.vault_address, symbol.split('/')[0])
             
         return profile
-
-            
-        return profile
-
 
 
     async def trigger_circuit_breaker(self, vault_address: str, reason: str):
@@ -406,6 +467,12 @@ if __name__ == "__main__":
                 short_pos, _ = exchange.get_short_position('ETH/USDT:USDT')
                 price = exchange.get_market_price('ETH/USDT')
                 
+                lst_eth_ratio = None
+                try:
+                    lst_eth_ratio = chain.get_lst_eth_ratio() if hasattr(chain, "get_lst_eth_ratio") else None
+                except Exception as ratio_error:
+                    logger.warning(f"Failed to fetch LST/ETH ratio: {ratio_error}")
+
                 vault_data = {
                     "address": chain.vault_address,
                     "onchain_collateral": vault_tvl,
@@ -413,7 +480,8 @@ if __name__ == "__main__":
                     "current_price": price,
                     "liq_onchain": 0.5,
                     "liq_cex": 0.3,
-                    "symbol": "ETH/USDT"
+                    "symbol": "ETH/USDT",
+                    "lst_eth_ratio": lst_eth_ratio
                 }
                 
                 await risk_engine.analyze_vault(vault_data)
