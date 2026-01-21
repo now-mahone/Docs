@@ -5,6 +5,7 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 
 ## Log
 <!-- NOTE: New entries go at the TOP (reverse chronological order - newest first) -->
+- [2026-01-20 20:00] - CowSwap solver registration prep: Generated filled solver application (`docs/runbooks/COWSWAP_SOLVER_APPLICATION_FILLED_2026_01_20.md`) including Base/Arbitrum ZIN contracts, solver wallet, guardrails, and contact info for forum submission. - Status: READY_TO_SUBMIT.
 - [2026-01-20 19:53] - Strategic roadmap delivery: Ranked top 40 non-frontend, non-DefiLlama priorities with five-part analysis (what/why/how/gain/worst-case) for Scofield decisioning. - Status: SUCCESS.
 - [2026-01-20 19:44] - Arbitrum Vault Deployment Prep Sync: Finalized runbook and prepared repository changes for private main sync. - Status: READY_FOR_EXECUTION.
 - [2026-01-20 18:16] - Arbitrum Vault Deployment Prep: Added Arbitrum vault deployment runbook (`docs/runbooks/ARBITRUM_VAULT_DEPLOYMENT.md`) based on `script/DeployArbitrumVault.s.sol` to enable native Arbitrum deposits. - Status: READY_FOR_EXECUTION.
