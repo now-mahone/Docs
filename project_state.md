@@ -5,6 +5,8 @@ Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveragi
 
 ## Log
 <!-- NOTE: New entries go at the TOP (reverse chronological order - newest first) -->
+- [2026-01-20 19:44] - Arbitrum Vault Deployment Prep Sync: Finalized runbook and prepared repository changes for private main sync. - Status: READY_FOR_EXECUTION.
+- [2026-01-20 18:16] - Arbitrum Vault Deployment Prep: Added Arbitrum vault deployment runbook (`docs/runbooks/ARBITRUM_VAULT_DEPLOYMENT.md`) based on `script/DeployArbitrumVault.s.sol` to enable native Arbitrum deposits. - Status: READY_FOR_EXECUTION.
 - [2026-01-20 18:11] - CowSwap Solver Registration Prep: Authored CowSwap solver registration runbook (`docs/runbooks/COWSWAP_SOLVER_REGISTRATION.md`) and a submission template (`docs/runbooks/COWSWAP_SOLVER_APPLICATION_TEMPLATE.md`) to unblock CowSwap auction access. - Status: READY_FOR_EXECUTION.
 - [2026-01-20 18:03] - OFT Omnichain Deployment Prep: Added Arbitrum OFT deployment script (`script/DeployOFTArbitrum.s.sol`), bidirectional peer wiring script (`script/WireOFTPeers.s.sol`), and an execution runbook (`docs/runbooks/OFT_OMNICHAIN_DEPLOYMENT.md`). Compiled successfully with Forge after removing unsupported string repeat calls. - Status: READY_FOR_EXECUTION.
 - [2026-01-20 17:42] - Strategic Priority #2 & #3 Verified Complete: Confirmed SOLVER_ROLE already granted on Arbitrum ZIN Pool (verified via `GrantSolverRoleArbitrum.s.sol` script - `hasRole()` returned true). Multi-chain solver configuration also complete. **REMAINING TOP PRIORITIES:** (1) Seed ZIN Pool liquidity on Base + Arbitrum, (4) Flash-Arb live extraction, (5) OFT peer wiring. - Status: ALREADY_COMPLETE.
