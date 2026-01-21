@@ -50,6 +50,7 @@ This document tracks all capital movements, wallet balances, and protocol-owned 
 
 | Contract | Address | Purpose |
 |----------|---------|---------|
+| **KerneVault** | `0x503D930dF68a68cdFeb8DEa173ADD8DD377841FF` | Main wstETH vault ✅ |
 | ZIN Executor | `0xbf039eB5CF2e1d0067C0918462fDd211e252Efdb` | Intent fulfillment contract |
 | ZIN Pool | `0x5D8ddE6264DF8A0963253693f32e057e1aA37aFD` | Intent execution liquidity |
 | **kUSD OFT V2** | `0xc1CF31008eF7C5aC0ebFF9712E96a39F299e8222` | kUSD token (LayerZero V2) ✅ |
