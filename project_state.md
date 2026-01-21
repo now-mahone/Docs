@@ -5,6 +5,8 @@ Kerne is a delta-neutral synthetic dollar protocol, leveraging LST collateral an
 
 ## Log
 <!-- NOTE: New entries go at the TOP (reverse chronological order - newest first) -->
+- [2026-01-21 15:45] - Proof of Reserve Automation: Verified automated PoR system (`bot/por_automated.py` + `bot/por_scheduler.py`) with daily scheduling, JSON + markdown output, Discord alerts, docker-compose service (`kerne-por`), and public API handler (`yield-server/src/handlers/proofOfReserve.ts`) for the “Glass House Standard” solvency endpoint. - Status: READY_FOR_EXECUTION.
+- [2026-01-21 15:40] - ZIN Launch Thread Posted: Scofield confirmed ZIN launch thread published on @KerneProtocol X account. - Status: SUCCESS.
 - [2026-01-21 15:00] - ZIN Launch Thread Guidance: Provided step-by-step posting instructions for X thread (Tweets 2-5), including reply chaining, “Post All” guidance, and post-thread actions (pin + like). - Status: SUCCESS.
 - [2026-01-21 14:19] - Arbitrum Vault Deployment: Deployed `KerneVault` on Arbitrum One at `0x503D930dF68a68cdFeb8DEa173ADD8DD377841FF` (wstETH vault). TX: `0x3dceb945c86365cc2a103723f6b4594f70e7997812e7af213460cab67ea03922`. Updated treasury ledger and bot env with `ARBITRUM_VAULT_ADDRESS`. - Status: SUCCESS.
 - [2026-01-20 21:29] - Daily Profit Telemetry v2: Implemented `bot/profit_telemetry.py` to aggregate ZIN pool metrics (Base/Arbitrum), treasury balances, vault TVL, and daily APY. Added Discord embed reporting, Markdown + JSON output to `docs/reports/`, and Web3 RPC auto-connect with contract existence checks. Verified telemetry run outputs and report generation (Discord skipped when webhook unset). **NOTE:** Base ZIN pool contract call currently returns empty code on RPC (investigation pending). - Status: SUCCESS.
