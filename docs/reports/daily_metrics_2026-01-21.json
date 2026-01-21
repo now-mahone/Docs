@@ -1,0 +1,31 @@
+{
+  "timestamp": 1768969699.685684,
+  "date": "2026-01-21",
+  "zin": {
+    "total_orders": 0,
+    "total_volume_usd": 0.0,
+    "total_profit_usd": 0.0,
+    "total_liquidity_usd": 0.0
+  },
+  "arb": {
+    "total_profit_usd": 0.0
+  },
+  "vault": {
+    "tvl_usd": 0.0
+  },
+  "summary": {
+    "total_profit_usd": 0.0,
+    "daily_apy_bps": 0.0,
+    "annualized_apy_pct": 0.0
+  },
+  "chains": [
+    {
+      "name": "arbitrum",
+      "chain_id": 42161,
+      "orders": 0,
+      "volume_usd": 0.0,
+      "profit_usd": 0.0,
+      "liquidity_usd": 0.0
+    }
+  ]
+}
