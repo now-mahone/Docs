@@ -39,8 +39,10 @@ This document tracks all capital movements, wallet balances, and protocol-owned 
 | InsuranceFund | `0x3C93E231a3b74659ABfCA95dFf2eC9a8525b08B9` | Insurance reserves |
 | FlashArbBot | `0xaED581A60db89fEe5f1D8f04538c953Cc78A1687` | Arbitrage executor |
 | KUSD PSM | `0x7286200Ba4C6Ed5041df55965c484a106F4716FD` | Peg stability module |
-| kUSD OFT | `0xb50bFec5FF426744b9d195a8C262da376637Cb6A` | kUSD token (LayerZero) |
-| KERNE OFT | `0xE828810B6B60A3DE21AB9d0BDba962bF9FbDc255` | KERNE token (LayerZero) |
+| kUSD OFT V1 ⚠️ | `0xb50bFec5FF426744b9d195a8C262da376637Cb6A` | **DEPRECATED** - LZ V1 incompatible |
+| KERNE OFT V1 ⚠️ | `0xE828810B6B60A3DE21AB9d0BDba962bF9FbDc255` | **DEPRECATED** - LZ V1 incompatible |
+| **kUSD OFT V2** | `0x257579db2702BAeeBFAC5c19d354f2FF39831299` | kUSD token (LayerZero V2) ✅ |
+| **KERNE OFT V2** | `0x4E1ce62F571893eCfD7062937781A766ff64F14e` | KERNE token (LayerZero V2) ✅ |
 | KERNE Token | `0xfEA3D217F5f2304C8551dc9F5B5169F2c2d87340` | Governance token |
 | KERNE Staking | `0x032Af1631671126A689614c0c957De774b45D582` | Staking contract |
 
@@ -50,6 +52,8 @@ This document tracks all capital movements, wallet balances, and protocol-owned 
 |----------|---------|---------|
 | ZIN Executor | `0xbf039eB5CF2e1d0067C0918462fDd211e252Efdb` | Intent fulfillment contract |
 | ZIN Pool | `0x5D8ddE6264DF8A0963253693f32e057e1aA37aFD` | Intent execution liquidity |
+| **kUSD OFT V2** | `0xc1CF31008eF7C5aC0ebFF9712E96a39F299e8222` | kUSD token (LayerZero V2) ✅ |
+| **KERNE OFT V2** | `0x087365f83caF2E2504c399330F5D15f62Ae7dAC3` | KERNE token (LayerZero V2) ✅ |
 
 ---
 

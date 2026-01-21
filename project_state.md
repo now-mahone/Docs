@@ -1,10 +1,12 @@
 # Kerne Project State
 
 ## Project Overview
-Kerne is a delta-neutral synthetic dollar protocol on the Base network, leveraging LST collateral and CEX-based hedging to provide institutional-grade yield and capital efficiency.
+Kerne is a delta-neutral synthetic dollar protocol, leveraging LST collateral and hedging to provide institutional grade yield and capital efficiency.
 
 ## Log
 <!-- NOTE: New entries go at the TOP (reverse chronological order - newest first) -->
+- [2026-01-20 21:03] - OFT V2 Omnichain Bridging Complete: Successfully executed Strategic Priority #2 - Wire OFT Peers for Omnichain Bridging. **CRITICAL FIX:** Discovered Base OFTs were LayerZero V1 (incompatible with V2 `setPeer()`). Deployed NEW V2 OFTs on Base to replace V1, then wired all 4 bidirectional peers. **BASE V2 OFTs (NEW):** kUSD OFT V2: `0x257579db2702BAeeBFAC5c19d354f2FF39831299`, KERNE OFT V2: `0x4E1ce62F571893eCfD7062937781A766ff64F14e`. **ARBITRUM V2 OFTs:** kUSD OFT: `0xc1CF31008eF7C5aC0ebFF9712E96a39F299e8222`, KERNE OFT: `0x087365f83caF2E2504c399330F5D15f62Ae7dAC3`. **PEER WIRING TXs:** Base kUSD→Arb: `0x90f0791e...`, Base KERNE→Arb: `0x4561e18f...`, Arb kUSD→Base: `0x347d2fc3...`, Arb KERNE→Base: `0x1db3bdd9...`. Verified bidirectional peer wiring via `peers()` calls. Updated `bot/.env` with new V2 addresses (V1 marked DEPRECATED). Created `script/DeployOFTBase.s.sol` for V2 Base deployments. kUSD and KERNE can now be bridged between Base ↔ Arbitrum using LayerZero V2. - Status: SUCCESS.
+- [2026-01-20 20:30] - CowSwap solver registration SUBMITTED: Posted solver request to CowSwap governance forum (Technical category). Application includes ZIN executor/pool contracts on Base and Arbitrum, solver wallet, safety guardrails, and contact info (X, email, web). Awaiting CowSwap team review and approval. - Status: SUBMITTED_AWAITING_REVIEW.
 - [2026-01-20 20:00] - CowSwap solver registration prep: Generated filled solver application (`docs/runbooks/COWSWAP_SOLVER_APPLICATION_FILLED_2026_01_20.md`) including Base/Arbitrum ZIN contracts, solver wallet, guardrails, and contact info for forum submission. - Status: READY_TO_SUBMIT.
 - [2026-01-20 19:53] - Strategic roadmap delivery: Ranked top 40 non-frontend, non-DefiLlama priorities with five-part analysis (what/why/how/gain/worst-case) for Scofield decisioning. - Status: SUCCESS.
 - [2026-01-20 19:44] - Arbitrum Vault Deployment Prep Sync: Finalized runbook and prepared repository changes for private main sync. - Status: READY_FOR_EXECUTION.
