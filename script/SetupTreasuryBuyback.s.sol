@@ -45,6 +45,10 @@ contract SetupTreasuryBuyback is Script {
         console.log("KERNE Token:", KERNE_TOKEN);
         console.log("Staking Contract:", KERNE_STAKING);
         
+        // 0. FIX CRITICAL: Treasury was deployed with placeholder addresses
+        // Must set correct KERNE token and staking contract addresses
+        _fixTreasuryConfiguration();
+        
         // 1. Verify Treasury configuration
         _verifyTreasuryConfig();
         
@@ -77,6 +81,40 @@ contract SetupTreasuryBuyback is Script {
         console.log("3. Run bot with buyback cycle enabled");
     }
     
+    function _fixTreasuryConfiguration() internal {
+        console.log("");
+        console.log("=== Fixing Treasury Configuration ===");
+        
+        // Check current state
+        address currentKerneToken = treasury.kerneToken();
+        address currentStaking = treasury.stakingContract();
+        
+        console.log("  Current KERNE Token:", currentKerneToken);
+        console.log("  Current Staking:", currentStaking);
+        console.log("  Expected KERNE Token:", KERNE_TOKEN);
+        console.log("  Expected Staking:", KERNE_STAKING);
+        
+        // Fix KERNE token if it's wrong
+        if (currentKerneToken != KERNE_TOKEN) {
+            console.log("  -> Setting KERNE token address...");
+            treasury.setKerneToken(KERNE_TOKEN);
+            console.log("  -> KERNE token updated!");
+        } else {
+            console.log("  -> KERNE token already correct");
+        }
+        
+        // Fix staking contract if it's wrong
+        if (currentStaking != KERNE_STAKING) {
+            console.log("  -> Setting staking contract address...");
+            treasury.setStakingContract(KERNE_STAKING);
+            console.log("  -> Staking contract updated!");
+        } else {
+            console.log("  -> Staking contract already correct");
+        }
+        
+        console.log("=== Treasury Configuration Fixed ===");
+    }
+
     function _verifyTreasuryConfig() internal view {
         address founder = treasury.founder();
         address kerneToken = treasury.kerneToken();
