@@ -5,6 +5,7 @@ Kerne is a delta-neutral synthetic dollar protocol, leveraging LST collateral an
 
 ## Log
 <!-- NOTE: New entries go at the TOP (reverse chronological order - newest first) -->
+- [2026-01-22 14:41] - Growth outreach: produced a ranked 12-category outreach matrix (why/who/action) aligned to the Liquidity Black Hole thesis; saved to `docs/marketing/growth_targets_ranked.md`. - Status: SUCCESS.
 - [2026-01-21 22:13] - Advised Growth Operating System should live under docs/growth/ (playbooks, pipelines, KPIs) with optional ops/tracker files; avoid new top-level unless requested. - Status: SUCCESS.
 - [2026-01-21 22:11] - Confirmed need for a dedicated Growth System (marketing, outreach, integrations, investor hunting) as the hardest lever; will structure a comprehensive growth operating system on request. - Status: ACKNOWLEDGED.
 - [2026-01-21 21:51] - Clarified "everything else" beyond repo development: governance/legal ops, treasury/capital management, growth & distribution, ops/security, BD/partnerships, compliance, market intel, and execution runbooks. - Status: SUCCESS.
