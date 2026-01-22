@@ -5,6 +5,7 @@ Kerne is a delta-neutral synthetic dollar protocol, leveraging LST collateral an
 
 ## Log
 <!-- NOTE: New entries go at the TOP (reverse chronological order - newest first) -->
+- [2026-01-21 22:13] - Advised Growth Operating System should live under docs/growth/ (playbooks, pipelines, KPIs) with optional ops/tracker files; avoid new top-level unless requested. - Status: SUCCESS.
 - [2026-01-21 22:11] - Confirmed need for a dedicated Growth System (marketing, outreach, integrations, investor hunting) as the hardest lever; will structure a comprehensive growth operating system on request. - Status: ACKNOWLEDGED.
 - [2026-01-21 21:51] - Clarified "everything else" beyond repo development: governance/legal ops, treasury/capital management, growth & distribution, ops/security, BD/partnerships, compliance, market intel, and execution runbooks. - Status: SUCCESS.
 - [2026-01-21 20:19] - Guidance: MetaMask integration path outlined (add KERNE/kUSD as custom tokens + add Base/Arbitrum networks if missing; optional deep-linking via `wallet_watchAsset`/`wallet_addEthereumChain`). No code changes required. - Status: SUCCESS.
