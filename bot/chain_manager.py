@@ -413,6 +413,288 @@ class ChainManager:
             logger.error(f"Error drawing from insurance fund: {e}")
             raise
 
+    # ═══════════════════════════════════════════════════════════════════════════════
+    # TREASURY BUYBACK FUNCTIONS
+    # ═══════════════════════════════════════════════════════════════════════════════
+
+    def get_treasury_balance(self, token_address: str) -> float:
+        """
+        Returns the balance of a specific token in the Treasury contract.
+        """
+        try:
+            if not self.treasury:
+                logger.warning("Treasury contract not initialized")
+                return 0.0
+            
+            treasury_address = os.getenv("TREASURY_ADDRESS")
+            if not treasury_address:
+                return 0.0
+            
+            erc20_abi = [
+                {"inputs":[{"name":"account","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+                {"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"stateMutability":"view","type":"function"}
+            ]
+            token = self.w3.eth.contract(address=Web3.to_checksum_address(token_address), abi=erc20_abi)
+            balance = token.functions.balanceOf(treasury_address).call()
+            decimals = token.functions.decimals().call()
+            return float(balance) / (10 ** decimals)
+        except Exception as e:
+            logger.error(f"Error getting treasury balance: {e}")
+            return 0.0
+
+    def get_buyback_stats(self) -> dict:
+        """
+        Returns buyback statistics from the Treasury contract.
+        """
+        try:
+            if not self.treasury:
+                return {"total_kerne_bought": 0, "total_spent": 0}
+            
+            stats = self.treasury.functions.getBuybackStats().call()
+            return {
+                "total_kerne_bought": float(self.w3.from_wei(stats[0], 'ether')),
+                "total_spent": float(self.w3.from_wei(stats[1], 'ether'))
+            }
+        except Exception as e:
+            logger.error(f"Error getting buyback stats: {e}")
+            return {"total_kerne_bought": 0, "total_spent": 0}
+
+    def preview_buyback(self, token_address: str, amount: float) -> dict:
+        """
+        Previews expected KERNE output for a given input amount.
+        Returns expected output and minimum with slippage.
+        """
+        try:
+            if not self.treasury:
+                return {"expected": 0, "minimum": 0, "error": "Treasury not initialized"}
+            
+            # Determine decimals
+            erc20_abi = [{"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"stateMutability":"view","type":"function"}]
+            token = self.w3.eth.contract(address=Web3.to_checksum_address(token_address), abi=erc20_abi)
+            decimals = token.functions.decimals().call()
+            amount_wei = int(amount * (10 ** decimals))
+            
+            result = self.treasury.functions.previewBuyback(token_address, amount_wei).call()
+            return {
+                "expected": float(self.w3.from_wei(result[0], 'ether')),
+                "minimum": float(self.w3.from_wei(result[1], 'ether')),
+                "error": None
+            }
+        except Exception as e:
+            logger.error(f"Error previewing buyback: {e}")
+            return {"expected": 0, "minimum": 0, "error": str(e)}
+
+    def is_buyback_token_approved(self, token_address: str) -> bool:
+        """
+        Checks if a token is approved for buybacks.
+        """
+        try:
+            if not self.treasury:
+                return False
+            return self.treasury.functions.isApprovedToken(token_address).call()
+        except Exception as e:
+            logger.error(f"Error checking approved token: {e}")
+            return False
+
+    def execute_treasury_distribute(self, token_address: str) -> str:
+        """
+        Distributes accumulated fees in Treasury (80% founder, 20% buyback pool).
+        """
+        try:
+            if not self.treasury:
+                logger.error("Treasury contract not initialized")
+                return ""
+            
+            nonce = self.w3.eth.get_transaction_count(self.account.address)
+            
+            tx = self.treasury.functions.distribute(token_address).build_transaction({
+                'from': self.account.address,
+                'nonce': nonce,
+                'gasPrice': self.w3.eth.gas_price,
+                'gas': 200000
+            })
+            
+            signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+            
+            if receipt.status == 1:
+                logger.success(f"Treasury distribution executed: {tx_hash.hex()}")
+            else:
+                logger.error(f"Treasury distribution failed: {tx_hash.hex()}")
+            return tx_hash.hex()
+        except Exception as e:
+            logger.error(f"Error executing treasury distribute: {e}")
+            return ""
+
+    def execute_buyback(self, token_address: str, amount: float, min_kerne_out: float = 0) -> str:
+        """
+        Executes a KERNE buyback using the Treasury contract via Aerodrome.
+        
+        Args:
+            token_address: Input token to swap (WETH, USDC, etc.)
+            amount: Amount of input token to swap
+            min_kerne_out: Minimum KERNE to receive (0 = use calculated slippage)
+        
+        Returns:
+            Transaction hash on success, empty string on failure
+        """
+        try:
+            if not self.treasury:
+                logger.error("Treasury contract not initialized")
+                return ""
+            
+            # Determine token decimals
+            erc20_abi = [{"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"stateMutability":"view","type":"function"}]
+            token = self.w3.eth.contract(address=Web3.to_checksum_address(token_address), abi=erc20_abi)
+            decimals = token.functions.decimals().call()
+            amount_wei = int(amount * (10 ** decimals))
+            min_out_wei = int(min_kerne_out * (10 ** 18)) if min_kerne_out > 0 else 0
+            
+            # Preview first for logging
+            preview = self.preview_buyback(token_address, amount)
+            logger.info(f"Buyback preview: {amount} tokens → ~{preview['expected']:.4f} KERNE (min: {preview['minimum']:.4f})")
+            
+            if preview['expected'] == 0:
+                logger.warning("Preview returned 0 output - pool may have no liquidity")
+                return ""
+            
+            nonce = self.w3.eth.get_transaction_count(self.account.address)
+            
+            tx = self.treasury.functions.executeBuyback(
+                token_address,
+                amount_wei,
+                min_out_wei
+            ).build_transaction({
+                'from': self.account.address,
+                'nonce': nonce,
+                'gasPrice': self.w3.eth.gas_price,
+                'gas': 400000  # Higher gas for DEX swap
+            })
+            
+            signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+            
+            if receipt.status == 1:
+                logger.success(f"🔥 KERNE buyback executed: {tx_hash.hex()}")
+                send_discord_alert(f"🔥 KERNE Buyback: {amount} tokens swapped for ~{preview['expected']:.4f} KERNE", level="SUCCESS")
+            else:
+                logger.error(f"Buyback transaction failed: {tx_hash.hex()}")
+            return tx_hash.hex()
+        except Exception as e:
+            logger.error(f"Error executing buyback: {e}")
+            return ""
+
+    def execute_distribute_and_buyback(self, token_address: str, min_kerne_out: float = 0) -> str:
+        """
+        Distributes fees AND executes buyback in one transaction (gas efficient).
+        
+        Args:
+            token_address: Token to distribute and swap
+            min_kerne_out: Minimum KERNE to receive (0 = use calculated slippage)
+        
+        Returns:
+            Transaction hash on success, empty string on failure
+        """
+        try:
+            if not self.treasury:
+                logger.error("Treasury contract not initialized")
+                return ""
+            
+            min_out_wei = int(min_kerne_out * (10 ** 18)) if min_kerne_out > 0 else 0
+            
+            nonce = self.w3.eth.get_transaction_count(self.account.address)
+            
+            tx = self.treasury.functions.distributeAndBuyback(
+                token_address,
+                min_out_wei
+            ).build_transaction({
+                'from': self.account.address,
+                'nonce': nonce,
+                'gasPrice': self.w3.eth.gas_price,
+                'gas': 500000  # Higher gas for distribute + DEX swap
+            })
+            
+            signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+            
+            if receipt.status == 1:
+                logger.success(f"🔥 Distribute + Buyback executed: {tx_hash.hex()}")
+                send_discord_alert(f"🔥 Treasury Distribute + KERNE Buyback executed", level="SUCCESS")
+            else:
+                logger.error(f"Distribute+Buyback transaction failed: {tx_hash.hex()}")
+            return tx_hash.hex()
+        except Exception as e:
+            logger.error(f"Error executing distribute+buyback: {e}")
+            return ""
+
+    def approve_buyback_token(self, token_address: str, approved: bool = True) -> str:
+        """
+        Approves or revokes a token for buyback swaps (owner only).
+        """
+        try:
+            if not self.treasury:
+                logger.error("Treasury contract not initialized")
+                return ""
+            
+            nonce = self.w3.eth.get_transaction_count(self.account.address)
+            
+            tx = self.treasury.functions.setApprovedBuybackToken(
+                token_address,
+                approved
+            ).build_transaction({
+                'from': self.account.address,
+                'nonce': nonce,
+                'gasPrice': self.w3.eth.gas_price,
+                'gas': 100000
+            })
+            
+            signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+            
+            if receipt.status == 1:
+                action = "approved" if approved else "revoked"
+                logger.success(f"Token {action} for buyback: {tx_hash.hex()}")
+            return tx_hash.hex()
+        except Exception as e:
+            logger.error(f"Error approving buyback token: {e}")
+            return ""
+
+    def set_routing_hop(self, token_address: str, hop_address: str) -> str:
+        """
+        Sets an intermediate routing hop for deeper liquidity (e.g., USDC → WETH → KERNE).
+        """
+        try:
+            if not self.treasury:
+                logger.error("Treasury contract not initialized")
+                return ""
+            
+            nonce = self.w3.eth.get_transaction_count(self.account.address)
+            
+            tx = self.treasury.functions.setRoutingHop(
+                token_address,
+                hop_address
+            ).build_transaction({
+                'from': self.account.address,
+                'nonce': nonce,
+                'gasPrice': self.w3.eth.gas_price,
+                'gas': 100000
+            })
+            
+            signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+            
+            if receipt.status == 1:
+                logger.success(f"Routing hop set: {tx_hash.hex()}")
+            return tx_hash.hex()
+        except Exception as e:
+            logger.error(f"Error setting routing hop: {e}")
+            return ""
+
     def bridge_kusd_v2(self, amount_eth: float, dst_eid: int) -> str:
         """
         Bridges kUSD to another chain using the KerneOFTV2 contract (LayerZero V2).

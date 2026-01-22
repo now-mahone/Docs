@@ -5,6 +5,7 @@ Kerne is a delta-neutral synthetic dollar protocol, leveraging LST collateral an
 
 ## Log
 <!-- NOTE: New entries go at the TOP (reverse chronological order - newest first) -->
+- [2026-01-21 18:10] - KERNE Buyback Flywheel Automation: Added automated buyback execution in bot engine and chain manager, created Treasury setup script, documented setup/runbook, and extended bot environment configuration for Aerodrome buybacks (WETH/USDC thresholds, cooldown, slippage, router). - Status: READY_FOR_EXECUTION.
 - [2026-01-21 15:45] - Proof of Reserve Automation: Verified automated PoR system (`bot/por_automated.py` + `bot/por_scheduler.py`) with daily scheduling, JSON + markdown output, Discord alerts, docker-compose service (`kerne-por`), and public API handler (`yield-server/src/handlers/proofOfReserve.ts`) for the “Glass House Standard” solvency endpoint. - Status: READY_FOR_EXECUTION.
 - [2026-01-21 15:40] - ZIN Launch Thread Posted: Scofield confirmed ZIN launch thread published on @KerneProtocol X account. - Status: SUCCESS.
 - [2026-01-21 15:00] - ZIN Launch Thread Guidance: Provided step-by-step posting instructions for X thread (Tweets 2-5), including reply chaining, “Post All” guidance, and post-thread actions (pin + like). - Status: SUCCESS.
