@@ -4,6 +4,8 @@
 Kerne is a delta-neutral synthetic dollar protocol, leveraging LST collateral and hedging to provide institutional grade yield and capital efficiency.
 ## Log
 <!-- NOTE: New entries go at the TOP (reverse chronological order - newest first) -->
+- [2026-01-26 22:26] - Leads Scaffolding - Created leads/growth range folders (1-100 through 901-1000) and generated 1,000 empty lead files for TVL outreach segmentation. - Status: SUCCESS.
+- [2026-01-26 21:01] - APY/Commission Clarification: Confirmed APY reporting uses net returns after costs/fees (insurance + performance fee) based on backtest assumptions and APY calculator logic. - Status: SUCCESS.
 - [2026-01-26 20:51] - Strategy - Delivered ranked top 14 zero-cost priorities (non-frontend, non-DefiLlama) with five-part analysis for Scofield decisioning. - Status: SUCCESS.
 - [2026-01-26 20:44] - ZIN Solver Live Activation - Confirmed Base RPC fix (mainnet.base.org) and ZIN pool liquidity (39.772851 USDC, 0.01178582 WETH). Deployer gas balance 0.010660 ETH on Base. Solver running live; CowSwap still 403 (registration pending). Added logging for pool liquidity checks and filtered UniswapX intents to skip output tokens without funded liquidity (USDC/WETH only) to eliminate "no_liquidity" rejects. - Status: LIVE_MONITORING.
 - [2026-01-27 00:30] - Priority #2 (Optimism Expansion) - Pre-flight Verification Complete. Successfully simulated FullOptimismDeployment and WireOFTPeers on a local Optimism Mainnet fork. All contracts (Vault, OFTs, ZIN) deploy and configure correctly. BLOCKER: Deployer wallet (0x57D4...0A99) still has 0 ETH on Optimism. Ready for live execution once gas is provided. - Status: READY_FOR_GAS.
