@@ -1,0 +1,16 @@
+# Kerne CoW Swap Solver - Minimal Dependencies
+# Created: 2026-01-27
+
+# Web framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+
+# Web3 interaction
+web3==6.15.1
+
+# Logging
+loguru==0.7.2
+
+# HTTP client (for web3)
+requests>=2.31.0
