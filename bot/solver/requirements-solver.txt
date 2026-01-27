@@ -1,16 +1,17 @@
 # Kerne CoW Swap Solver - Minimal Dependencies
 # Created: 2026-01-27
+# Updated: Use versions with pre-built wheels for Python 3.11
 
 # Web framework
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-pydantic==2.5.3
+fastapi>=0.104.0,<1.0.0
+uvicorn[standard]>=0.24.0,<1.0.0
+pydantic>=2.0.0,<3.0.0
 
 # Web3 interaction
-web3==6.15.1
+web3>=6.0.0,<7.0.0
 
 # Logging
-loguru==0.7.2
+loguru>=0.7.0,<1.0.0
 
 # HTTP client (for web3)
-requests>=2.31.0
+requests>=2.31.0,<3.0.0
