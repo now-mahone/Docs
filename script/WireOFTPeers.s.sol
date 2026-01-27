@@ -35,14 +35,20 @@ contract WireOFTPeers is Script {
     // LayerZero V2 Endpoint IDs
     uint32 constant BASE_EID = 30184;
     uint32 constant ARBITRUM_EID = 30110;
+    uint32 constant OPTIMISM_EID = 30111;
     
     // Chain IDs
     uint256 constant BASE_CHAIN_ID = 8453;
     uint256 constant ARBITRUM_CHAIN_ID = 42161;
+    uint256 constant OPTIMISM_CHAIN_ID = 10;
 
-    // Known Base Mainnet OFT addresses (from TREASURY_LEDGER.md)
-    address constant BASE_KUSD_OFT_DEFAULT = 0xb50bFec5FF426744b9d195a8C262da376637Cb6A;
-    address constant BASE_KERNE_OFT_DEFAULT = 0xE828810B6B60A3DE21AB9d0BDba962bF9FbDc255;
+    // Known Base Mainnet OFT addresses (from project_state.md)
+    address constant BASE_KUSD_OFT_DEFAULT = 0x257579db2702BAeeBFAC5c19d354f2FF39831299;
+    address constant BASE_KERNE_OFT_DEFAULT = 0x4E1ce62F571893eCfD7062937781A766ff64F14e;
+
+    // Known Arbitrum Mainnet OFT addresses
+    address constant ARBITRUM_KUSD_OFT_DEFAULT = 0xc1CF31008eF7C5aC0ebFF9712E96a39F299e8222;
+    address constant ARBITRUM_KERNE_OFT_DEFAULT = 0x087365f83caF2E2504c399330F5D15f62Ae7dAC3;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -50,8 +56,10 @@ contract WireOFTPeers is Script {
         // Get OFT addresses from env or use defaults
         address baseKusd = _getEnvAddressOr("BASE_KUSD_OFT_ADDRESS", BASE_KUSD_OFT_DEFAULT);
         address baseKerne = _getEnvAddressOr("BASE_KERNE_OFT_ADDRESS", BASE_KERNE_OFT_DEFAULT);
-        address arbKusd = vm.envAddress("ARBITRUM_KUSD_OFT_ADDRESS");
-        address arbKerne = vm.envAddress("ARBITRUM_KERNE_OFT_ADDRESS");
+        address arbKusd = _getEnvAddressOr("ARBITRUM_KUSD_OFT_ADDRESS", ARBITRUM_KUSD_OFT_DEFAULT);
+        address arbKerne = _getEnvAddressOr("ARBITRUM_KERNE_OFT_ADDRESS", ARBITRUM_KERNE_OFT_DEFAULT);
+        address optKusd = vm.envAddress("OPTIMISM_KUSD_OFT_ADDRESS");
+        address optKerne = vm.envAddress("OPTIMISM_KERNE_OFT_ADDRESS");
 
         console.log("============================================================");
         console.log("Kerne OFT Peer Wiring");
@@ -66,15 +74,21 @@ contract WireOFTPeers is Script {
         console.log("  kUSD:", arbKusd);
         console.log("  KERNE:", arbKerne);
         console.log("");
+        console.log("Optimism OFTs:");
+        console.log("  kUSD:", optKusd);
+        console.log("  KERNE:", optKerne);
+        console.log("");
 
         vm.startBroadcast(deployerPrivateKey);
 
         if (block.chainid == BASE_CHAIN_ID) {
-            _wireOnBase(baseKusd, baseKerne, arbKusd, arbKerne);
+            _wireOnBase(baseKusd, baseKerne, arbKusd, arbKerne, optKusd, optKerne);
         } else if (block.chainid == ARBITRUM_CHAIN_ID) {
-            _wireOnArbitrum(baseKusd, baseKerne, arbKusd, arbKerne);
+            _wireOnArbitrum(baseKusd, baseKerne, arbKusd, arbKerne, optKusd, optKerne);
+        } else if (block.chainid == OPTIMISM_CHAIN_ID) {
+            _wireOnOptimism(baseKusd, baseKerne, arbKusd, arbKerne, optKusd, optKerne);
         } else {
-            revert("Unsupported chain. Must run on Base (8453) or Arbitrum (42161)");
+            revert("Unsupported chain. Must run on Base, Arbitrum, or Optimism");
         }
 
         vm.stopBroadcast();
@@ -89,53 +103,86 @@ contract WireOFTPeers is Script {
         address baseKusd,
         address baseKerne,
         address arbKusd,
-        address arbKerne
+        address arbKerne,
+        address optKusd,
+        address optKerne
     ) internal {
-        console.log("Wiring Base OFTs -> Arbitrum peers...");
-        console.log("");
+        console.log("Wiring Base OFTs -> peers...");
 
-        // Wire kUSD: Base -> Arbitrum
-        bytes32 arbKusdPeer = bytes32(uint256(uint160(arbKusd)));
-        (bool success1, ) = baseKusd.call(
-            abi.encodeWithSignature("setPeer(uint32,bytes32)", ARBITRUM_EID, arbKusdPeer)
-        );
-        require(success1, "Failed to set kUSD peer on Base");
-        console.log("kUSD peer set: Base -> Arbitrum (EID:", ARBITRUM_EID, ")");
+        // Wire to Arbitrum
+        _setPeer(baseKusd, ARBITRUM_EID, arbKusd);
+        _setPeer(baseKerne, ARBITRUM_EID, arbKerne);
 
-        // Wire KERNE: Base -> Arbitrum
-        bytes32 arbKernePeer = bytes32(uint256(uint160(arbKerne)));
-        (bool success2, ) = baseKerne.call(
-            abi.encodeWithSignature("setPeer(uint32,bytes32)", ARBITRUM_EID, arbKernePeer)
-        );
-        require(success2, "Failed to set KERNE peer on Base");
-        console.log("KERNE peer set: Base -> Arbitrum (EID:", ARBITRUM_EID, ")");
+        // Wire to Optimism
+        if (optKusd != address(0)) _setPeer(baseKusd, OPTIMISM_EID, optKusd);
+        if (optKerne != address(0)) _setPeer(baseKerne, OPTIMISM_EID, optKerne);
     }
 
     function _wireOnArbitrum(
         address baseKusd,
         address baseKerne,
         address arbKusd,
-        address arbKerne
+        address arbKerne,
+        address optKusd,
+        address optKerne
     ) internal {
-        console.log("Wiring Arbitrum OFTs -> Base peers...");
-        console.log("");
+        console.log("Wiring Arbitrum OFTs -> peers...");
 
-        // Wire kUSD: Arbitrum -> Base
-        bytes32 baseKusdPeer = bytes32(uint256(uint160(baseKusd)));
-        (bool success1, ) = arbKusd.call(
-            abi.encodeWithSignature("setPeer(uint32,bytes32)", BASE_EID, baseKusdPeer)
-        );
-        require(success1, "Failed to set kUSD peer on Arbitrum");
-        console.log("kUSD peer set: Arbitrum -> Base (EID:", BASE_EID, ")");
+        // Wire to Base
+        _setPeer(arbKusd, BASE_EID, baseKusd);
+        _setPeer(arbKerne, BASE_EID, baseKerne);
 
-        // Wire KERNE: Arbitrum -> Base
-        bytes32 baseKernePeer = bytes32(uint256(uint160(baseKerne)));
-        (bool success2, ) = arbKerne.call(
-            abi.encodeWithSignature("setPeer(uint32,bytes32)", BASE_EID, baseKernePeer)
-        );
-        require(success2, "Failed to set KERNE peer on Arbitrum");
-        console.log("KERNE peer set: Arbitrum -> Base (EID:", BASE_EID, ")");
+        // Wire to Optimism
+        if (optKusd != address(0)) _setPeer(arbKusd, OPTIMISM_EID, optKusd);
+        if (optKerne != address(0)) _setPeer(arbKerne, OPTIMISM_EID, optKerne);
     }
+
+    function _wireOnOptimism(
+        address baseKusd,
+        address baseKerne,
+        address arbKusd,
+        address arbKerne,
+        address optKusd,
+        address optKerne
+    ) internal {
+        console.log("Wiring Optimism OFTs -> peers...");
+
+        // Wire to Base
+        _setPeer(optKusd, BASE_EID, baseKusd);
+        _setPeer(optKerne, BASE_EID, baseKerne);
+
+        // Wire to Arbitrum
+        _setPeer(optKusd, ARBITRUM_EID, arbKusd);
+        _setPeer(optKerne, ARBITRUM_EID, arbKerne);
+    }
+
+    function _setPeer(address oft, uint32 remoteEid, address peer) internal {
+        if (peer == address(0)) return;
+        bytes32 peerBytes32 = bytes32(uint256(uint160(peer)));
+        (bool success, ) = oft.call(
+            abi.encodeWithSignature("setPeer(uint32,bytes32)", remoteEid, peerBytes32)
+        );
+        require(success, string(abi.encodePacked("Failed to set peer for EID ", _uintToString(remoteEid))));
+        console.log("Peer set for EID:", remoteEid, "->", peer);
+    }
+
+    function _uintToString(uint32 value) internal pure returns (string memory) {
+        if (value == 0) return "0";
+        uint32 temp = value;
+        uint32 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint32(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
+    }
+
 
     function _getEnvAddressOr(string memory key, address defaultValue) internal view returns (address) {
         try vm.envAddress(key) returns (address value) {

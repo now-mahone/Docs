@@ -53,3 +53,11 @@ class BaseExchange(ABC):
         Returns 0.0 if no position exists.
         """
         pass
+
+    @abstractmethod
+    def get_order_book(self, symbol: str) -> Dict:
+        """
+        Returns the order book for a symbol.
+        """
+        pass
+

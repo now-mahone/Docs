@@ -436,10 +436,12 @@ contract KerneZINTest is Test {
             address(usdc),
             100e18,
             user,
+            zinExecutor.ONE_INCH_ROUTER(),
             "",
             safetyParams
         );
     }
+
     
     function test_RevertWhen_ZINExecutor_NonAdminCannotSetProfitVault() public {
         vm.prank(user);
@@ -532,6 +534,7 @@ contract KerneZINTest is Test {
             address(usdc),
             10e18,
             user,
+            zinExecutor.ONE_INCH_ROUTER(),
             aggregatorData,
             safetyParams
         );
@@ -566,6 +569,7 @@ contract KerneZINTest is Test {
             address(weth),
             amountOut,
             user,
+            zinExecutor.ONE_INCH_ROUTER(),
             aggregatorData,
             safetyParams
         );
@@ -602,6 +606,7 @@ contract KerneZINTest is Test {
             address(weth),
             amountOut,
             user,
+            zinExecutor.ONE_INCH_ROUTER(),
             aggregatorData,
             safetyParams
         );
@@ -610,6 +615,44 @@ contract KerneZINTest is Test {
         assertEq(zinExecutor.totalIntentsFulfilled(), 0);
         assertEq(zinExecutor.getTokenSpread(address(weth)), 0);
     }
+
+    function test_ZINExecutor_FulfillFusionIntent() public {
+        uint256 amountOut = 10e18;
+        uint256 aggregatorOut = 11e18;
+        address fusionSettler = address(0x123);
+        vm.etch(fusionSettler, address(new MockAggregator()).code);
+        
+        bytes memory aggregatorData = abi.encodeWithSelector(
+            MockAggregator.swap.selector,
+            address(weth),
+            address(weth),
+            amountOut,
+            aggregatorOut,
+            user,
+            address(zinExecutor)
+        );
+        bytes memory safetyParams = abi.encode(block.timestamp, 1e18, 10);
+
+        vm.startPrank(user);
+        weth.approve(fusionSettler, amountOut);
+        vm.stopPrank();
+
+        vm.prank(solver);
+        zinExecutor.fulfillIntent(
+            address(vault),
+            address(weth),
+            address(weth),
+            amountOut,
+            user,
+            fusionSettler,
+            aggregatorData,
+            safetyParams
+        );
+
+        assertEq(zinExecutor.totalIntentsFulfilled(), 1);
+        assertEq(zinExecutor.totalSpreadCaptured(), 1e18);
+    }
+
 
     function test_ZINRouter_RevertOnExpiredIntent() public {
         KerneZINRouter.Intent memory intent = KerneZINRouter.Intent({

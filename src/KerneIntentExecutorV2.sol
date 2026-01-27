@@ -86,6 +86,7 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
      * @param tokenOut The token the user wants to receive.
      * @param amountOut The amount of tokenOut to provide to the user.
      * @param user The address of the user whose intent is being fulfilled.
+     * @param target The address of the aggregator/settler to call.
      * @param aggregatorData The call data for the aggregator (1inch/Uniswap/Aerodrome) to settle the trade.
      * @param safetyParams Encoded IntentSafetyParams for circuit breaker validation.
      */
@@ -95,9 +96,37 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
         address tokenOut,
         uint256 amountOut,
         address user,
+        address target,
         bytes calldata aggregatorData,
         bytes calldata safetyParams
     ) external onlyRole(SOLVER_ROLE) nonReentrant {
+        _validateSentinel(safetyParams);
+
+        bytes memory data = abi.encode(tokenIn, amountOut, user, target, aggregatorData, msg.sender, uint8(0));
+        IERC3156FlashLender(lender).flashLoan(this, tokenOut, amountOut, data);
+    }
+
+    /**
+     * @notice Fulfills a 1inch Fusion/LI.FI/Aori intent using Kerne's internal liquidity.
+     * @dev Similar to fulfillIntent but skips direct transfer to user, instead approving the target.
+     */
+    function fulfillSettlerIntent(
+        address lender,
+        address tokenIn,
+        address tokenOut,
+        uint256 amountOut,
+        address user,
+        address target,
+        bytes calldata aggregatorData,
+        bytes calldata safetyParams
+    ) external onlyRole(SOLVER_ROLE) nonReentrant {
+        _validateSentinel(safetyParams);
+
+        bytes memory data = abi.encode(tokenIn, amountOut, user, target, aggregatorData, msg.sender, uint8(1));
+        IERC3156FlashLender(lender).flashLoan(this, tokenOut, amountOut, data);
+    }
+
+    function _validateSentinel(bytes calldata safetyParams) internal view {
         if (sentinelActive) {
             IntentSafetyParams memory s = abi.decode(safetyParams, (IntentSafetyParams));
             
@@ -106,16 +135,13 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
             if (latencySeconds == 0) latencySeconds = 1; // Minimum 1s resolution
             require(block.timestamp <= s.timestamp + latencySeconds, "Sentinel: Intent expired (Latency)");
         }
-
-        bytes memory data = abi.encode(tokenIn, amountOut, user, aggregatorData, msg.sender);
-        IERC3156FlashLender(lender).flashLoan(this, tokenOut, amountOut, data);
     }
 
     /**
      * @notice IERC3156 Flash Loan Callback - The Core ZIN Engine
      * @dev Flow:
      *      1. Receive flash loan of tokenOut
-     *      2. Send tokenOut to user (fulfill their intent)
+     *      2. Send tokenOut to user (Direct) OR Approve target (Settler)
      *      3. Use aggregatorData to swap user's tokenIn for tokenOut
      *      4. Repay flash loan amount (0 fee for internal liquidity)
      *      5. Keep the difference as spread profit
@@ -129,17 +155,21 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
     ) external override returns (bytes32) {
         require(initiator == address(this), "Untrusted initiator");
         
-        (address tokenIn, uint256 amountOut, address user, bytes memory aggregatorData, address solver) = 
-            abi.decode(data, (address, uint256, address, bytes, address));
+        (address tokenIn, uint256 amountOut, address user, address target, bytes memory aggregatorData, address solver, uint8 fulfillmentType) = 
+            abi.decode(data, (address, uint256, address, address, bytes, address, uint8));
 
-        // Step 1: Fulfill user intent - Send tokenOut to user at zero cost to them
-        IERC20(tokenOut).safeTransfer(user, amountOut);
+        if (fulfillmentType == 0) {
+            // Direct fulfillment: Send tokenOut to user at zero cost to them
+            IERC20(tokenOut).safeTransfer(user, amountOut);
+        } else {
+            // Settler fulfillment: Approve target to pull tokenOut
+            IERC20(tokenOut).forceApprove(target, amountOut);
+        }
 
         // Step 2: Execute aggregator trade to get tokenIn and swap it to tokenOut
         // The aggregatorData should handle pulling tokenIn from user and swapping to tokenOut
-        uint256 balanceBefore = IERC20(tokenOut).balanceOf(address(this));
         
-        (bool success, bytes memory returnData) = ONE_INCH_ROUTER.call(aggregatorData);
+        (bool success, bytes memory returnData) = target.call(aggregatorData);
         if (!success) {
             if (returnData.length > 0) {
                 assembly {
@@ -150,6 +180,7 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
                 revert("Aggregator swap failed");
             }
         }
+
 
         // Step 3: Calculate spread captured
         uint256 balanceAfter = IERC20(tokenOut).balanceOf(address(this));

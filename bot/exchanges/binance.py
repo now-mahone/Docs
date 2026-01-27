@@ -91,3 +91,11 @@ class BinanceExchange(BaseExchange):
         except Exception as e:
             logger.error(f"Binance Error liquidation price: {e}")
             return 0.0
+
+    def get_order_book(self, symbol: str) -> dict:
+        try:
+            return self.exchange.fetch_order_book(symbol)
+        except Exception as e:
+            logger.error(f"Binance Error order book: {e}")
+            return {"bids": [], "asks": []}
+

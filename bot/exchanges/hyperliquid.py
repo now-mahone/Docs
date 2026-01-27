@@ -106,3 +106,16 @@ class HyperliquidExchange(BaseExchange):
         except Exception as e:
             logger.error(f"HL Error liquidation price: {e}")
             return 0.0
+
+    def get_order_book(self, symbol: str) -> dict:
+        try:
+            l2_snapshot = self.info.l2_snapshot(symbol)
+            levels = l2_snapshot.get("levels", [[], []])
+            return {
+                "bids": [[float(l["px"]), float(l["sz"])] for l in levels[0]],
+                "asks": [[float(l["px"]), float(l["sz"])] for l in levels[1]]
+            }
+        except Exception as e:
+            logger.error(f"HL Error order book: {e}")
+            return {"bids": [], "asks": []}
+

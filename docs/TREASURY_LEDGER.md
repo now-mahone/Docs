@@ -55,6 +55,17 @@ This document tracks all capital movements, wallet balances, and protocol-owned 
 | ZIN Pool | `0x5D8ddE6264DF8A0963253693f32e057e1aA37aFD` | Intent execution liquidity |
 | **kUSD OFT V2** | `0xc1CF31008eF7C5aC0ebFF9712E96a39F299e8222` | kUSD token (LayerZero V2) ✅ |
 | **KERNE OFT V2** | `0x087365f83caF2E2504c399330F5D15f62Ae7dAC3` | KERNE token (LayerZero V2) ✅ |
+| | | |
+
+### Protocol Contracts (Optimism Mainnet) - PRE-FLIGHTED 2026-01-27
+
+| Contract | Address | Purpose | Status |
+|----------|---------|---------|--------|
+| **KerneVault** | `0x5FD0F7eA40984a6a8E9c6f6BDfd297e7dB4448Bd` | Main wstETH vault | ⚠️ AWAITING_GAS |
+| ZIN Executor | `0xb3AD51979bB7B03F0Be43d36350428170d87EF08` | Intent fulfillment contract | ⚠️ AWAITING_GAS |
+| ZIN Pool | `0x6b8c81d40F5Fb94d2156BCe053DC162f9b265564` | Intent execution liquidity | ⚠️ AWAITING_GAS |
+| **kUSD OFT V2** | `0x5D8ddE6264DF8A0963253693f32e057e1aA37aFD` | kUSD token (LayerZero V2) | ⚠️ AWAITING_GAS |
+| **KERNE OFT V2** | `0x924Dc3a2a40FFEaC98634E5a6360ad424b0B0d49` | KERNE token (LayerZero V2) | ⚠️ AWAITING_GAS |
 
 ---
 

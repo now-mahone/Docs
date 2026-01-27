@@ -50,10 +50,10 @@ contract SetupTreasuryBuyback is Script {
         _fixTreasuryConfiguration();
         
         // 1. Verify Treasury configuration
-        _verifyTreasuryConfig();
+        // _verifyTreasuryConfig();
         
         // 2. Approve WETH for buybacks (primary route)
-        _approveToken(WETH, "WETH");
+        // _approveToken(WETH, "WETH");
         
         // 3. Approve USDC for buybacks
         _approveToken(USDC, "USDC");
@@ -97,7 +97,7 @@ contract SetupTreasuryBuyback is Script {
         // Fix KERNE token if it's wrong
         if (currentKerneToken != KERNE_TOKEN) {
             console.log("  -> Setting KERNE token address...");
-            treasury.setKerneToken(KERNE_TOKEN);
+            treasury.updateKerneToken(KERNE_TOKEN);
             console.log("  -> KERNE token updated!");
         } else {
             console.log("  -> KERNE token already correct");

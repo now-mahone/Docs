@@ -1,7 +1,0 @@
-# Created: 2026-01-22
-id,category,name,twitter,email,telegram,discord,website,estimated_aum,potential_deposit,priority,notes
-defi_kol_1,1_narrative_cartel,Example KOL,@example_kol,kol@example.com,,,,,250000,1,Top-tier newsletter writer
-lst_partner_1,4_lst_providers,Example LST Provider,,partners@example.com,,,https://example.com,50000000,5000000,1,Potential co-marketing
-fund_1,5_crypto_funds,Example Fund,,bd@examplefund.com,,,https://examplefund.com,100000000,5000000,2,Strategic fund target
-dao_1,3_dao_treasuries,Example DAO Treasury,,treasury@exampledao.org,,,https://exampledao.org,50000000,2000000,2,Treasury yield candidate
-mm_1,8_market_makers,Example MM,,trade@examplemm.com,,,https://examplemm.com,0,0,3,Liquidity provider outreach

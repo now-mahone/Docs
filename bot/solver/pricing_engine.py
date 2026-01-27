@@ -56,9 +56,9 @@ class PricingEngine:
         except Exception as e:
             logger.error(f"Error optimizing spread: {e}")
 
-    def calculate_intent_price(self, market_price, funding_rate, hedging_cost, amount_eth, gas_cost_eth=0.0001):
+    def calculate_intent_price(self, market_price, funding_rate, hedging_cost, amount_eth, venue="CowSwap", gas_cost_eth=0.0001):
         """
-        Calculates the price we can offer the user, now impact-aware.
+        Calculates the price we can offer the user, now impact-aware and venue-aware.
         """
         # Daily funding capture (approximate)
         daily_funding = funding_rate / 365
@@ -66,20 +66,31 @@ class PricingEngine:
         # Impact modeling
         impact_bps = self.calculate_impact(amount_eth)
         
+        # Venue-specific fee structures (bps)
+        venue_fees = {
+            "CowSwap": 0,
+            "UniswapX": 0,
+            "1inchFusion": 2,
+            "LIFI": 5,
+            "Aori": 1,
+        }
+        fee_bps = venue_fees.get(venue, 0)
+        
         # We want to beat the market price by 1-2 bps to win the auction
         offer_price = market_price * 0.9999 # 1 bps discount to user
         
-        # Profit = (Market - Offer) + Daily_Funding - Hedging_Cost - Gas_Cost - Impact
+        # Profit = (Market - Offer) + Daily_Funding - Hedging_Cost - Gas_Cost - Impact - Venue_Fee
         discount_bps = 1 
         gas_bps = (gas_cost_eth / market_price) * 10000
         
-        profit_bps = (daily_funding * 10000) - (hedging_cost * 10000) - discount_bps - gas_bps - impact_bps
+        profit_bps = (daily_funding * 10000) - (hedging_cost * 10000) - discount_bps - gas_bps - impact_bps - fee_bps
         
         is_profitable = profit_bps >= self.current_min_spread_bps
         
         if is_profitable:
-            logger.info(f"Pricing Engine: Profitable intent found! Spread: {self.current_min_spread_bps} bps, Expected Profit: {profit_bps:.2f} bps (Impact: {impact_bps:.2f} bps)")
+            logger.info(f"Pricing Engine: Profitable intent found on {venue}! Spread: {self.current_min_spread_bps} bps, Expected Profit: {profit_bps:.2f} bps (Impact: {impact_bps:.2f} bps, Fee: {fee_bps} bps)")
         else:
-            logger.debug(f"Pricing Engine: Intent not profitable. Profit: {profit_bps:.2f} bps (Min: {self.current_min_spread_bps})")
+            logger.debug(f"Pricing Engine: Intent not profitable on {venue}. Profit: {profit_bps:.2f} bps (Min: {self.current_min_spread_bps})")
             
         return offer_price, is_profitable
+

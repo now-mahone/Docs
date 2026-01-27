@@ -5,6 +5,7 @@ from exchanges.base import BaseExchange
 from exchanges.hyperliquid import HyperliquidExchange
 from exchanges.binance import BinanceExchange
 from exchanges.bybit import BybitExchange
+from router import SmartRouter
 
 class ExchangeManager:
     """
@@ -38,8 +39,11 @@ class ExchangeManager:
             logger.error("No exchanges initialized!")
             raise ValueError("No valid exchange configurations found")
 
+        self.router = SmartRouter(self)
+
     def get_exchange(self, name: str) -> BaseExchange:
         return self.exchanges.get(name.lower())
+
 
     def get_market_price(self, symbol: str = "ETH") -> float:
         """Returns the average market price across all active exchanges."""
@@ -76,44 +80,32 @@ class ExchangeManager:
             "upnl": total_upnl
         }
 
-    def execute_short(self, symbol: str, amount_eth: float, preferred_exchange: str = None) -> bool:
-        """Executes a short on the exchange with the most total equity."""
-        target_ex = None
-        if preferred_exchange and preferred_exchange in self.exchanges:
-            target_ex = self.exchanges[preferred_exchange]
-        else:
-            # Select exchange with highest equity to avoid margin squeeze
-            best_name = None
-            max_equity = -1.0
-            for name, ex in self.exchanges.items():
-                equity = ex.get_total_equity()
-                if equity > max_equity:
-                    max_equity = equity
-                    best_name = name
-            target_ex = self.exchanges[best_name] if best_name else list(self.exchanges.values())[0]
+    def execute_short(self, symbol: str, amount_eth: float) -> bool:
+        """Executes a short using the SmartRouter for optimal distribution."""
+        distribution = self.router.calculate_distribution(symbol, amount_eth, "sell")
+        success = True
+        for name, amount in distribution.items():
+            if amount < 0.001: continue
+            ex = self.exchanges[name]
+            ex_symbol = self._map_symbol(name, symbol)
+            if not ex.execute_order(ex_symbol, amount, "sell"):
+                logger.error(f"Failed to execute short on {name}")
+                success = False
+        return success
 
-        ex_symbol = self._map_symbol(next(name for name, ex in self.exchanges.items() if ex == target_ex), symbol)
-        return target_ex.execute_order(ex_symbol, amount_eth, "sell")
+    def execute_buy(self, symbol: str, amount_eth: float) -> bool:
+        """Executes a buy using the SmartRouter for optimal distribution."""
+        distribution = self.router.calculate_distribution(symbol, amount_eth, "buy")
+        success = True
+        for name, amount in distribution.items():
+            if amount < 0.001: continue
+            ex = self.exchanges[name]
+            ex_symbol = self._map_symbol(name, symbol)
+            if not ex.execute_order(ex_symbol, amount, "buy"):
+                logger.error(f"Failed to execute buy on {name}")
+                success = False
+        return success
 
-    def execute_buy(self, symbol: str, amount_eth: float, preferred_exchange: str = None) -> bool:
-        """Executes a buy on the exchange with the largest short position."""
-        target_ex = None
-        if preferred_exchange and preferred_exchange in self.exchanges:
-            target_ex = self.exchanges[preferred_exchange]
-        else:
-            # Select exchange with largest short position to reduce risk there first
-            best_name = None
-            max_short = -1.0
-            for name, ex in self.exchanges.items():
-                ex_symbol = self._map_symbol(name, symbol)
-                size, _ = ex.get_position(ex_symbol)
-                if size > max_short:
-                    max_short = size
-                    best_name = name
-            target_ex = self.exchanges[best_name] if best_name else list(self.exchanges.values())[0]
-
-        ex_symbol = self._map_symbol(next(name for name, ex in self.exchanges.items() if ex == target_ex), symbol)
-        return target_ex.execute_order(ex_symbol, amount_eth, "buy")
 
     def get_funding_rate(self, symbol: str = "ETH") -> float:
         """Returns the average funding rate."""
@@ -139,6 +131,48 @@ class ExchangeManager:
         # So liquidation price is ABOVE current price.
         # The lowest liquidation price is the most dangerous one.
         return min(liq_prices) if liq_prices else 0.0
+
+    def get_order_book(self, symbol: str = "ETH") -> Dict[str, Dict]:
+        """Returns order books from all active exchanges."""
+        books = {}
+        for name, ex in self.exchanges.items():
+            ex_symbol = self._map_symbol(name, symbol)
+            books[name] = ex.get_order_book(ex_symbol)
+        return books
+
+    def execute_twap_order(self, symbol: str, amount_eth: float, side: str, duration_mins: int = 10):
+        """
+        Executes a Time-Weighted Average Price (TWAP) order.
+        Splits the total amount into multiple smaller orders over time.
+        """
+        import asyncio
+        async def _twap():
+            num_slices = max(5, duration_mins // 2)
+            slice_amount = amount_eth / num_slices
+            interval = (duration_mins * 60) / num_slices
+            
+            logger.info(f"⏳ Executing TWAP {side} for {amount_eth} {symbol} over {duration_mins} mins ({num_slices} slices)")
+            
+            for i in range(num_slices):
+                if side.lower() == 'buy':
+                    self.execute_buy(symbol, slice_amount)
+                else:
+                    self.execute_short(symbol, slice_amount)
+                
+                if i < num_slices - 1:
+                    await asyncio.sleep(interval)
+            
+            logger.success(f"✅ TWAP {side} completed.")
+
+        # Trigger as background task if in async loop, otherwise run sync (not ideal)
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(_twap())
+        except RuntimeError:
+            # Fallback for sync contexts (running it sync here would block)
+            logger.warning("TWAP called outside of event loop, execution might be delayed or blocked.")
+            # In a real sync bot, we'd use a thread or similar
+
 
     def _map_symbol(self, exchange_name: str, symbol: str) -> str:
         """Maps generic symbols like 'ETH' to exchange-specific formats."""

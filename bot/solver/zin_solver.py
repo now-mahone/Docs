@@ -1,4 +1,6 @@
 # Created: 2026-01-17
+# Refactoring started: 2026-01-27
+
 """
 Kerne Zero-Fee Intent Network (ZIN) Solver - Complete CowSwap/UniswapX Integration
 Transforms Kerne into Base's primary execution engine for high-volume trading.
@@ -44,15 +46,29 @@ _env_path = _load_env()
 import asyncio
 import json
 import time
+from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple, Any
+
 from dataclasses import dataclass, field
-from enum import Enum
-from loguru import logger
 from web3 import Web3
 from web3.contract import Contract
 from eth_account import Account
 from eth_abi import encode
-import aiohttp
+from loguru import logger
+from .fetchers import (
+    IntentVenue,
+    ChainConfig,
+    ChainContext,
+    IntentData,
+    BaseIntentFetcher,
+    CowSwapFetcher,
+    UniswapXFetcher,
+    FusionIntentFetcher,
+    LifiIntentFetcher,
+    AoriIntentFetcher
+)
+
+
 
 # =============================================================================
 # CONFIGURATION
@@ -236,62 +252,8 @@ ERC20_ABI = [
 # =============================================================================
 
 @dataclass
-class ChainConfig:
-    name: str
-    chain_id: int
-    rpc_urls: List[str]
-    executor_address: str
-    pool_address: str
-    profit_vault_address: Optional[str]
-    cowswap_api_base: Optional[str]
-    uniswapx_config: Dict[str, Any]
-    aerodrome_router: Optional[str]
-    token_targets: Dict[str, str]
-    explorer_base_url: str
-
-
-@dataclass
-class ChainContext:
-    config: ChainConfig
-    w3: Web3
-    zin_executor: Contract
-    zin_pool: Contract
-
-
-class IntentVenue(Enum):
-    COWSWAP = "CowSwap"
-    UNISWAPX = "UniswapX"
-    DIRECT = "Direct"
-
-
-@dataclass
-class IntentData:
-    """Represents a user intent to be fulfilled."""
-    order_id: str
-    venue: IntentVenue
-    user: str
-    token_in: str
-    token_out: str
-    amount_in: int
-    amount_out: int
-    price_limit: int
-    deadline: int
-    chain: str
-    signature: str = ""
-    encoded_order: str = ""
-    raw_order: Dict = field(default_factory=dict)
-
-    @property
-    def token_in_symbol(self) -> str:
-        return self.raw_order.get("token_in_symbol", "UNKNOWN")
-
-    @property
-    def token_out_symbol(self) -> str:
-        return self.raw_order.get("token_out_symbol", "UNKNOWN")
-
-
-@dataclass
 class QuoteResult:
+
     """Result from an aggregator quote."""
     aggregator: str
     calldata: bytes
@@ -344,17 +306,27 @@ class ZINSolver:
         self.total_intents_processed = 0
         self.total_profit_captured = 0
         self.failed_intents = 0
-        self.intents_by_venue: Dict[str, int] = {"CowSwap": 0, "UniswapX": 0}
+        self.intents_by_venue: Dict[str, int] = {
+            IntentVenue.COWSWAP.value: 0,
+            IntentVenue.UNISWAPX.value: 0,
+            IntentVenue.FUSION.value: 0,
+            IntentVenue.LIFI.value: 0,
+            IntentVenue.AORI.value: 0
+        }
 
-        # Health check flags
-        self._cowswap_health_logged: Dict[str, bool] = {}
-        self._uniswapx_health_logged: Dict[str, bool] = {}
+        # Initialize fetchers
+        self.fetchers: List[BaseIntentFetcher] = [
+            CowSwapFetcher(self),
+            UniswapXFetcher(self),
+            FusionIntentFetcher(self),
+            LifiIntentFetcher(self),
+            AoriIntentFetcher(self)
+        ]
 
         # Rate limiting
-        self._last_cowswap_fetch: Dict[str, float] = {}
-        self._last_uniswapx_fetch: Dict[str, float] = {}
         self._min_fetch_interval = 2.0  # seconds
         self._token_amount_caps = self._parse_token_amount_caps()
+
 
         # Auto-scaling configuration
         self._auto_scale_enabled = os.getenv("ZIN_AUTO_SCALE", "true").lower() == "true"
@@ -426,6 +398,9 @@ class ZINSolver:
                 aerodrome_router=AERODROME_ROUTER,
                 token_targets=base_targets,
                 explorer_base_url="https://basescan.org/tx/",
+                fusion_settler="0x111111125421cA6dc452d289314280a0f8842A65",
+                lifi_settler="0x1234567890123456789012345678901234567890", # Placeholder
+                aori_settler="0x0987654321098765432109876543210987654321", # Placeholder
             ),
             "arbitrum": ChainConfig(
                 name="arbitrum",
@@ -439,8 +414,12 @@ class ZINSolver:
                 aerodrome_router=None,
                 token_targets=arbitrum_targets,
                 explorer_base_url="https://arbiscan.io/tx/",
+                fusion_settler="0x111111125421cA6dc452d289314280a0f8842A65",
+                lifi_settler="0x1234567890123456789012345678901234567890", # Placeholder
+                aori_settler="0x0987654321098765432109876543210987654321", # Placeholder
             ),
         }
+
 
         return configs
 
@@ -577,10 +556,23 @@ class ZINSolver:
     def _get_intent_cap(self, intent: IntentData) -> int:
         """Resolve the max allowed intent size for the token out."""
         token_out_key = intent.token_out.lower()
+        
+        # Venue-specific position caps
+        venue_caps = {
+            IntentVenue.COWSWAP: 1.0,
+            IntentVenue.UNISWAPX: 1.0,
+            IntentVenue.FUSION: 0.5, # Lower cap for new venues initially
+            IntentVenue.LIFI: 0.5,
+            IntentVenue.AORI: 0.5,
+        }
+        
+        multiplier = venue_caps.get(intent.venue, 1.0)
+        
         if token_out_key in self._token_amount_caps:
-            return self._token_amount_caps[token_out_key]
+            return int(self._token_amount_caps[token_out_key] * multiplier)
 
-        return ZIN_MAX_INTENT_AMOUNT
+        return int(ZIN_MAX_INTENT_AMOUNT * multiplier)
+
 
     def _is_gas_price_ok(self, context: ChainContext) -> bool:
         """Check if current gas price is within guardrails."""
@@ -590,257 +582,6 @@ class ZINSolver:
             return False
         return True
 
-    # =========================================================================
-    # COWSWAP INTEGRATION
-    # =========================================================================
-
-    async def fetch_cowswap_orders(self, context: ChainContext) -> List[IntentData]:
-        """
-        Fetch open orders from CowSwap auction API.
-
-        CowSwap uses a batch auction model where solvers compete to fill orders.
-        We monitor the auction endpoint for orders we can profitably fill.
-
-        API Docs: https://docs.cow.fi/cow-protocol/reference/apis/orderbook
-        """
-        if not context.config.cowswap_api_base:
-            return []
-
-        now = time.time()
-        last_fetch = self._last_cowswap_fetch.get(context.config.name, 0)
-        if now - last_fetch < self._min_fetch_interval:
-            return []
-        self._last_cowswap_fetch[context.config.name] = now
-
-        intents = []
-
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(
-                    f"{context.config.cowswap_api_base}/auction",
-                    timeout=aiohttp.ClientTimeout(total=10)
-                ) as resp:
-                    if not self._cowswap_health_logged.get(context.config.name):
-                        self._cowswap_health_logged[context.config.name] = True
-                        if resp.status == 200:
-                            logger.info(f"CowSwap: API reachable (endpoint={context.config.cowswap_api_base})")
-                        elif resp.status == 403:
-                            logger.info("CowSwap: Auction API requires solver registration (403) - using UniswapX only")
-                        else:
-                            logger.warning(f"CowSwap: API health check failed (status={resp.status})")
-
-                    if resp.status == 200:
-                        auction_data = await resp.json()
-                        orders = auction_data.get('orders', [])
-
-                        if orders:
-                            logger.debug(f"CowSwap: Fetched {len(orders)} orders from auction")
-
-                        for order in orders:
-                            intent = self._normalize_cowswap_order(order, context)
-                            if intent:
-                                intents.append(intent)
-
-                    elif resp.status == 429:
-                        logger.warning("CowSwap: Rate limited (429). Backing off...")
-                    else:
-                        logger.debug(f"CowSwap: API returned status {resp.status}")
-
-            except asyncio.TimeoutError:
-                logger.warning("CowSwap: Request timeout")
-            except aiohttp.ClientError as e:
-                logger.error(f"CowSwap: Network error: {e}")
-            except Exception as e:
-                logger.error(f"CowSwap: Unexpected error: {e}")
-
-        return intents
-
-    def _normalize_cowswap_order(self, order: Dict, context: ChainContext) -> Optional[IntentData]:
-        """
-        Normalize CowSwap order to internal IntentData format.
-        """
-        try:
-            order_id = order.get('uid', '')
-            sell_token = order.get('sellToken', '').lower()
-            buy_token = order.get('buyToken', '').lower()
-            sell_amount = int(order.get('sellAmount', 0))
-            buy_amount = int(order.get('buyAmount', 0))
-            valid_to = int(order.get('validTo', 0))
-            owner = order.get('owner', '')
-            signature = order.get('signature', '')
-
-            # Skip if missing critical data
-            if not all([order_id, sell_token, buy_token, sell_amount, buy_amount, owner]):
-                return None
-
-            # Skip expired orders
-            if valid_to < int(time.time()):
-                return None
-
-            # Check if this is a token pair we're interested in
-            if not self._is_target_pair(sell_token, buy_token, context):
-                return None
-
-            order_data = {
-                "token_in_symbol": context.config.token_targets.get(sell_token, "UNKNOWN"),
-                "token_out_symbol": context.config.token_targets.get(buy_token, "UNKNOWN"),
-            }
-            order_data.update(order)
-
-            return IntentData(
-                order_id=order_id,
-                venue=IntentVenue.COWSWAP,
-                user=owner,
-                token_in=sell_token,
-                token_out=buy_token,
-                amount_in=sell_amount,
-                amount_out=buy_amount,
-                price_limit=buy_amount,  # Minimum output expected
-                deadline=valid_to,
-                chain=context.config.name,
-                signature=signature,
-                raw_order=order_data
-            )
-
-        except Exception as e:
-            logger.error(f"CowSwap: Error normalizing order: {e}")
-            return None
-
-    # =========================================================================
-    # UNISWAPX INTEGRATION
-    # =========================================================================
-
-    async def fetch_uniswapx_orders(self, context: ChainContext) -> List[IntentData]:
-        """
-        Fetch open orders from UniswapX API.
-        """
-        now = time.time()
-        last_fetch = self._last_uniswapx_fetch.get(context.config.name, 0)
-        if now - last_fetch < self._min_fetch_interval:
-            return []
-        self._last_uniswapx_fetch[context.config.name] = now
-
-        intents = []
-        config = context.config.uniswapx_config
-
-        params = {
-            "orderStatus": "open",
-            "chainId": config["chain_id"],
-            "orderType": config["order_type"],
-            "limit": 100,
-        }
-
-        headers = {
-            "Accept": "application/json",
-            "Origin": "https://app.uniswap.org"
-        }
-
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(
-                    config["api_url"],
-                    params=params,
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=10)
-                ) as resp:
-                    if not self._uniswapx_health_logged.get(context.config.name):
-                        self._uniswapx_health_logged[context.config.name] = True
-                        if resp.status == 200:
-                            logger.info(
-                                f"UniswapX: API reachable (chainId={config['chain_id']}, "
-                                f"orderType={config['order_type']})"
-                            )
-                        else:
-                            logger.warning(
-                                f"UniswapX: API health check failed (status={resp.status})"
-                            )
-
-                    if resp.status == 200:
-                        data = await resp.json()
-                        orders = data.get('orders', [])
-
-                        if orders:
-                            logger.debug(f"UniswapX: Fetched {len(orders)} open orders")
-
-                        for order in orders:
-                            intent = self._normalize_uniswapx_order(order, context)
-                            if intent:
-                                intents.append(intent)
-
-                    elif resp.status == 429:
-                        logger.warning("UniswapX: Rate limited (429). Backing off...")
-                    else:
-                        logger.debug(f"UniswapX: API returned status {resp.status}")
-
-            except asyncio.TimeoutError:
-                logger.warning("UniswapX: Request timeout")
-            except aiohttp.ClientError as e:
-                logger.error(f"UniswapX: Network error: {e}")
-            except Exception as e:
-                logger.error(f"UniswapX: Unexpected error: {e}")
-
-        return intents
-
-    def _normalize_uniswapx_order(self, order: Dict, context: ChainContext) -> Optional[IntentData]:
-        """
-        Normalize UniswapX order to internal IntentData format.
-        """
-        try:
-            order_hash = order.get('orderHash', '')
-
-            # Extract input (what the user is selling)
-            input_data = order.get('input', {})
-            sell_token = input_data.get('token', '').lower()
-            sell_amount = int(input_data.get('amount', 0))
-
-            # Extract outputs (what the user wants to buy)
-            outputs = order.get('outputs', [])
-            if not outputs:
-                return None
-
-            primary_output = outputs[0]
-            buy_token = primary_output.get('token', '').lower()
-            buy_amount = int(primary_output.get('amount', 0))
-
-            swapper = order.get('swapper', '')
-            encoded_order = order.get('encodedOrder', '')
-
-            # Skip if missing critical data
-            if not all([order_hash, sell_token, buy_token, sell_amount, buy_amount, swapper]):
-                return None
-
-            # Check if this is a token pair we're interested in
-            if not self._is_target_pair(sell_token, buy_token, context):
-                return None
-
-            # Calculate deadline (UniswapX orders typically have ~2 min validity)
-            deadline = int(time.time()) + 120
-
-            order_data = {
-                "token_in_symbol": context.config.token_targets.get(sell_token, "UNKNOWN"),
-                "token_out_symbol": context.config.token_targets.get(buy_token, "UNKNOWN"),
-            }
-            order_data.update(order)
-
-            return IntentData(
-                order_id=order_hash,
-                venue=IntentVenue.UNISWAPX,
-                user=swapper,
-                token_in=sell_token,
-                token_out=buy_token,
-                amount_in=sell_amount,
-                amount_out=buy_amount,
-                price_limit=buy_amount,
-                deadline=deadline,
-                chain=context.config.name,
-                encoded_order=encoded_order,
-                raw_order=order_data
-            )
-
-        except Exception as e:
-            logger.error(f"UniswapX: Error normalizing order: {e}")
-            return None
-
     def _is_target_pair(self, token_in: str, token_out: str, context: ChainContext) -> bool:
         """Check if this token pair is one we want to fulfill."""
         token_in = token_in.lower()
@@ -848,9 +589,27 @@ class ZINSolver:
 
         return token_in in context.config.token_targets or token_out in context.config.token_targets
 
+    def _has_output_liquidity(self, token_out: str, context: ChainContext) -> bool:
+        """
+        Check if we have liquidity for the output token.
+        Only USDC and WETH are currently funded in the ZIN Pool.
+        """
+        token_out = token_out.lower()
+        
+        # Tokens we have liquidity for (funded in ZIN Pool)
+        funded_tokens = {
+            BASE_USDC.lower(),
+            BASE_WETH.lower(),
+            ARBITRUM_USDC.lower(),
+            ARBITRUM_WETH.lower(),
+        }
+        
+        return token_out in funded_tokens
+
     # =========================================================================
     # AGGREGATOR QUOTING
     # =========================================================================
+
 
     async def get_best_quote(
         self,
@@ -1073,16 +832,31 @@ class ZINSolver:
         user_wants = intent.amount_out
         we_can_get = quote.expected_output
 
-        if we_can_get <= user_wants:
+        # Venue-specific fee structures (bps)
+        venue_fees = {
+            IntentVenue.COWSWAP: 0,
+            IntentVenue.UNISWAPX: 0,
+            IntentVenue.FUSION: 2, # 1inch Fusion fee
+            IntentVenue.LIFI: 5,   # LI.FI fee
+            IntentVenue.AORI: 1,   # Aori fee
+        }
+        
+        fee_bps = venue_fees.get(intent.venue, 0)
+        fee_amount = (we_can_get * fee_bps) // 10000
+        
+        we_keep = we_can_get - fee_amount
+
+        if we_keep <= user_wants:
             return (0, 0, False)
 
-        profit_amount = we_can_get - user_wants
+        profit_amount = we_keep - user_wants
         profit_bps = (profit_amount * 10000) // user_wants if user_wants > 0 else 0
 
         min_profit_bps = max(ZIN_MIN_PROFIT_BPS, 0)
         is_profitable = profit_bps >= min_profit_bps
 
         return (profit_amount, profit_bps, is_profitable)
+
 
     async def check_vault_liquidity(self, context: ChainContext, token: str) -> int:
         """Check available liquidity in the ZIN pool for a token."""
@@ -1111,6 +885,14 @@ class ZINSolver:
 
         liquidity = await self.check_vault_liquidity(context, token)
         self._liquidity_cache[token_key] = (liquidity, now)
+        
+        # Debug logging for liquidity checks
+        token_name = context.config.token_targets.get(token.lower(), token[:10] + "...")
+        if liquidity == 0:
+            logger.debug(f"No liquidity for {token_name} ({token[:10]}...) in ZIN Pool")
+        else:
+            logger.debug(f"Liquidity for {token_name}: {liquidity}")
+        
         return liquidity
 
     def _calculate_scaled_position(
@@ -1190,6 +972,15 @@ class ZINSolver:
             )
 
         try:
+            # Determine settlement target
+            target = ONE_INCH_ROUTER # Default
+            if intent.venue == IntentVenue.FUSION:
+                target = context.config.fusion_settler or ONE_INCH_ROUTER
+            elif intent.venue == IntentVenue.LIFI:
+                target = context.config.lifi_settler or ONE_INCH_ROUTER
+            elif intent.venue == IntentVenue.AORI:
+                target = context.config.aori_settler or ONE_INCH_ROUTER
+
             safety_params = encode(
                 ["uint256", "uint256", "uint256"],
                 [
@@ -1205,6 +996,7 @@ class ZINSolver:
                 Web3.to_checksum_address(intent.token_out),
                 intent.amount_out,
                 Web3.to_checksum_address(intent.user),
+                Web3.to_checksum_address(target),
                 quote.calldata,
                 safety_params
             ).build_transaction({
@@ -1214,6 +1006,7 @@ class ZINSolver:
                 "gasPrice": context.w3.eth.gas_price,
                 "chainId": context.config.chain_id
             })
+
 
             signed_tx = context.w3.eth.account.sign_transaction(tx, PRIVATE_KEY)
             tx_hash = context.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
@@ -1518,17 +1311,17 @@ class ZINSolver:
         processed = 0
 
         for chain_name, context in self.chain_contexts.items():
-            cowswap_intents = await self.fetch_cowswap_orders(context)
-            uniswapx_intents = await self.fetch_uniswapx_orders(context)
+            all_intents = []
+            for fetcher in self.fetchers:
+                intents = await fetcher.fetch_intents(context)
+                all_intents.extend(intents)
 
-            all_intents = cowswap_intents + uniswapx_intents
             if ZIN_MAX_INTENTS_PER_CYCLE > 0:
                 all_intents = all_intents[:ZIN_MAX_INTENTS_PER_CYCLE]
 
             if all_intents:
                 logger.info(
-                    f"[{chain_name}] Found {len(all_intents)} potential intents "
-                    f"(CowSwap: {len(cowswap_intents)}, UniswapX: {len(uniswapx_intents)})"
+                    f"[{chain_name}] Found {len(all_intents)} potential intents"
                 )
 
             for intent in all_intents:
@@ -1537,6 +1330,7 @@ class ZINSolver:
                     processed += 1
 
         return processed
+
 
     def save_session_summary(self, start_time: float, cycle_count: int):
         """Save session summary to file when shutting down."""
