@@ -4,6 +4,7 @@
 Kerne is a delta-neutral synthetic dollar protocol, leveraging LST collateral and hedging to provide institutional grade yield and capital efficiency.
 ## Log
 <!-- NOTE: New entries go at the TOP (reverse chronological order - newest first) -->
+- [2026-01-26 22:29] - Leads Cleanup - Removed pre-existing lead markdowns from leads/growth root (Aave, Lido, Paradigm, a16z) to keep only the 1-1000 folder structure. - Status: SUCCESS.
 - [2026-01-26 22:26] - Leads Scaffolding - Created leads/growth range folders (1-100 through 901-1000) and generated 1,000 empty lead files for TVL outreach segmentation. - Status: SUCCESS.
 - [2026-01-26 21:01] - APY/Commission Clarification: Confirmed APY reporting uses net returns after costs/fees (insurance + performance fee) based on backtest assumptions and APY calculator logic. - Status: SUCCESS.
 - [2026-01-26 20:51] - Strategy - Delivered ranked top 14 zero-cost priorities (non-frontend, non-DefiLlama) with five-part analysis for Scofield decisioning. - Status: SUCCESS.
