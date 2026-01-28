@@ -508,11 +508,22 @@ async def solve(request: SolveRequest):
     Receives auction batches from CoW Protocol's driver and returns solutions.
     """
     try:
+        # Ensure solver is initialized
+        if solver is None:
+            logger.error("Solver not initialized")
+            return SolveResponse(solutions=[])
+        
         response = await solver.solve(request)
+        # Ensure we always return a valid response
+        if response is None:
+            return SolveResponse(solutions=[])
         return response
+        
     except Exception as e:
-        logger.error(f"Solve error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Solve error: {e}", exc_info=True)
+        # Return empty solutions rather than raising exception
+        # This ensures CoW driver gets a valid response
+        return SolveResponse(solutions=[])
 
 @app.post("/quote")
 async def quote(request: Request):

@@ -177,6 +177,42 @@ services:
         max-size: "50m"
         max-file: "5"
 
+  # CoW Swap Solver API - HTTP endpoint for CoW Protocol solver competition
+  kerne-cowswap-solver:
+    build: .
+    container_name: kerne-cowswap-solver
+    restart: always
+    command: ["python", "-m", "solver.cowswap_solver_api"]
+    env_file:
+      - .env
+    environment:
+      - SOLVER_HOST=0.0.0.0
+      - SOLVER_PORT=8081
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./.env:/app/.env
+      - ./solver:/app/solver
+      - ../out:/app/out
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
   # Daily Profit Telemetry - Automated reporting to Discord and docs/reports/
   kerne-telemetry:
     build: .
