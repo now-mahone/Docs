@@ -32,16 +32,6 @@ def create_app():
         logger.info(f"Solver API loaded successfully")
         logger.info(f"Solver name: {solver.__class__.__name__}")
         
-        # Add a startup event to verify the solver is working
-        @app.on_event("startup")
-        async def startup_event():
-            logger.info("=" * 60)
-            logger.info("Kerne CoW Swap Solver Starting Up")
-            logger.info("=" * 60)
-            logger.info(f"Host: {HOST}")
-            logger.info(f"Port: {PORT}")
-            logger.info(f"Solver initialized: {solver is not None}")
-        
         # Add exception handler for all unhandled exceptions
         from fastapi import Request
         from fastapi.responses import JSONResponse

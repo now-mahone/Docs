@@ -17,6 +17,7 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 from decimal import Decimal
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -454,10 +455,27 @@ class KerneSolver:
 # FASTAPI APPLICATION
 # =============================================================================
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan event handler for the FastAPI application."""
+    logger.info("=" * 60)
+    logger.info("Kerne CoW Swap Solver Starting Up")
+    logger.info("=" * 60)
+    logger.info(f"Solver initialized: {solver is not None}")
+    if solver:
+        logger.info(f"  RPC: {BASE_RPC_URL[:50]}...")
+        logger.info(f"  ZIN Executor: {ZIN_EXECUTOR}")
+        logger.info(f"  ZIN Pool: {ZIN_POOL}")
+    
+    yield
+    
+    logger.info("Kerne CoW Swap Solver Shutting Down")
+
 app = FastAPI(
     title="Kerne CoW Swap Solver",
     description="Solver endpoint for CoW Protocol solver competition",
-    version=SOLVER_VERSION
+    version=SOLVER_VERSION,
+    lifespan=lifespan
 )
 
 # CORS middleware
@@ -472,7 +490,7 @@ app.add_middleware(
 # Initialize solver
 solver = KerneSolver()
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     """Health check endpoint."""
     return {
