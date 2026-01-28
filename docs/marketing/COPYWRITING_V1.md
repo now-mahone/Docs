@@ -20,7 +20,7 @@ The Future of Onchain Yield.
 Live at an APY of 20.4%
 
 **Body:**
-Earn yield on ETH without worrying about price swings. Kerne's vaults hedge automatically. You deposit. We handle the rest. Your capital grows.
+Building the most capital efficient delta neutral infrastructure in DeFi. Kerne's vaults hedge automatically to capture yield without price exposure.
 
 ---
 
