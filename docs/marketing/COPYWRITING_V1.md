@@ -1124,7 +1124,7 @@ Phase 3: Dual narrative split and updated headlines
 
 ---
 
-## GEMINI 1.5 PRO IMPROVEMENTS
+## GEMINI 3 PRO IMPROVEMENTS
 
 ### Strategic Lens
 
