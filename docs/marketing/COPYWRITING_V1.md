@@ -1124,6 +1124,102 @@ Phase 3: Dual narrative split and updated headlines
 
 ---
 
+## GEMINI 1.5 PRO IMPROVEMENTS
+
+### Strategic Lens
+
+Claude optimized for persuasion (Psychology). GPT 5.2 optimized for approval (Sales/Risk). This section optimizes for **Technical Authority and Integration Velocity**.
+
+Institutions and high-net-worth individuals often have technical advisors or quantitative analysts vetting these protocols. They don't just buy the narrative; they buy the **infrastructure**. We need to position Kerne not just as a product, but as a superior piece of financial engineering that fits seamlessly into their existing stacks.
+
+### 1. Pivot to "Infrastructure-First" Language
+
+**Problem:** The current copy feels like a "product" pitch.
+**Fix:** Frame Kerne as "Financial Primitives" or "Yield Infrastructure."
+
+**Home Hero (Alternative Technical Hook):**
+> **The Programmable Yield Layer.**
+> ERC-4626 compliant vaults engineered for delta-neutral basis capture. Fully composable. Mathematically hedged.
+
+**Why:** This signals to developers and quants that we speak their language and adhere to standards.
+
+### 2. Weaponize "ERC-4626" as a Trust Signal
+
+**Problem:** We mention "vaults" but don't explicitly leverage the standard.
+**Fix:** Explicitly state ERC-4626 compliance.
+
+**Institutional Page (Add to Features):**
+> **Standardized Composability (ERC-4626)**
+> Native compatibility with all major yield aggregators, lending markets, and institutional custodians. Zero integration friction for your internal dashboards.
+
+### 3. The "Glass Box" Data Strategy (Data as a Feature)
+
+**Problem:** "Transparency" is a buzzword. We need to prove it with data availability.
+**Fix:** Promote our APIs and data granularity.
+
+**Transparency Page (Add Section):**
+> **Institutional Data Access**
+> We don't just show you a dashboard; we give you the raw feed.
+> *   **Real-Time Solvency API:** Millisecond-latency health checks.
+> *   **Historical Funding Rates:** CSV exports of every funding payment received.
+> *   **Position Telemetry:** Live feeds of open interest and hedge ratios across all venues.
+
+### 4. Latency as a Risk Management Moat
+
+**Problem:** We mention "real-time" but don't quantify the advantage of Base.
+**Fix:** Highlight the speed of execution as a safety feature.
+
+**Risk Management (Refine "Depeg Protection"):**
+> **Sub-Second Circuit Breakers**
+> Leveraging the sub-second block times of the Base network, our Oracle Guard detects and reacts to depeg events faster than mainnet latency allows. Your capital is protected by the speed of the chain.
+
+### 5. Sell the SDK (Developer Experience)
+
+**Problem:** We want partners, but we don't sell the "ease of building."
+**Fix:** Add a section specifically for builders/integrators.
+
+**Footer/About (Add "For Developers" Link/Section):**
+> **Build on Kerne**
+> Integrate delta-neutral yield into your wallet, exchange, or fintech app with the `@kerne/sdk`.
+> *   Type-safe hooks (wagmi/viem)
+> *   Instant gas estimation
+> *   One-line deposit integration
+
+### 6. Precise Mechanism Terminology ("Basis Capture")
+
+**Problem:** "Hedging" sounds defensive. "Basis Capture" sounds like alpha.
+**Fix:** Use more precise financial terminology in the Litepaper and Institutional sections.
+
+**Litepaper Section 2 (Refinement):**
+> **Basis Capture Engine**
+> Kerne systematically harvests the "basis" (the spread between spot and perpetual futures prices). This is not speculative trading; it is the extraction of structural market inefficiencies inherent in crypto derivatives.
+
+### 7. Future-Proofing with LayerZero V2
+
+**Problem:** Bridging is mentioned, but not the *standard*.
+**Fix:** Highlight LayerZero V2 as a security and scalability feature.
+
+**Terminal/Bridge Section:**
+> **Omnichain Liquidity (LayerZero V2)**
+> Built on the immutable security of LayerZero V2. Move kUSD seamlessly between Base, Arbitrum, and Optimism with unified liquidity and zero slippage. No fragmented pools. No wrapped assets.
+
+### 8. Visualizing "Drawdown Duration"
+
+**Problem:** We show "Max Drawdown," but institutions care about *how long* they are underwater.
+**Fix:** Suggest a specific chart metric.
+
+**Performance Metrics (Add Data Point):**
+> **Max Drawdown Duration:** < 4 hours (Historical average recovery time from negative funding events).
+
+### Implementation Priority
+
+1.  **Immediate:** Add ERC-4626 and LayerZero V2 mentions (High trust/competence signals).
+2.  **Week 1:** Refine mechanism language to "Basis Capture" (Elevates the financial sophistication).
+3.  **Week 2:** Add "For Developers" section and SDK highlights (Opens B2B2C channels).
+4.  **Ongoing:** Build out the "Glass Box" data exports (The ultimate proof of transparency).
+
+---
+
 ## NEXT STEPS
 
 1. Review this copy with Mahone for alignment with current UI implementation
