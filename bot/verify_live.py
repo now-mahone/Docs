@@ -22,17 +22,10 @@ def verify_live_system():
 
         # 2. Check Short Position on CEX
         exchange = ExchangeManager()
-        # Assuming we are shorting ETH/USDT or similar
-        # This is a simplified check for the purpose of genesis verification
-        positions = exchange.exchange.fetch_positions()
-        eth_short_size = 0
-        for pos in positions:
-            if pos['symbol'].startswith('ETH') and float(pos['contracts']) > 0:
-                # Rough estimate in ETH
-                eth_short_size = abs(float(pos['notional']) / pos['markPrice'])
-                break
+        agg_pos = exchange.get_aggregate_position("ETH")
+        eth_short_size = abs(agg_pos["size"])
 
-        logger.info(f"Estimated Short Position on CEX: {eth_short_size:.4f} ETH equivalent")
+        logger.info(f"Aggregate Short Position on CEX: {eth_short_size:.4f} ETH")
 
         # 3. Delta Calculation
         delta = abs(vault_tvl - eth_short_size)

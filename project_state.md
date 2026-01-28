@@ -5,6 +5,9 @@
 Kerne is a delta-neutral synthetic dollar protocol, leveraging LST collateral and hedging to provide institutional grade yield and capital efficiency.
 ## Log
 <!-- NOTE: New entries go at the TOP (reverse chronological order - newest first) -->
+- [2026-01-28 13:05] - Website Copywriting v1: Consolidated and polished all website copy into `docs/marketing/COPYWRITING_V1.md`. Removed all unnecessary hyphens/dashes per requirements. Tightened copy for maximum institutional impact and conversion. Covers: Home, About, Institutional, Transparency, Litepaper, Terminal, Footer, Privacy Policy. - Status: SUCCESS.
+- [2026-01-28 11:55] - CoW Swap Communication: Sent professional delay response to Bram regarding solver endpoint. - Status: SUCCESS.
+- [2026-01-28 11:46] - Scanned https://m-vercel.vercel.app/ for text content - Completed.
 - [2026-01-27 19:20] - Operations: Scofield concluded work for the day. All systems stable. - Status: SUCCESS.
 - [2026-01-27 18:50] - Render Solver API Live: Confirmed successful deployment on Render. Service is live at https://kerne-solver.onrender.com. Verified that `HEAD /` and `GET /` both return `200 OK`, satisfying Render's health checks and resolving the previous 405 errors. - Status: LIVE.
 - [2026-01-27 18:45] - Render Solver API Hardening: Fixed `405 Method Not Allowed` on `HEAD /` requests and resolved `DeprecationWarning` for `on_event`. Implemented fixes: (1) Switched to `lifespan` event handler in `bot/solver/cowswap_solver_api.py`, (2) Explicitly added `HEAD` method support to the root route, (3) Cleaned up `main_solver.py` to remove deprecated startup logic. Verified locally that `HEAD /` returns `200 OK`. - Status: SUCCESS.
