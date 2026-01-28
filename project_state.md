@@ -5,6 +5,7 @@
 Kerne is a delta-neutral synthetic dollar protocol, leveraging LST collateral and hedging to provide institutional grade yield and capital efficiency.
 ## Log
 <!-- NOTE: New entries go at the TOP (reverse chronological order - newest first) -->
+- [2026-01-28 13:12] - Website Copywriting v1 (Claude Opus Improvements): Added comprehensive "CLAUDE OPUS IMPROVEMENTS" section to `docs/marketing/COPYWRITING_V1.md` with 10 strategic enhancement categories: (1) Urgency/Scarcity elements, (2) Social proof sections, (3) Objection handling FAQ, (4) Emotional resonance rewrites, (5) Stronger CTAs, (6) Specificity improvements, (7) Trust signals, (8) Headline power upgrades, (9) Mobile/scan optimization, (10) Competitive positioning table. Includes implementation priority roadmap and alignment with Genesis "Liquidity Black Hole" thesis. - Status: SUCCESS.
 - [2026-01-28 13:05] - Website Copywriting v1: Consolidated and polished all website copy into `docs/marketing/COPYWRITING_V1.md`. Removed all unnecessary hyphens/dashes per requirements. Tightened copy for maximum institutional impact and conversion. Covers: Home, About, Institutional, Transparency, Litepaper, Terminal, Footer, Privacy Policy. - Status: SUCCESS.
 - [2026-01-28 11:55] - CoW Swap Communication: Sent professional delay response to Bram regarding solver endpoint. - Status: SUCCESS.
 - [2026-01-28 11:46] - Scanned https://m-vercel.vercel.app/ for text content - Completed.
