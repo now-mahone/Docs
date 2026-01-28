@@ -982,6 +982,148 @@ The improvements above are designed to create that gravitational pull.
 
 ---
 
+## GPT 5.2 IMPROVEMENTS
+
+### Strategic Lens
+
+Claude's section optimizes persuasion. This section optimizes institutional decision mechanics: credibility, compliance safety, and reducing perceived implementation risk. Institutions do not only ask "is this attractive" they ask "is this safe to approve internally."
+
+### 1. Upgrade the core promise into an institutional mandate
+
+Current framing is "yield without price swings." Stronger framing for committees:
+
+Proposed headline options:
+1. Delta Neutral Yield for Balance Sheets
+2. A Synthetic Dollar Built for Treasury Risk
+3. Yield Engineered for Capital Preservation
+
+Proposed supporting line:
+Kerne turns ETH into a dollar denominated yield stream while keeping exposure neutralized by design.
+
+### 2. Add an explicit "What you get" summary above the fold
+
+Institutions want a fast checklist, not prose.
+
+Suggested micro section under hero:
+What you get
+1. Delta neutral exposure with automated hedging
+2. Noncustodial deposits and verifiable backing
+3. Real time solvency signals and circuit breakers
+4. Withdraw anytime with an onchain liquidity buffer
+
+### 3. Replace vague claims with verifiable artifacts
+
+Whenever we claim "audited" or "proof of solvency," link to artifacts or omit the claim until ready.
+
+Add a Trust section with links:
+1. Vault source code verification on BaseScan
+2. Proof of solvency endpoint with signed attestations
+3. Insurance Fund policy and live balance
+4. Risk policy and pause conditions
+
+If a link does not exist yet, do not mention it. Institutions punish overclaiming.
+
+### 4. Create two parallel narratives: retail fast path and institutional deep path
+
+Home page should be one decision: deposit or not.
+Institutional page should be one decision: submit onboarding or not.
+
+Suggested split:
+1. Home focuses on simple outcomes and proof points.
+2. Institutional focuses on governance, reporting, custody, and procurement support.
+
+Add CTA pairing:
+Connect Wallet
+Request Institutional Access
+
+### 5. Add internal approval language for institutional conversion
+
+Institutions need copy that helps the champion sell internally.
+
+Insert on Institutional page:
+Designed for Investment Committees
+1. Noncustodial architecture, assets remain withdrawable onchain
+2. Real time solvency telemetry for risk teams
+3. Reporting exports for accounting and audits
+4. Whitelisting controls for compliance
+
+### 6. Add "How we manage tail risk" as a dedicated block
+
+Your transparency page has risk modules, but the copy should explicitly connect them to the feared events.
+
+Tail risk coverage map:
+1. Funding turns negative: strategy closes and parks in LSTs
+2. LST decouples: Oracle Guard pauses vault interactions
+3. Volatility spike: automated deleveraging and circuit breakers
+4. Venue risk: MPC custody plus Insurance Fund reserves
+
+This helps a risk officer sign off faster.
+
+### 7. Clarify kUSD positioning and remove ambiguity
+
+If kUSD is a synthetic dollar, the copy must answer:
+1. What backs it
+2. How it stays near peg
+3. How redemptions work
+4. What happens in stress
+
+Suggested kUSD one paragraph:
+kUSD is minted against overcollateralized LST backed vault positions. The peg is supported by onchain liquidity and the Peg Stability Module. Solvency is monitored continuously and vault interactions can be paused under predefined conditions.
+
+### 8. Fix conversion leakage in the onboarding form
+
+The form asks for Work Email but does not say what happens next.
+
+Add microcopy under the CTA:
+Response time: within 24 hours
+What you receive: vault access tier, reporting access, and integration support
+
+Add a compliance reassurance line:
+We do not request personal identification through this form. Whitelisting requirements are handled directly with approved partners.
+
+### 9. Add "time to first value" everywhere
+
+Institutions ask: how long until this is working.
+
+Add explicit time anchors:
+1. Wallet connect: 10 seconds
+2. First deposit: under 60 seconds
+3. Solvency data visible: immediately after deposit
+4. Institutional whitelisting: 1 to 3 business days
+
+### 10. Make the copy resilient to changing APY
+
+APY should be treated as an output, not a promise.
+
+Recommended phrasing:
+Projected APY based on current funding and staking yield.
+Show a range and a 30 day realized average.
+If the site cannot show realized, do not use the word realized.
+
+### 11. Add a single sentence that creates "protocol inevitability"
+
+This is positioning, not features. It should feel like the standard.
+
+Proposed line for footer or About hero:
+Kerne is building the prime liquidity layer for the onchain economy, where yield is engineered, not speculated.
+
+### 12. Tighten terminology to reduce institutional friction
+
+Replace jargon that triggers questions:
+1. "points" becomes "rewards credits"
+2. "zap" becomes "one click liquidity"
+3. "fold" becomes "recursive leverage"
+
+These reduce explanation burden.
+
+### Implementation order
+
+Phase 1: Credibility and artifact links, onboarding microcopy, APY wording
+Phase 2: Tail risk block and institutional approval language
+Phase 3: Dual narrative split and updated headlines
+
+---
+
 ## NEXT STEPS
 
 1. Review this copy with Mahone for alignment with current UI implementation
