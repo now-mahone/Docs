@@ -13,6 +13,7 @@ import os
 import time
 import json
 import asyncio
+import aiohttp
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 from decimal import Decimal
@@ -54,7 +55,7 @@ _load_env()
 # =============================================================================
 
 SOLVER_NAME = "Kerne"
-SOLVER_VERSION = "1.0.0"
+SOLVER_VERSION = "1.1.0"
 
 # Base Mainnet Addresses
 BASE_WETH = "0x4200000000000000000000000000000000000006"
@@ -62,30 +63,48 @@ BASE_USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
 BASE_WSTETH = "0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452"
 BASE_CBETH = "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22"
 
+# Arbitrum Addresses
+ARBITRUM_WETH = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+ARBITRUM_USDC = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+ARBITRUM_USDC_E = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
+ARBITRUM_WSTETH = "0x5979D7b546E38E414F7E9822514be443A4800529"
+
 # Aerodrome Router (Base)
 AERODROME_ROUTER = "0xcF77a3Ba9A5CA399B7c97c478569a74DD55C726f"
 AERODROME_FACTORY = "0x420DD381b31aEf6683db6B902084cB0FFECe40Da"
 
-# CoW Protocol Settlement Contract (Base)
-COW_SETTLEMENT = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
+# CoW Protocol Settlement Contract
+COW_SETTLEMENT_BASE = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
+COW_SETTLEMENT_ARBITRUM = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41" # Same address on Arb
 
 # ZIN Infrastructure
-ZIN_EXECUTOR = os.getenv("ZIN_EXECUTOR_ADDRESS", "0x04F52F9F4dAb1ba2330841Af85dAeeB8eaC9E995")
-ZIN_POOL = os.getenv("ZIN_POOL_ADDRESS", "0xB9BdF6F3Fc3819b61f6fE799bE1395501822d0c7")
+ZIN_EXECUTOR_BASE = os.getenv("ZIN_EXECUTOR_ADDRESS", "0x04F52F9F4dAb1ba2330841Af85dAeeB8eaC9E995")
+ZIN_POOL_BASE = os.getenv("ZIN_POOL_ADDRESS", "0xB9BdF6F3Fc3819b61f6fE799bE1395501822d0c7")
+
+ZIN_EXECUTOR_ARBITRUM = os.getenv("ARBITRUM_ZIN_EXECUTOR_ADDRESS", "0xbf039eB5CF2e1d0067C0918462fDd211e252Efdb")
+ZIN_POOL_ARBITRUM = os.getenv("ARBITRUM_ZIN_POOL_ADDRESS", "0x5D8ddE6264DF8A0963253693f32e057e1aA37aFD")
 
 # RPC Configuration
 BASE_RPC_URL = os.getenv("BASE_RPC_URL") or os.getenv("RPC_URL", "").split(",")[0] or "https://mainnet.base.org"
+ARBITRUM_RPC_URL = os.getenv("ARBITRUM_RPC_URL") or "https://arb1.arbitrum.io/rpc"
 
 # Solver Configuration
 MIN_PROFIT_BPS = int(os.getenv("ZIN_MIN_PROFIT_BPS", "5"))
 MAX_GAS_PRICE_GWEI = int(os.getenv("ZIN_MAX_GAS_PRICE_GWEI", "50"))
+ONE_INCH_API_KEY = os.getenv("ONE_INCH_API_KEY")
 
 # Supported tokens we can provide liquidity for
 SUPPORTED_TOKENS = {
-    BASE_USDC.lower(): {"symbol": "USDC", "decimals": 6},
-    BASE_WETH.lower(): {"symbol": "WETH", "decimals": 18},
-    BASE_WSTETH.lower(): {"symbol": "wstETH", "decimals": 18},
-    BASE_CBETH.lower(): {"symbol": "cbETH", "decimals": 18},
+    # Base
+    BASE_USDC.lower(): {"symbol": "USDC", "decimals": 6, "chain": 8453},
+    BASE_WETH.lower(): {"symbol": "WETH", "decimals": 18, "chain": 8453},
+    BASE_WSTETH.lower(): {"symbol": "wstETH", "decimals": 18, "chain": 8453},
+    BASE_CBETH.lower(): {"symbol": "cbETH", "decimals": 18, "chain": 8453},
+    # Arbitrum
+    ARBITRUM_USDC.lower(): {"symbol": "USDC", "decimals": 6, "chain": 42161},
+    ARBITRUM_USDC_E.lower(): {"symbol": "USDC.e", "decimals": 6, "chain": 42161},
+    ARBITRUM_WETH.lower(): {"symbol": "WETH", "decimals": 18, "chain": 42161},
+    ARBITRUM_WSTETH.lower(): {"symbol": "wstETH", "decimals": 18, "chain": 42161},
 }
 
 # =============================================================================
@@ -164,13 +183,15 @@ class KerneSolver:
     Kerne CoW Swap Solver
     
     Uses Kerne's ZIN infrastructure to provide liquidity for CoW Protocol auctions.
+    Supports Base (8453) and Arbitrum (42161).
     """
     
     def __init__(self):
-        self.w3 = Web3(Web3.HTTPProvider(BASE_RPC_URL, request_kwargs={'timeout': 30}))
+        self.w3_base = Web3(Web3.HTTPProvider(BASE_RPC_URL, request_kwargs={'timeout': 30}))
+        self.w3_arb = Web3(Web3.HTTPProvider(ARBITRUM_RPC_URL, request_kwargs={'timeout': 30}))
         self.solution_counter = 0
         
-        # Aerodrome Router ABI for quoting
+        # Aerodrome Router ABI for quoting (Base only)
         self.router_abi = [
             {
                 "inputs": [
@@ -201,10 +222,16 @@ class KerneSolver:
         ]
         
         logger.info(f"Kerne Solver initialized")
-        logger.info(f"  RPC: {BASE_RPC_URL[:50]}...")
-        logger.info(f"  ZIN Executor: {ZIN_EXECUTOR}")
-        logger.info(f"  ZIN Pool: {ZIN_POOL}")
+        logger.info(f"  Base RPC: {BASE_RPC_URL[:50]}...")
+        logger.info(f"  Arb RPC: {ARBITRUM_RPC_URL[:50]}...")
         
+    def _get_chain_context(self, token_address: str) -> Optional[int]:
+        """Determine chain ID from token address."""
+        token_info = SUPPORTED_TOKENS.get(token_address.lower())
+        if token_info:
+            return token_info["chain"]
+        return None
+
     def _is_supported_pair(self, sell_token: str, buy_token: str) -> bool:
         """Check if we support this token pair."""
         sell_lower = sell_token.lower()
@@ -213,15 +240,46 @@ class KerneSolver:
         # We need at least one token to be in our supported list
         return sell_lower in SUPPORTED_TOKENS or buy_lower in SUPPORTED_TOKENS
     
+    async def _get_1inch_quote(self, chain_id: int, token_in: str, token_out: str, amount_in: int) -> Optional[dict]:
+        """Get quote from 1inch API (works for Base and Arbitrum)."""
+        if not ONE_INCH_API_KEY:
+            return None
+            
+        url = f"https://api.1inch.dev/swap/v6.0/{chain_id}/swap"
+        params = {
+            "src": token_in,
+            "dst": token_out,
+            "amount": str(amount_in),
+            "from": ZIN_EXECUTOR_BASE if chain_id == 8453 else ZIN_EXECUTOR_ARBITRUM,
+            "slippage": "0.5",
+            "disableEstimate": "true",
+            "allowPartialFill": "false",
+        }
+        headers = {"Authorization": f"Bearer {ONE_INCH_API_KEY}", "Accept": "application/json"}
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params, headers=headers, timeout=5) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        return {
+                            "amountOut": int(data.get("dstAmount", 0)),
+                            "tx": data.get("tx", {}),
+                            "gas": int(data.get("tx", {}).get("gas", 500000))
+                        }
+        except Exception as e:
+            logger.debug(f"1inch quote error: {e}")
+        return None
+
     def _get_aerodrome_quote(
         self,
         token_in: str,
         token_out: str,
         amount_in: int
     ) -> Optional[int]:
-        """Get quote from Aerodrome."""
+        """Get quote from Aerodrome (Base only)."""
         try:
-            router = self.w3.eth.contract(
+            router = self.w3_base.eth.contract(
                 address=Web3.to_checksum_address(AERODROME_ROUTER),
                 abi=self.router_abi
             )
@@ -249,11 +307,14 @@ class KerneSolver:
             
         return None
     
-    def _check_pool_liquidity(self, token: str) -> int:
+    def _check_pool_liquidity(self, chain_id: int, token: str) -> int:
         """Check available liquidity in ZIN pool."""
         try:
-            pool = self.w3.eth.contract(
-                address=Web3.to_checksum_address(ZIN_POOL),
+            w3 = self.w3_base if chain_id == 8453 else self.w3_arb
+            pool_addr = ZIN_POOL_BASE if chain_id == 8453 else ZIN_POOL_ARBITRUM
+            
+            pool = w3.eth.contract(
+                address=Web3.to_checksum_address(pool_addr),
                 abi=self.pool_abi
             )
             return pool.functions.maxFlashLoan(
@@ -271,7 +332,7 @@ class KerneSolver:
         min_amount_out: int,
         recipient: str
     ) -> str:
-        """Build Aerodrome swap calldata."""
+        """Build Aerodrome swap calldata (Base only)."""
         swap_abi = [
             {
                 "inputs": [
@@ -293,7 +354,7 @@ class KerneSolver:
             }
         ]
         
-        router = self.w3.eth.contract(
+        router = self.w3_base.eth.contract(
             address=Web3.to_checksum_address(AERODROME_ROUTER),
             abi=swap_abi
         )
@@ -317,21 +378,10 @@ class KerneSolver:
     async def solve(self, request: SolveRequest) -> SolveResponse:
         """
         Solve a CoW Protocol auction.
-        
-        This is the main entry point called by CoW Protocol's driver.
         """
         logger.info(f"Received auction {request.id} with {len(request.orders)} orders")
         
         solutions = []
-        
-        # Check gas price
-        try:
-            gas_price_gwei = self.w3.eth.gas_price / 1e9
-            if gas_price_gwei > MAX_GAS_PRICE_GWEI:
-                logger.warning(f"Gas price too high: {gas_price_gwei:.2f} gwei")
-                return SolveResponse(solutions=[])
-        except Exception as e:
-            logger.warning(f"Could not check gas price: {e}")
         
         # Process each order
         for order in request.orders:
@@ -353,11 +403,12 @@ class KerneSolver:
     ) -> Optional[Solution]:
         """Attempt to solve a single order."""
         
-        # Check if we support this pair
-        if not self._is_supported_pair(order.sellToken, order.buyToken):
-            logger.debug(f"Unsupported pair: {order.sellToken[:10]} -> {order.buyToken[:10]}")
+        # Determine chain from tokens
+        chain_id = self._get_chain_context(order.buyToken) or self._get_chain_context(order.sellToken)
+        if not chain_id:
+            logger.debug(f"Unknown chain for tokens: {order.sellToken} -> {order.buyToken}")
             return None
-        
+
         # Check order validity
         if order.validTo < int(time.time()):
             logger.debug(f"Order expired: {order.uid[:16]}")
@@ -366,12 +417,26 @@ class KerneSolver:
         sell_amount = int(order.sellAmount)
         buy_amount = int(order.buyAmount)
         
-        # Get quote from Aerodrome
-        quote_output = self._get_aerodrome_quote(
-            order.sellToken,
-            order.buyToken,
-            sell_amount
-        )
+        # Get quote
+        quote_output = 0
+        calldata = ""
+        target = ""
+        
+        if chain_id == 8453: # Base
+            # Try Aerodrome first
+            quote_output = self._get_aerodrome_quote(order.sellToken, order.buyToken, sell_amount)
+            if quote_output and quote_output >= buy_amount:
+                target = AERODROME_ROUTER
+                min_out = int(buy_amount * 0.995)
+                calldata = self._build_swap_calldata(order.sellToken, order.buyToken, sell_amount, min_out, COW_SETTLEMENT_BASE)
+        
+        # Fallback to 1inch (Base or Arbitrum)
+        if (not quote_output or quote_output < buy_amount) and ONE_INCH_API_KEY:
+            quote_1inch = await self._get_1inch_quote(chain_id, order.sellToken, order.buyToken, sell_amount)
+            if quote_1inch:
+                quote_output = quote_1inch["amountOut"]
+                calldata = quote_1inch["tx"].get("data", "")
+                target = quote_1inch["tx"].get("to", "")
         
         if not quote_output:
             logger.debug(f"No quote available for order {order.uid[:16]}")
@@ -391,46 +456,28 @@ class KerneSolver:
             return None
         
         # Check liquidity
-        liquidity = self._check_pool_liquidity(order.buyToken)
+        liquidity = self._check_pool_liquidity(chain_id, order.buyToken)
         if liquidity < buy_amount:
             logger.debug(f"Insufficient liquidity: {liquidity} < {buy_amount}")
             return None
         
-        logger.info(f"Found profitable order: {order.uid[:16]}, profit: {profit_bps} bps")
+        logger.info(f"Found profitable order on Chain {chain_id}: {order.uid[:16]}, profit: {profit_bps} bps")
         
         # Build solution
         self.solution_counter += 1
         
         # Calculate clearing prices
-        # Price is expressed as: how much of token B per unit of token A
-        # For a sell order: sellToken price = buyAmount / sellAmount
         sell_price = str((buy_amount * 10**18) // sell_amount) if sell_amount > 0 else "0"
         buy_price = str((sell_amount * 10**18) // buy_amount) if buy_amount > 0 else "0"
-        
-        # Build swap interaction
-        min_out = int(buy_amount * 0.995)  # 0.5% slippage buffer
-        swap_calldata = self._build_swap_calldata(
-            order.sellToken,
-            order.buyToken,
-            sell_amount,
-            min_out,
-            COW_SETTLEMENT  # Tokens go to settlement contract
-        )
-        
-        # Pre-interaction: approve tokens if needed (usually not needed for CoW)
-        pre_interactions: List[Interaction] = []
         
         # Intra-interaction: the actual swap
         intra_interactions: List[Interaction] = [
             Interaction(
-                target=AERODROME_ROUTER,
+                target=target,
                 value="0",
-                callData=swap_calldata
+                callData=calldata
             )
         ]
-        
-        # Post-interaction: none needed
-        post_interactions: List[Interaction] = []
         
         solution = Solution(
             id=self.solution_counter,
@@ -445,8 +492,8 @@ class KerneSolver:
                     executedAmount=order.sellAmount
                 )
             ],
-            interactions=[pre_interactions, intra_interactions, post_interactions],
-            score=str(profit)  # Score is the surplus we generate
+            interactions=[[], intra_interactions, []],
+            score=str(profit)
         )
         
         return solution
@@ -463,9 +510,8 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 60)
     logger.info(f"Solver initialized: {solver is not None}")
     if solver:
-        logger.info(f"  RPC: {BASE_RPC_URL[:50]}...")
-        logger.info(f"  ZIN Executor: {ZIN_EXECUTOR}")
-        logger.info(f"  ZIN Pool: {ZIN_POOL}")
+        logger.info(f"  Base RPC: {BASE_RPC_URL[:50]}...")
+        logger.info(f"  Arb RPC: {ARBITRUM_RPC_URL[:50]}...")
     
     yield
     
@@ -493,6 +539,8 @@ solver = KerneSolver()
 @app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     """Health check endpoint."""
+    if solver is None:
+        return Response(status_code=503)
     return {
         "solver": SOLVER_NAME,
         "version": SOLVER_VERSION,
@@ -503,6 +551,8 @@ async def root():
 @app.get("/health")
 async def health():
     """Health check for monitoring."""
+    if solver is None:
+        return Response(status_code=503)
     return {"status": "ok"}
 
 @app.get("/info")
@@ -511,12 +561,19 @@ async def info():
     return {
         "name": SOLVER_NAME,
         "version": SOLVER_VERSION,
-        "supported_chains": [8453],  # Base
+        "supported_chains": [8453, 42161],  # Base, Arbitrum
         "supported_tokens": list(SUPPORTED_TOKENS.keys()),
-        "zin_executor": ZIN_EXECUTOR,
-        "zin_pool": ZIN_POOL,
+        "zin_executor_base": ZIN_EXECUTOR_BASE,
+        "zin_pool_base": ZIN_POOL_BASE,
+        "zin_executor_arbitrum": ZIN_EXECUTOR_ARBITRUM,
+        "zin_pool_arbitrum": ZIN_POOL_ARBITRUM,
         "min_profit_bps": MIN_PROFIT_BPS
     }
+
+@app.get("/solve")
+async def solve_get():
+    """Helper for browser visits."""
+    return {"message": "This endpoint accepts POST requests for CoW Protocol auctions. See /docs for schema."}
 
 @app.post("/solve")
 async def solve(request: SolveRequest):

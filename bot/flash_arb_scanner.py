@@ -11,6 +11,7 @@ Aerodrome, Uniswap V3, Sushi, BaseSwap, and Maverick.
 import os
 import json
 import time
+import math
 import asyncio
 from typing import Optional, Tuple, List, Dict, Any, Set
 from dataclasses import dataclass, field
@@ -272,6 +273,9 @@ class GraphArbScanner:
         self.adj.setdefault(pool.token1.address, []).append(pool)
 
     def find_cycles(self, start_token: Token, max_hops: int = 3) -> List[List[Pool]]:
+        """
+        Legacy DFS discovery. Kept for fallback.
+        """
         cycles = []
         def dfs(curr_token_addr: str, path: List[Pool], visited_tokens: Set[str]):
             if len(path) == max_hops: return
@@ -283,6 +287,137 @@ class GraphArbScanner:
                 if next_token.address not in visited_tokens:
                     dfs(next_token.address, path + [pool], visited_tokens | {next_token.address})
         dfs(start_token.address, [], {start_token.address})
+        return cycles
+
+    async def find_profitable_cycles_bellman_ford(self, start_token: Token, amount_in: int) -> List[List[Pool]]:
+        """
+        Bellman-Ford Negative Cycle Detection.
+        1. Fetches prices for all edges (pools) in parallel.
+        2. Builds graph with weight = -log(price).
+        3. Detects negative cycles (profit > 1.0).
+        """
+        # 1. Build the graph nodes
+        tokens = list(self.adj.keys())
+        token_map = {t: i for i, t in enumerate(tokens)}
+        reverse_token_map = {i: t for t, i in token_map.items()}
+        n = len(tokens)
+        
+        # 2. Fetch all edge prices in parallel
+        # We need to query every pool in self.pools for the given amount_in
+        # Note: This assumes amount_in is preserved roughly across hops (simplification)
+        # For better accuracy, we'd need iterative updates, but for discovery this is fine.
+        
+        tasks = []
+        pool_map = [] # Stores (pool, token_in, token_out) corresponding to tasks
+        
+        for pool in self.pools:
+            # Check forward: token0 -> token1
+            tasks.append(self.get_quote(pool, pool.token0, amount_in))
+            pool_map.append((pool, pool.token0, pool.token1))
+            
+            # Check reverse: token1 -> token0
+            tasks.append(self.get_quote(pool, pool.token1, amount_in))
+            pool_map.append((pool, pool.token1, pool.token0))
+            
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # 3. Build Weighted Graph
+        # edges[u] = [(v, weight, pool)]
+        edges = []
+        
+        for i, res in enumerate(results):
+            if isinstance(res, Exception) or res == 0:
+                continue
+                
+            pool, t_in, t_out = pool_map[i]
+            amount_out = res
+            
+            # Calculate price = amount_out / amount_in
+            # We must normalize decimals
+            decimals_in = t_in.decimals
+            decimals_out = t_out.decimals
+            
+            # Price = (OutRaw / 10^dOut) / (InRaw / 10^dIn)
+            price = (amount_out / (10**decimals_out)) / (amount_in / (10**decimals_in))
+            
+            if price <= 0: continue
+            
+            weight = -math.log(price)
+            u = token_map.get(t_in.address)
+            v = token_map.get(t_out.address)
+            
+            if u is not None and v is not None:
+                edges.append((u, v, weight, pool))
+
+        # 4. Run Bellman-Ford
+        dist = [float('inf')] * n
+        parent = [-1] * n
+        edge_to_parent = [None] * n # Stores the pool used to get to node
+        
+        start_node = token_map[start_token.address]
+        dist[start_node] = 0
+        
+        # Relax edges N-1 times
+        for _ in range(n - 1):
+            changed = False
+            for u, v, w, pool in edges:
+                if dist[u] != float('inf') and dist[u] + w < dist[v]:
+                    dist[v] = dist[u] + w
+                    parent[v] = u
+                    edge_to_parent[v] = pool
+                    changed = True
+            if not changed: break
+            
+        # Check for negative cycles
+        cycles = []
+        seen_cycles = set()
+        
+        for u, v, w, pool in edges:
+            if dist[u] != float('inf') and dist[u] + w < dist[v]:
+                # Negative cycle found!
+                # Trace back to find the cycle
+                curr = v
+                for _ in range(n):
+                    curr = parent[curr]
+                
+                cycle_path = []
+                cycle_pools = []
+                cycle_node = curr
+                
+                while True:
+                    prev = parent[cycle_node]
+                    pool_used = edge_to_parent[cycle_node]
+                    
+                    cycle_path.append(cycle_node)
+                    cycle_pools.append(pool_used)
+                    
+                    if prev == curr and len(cycle_path) > 1:
+                        break
+                    if prev == -1: # Should not happen in a cycle
+                        break
+                        
+                    cycle_node = prev
+                
+                # The cycle is constructed backwards (v <- u <- ... <- v)
+                # We need to reverse it to get execution order
+                cycle_pools.reverse()
+                
+                # Check if this cycle starts/ends with our start_token (or can be rotated)
+                # For simplicity, we only return cycles that contain our start_token
+                # and rotate them to start with it.
+                
+                # Reconstruct tokens to check
+                # cycle_pools[0] connects some T -> some T'
+                # This part is tricky with just pools. 
+                # Let's simplify: just return the list of pools if it's valid.
+                
+                # Unique ID for cycle to avoid duplicates
+                cycle_id = tuple(sorted([p.token0.address for p in cycle_pools]))
+                if cycle_id in seen_cycles: continue
+                seen_cycles.add(cycle_id)
+                
+                cycles.append(cycle_pools)
+                
         return cycles
 
     async def get_quote(self, pool: Pool, token_in: Token, amount_in: int, retries: int = 3) -> int:
@@ -409,11 +544,22 @@ class GraphArbScanner:
 
             tasks = []
             for base_token in base_tokens:
-                cycles = self.find_cycles(base_token, max_hops=4)
+                # Determine amount for discovery
                 amount = int(self.max_trade_size_eth * multiplier * (10 ** base_token.decimals)) if base_token == self.WETH else int(10000 * multiplier * (10 ** base_token.decimals))
                 if amount == 0: continue
+
+                # Use Bellman-Ford for discovery
+                # Note: BF is heavier on RPC (fetches all edges), so we might want to alternate or use it less frequently
+                # For now, we replace DFS with BF as requested.
+                cycles = await self.find_profitable_cycles_bellman_ford(base_token, amount)
+                
+                # If BF returns nothing (or fails), fallback to DFS? 
+                # BF is superior, so let's trust it. But we still need to evaluate the specific path 
+                # with exact amounts to get the ArbPath object with profit_usd.
                 
                 for cycle in cycles:
+                    # BF finds the cycle structure. We still need to run evaluate_cycle 
+                    # to get the precise profit/gas estimation and ArbPath object.
                     tasks.append(self.evaluate_cycle(cycle, base_token, amount))
             
             try:

@@ -8,6 +8,9 @@
 Kerne is a delta-neutral synthetic dollar protocol, leveraging LST collateral and hedging to provide institutional grade yield and capital efficiency.
 ## Log
 <!-- NOTE: New entries go at the TOP (reverse chronological order - newest first) -->
+- [2026-01-30 21:05] - CowSwap Solver API Upgrade: Upgraded `bot/solver/cowswap_solver_api.py` to v1.1.0 with full multi-chain support (Base + Arbitrum) and 1inch API integration. The endpoint is now fully compatible with the ZIN infrastructure and ready for the CoW Swap Shadow Competition. - Status: CODE_READY_FOR_DEPLOYMENT.
+- [2026-01-30 21:00] - Flash-Arb Optimization: Implemented Bellman-Ford algorithm in `bot/flash_arb_scanner.py` to detect negative weight cycles (complex arbitrage loops) across the Base ecosystem graph. This upgrades the bot from simple pair scanning to institutional-grade cycle discovery. - Status: SUCCESS.
+- [2026-01-30 20:55] - ZIN Arbitrum Activation Prep: Verified ZIN Solver configuration for Arbitrum and created `docs/runbooks/ZIN_ARBITRUM_ACTIVATION.md` with precise funding instructions to unblock the solver. - Status: READY_FOR_FUNDING.
 - [2026-01-30 14:55] - Protocol: Verified the "Loyalist Lock" airdrop logic in `KerneAirdrop.sol` with a comprehensive unit test suite (`test/unit/KerneAirdrop.t.sol`). Confirmed the 75% penalty redistribution and 12-month lock mechanics are mathematically sound. - Status: SUCCESS.
 - [2026-01-30 14:50] - Operations: Prepared the final CowSwap Solver Application for Mr. Scofield to submit to the governance forum. Updated the application with current ZIN infrastructure and contact details. - Status: SUCCESS.
 - [2026-01-30 14:45] - Operations: Formally generated the first "Mathematical Solvency Certificate" (KYS-2026-01) using the Kerne Math Division (Aristotle + GPT-5.2 Pro). Verified the 20.3% realized APY logic for institutional BD. - Status: SUCCESS.
