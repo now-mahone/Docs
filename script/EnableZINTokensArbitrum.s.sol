@@ -24,7 +24,7 @@ contract EnableZINTokensArbitrum is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         
-        KerneZINPool pool = KerneZINPool(ZIN_POOL);
+        KerneZINPool pool = KerneZINPool(payable(ZIN_POOL));
         
         console.log("=== Enabling ZIN Tokens on Arbitrum ===");
         console.log("Pool:", ZIN_POOL);
@@ -46,7 +46,7 @@ contract EnableZINTokensArbitrum is Script {
             console.log(string.concat(name, " is already supported"));
         } else {
             console.log(string.concat("Enabling ", name, "..."));
-            pool.supportToken(token, true);
+            pool.supportToken(token);
             console.log(string.concat(name, " enabled!"));
         }
     }

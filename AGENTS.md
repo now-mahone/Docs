@@ -172,3 +172,4 @@ Examples:
 - **Bot Verification**: Use `python main.py --dry-run` to verify engine logic before execution.
 - **SDK Vitest**: Use `npm run test:run` in `sdk/` to ensure frontend-contract compatibility.
 - **Yield Adapters**: Every new yield source must have an adapter in `yield-server/src/adaptors/` with 100% test coverage.
+

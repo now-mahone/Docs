@@ -17,7 +17,7 @@
 The Future of Onchain Yield.
 
 **Subheadline:**
-Live at an APY of 20.4%
+Live at an APY of 20.3%
 
 **Body:**
 Building the most capital efficient delta neutral infrastructure in DeFi. Kerne's vaults hedge automatically to capture yield without price exposure.

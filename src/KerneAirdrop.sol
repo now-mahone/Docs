@@ -363,18 +363,18 @@ contract KerneAirdrop is AccessControl, ReentrancyGuard, Pausable {
      * @return vested Amount vested so far
      */
     function _calculateVested(address user) internal view returns (uint256) {
-        UserClaim storage claim = userClaims[user];
+        UserClaim storage userClaim = userClaims[user];
         
-        if (claim.claimType != ClaimType.VESTING) return 0;
-        if (claim.vestingStart == 0) return 0;
+        if (userClaim.claimType != ClaimType.VESTING) return 0;
+        if (userClaim.vestingStart == 0) return 0;
         
-        uint256 elapsed = block.timestamp - claim.vestingStart;
+        uint256 elapsed = block.timestamp - userClaim.vestingStart;
         
         if (elapsed >= VESTING_DURATION) {
-            return claim.totalAllocation;
+            return userClaim.totalAllocation;
         }
         
-        return (claim.totalAllocation * elapsed) / VESTING_DURATION;
+        return (userClaim.totalAllocation * elapsed) / VESTING_DURATION;
     }
 
     /**
@@ -383,13 +383,13 @@ contract KerneAirdrop is AccessControl, ReentrancyGuard, Pausable {
      * @return bonus Bonus amount
      */
     function _calculateLoyalistBonus(address user) internal view returns (uint256) {
-        UserClaim storage claim = userClaims[user];
+        UserClaim storage userClaim = userClaims[user];
         
-        if (claim.claimType != ClaimType.LOYALIST) return 0;
+        if (userClaim.claimType != ClaimType.LOYALIST) return 0;
         if (totalLoyalistLocked == 0) return 0;
         
         // Pro-rata share of penalty pool based on locked amount
-        return (penaltyPool * claim.lockedAmount) / totalLoyalistLocked;
+        return (penaltyPool * userClaim.lockedAmount) / totalLoyalistLocked;
     }
 
     /**
@@ -407,15 +407,15 @@ contract KerneAirdrop is AccessControl, ReentrancyGuard, Pausable {
      * @return withdrawable Amount available to withdraw
      */
     function getWithdrawable(address user) external view returns (uint256) {
-        UserClaim storage claim = userClaims[user];
+        UserClaim storage userClaim = userClaims[user];
         
-        if (claim.claimType == ClaimType.VESTING) {
+        if (userClaim.claimType == ClaimType.VESTING) {
             uint256 vested = _calculateVested(user);
-            return vested - claim.claimedAmount;
-        } else if (claim.claimType == ClaimType.LOYALIST) {
-            if (block.timestamp < claim.lockExpiry) return 0;
-            if (claim.claimedAmount > 0) return 0;
-            return claim.lockedAmount + _calculateLoyalistBonus(user);
+            return vested - userClaim.claimedAmount;
+        } else if (userClaim.claimType == ClaimType.LOYALIST) {
+            if (block.timestamp < userClaim.lockExpiry) return 0;
+            if (userClaim.claimedAmount > 0) return 0;
+            return userClaim.lockedAmount + _calculateLoyalistBonus(user);
         }
         
         return 0;
