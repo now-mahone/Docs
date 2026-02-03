@@ -119,3 +119,56 @@ class HyperliquidExchange(BaseExchange):
             logger.error(f"HL Error order book: {e}")
             return {"bids": [], "asks": []}
 
+    def withdraw_to_onchain(self, amount_usd: float, destination_address: str = None) -> bool:
+        """
+        Withdraws USDC from Hyperliquid to an on-chain address (Arbitrum).
+        """
+        try:
+            dest = destination_address or self.address
+            logger.info(f"Withdrawing {amount_usd} USDC from Hyperliquid to {dest}")
+            
+            # Hyperliquid API uses integer for USDC (6 decimals)
+            amount_raw = int(amount_usd * 1e6)
+            
+            response = self.exchange.withdraw_from_bridge(
+                amount=amount_raw,
+                destination=dest
+            )
+            
+            if response["status"] == "ok":
+                logger.success(f"Withdrawal initiated: {response}")
+                return True
+            else:
+                logger.error(f"Withdrawal failed: {response}")
+                return False
+        except Exception as e:
+            logger.error(f"HL Error withdrawal: {e}")
+            return False
+
+    def deposit_from_onchain(self, amount_usd: float) -> bool:
+        """
+        Note: Deposits usually require an on-chain transaction to the HL Bridge.
+        This method provides the instructions/parameters for the bot's ChainManager to execute.
+        """
+        # Hyperliquid Bridge on Arbitrum: 0x2Df1c51E09a42Ad01097321978c7035100396630
+        # This is handled by the SovereignVault calling ChainManager.
+        logger.info(f"Deposit of {amount_usd} USDC requested. Must be executed via ChainManager on Arbitrum.")
+        return True
+
+    def get_api_status(self) -> dict:
+        """
+        Verifies the API connection and returns account status.
+        """
+        try:
+            user_state = self.info.user_state(self.address)
+            return {
+                "status": "connected",
+                "address": self.address,
+                "margin_summary": user_state.get("marginSummary", {}),
+                "is_mainnet": self.base_url == constants.MAINNET_API_URL
+            }
+        except Exception as e:
+            logger.error(f"HL API Status Error: {e}")
+            return {"status": "error", "message": str(e)}
+
+

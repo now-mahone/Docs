@@ -158,13 +158,18 @@ class OmniOrchestrator:
         
         nonce = w3.eth.get_transaction_count(self.wallet_address)
         
+        def to_int(val):
+            if isinstance(val, str) and val.startswith('0x'):
+                return int(val, 16)
+            return int(val)
+
         tx = {
             'from': self.wallet_address,
             'to': tx_data['to'],
             'data': tx_data['data'],
-            'value': int(tx_data.get('value', 0)),
+            'value': to_int(tx_data.get('value', 0)),
             'nonce': nonce,
-            'gas': int(int(tx_data.get('gasLimit', 500000)) * 1.2), # 20% buffer
+            'gas': int(to_int(tx_data.get('gasLimit', 500000)) * 1.2), # 20% buffer
             'chainId': chain_id
         }
         
@@ -172,14 +177,15 @@ class OmniOrchestrator:
         try:
             fee_history = w3.eth.fee_history(1, 'latest')
             base_fee = fee_history['baseFeePerGas'][-1]
-            tx['maxFeePerGas'] = int(base_fee * 1.5)
-            tx['maxPriorityFeePerGas'] = w3.to_wei(1, 'gwei')
+            priority_fee = w3.to_wei(0.001, 'gwei') # Lower priority fee for L2s
+            tx['maxPriorityFeePerGas'] = priority_fee
+            tx['maxFeePerGas'] = int(base_fee * 1.5) + priority_fee
         except:
             tx['gasPrice'] = w3.eth.gas_price
 
         logger.info(f"Signing transaction on chain {chain_id}...")
         signed_tx = w3.eth.account.sign_transaction(tx, self.private_key)
-        tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+        tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
         
         logger.success(f"Transaction sent! Hash: {tx_hash.hex()}")
         return tx_hash.hex()

@@ -1,5 +1,8 @@
 # Kerne Protocol: Cline Rules
 
+## 0. SYSTEM ENVIRONMENT
+**CRITICAL:** This project is developed EXCLUSIVELY on Windows 11. All commands, shell syntax, and tool usage must be compatible with Windows (cmd.exe/PowerShell). Never assume a Linux/Unix environment.
+
 ## 1. DECISION PROTOCOL (SINGULAR PATH)
 **CRITICAL:** Never recommend multiple options or "A or B" scenarios to Scofield or Mahone unless explicitly asked.
 - **Action:** Always analyze all possibilities internally, then present ONLY the singular best path forward.

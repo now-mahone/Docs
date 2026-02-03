@@ -21,6 +21,10 @@ interface IKUSD is IERC20 {
     function burnFrom(address account, uint256 amount) external;
 }
 
+interface IKerneYieldOracle {
+    function getTWAY(address vault) external view returns (uint256);
+}
+
 /**
  * @title kUSDMinter
  * @author Kerne Protocol
@@ -54,6 +58,7 @@ contract kUSDMinter is AccessControl, ReentrancyGuard, Pausable {
     IERC20 public immutable kLP;
 
     address public dexAggregator;
+    IKerneYieldOracle public yieldOracle;
 
     mapping(address => Position) public positions;
 
@@ -63,6 +68,7 @@ contract kUSDMinter is AccessControl, ReentrancyGuard, Pausable {
     event Folded(address indexed user, uint256 debtAdded, uint256 collateralAdded, uint256 healthFactor);
     event LeverageExecuted(address indexed user, uint256 assetDeposited, uint256 collateralAdded, uint256 kusdMinted);
     event DexAggregatorUpdated(address indexed previousAggregator, address indexed newAggregator);
+    event OracleUpdated(address indexed previousOracle, address indexed newOracle);
     event RiskParamsUpdated(uint256 mintRatio, uint256 liquidationThreshold, uint256 liquidationBonus, uint256 minHealthFactor);
 
     constructor(address _kusd, address _vault, address _admin) {
@@ -90,6 +96,12 @@ contract kUSDMinter is AccessControl, ReentrancyGuard, Pausable {
         address previous = dexAggregator;
         dexAggregator = _aggregator;
         emit DexAggregatorUpdated(previous, _aggregator);
+    }
+
+    function setYieldOracle(address _oracle) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        address previous = address(yieldOracle);
+        yieldOracle = IKerneYieldOracle(_oracle);
+        emit OracleUpdated(previous, _oracle);
     }
 
     function setRiskParams(
@@ -121,7 +133,7 @@ contract kUSDMinter is AccessControl, ReentrancyGuard, Pausable {
 
     function mint(uint256 kLPAmount, uint256 kusdAmount) external nonReentrant whenNotPaused {
         require(kLPAmount > 0, "Invalid collateral");
-        require(kusdAmount > 0, "Invalid mint amount");
+        // require(kusdAmount > 0, "Invalid mint amount"); // Allow 0 mint for collateral deposit
 
         kLP.safeTransferFrom(msg.sender, address(this), kLPAmount);
 
@@ -132,7 +144,9 @@ contract kUSDMinter is AccessControl, ReentrancyGuard, Pausable {
         _enforceMintRatio(position);
         _enforceMinHealth(position);
 
-        kusd.mint(msg.sender, kusdAmount);
+        if (kusdAmount > 0) {
+            kusd.mint(msg.sender, kusdAmount);
+        }
 
         emit Minted(msg.sender, kLPAmount, kusdAmount);
     }
@@ -184,6 +198,33 @@ contract kUSDMinter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     function fold(uint256 amountToBorrow, uint256 minKLPOut) external nonReentrant whenNotPaused {
+        uint256 price = getKLPPrice();
+        _fold(amountToBorrow, minKLPOut, price);
+    }
+
+    function foldToTargetAPY(uint256 targetAPY, uint256 minKLPOut) external nonReentrant whenNotPaused {
+        require(address(yieldOracle) != address(0), "Oracle not set");
+        uint256 baseAPY = yieldOracle.getTWAY(address(vault));
+        require(baseAPY > 0, "Base APY is zero");
+        require(targetAPY > baseAPY, "Target must be > Base");
+
+        Position storage position = positions[msg.sender];
+        uint256 currentCollateral = position.collateralAmount;
+        require(currentCollateral > 0, "No collateral");
+
+        uint256 price = getKLPPrice();
+        uint256 collateralValue = (currentCollateral * price) / PRECISION;
+        
+        // Debt = (TargetAPY - BaseAPY) * CollateralValue / BaseAPY
+        uint256 requiredDebt = ((targetAPY - baseAPY) * collateralValue) / baseAPY;
+        
+        require(requiredDebt > position.debtAmount, "Target APY lower than current");
+        
+        uint256 amountToBorrow = requiredDebt - position.debtAmount;
+        _fold(amountToBorrow, minKLPOut, price);
+    }
+
+    function _fold(uint256 amountToBorrow, uint256 minKLPOut, uint256 price) internal {
         require(amountToBorrow > 0, "Invalid borrow");
         require(dexAggregator != address(0), "Aggregator not set");
 
@@ -202,8 +243,8 @@ contract kUSDMinter is AccessControl, ReentrancyGuard, Pausable {
 
         position.collateralAmount += shares;
 
-        _enforceMintRatio(position);
-        uint256 healthFactor = _enforceMinHealth(position);
+        _enforceMintRatioWithPrice(position, price);
+        uint256 healthFactor = _enforceMinHealthWithPrice(position, price);
 
         emit Folded(msg.sender, amountToBorrow, shares, healthFactor);
     }
@@ -256,14 +297,30 @@ contract kUSDMinter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     function _enforceMintRatio(Position memory position) internal view {
+        _enforceMintRatioWithPrice(position, getKLPPrice());
+    }
+
+    function _enforceMintRatioWithPrice(Position memory position, uint256 price) internal view {
         uint256 required = (position.debtAmount * MINT_COLLATERAL_RATIO) / PRECISION;
-        require(_collateralValue(position.collateralAmount) >= required, "Insufficient collateral");
+        uint256 val = (position.collateralAmount * price) / PRECISION;
+        require(val >= required, "Insufficient collateral");
     }
 
     function _enforceMinHealth(Position memory position) internal view returns (uint256) {
-        uint256 healthFactor = _healthFactor(position, LIQUIDATION_THRESHOLD);
+        return _enforceMinHealthWithPrice(position, getKLPPrice());
+    }
+
+    function _enforceMinHealthWithPrice(Position memory position, uint256 price) internal view returns (uint256) {
+        uint256 healthFactor = _healthFactorWithPrice(position, LIQUIDATION_THRESHOLD, price);
         require(healthFactor >= minHealthFactor, "Health factor too low");
         return healthFactor;
+    }
+
+    function _healthFactorWithPrice(Position memory position, uint256 threshold, uint256 price) internal pure returns (uint256) {
+        if (position.debtAmount == 0) return 100 * PRECISION;
+        uint256 val = (position.collateralAmount * price) / PRECISION;
+        uint256 ratio = (val * PRECISION) / position.debtAmount;
+        return (ratio * PRECISION) / threshold;
     }
 
     function _swap(address fromAsset, address toAsset, uint256 amount) internal returns (uint256 receivedAmount) {

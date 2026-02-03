@@ -7,6 +7,7 @@ from loguru import logger
 from exchange_manager import ExchangeManager
 from chain_manager import ChainManager
 from credits_manager import CreditsManager
+from apy_calculator import APYCalculator
 
 class HedgingEngine:
     """
@@ -39,6 +40,8 @@ class HedgingEngine:
         
         self.buyback_log_path = os.path.join(os.path.dirname(__file__), "data", "buyback_log.json")
         self._ensure_buyback_log()
+
+        self.apy_calc = APYCalculator()
         
         logger.info(f"🚀 HedgingEngine V2 (Async) initialized. Symbol: {self.SYMBOL}")
 
@@ -80,6 +83,12 @@ class HedgingEngine:
             total_vault_tvl = sum(multi_chain_tvl.values())
             on_chain_assets = await asyncio.to_thread(self.chain.get_on_chain_assets)
             
+            # Fetch pending withdrawals to optimize capital deployment
+            total_pending_withdrawals = 0
+            for v in self.chain.vaults:
+                pending = await asyncio.to_thread(self.chain.get_pending_withdrawals, v["address"], v["chain"])
+                total_pending_withdrawals += pending
+            
             if dry_run:
                 market_price = 2500.0
                 agg_pos = {"size": 0.0, "upnl": 0.0}
@@ -98,9 +107,40 @@ class HedgingEngine:
             solvency_ratio = (total_protocol_assets / total_vault_tvl) if total_vault_tvl > 0 else 1.0
             logger.info(f"Solvency: {solvency_ratio*100:.2f}% | Target: 100%+")
 
-            # 3. Target Hedge Calculation (100% of TVL)
-            target_short = total_vault_tvl 
+            # 3. APY Calibration & Target Hedge Calculation
+            funding_rate = await asyncio.to_thread(self.exchange.get_funding_rate, self.SYMBOL)
+            staking_yield = 0.035 # Base staking yield (3.5%)
+            
+            # Calculate optimal leverage based on funding rates
+            # If funding is positive (we get paid to short), we can increase leverage
+            target_leverage = self.MIN_LEVERAGE
+            if funding_rate > 0:
+                # Aggressive scaling: increase leverage by 1x for every 10% annual funding
+                annual_funding = funding_rate * 3 * 365
+                target_leverage = min(self.MAX_LEVERAGE, self.MIN_LEVERAGE + (annual_funding * 10))
+            
+            expected_apy = self.apy_calc.calculate_expected_apy(
+                leverage=target_leverage,
+                funding_rate=funding_rate,
+                staking_yield=staking_yield,
+                spread_edge=0.001, # 10bps from ZIN Solver
+                turnover_rate=0.5,
+                cost_rate=0.005
+            )
+            
+            logger.info(f"APY Calibration: Target Leverage {target_leverage:.2x} | Expected APY: {expected_apy*100:.2f}%")
+
+            # Target hedge is 100% of active TVL (Delta Neutral)
+            # We subtract pending withdrawals because they are no longer earning yield for the protocol
+            # and will be moved to the liquid buffer shortly.
+            active_tvl = total_vault_tvl - total_pending_withdrawals
+            
+            # Note: Leverage in HL is used to minimize collateral requirement, 
+            # but the notional size always matches the active TVL for delta neutrality.
+            target_short = max(0, active_tvl)
             delta = target_short - short_pos
+            
+            logger.info(f"Active TVL: {active_tvl:.4f} ETH | Pending Withdrawals: {total_pending_withdrawals:.4f} ETH")
             logger.info(f"Hedge Delta: {delta:.4f} ETH")
 
             # 4. Rebalance

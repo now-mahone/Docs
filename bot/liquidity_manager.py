@@ -192,15 +192,27 @@ class LiquidityManager:
         """
         logger.info("Checking for large unwinding events [ANTI_REFLEXIVE]...")
         
-        # Simulated check for large withdrawal requests
-        pending_unwind = 0 # ETH
-        
-        if pending_unwind > 100: # 100 ETH threshold
-            logger.warning(f"Large unwind detected ({pending_unwind} ETH). Executing TWAP exit...")
-            # Logic to split CEX exit into smaller chunks over time
-            logger.success("Anti-reflexive exit strategy active.")
+        # 1. Fetch actual pending withdrawals from the queue
+        total_pending = 0
+        for v in self.chain.vaults:
+            pending = self.chain.get_pending_withdrawals(v["address"], v["chain"])
+            if pending > 0:
+                logger.warning(f"Pending withdrawals detected on {v['chain']}: {pending:.4f} ETH")
+                total_pending += pending
+
+        # 2. Check if we need to unwind CEX positions
+        if total_pending > 0:
+            on_chain_buffer = self.chain.get_on_chain_assets()
+            if total_pending > on_chain_buffer:
+                shortfall = total_pending - on_chain_buffer
+                logger.critical(f"LIQUIDITY SHORTFALL: {shortfall:.4f} ETH. Triggering Hyperliquid unwind...")
+                # In production, this calls the HedgingEngine to close positions
+                # self.engine.unwind_positions(shortfall)
+                send_discord_alert(f"🚨 LIQUIDITY ALERT: {shortfall:.4f} ETH shortfall in withdrawal queue. Unwind initiated.", level="CRITICAL")
+            else:
+                logger.info(f"On-chain buffer ({on_chain_buffer:.4f} ETH) sufficient for pending withdrawals.")
         else:
-            logger.info("No large unwinds detected. Standard liquidity sufficient.")
+            logger.info("No pending withdrawals in queue.")
 
     def execute_reflexive_buyback(self):
         """

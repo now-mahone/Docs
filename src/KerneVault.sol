@@ -99,6 +99,19 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     /// @notice Flash loan fee in basis points (e.g., 9 = 0.09%)
     uint256 public flashFeeBps = 9;
 
+    /// @notice The cooldown period for withdrawals (default 7 days)
+    uint256 public withdrawalCooldown = 7 days;
+
+    struct WithdrawalRequest {
+        uint256 assets;
+        uint256 shares;
+        uint256 unlockTimestamp;
+        bool claimed;
+    }
+
+    /// @notice Mapping of user address to their withdrawal requests
+    mapping(address => WithdrawalRequest[]) public withdrawalRequests;
+
     // --- Events ---
     event OffChainAssetsUpdated(uint256 oldAmount, uint256 newAmount, uint256 timestamp);
     event FundsSwept(uint256 amount, address destination);
@@ -110,6 +123,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     event VerificationNodeUpdated(address indexed oldNode, address indexed newNode);
     event FounderWealthCaptured(uint256 amount, address indexed recipient);
     event InsuranceFundContribution(uint256 amount);
+    event WithdrawalRequested(address indexed user, uint256 requestId, uint256 assets, uint256 shares, uint256 unlockTimestamp);
+    event WithdrawalClaimed(address indexed user, uint256 requestId, uint256 assets);
+    event WithdrawalCooldownUpdated(uint256 oldCooldown, uint256 newCooldown);
 
     /**
      * @param asset_ The underlying asset (e.g., WETH or USDC)
@@ -184,6 +200,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         _symbol = symbol_;
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin_);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(STRATEGIST_ROLE, strategist_);
         _grantRole(PAUSER_ROLE, admin_);
         _grantRole(PAUSER_ROLE, strategist_);
@@ -499,6 +516,65 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         flashFeeBps = bps;
     }
 
+    function setWithdrawalCooldown(uint256 _cooldown) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_cooldown <= 30 days, "Cooldown too long");
+        uint256 old = withdrawalCooldown;
+        withdrawalCooldown = _cooldown;
+        emit WithdrawalCooldownUpdated(old, _cooldown);
+    }
+
+    // --- Withdrawal Queue Implementation ---
+
+    /**
+     * @notice Requests a withdrawal by escrowing shares.
+     * @param assets The amount of assets to withdraw.
+     */
+    function requestWithdrawal(uint256 assets) external nonReentrant whenNotPaused returns (uint256) {
+        uint256 shares = previewWithdraw(assets);
+        require(shares > 0, "Zero shares");
+        
+        _transfer(msg.sender, address(this), shares);
+        
+        uint256 requestId = withdrawalRequests[msg.sender].length;
+        uint256 unlockTimestamp = block.timestamp + withdrawalCooldown;
+        
+        withdrawalRequests[msg.sender].push(WithdrawalRequest({
+            assets: assets,
+            shares: shares,
+            unlockTimestamp: unlockTimestamp,
+            claimed: false
+        }));
+        
+        emit WithdrawalRequested(msg.sender, requestId, assets, shares, unlockTimestamp);
+        return requestId;
+    }
+
+    /**
+     * @notice Claims a matured withdrawal request.
+     * @param requestId The index of the request in the user's array.
+     */
+    function claimWithdrawal(uint256 requestId) external nonReentrant whenNotPaused {
+        WithdrawalRequest storage request = withdrawalRequests[msg.sender][requestId];
+        require(!request.claimed, "Already claimed");
+        require(block.timestamp >= request.unlockTimestamp, "Cooldown not met");
+        require(IERC20(asset()).balanceOf(address(this)) >= request.assets, "Insufficient liquid buffer");
+
+        request.claimed = true;
+        
+        _burn(address(this), request.shares);
+        SafeERC20.safeTransfer(IERC20(asset()), msg.sender, request.assets);
+        
+        _checkSolvency(true);
+        emit WithdrawalClaimed(msg.sender, requestId, request.assets);
+    }
+
+    /**
+     * @notice Returns the number of withdrawal requests for a user.
+     */
+    function getWithdrawalRequestCount(address user) external view returns (uint256) {
+        return withdrawalRequests[user].length;
+    }
+
     // --- IERC3156FlashLender Implementation ---
 
     /**
@@ -649,31 +725,28 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         return super.mint(shares, receiver);
     }
 
+    /**
+     * @notice Direct withdrawals are disabled in favor of the withdrawal queue.
+     * @dev Use requestWithdrawal() and claimWithdrawal() instead.
+     */
     function withdraw(
-        uint256 assets,
-        address receiver,
-        address owner
+        uint256,
+        address,
+        address
     ) public virtual override whenNotPaused returns (uint256) {
-        require(IERC20(asset()).balanceOf(address(this)) >= assets, "Insufficient liquid buffer");
-        if (maxWithdrawLimit > 0) {
-            require(assets <= maxWithdrawLimit, "Withdraw limit exceeded");
-        }
-        _checkSolvency(true);
-        return super.withdraw(assets, receiver, owner);
+        revert("Use withdrawal queue");
     }
 
+    /**
+     * @notice Direct redemptions are disabled in favor of the withdrawal queue.
+     * @dev Use requestWithdrawal() and claimWithdrawal() instead.
+     */
     function redeem(
-        uint256 shares,
-        address receiver,
-        address owner
+        uint256,
+        address,
+        address
     ) public virtual override whenNotPaused returns (uint256) {
-        uint256 assets = previewRedeem(shares);
-        require(IERC20(asset()).balanceOf(address(this)) >= assets, "Insufficient liquid buffer");
-        if (maxWithdrawLimit > 0) {
-            require(assets <= maxWithdrawLimit, "Withdraw limit exceeded");
-        }
-        _checkSolvency(true);
-        return super.redeem(shares, receiver, owner);
+        revert("Use withdrawal queue");
     }
 
     function getProjectedAPY() external view returns (uint256) {

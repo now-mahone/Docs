@@ -367,6 +367,43 @@ class ChainManager:
             
         return tvl_data
 
+    def get_pending_withdrawals(self, vault_address: str = None, chain_name: str = "Base") -> float:
+        """
+        Fetches all WithdrawalRequested events and calculates the total pending assets.
+        """
+        try:
+            addr = vault_address or self.vault_address
+            w3 = self.w3
+            if chain_name == "Arbitrum": w3 = self.arb_w3
+            elif chain_name == "Optimism": w3 = self.opt_w3
+            
+            if not w3: return 0.0
+            
+            vault = w3.eth.contract(address=Web3.to_checksum_address(addr), abi=self.abi)
+            
+            # Fetch events from the last 30 days (approx blocks)
+            current_block = w3.eth.block_number
+            from_block = max(0, current_block - (30 * 24 * 60 * 5)) # 5 blocks per min approx
+            
+            events = vault.events.WithdrawalRequested.get_logs(from_block=from_block)
+            
+            total_pending_wei = 0
+            for event in events:
+                # Check if already claimed (this requires a contract call per request or a more complex event filter)
+                # For now, we fetch the request status from the contract
+                request_id = event.args.requestId
+                user = event.args.user
+                request_data = vault.functions.withdrawalRequests(user, request_id).call()
+                
+                # request_data: [assets, shares, unlockTimestamp, claimed]
+                if not request_data[3]: # if not claimed
+                    total_pending_wei += request_data[0]
+            
+            return float(w3.from_wei(total_pending_wei, 'ether'))
+        except Exception as e:
+            logger.error(f"Error fetching pending withdrawals on {chain_name}: {e}")
+            return 0.0
+
 
     def draw_from_insurance_fund(self, amount_eth: float) -> str:
         """
@@ -693,6 +730,43 @@ class ChainManager:
             return tx_hash.hex()
         except Exception as e:
             logger.error(f"Error setting routing hop: {e}")
+            return ""
+
+    def transfer_erc20(self, token_address: str, to_address: str, amount: float, chain_name: str = "Arbitrum") -> str:
+        """
+        Generic ERC20 transfer for autonomous rebalancing.
+        """
+        try:
+            w3 = self.arb_w3 if chain_name == "Arbitrum" else self.w3
+            if not w3:
+                logger.error(f"RPC for {chain_name} not available.")
+                return ""
+
+            erc20_abi = [
+                {"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
+                {"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}
+            ]
+            token = w3.eth.contract(address=Web3.to_checksum_address(token_address), abi=erc20_abi)
+            decimals = token.functions.decimals().call()
+            amount_raw = int(amount * (10 ** decimals))
+
+            nonce = w3.eth.get_transaction_count(self.account.address)
+            tx = token.functions.transfer(Web3.to_checksum_address(to_address), amount_raw).build_transaction({
+                'from': self.account.address,
+                'nonce': nonce,
+                'gasPrice': w3.eth.gas_price
+            })
+
+            signed_tx = w3.eth.account.sign_transaction(tx, self.private_key)
+            tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+            
+            if receipt.status == 1:
+                logger.success(f"ERC20 Transfer successful on {chain_name}: {tx_hash.hex()}")
+                return tx_hash.hex()
+            return ""
+        except Exception as e:
+            logger.error(f"ERC20 Transfer failed: {e}")
             return ""
 
     def bridge_kusd_v2(self, amount_eth: float, dst_eid: int) -> str:
