@@ -33,6 +33,7 @@ class SentinelMonitor:
         self.REBALANCE_THRESHOLD = 0.05 # 5% deviation triggers rebalance
         self.CRITICAL_CR = 1.30 # 130% Collateral Ratio
         self.DEPEG_THRESHOLD = 0.02 # 2% LST/ETH deviation
+        self.NEGATIVE_FUNDING_THRESHOLD = -0.0001 # -1bps per hour (-8.7% APR)
 
     async def monitor_loop(self):
         """
@@ -85,6 +86,15 @@ class SentinelMonitor:
                     await self.flash_rebalance(name)
                 else:
                     log.debug(f"Health OK: CR {cr:.2f}")
+
+                # Basis Trade Profit Guard: Check Funding Rate
+                funding_rate = ex.get_funding_rate('ETH/USDT:USDT')
+                if funding_rate < self.NEGATIVE_FUNDING_THRESHOLD:
+                    log.warning(f"NEGATIVE FUNDING ALERT: {funding_rate:.6f} hourly. Basis trade yield is negative.")
+                    self.alert_manager.send_alert(
+                        f"⚠️ Negative Funding on {name}: {funding_rate:.6f} hourly. "
+                        f"Annualized: {funding_rate * 24 * 365:.2%} APR"
+                    )
                     
             except Exception as e:
                 log.error(f"Failed to fetch health data: {e}")
