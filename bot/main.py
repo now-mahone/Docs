@@ -8,9 +8,10 @@ from engine import HedgingEngine
 from event_listener import VaultEventListener
 from alerts import send_discord_alert
 from sentinel.risk_engine import RiskEngine
+from api_connector import APIRefreshLoop
 
 # Created: 2025-12-28
-# Updated: 2026-01-23 (Event-Driven Async Architecture V2)
+# Updated: 2026-02-06 (Integrated APIRefreshLoop for live data aggregation)
 
 async def periodic_tasks(engine: HedgingEngine, chain: ChainManager, risk_engine: RiskEngine, dry_run: bool):
     """
@@ -72,6 +73,11 @@ async def main():
             queue=event_queue
         )
         
+        # Start API refresh loop (background thread — aggregates free API data + serves stats on :8787)
+        api_loop = APIRefreshLoop(refresh_interval=30.0, serve_stats=True, stats_port=8787)
+        api_loop.start()
+        logger.info("📊 API connector started — stats available at http://localhost:8787/stats")
+
         if not args.dry_run:
             send_discord_alert("🚀 Kerne Bot V2 (Async) Started", level="INFO")
 

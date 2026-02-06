@@ -9,6 +9,7 @@ from chain_manager import ChainManager
 from credits_manager import CreditsManager
 from apy_calculator import APYCalculator
 from sovereign_vault import SovereignVault
+from api_connector import LSTYieldFeed, FundingRateAggregator
 
 class HedgingEngine:
     """
@@ -111,7 +112,10 @@ class HedgingEngine:
 
             # 3. APY Calibration & Target Hedge Calculation
             funding_rate = await asyncio.to_thread(self.exchange.get_funding_rate, self.SYMBOL)
-            staking_yield = 0.035 # Base staking yield (3.5%)
+            
+            # Live staking yield from Lido/DeFiLlama APIs (replaces hardcoded 3.5%)
+            lst_yields = LSTYieldFeed.get_staking_yields()
+            staking_yield = lst_yields.get("wstETH", 0.035)
             
             # Calculate optimal leverage based on funding rates
             # If funding is positive (we get paid to short), we can increase leverage
