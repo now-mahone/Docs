@@ -8,6 +8,7 @@ from exchange_manager import ExchangeManager
 from chain_manager import ChainManager
 from credits_manager import CreditsManager
 from apy_calculator import APYCalculator
+from sovereign_vault import SovereignVault
 
 class HedgingEngine:
     """
@@ -42,6 +43,7 @@ class HedgingEngine:
         self._ensure_buyback_log()
 
         self.apy_calc = APYCalculator()
+        self.sovereign = SovereignVault(self.chain, self.exchange)
         
         logger.info(f"🚀 HedgingEngine V2 (Async) initialized. Symbol: {self.SYMBOL}")
 
@@ -128,7 +130,11 @@ class HedgingEngine:
                 cost_rate=0.005
             )
             
-            logger.info(f"APY Calibration: Target Leverage {target_leverage:.2x} | Expected APY: {expected_apy*100:.2f}%")
+            logger.info(f"APY Calibration: Target Leverage {target_leverage:.2f}x | Expected APY: {expected_apy*100:.2f}%")
+            
+            # Explicitly log the Basis Trade (Delta-Neutral) yield component
+            basis_yield = funding_rate * 3 * 365 * target_leverage
+            logger.info(f"📈 Delta-Neutral Basis Yield: {basis_yield*100:.2f}% APY (Funding: {funding_rate*100:.4f}%)")
 
             # Target hedge is 100% of active TVL (Delta Neutral)
             # We subtract pending withdrawals because they are no longer earning yield for the protocol
@@ -153,6 +159,9 @@ class HedgingEngine:
             # 5. Reporting
             if not dry_run:
                 await asyncio.to_thread(self.chain.update_offchain_value, offchain_value_eth)
+                
+                # Sovereign Vault L1 Sync
+                await asyncio.to_thread(self.sovereign.sync_l1_assets_to_vault)
                 
                 # Buyback Flywheel integration (Non-blocking)
                 asyncio.create_task(self.run_buyback_cycle(dry_run=dry_run))

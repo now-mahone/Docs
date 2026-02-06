@@ -106,6 +106,12 @@ contract KerneZINTest is Test {
         zinPool.grantRole(zinPool.SOLVER_ROLE(), solver);
         zinPool.grantRole(zinPool.SOLVER_ROLE(), address(zinRouter));
         zinRouter.grantRole(zinRouter.SOLVER_ROLE(), solver);
+        zinExecutor.grantRole(zinExecutor.SOLVER_ROLE(), solver);
+        zinExecutor.grantRole(zinExecutor.SOLVER_ROLE(), address(this));
+        
+        vault.grantRole(vault.STRATEGIST_ROLE(), address(zinRouter));
+        vault.grantRole(vault.STRATEGIST_ROLE(), address(zinPool));
+        vault.grantRole(vault.STRATEGIST_ROLE(), address(zinExecutor));
         
         // Support tokens
         zinPool.supportToken(address(weth));
@@ -427,6 +433,7 @@ contract KerneZINTest is Test {
     
     function test_RevertWhen_ZINExecutor_NonSolverCannotFulfill() public {
         bytes memory safetyParams = abi.encode(block.timestamp, 1e18, 10);
+        address router = zinExecutor.ONE_INCH_ROUTER();
         
         vm.prank(user);
         vm.expectRevert();
@@ -436,7 +443,7 @@ contract KerneZINTest is Test {
             address(usdc),
             100e18,
             user,
-            zinExecutor.ONE_INCH_ROUTER(),
+            router,
             "",
             safetyParams
         );
@@ -525,6 +532,7 @@ contract KerneZINTest is Test {
         vm.warp(100);
         bytes memory safetyParams = abi.encode(block.timestamp - 10, 1e18, 10);
         bytes memory aggregatorData = "";
+        address router = zinExecutor.ONE_INCH_ROUTER();
 
         vm.prank(solver);
         vm.expectRevert("Sentinel: Intent expired (Latency)");
@@ -534,7 +542,7 @@ contract KerneZINTest is Test {
             address(usdc),
             10e18,
             user,
-            zinExecutor.ONE_INCH_ROUTER(),
+            router,
             aggregatorData,
             safetyParams
         );
@@ -632,6 +640,9 @@ contract KerneZINTest is Test {
             address(zinExecutor)
         );
         bytes memory safetyParams = abi.encode(block.timestamp, 1e18, 10);
+
+        // Fund settler with tokenOut to simulate successful swap
+        weth.mint(fusionSettler, aggregatorOut);
 
         vm.startPrank(user);
         weth.approve(fusionSettler, amountOut);

@@ -17,3 +17,11 @@
 ## 3. THE "MEMORY" PROTOCOL
 - **Update `project_state.md`:** At the end of every successful task, update `project_state.md` with the format: `[YYYY-MM-DD HH:MM] - Action Taken - Status`.
 - **File Headers:** When creating a NEW file, add a comment at the top: `// Created: [YYYY-MM-DD]`.
+
+## 4. AUTONOMY PROTOCOL
+- **Action:** Maximize autonomy by identifying, designing, and executing entire autonomous systems and processes that eliminate the need for manual user intervention.
+- **Scope:** This includes, but is not limited to:
+    - **Autonomous Outreach:** Identifying target institutions, selecting key personnel (3-6 per entity), and executing tailored contact strategies (e.g., forum submissions, social engineering, direct outreach) designed to maximize conversion without triggering internal collision alerts.
+    - **Autonomous Capital Management:** Designing systems to automatically allocate capital across chains and tokens based on strategic utility, risk/reward profiles, and protocol needs.
+    - **Operational Bridging:** Handling all technical hurdles (token bridging, gas management, transaction execution) independently.
+- **Goal:** Operate as a fully independent agent within the workspace, only requesting confirmation for high-impact or destructive operations as defined by system safety rules.

@@ -251,6 +251,30 @@ class ChainManager:
             logger.error(f"Error registering vault: {e}")
             raise
 
+    def update_l1_assets(self, amount_wei: int) -> str:
+        """
+        Updates the L1 asset value in the KerneVault contract for Sovereign Vault hedging.
+        """
+        try:
+            nonce = self.w3.eth.get_transaction_count(self.account.address)
+            
+            tx = self.vault.functions.updateL1Assets(amount_wei).build_transaction({
+                'from': self.account.address,
+                'nonce': nonce,
+                'gasPrice': self.w3.eth.gas_price
+            })
+            
+            signed_tx = self.w3.eth.account.sign_transaction(tx, self.private_key)
+            tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+            
+            if receipt.status == 1:
+                logger.success(f"L1 assets updated: {tx_hash.hex()}")
+            return tx_hash.hex()
+        except Exception as e:
+            logger.error(f"Error updating L1 assets: {e}")
+            raise
+
     def update_offchain_value(self, amount_eth: float) -> str:
         """
         Updates the off-chain asset value in the KerneVault contract.
@@ -385,7 +409,7 @@ class ChainManager:
             current_block = w3.eth.block_number
             from_block = max(0, current_block - (30 * 24 * 60 * 5)) # 5 blocks per min approx
             
-            events = vault.events.WithdrawalRequested.get_logs(from_block=from_block)
+            events = vault.events.WithdrawalRequested.get_logs(fromBlock=from_block)
             
             total_pending_wei = 0
             for event in events:

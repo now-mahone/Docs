@@ -17,9 +17,11 @@ contract MockToken is ERC20 {
 }
 
 contract MockAggregator {
-    function settle(address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOut, address executor) external {
-        IERC20(tokenIn).transferFrom(executor, address(this), amountIn);
-        IERC20(tokenOut).transfer(executor, amountOut);
+    function settle(address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOut, address recipient, address from) external {
+        // Pull tokenIn from the 'from' address (the user who is swapping)
+        IERC20(tokenIn).transferFrom(from, address(this), amountIn);
+        // Send tokenOut to the recipient (executor, to repay flash loan)
+        IERC20(tokenOut).transfer(recipient, amountOut);
     }
 }
 
@@ -39,26 +41,31 @@ contract KerneIntentExecutorTest is Test {
     address public constant ONE_INCH_ROUTER = 0x111111125421cA6dc452d289314280a0f8842A65;
 
     function setUp() public {
-        kUSD = new KerneToken(admin);
+        kUSD = new KerneToken(address(this));
+        kUSD.grantRole(kUSD.MINTER_ROLE(), address(this));
         usdc = new MockToken("USDC", "USDC");
         weth = new MockToken("WETH", "WETH");
 
-        vault = new KerneVault(IERC20(address(usdc)), "Kerne Vault USDC", "kUSDC", admin, admin, exchange);
-        psm = new KUSDPSM(address(kUSD), admin);
+        // Deploy vault with this contract as admin
+        vault = new KerneVault(IERC20(address(usdc)), "Kerne Vault USDC", "kUSDC", address(this), address(this), exchange);
+        psm = new KUSDPSM(address(kUSD), address(this));
 
         executor = new KerneIntentExecutor(admin, solver);
 
         // Grant roles for zero-fee flash loans
-        vm.startPrank(admin);
         vault.grantRole(vault.STRATEGIST_ROLE(), address(executor));
         psm.grantRole(psm.ARBITRAGEUR_ROLE(), address(executor));
         psm.addStable(address(usdc), 0, 1000000 ether);
+        psm.addStable(address(kUSD), 0, 1000000 ether);
 
         // Fund liquidity sources
         usdc.mint(address(vault), 1000000 ether);
         usdc.mint(address(psm), 1000000 ether);
         kUSD.mint(address(psm), 1000000 ether);
-        vm.stopPrank();
+        
+        // Label for clarity
+        vm.label(admin, "Admin");
+        vm.label(solver, "Solver");
 
         // Etch Mock Aggregator at 1inch address
         MockAggregator mockAggregator = new MockAggregator();
@@ -72,26 +79,23 @@ contract KerneIntentExecutorTest is Test {
 
     function testFulfillIntentWithVault() public {
         uint256 amount = 1000 ether;
-        uint256 amountIn = 1010 ether; // User gives 1010 USDC for 1000 USDC flash loan (to cover hypothetical fees or just profit)
-        
-        // In this test, we flash loan USDC from Vault to give to user.
-        // Aggregator will take USDC from user (simulated) and give back to executor.
         
         // Mock user having tokenIn (WETH)
         weth.mint(user, 10 ether);
         
-        // Aggregator data: call settle(weth, usdc, 1 ether, 1000 ether, executor)
-        // Wait, the executor sends tokenOut to user.
-        // Then executor needs to get tokenOut back to repay flash loan.
-        // So aggregator should swap tokenIn (from user) to tokenOut.
+        // Fund the mock aggregator with USDC to simulate swap output
+        usdc.mint(ONE_INCH_ROUTER, 1000 ether);
         
+        // Aggregator data: call settle(weth, usdc, 1 ether, 1000 ether, executor, user)
+        // The aggregator pulls WETH from user, sends USDC to executor
         bytes memory aggregatorData = abi.encodeWithSignature(
-            "settle(address,address,uint256,uint256,address)",
+            "settle(address,address,uint256,uint256,address,address)",
             address(weth),
             address(usdc),
             1 ether,
             1000 ether,
-            address(executor)
+            address(executor),
+            user
         );
 
         KerneIntentExecutor.IntentSafetyParams memory safety = KerneIntentExecutor.IntentSafetyParams({
@@ -100,13 +104,7 @@ contract KerneIntentExecutorTest is Test {
         });
         bytes memory safetyParams = abi.encode(safety);
 
-        // Solver fulfills intent
-        vm.startPrank(solver);
-        
-        // We need to make sure the mock aggregator can pull WETH from user
-        // In a real intent, the user would have signed a permit or approved the aggregator.
-        // Here we simulate user approving executor or aggregator.
-        vm.stopPrank();
+        // User approves the aggregator to pull their WETH
         vm.prank(user);
         weth.approve(ONE_INCH_ROUTER, 1 ether);
         
@@ -130,13 +128,18 @@ contract KerneIntentExecutorTest is Test {
     function testFulfillIntentWithPSM() public {
         uint256 amount = 1000 ether;
         
+        // Fund the mock aggregator with kUSD to simulate swap output
+        kUSD.mint(ONE_INCH_ROUTER, 1000 ether);
+        
+        // Aggregator data: call settle(usdc, kUSD, 1000 ether, 1000 ether, executor, user)
         bytes memory aggregatorData = abi.encodeWithSignature(
-            "settle(address,address,uint256,uint256,address)",
+            "settle(address,address,uint256,uint256,address,address)",
             address(usdc),
             address(kUSD),
             1000 ether,
             1000 ether,
-            address(executor)
+            address(executor),
+            user
         );
 
         KerneIntentExecutor.IntentSafetyParams memory safety = KerneIntentExecutor.IntentSafetyParams({
@@ -146,6 +149,7 @@ contract KerneIntentExecutorTest is Test {
         bytes memory safetyParams = abi.encode(safety);
 
         usdc.mint(user, 1000 ether);
+        // User approves the aggregator to pull their USDC
         vm.prank(user);
         usdc.approve(ONE_INCH_ROUTER, 1000 ether);
 

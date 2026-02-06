@@ -26,6 +26,12 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     /// @notice Assets currently held off-chain (e.g., on CEX for hedging)
     uint256 public offChainAssets;
 
+    /// @notice Assets currently held on Hyperliquid L1 (Sovereign Vault)
+    uint256 public l1Assets;
+
+    /// @notice The address of the Hyperliquid L1 bridge
+    address public l1DepositAddress;
+
     /// @notice The address where funds are swept for CEX deposit
     address public immutable exchangeDepositAddress;
 
@@ -126,6 +132,8 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     event WithdrawalRequested(address indexed user, uint256 requestId, uint256 assets, uint256 shares, uint256 unlockTimestamp);
     event WithdrawalClaimed(address indexed user, uint256 requestId, uint256 assets);
     event WithdrawalCooldownUpdated(uint256 oldCooldown, uint256 newCooldown);
+    event L1AssetsUpdated(uint256 oldAmount, uint256 newAmount, uint256 timestamp);
+    event L1DepositRequested(uint256 amount, address bridge);
 
     /**
      * @param asset_ The underlying asset (e.g., WETH or USDC)
@@ -250,8 +258,8 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
             return super.totalAssets() + verifiedAssets;
         }
 
-        // Fallback to reported off-chain assets and hedging reserve
-        return super.totalAssets() + offChainAssets + hedgingReserve;
+        // Fallback to reported off-chain assets, L1 assets, and hedging reserve
+        return super.totalAssets() + offChainAssets + l1Assets + hedgingReserve;
     }
 
     /**
@@ -296,8 +304,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
             } else if (block.timestamp - insolventSince > GRACE_PERIOD) {
                 if (!paused()) _pause();
             }
-            // Revert on strict operations (withdrawals) or if already paused
-            if (strict || paused()) revert("Vault: Insolvent");
+            // Revert on strict operations (withdrawals)
+            // If we just paused, we don't want to revert and roll back the pause
+            if (strict) revert("Vault: Insolvent");
         } else {
             insolventSince = 0;
         }
@@ -331,6 +340,18 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         hedgingReserve = amount;
         lastReportedTimestamp = block.timestamp;
         emit HedgingReserveUpdated(oldAmount, amount, block.timestamp);
+    }
+
+    /**
+     * @notice Updates the amount of assets held on Hyperliquid L1.
+     */
+    function updateL1Assets(
+        uint256 amount
+    ) external onlyRole(STRATEGIST_ROLE) {
+        uint256 oldAmount = l1Assets;
+        l1Assets = amount;
+        lastReportedTimestamp = block.timestamp;
+        emit L1AssetsUpdated(oldAmount, amount, block.timestamp);
     }
 
     /**
@@ -523,6 +544,20 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         emit WithdrawalCooldownUpdated(old, _cooldown);
     }
 
+    /**
+     * @notice Sweeps funds to the Hyperliquid L1 bridge for Sovereign Vault hedging.
+     */
+    function requestL1Deposit(uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant whenNotPaused {
+        require(amount > 0, "Amount must be greater than zero");
+        require(l1DepositAddress != address(0), "L1 bridge not set");
+        SafeERC20.safeTransfer(IERC20(asset()), l1DepositAddress, amount);
+        emit L1DepositRequested(amount, l1DepositAddress);
+    }
+
+    function setL1DepositAddress(address _addr) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        l1DepositAddress = _addr;
+    }
+
     // --- Withdrawal Queue Implementation ---
 
     /**
@@ -551,9 +586,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
 
     /**
      * @notice Claims a matured withdrawal request.
+     * @dev Bypasses whenNotPaused to ensure users can always exit matured positions.
      * @param requestId The index of the request in the user's array.
      */
-    function claimWithdrawal(uint256 requestId) external nonReentrant whenNotPaused {
+    function claimWithdrawal(uint256 requestId) external nonReentrant {
         WithdrawalRequest storage request = withdrawalRequests[msg.sender][requestId];
         require(!request.claimed, "Already claimed");
         require(block.timestamp >= request.unlockTimestamp, "Cooldown not met");
@@ -782,4 +818,34 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     }
 
     mapping(address => PrimeInfo) public primeAccounts;
+
+    /**
+     * @notice Emergency exit for users to bypass the withdrawal cooldown when the vault is paused.
+     * @dev Only available if the vault has been paused for more than 3 days.
+     * @dev Charges a 5% "Panic Fee" that is sent to the insurance fund.
+     * @param assets The amount of assets to withdraw.
+     */
+    function emergencyExit(uint256 assets) external nonReentrant {
+        require(paused(), "Vault not paused");
+        require(block.timestamp >= insolventSince + 3 days, "Grace period not met");
+        
+        uint256 shares = previewWithdraw(assets);
+        require(shares > 0, "Zero shares");
+        require(balanceOf(msg.sender) >= shares, "Insufficient balance");
+
+        uint256 fee = (assets * 500) / 10000; // 5% fee
+        uint256 netAssets = assets - fee;
+
+        require(IERC20(asset()).balanceOf(address(this)) >= assets, "Insufficient liquid buffer");
+
+        _burn(msg.sender, shares);
+        
+        if (fee > 0 && insuranceFund != address(0)) {
+            SafeERC20.safeTransfer(IERC20(asset()), insuranceFund, fee);
+        }
+
+        SafeERC20.safeTransfer(IERC20(asset()), msg.sender, netAssets);
+        
+        emit WithdrawalClaimed(msg.sender, type(uint256).max, netAssets);
+    }
 }

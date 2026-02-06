@@ -7,8 +7,10 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 import { Pausable } from "@openzeppelin/contracts/utils/Pausable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC3156FlashBorrower } from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
+import { IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156FlashLender.sol";
 
-interface IKerneVault {
+interface IKerneVault is IERC3156FlashLender {
     function asset() external view returns (address);
     function totalAssets() external view returns (uint256);
     function totalSupply() external view returns (uint256);
@@ -31,12 +33,19 @@ interface IKerneYieldOracle {
  * @notice Manages the minting and burning of kUSD against KerneVault shares (kLP).
  * @dev Includes leveraged yield loop (folding) with on-chain guardrails.
  */
-contract kUSDMinter is AccessControl, ReentrancyGuard, Pausable {
+contract kUSDMinter is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashBorrower {
     using SafeERC20 for IERC20;
 
     struct Position {
         uint256 collateralAmount; // kLP shares
         uint256 debtAmount; // kUSD debt
+    }
+
+    struct FlashData {
+        address user;
+        uint256 userPrincipal;
+        uint256 flashAmount;
+        uint256 minKLPOut;
     }
 
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
@@ -67,6 +76,7 @@ contract kUSDMinter is AccessControl, ReentrancyGuard, Pausable {
     event Liquidated(address indexed user, address indexed liquidator, uint256 collateralLiquidated, uint256 debtRepaid);
     event Folded(address indexed user, uint256 debtAdded, uint256 collateralAdded, uint256 healthFactor);
     event LeverageExecuted(address indexed user, uint256 assetDeposited, uint256 collateralAdded, uint256 kusdMinted);
+    event FlashLeverageExecuted(address indexed user, uint256 principal, uint256 flashAmount, uint256 collateralAdded);
     event DexAggregatorUpdated(address indexed previousAggregator, address indexed newAggregator);
     event OracleUpdated(address indexed previousOracle, address indexed newOracle);
     event RiskParamsUpdated(uint256 mintRatio, uint256 liquidationThreshold, uint256 liquidationBonus, uint256 minHealthFactor);
@@ -195,6 +205,78 @@ contract kUSDMinter is AccessControl, ReentrancyGuard, Pausable {
         kusd.mint(msg.sender, kusdAmount);
 
         emit LeverageExecuted(msg.sender, assetAmount, shares, kusdAmount);
+    }
+
+    /**
+     * @notice Executes a one-click leveraged deposit using a flash loan.
+     * @param userPrincipal The amount of underlying asset provided by the user.
+     * @param flashAmount The amount to flash loan for leverage.
+     * @param minKLPOut Minimum kLP shares to receive (slippage).
+     */
+    function flashLeverage(uint256 userPrincipal, uint256 flashAmount, uint256 minKLPOut) external nonReentrant whenNotPaused {
+        require(userPrincipal > 0, "Invalid principal");
+        require(flashAmount > 0, "Invalid flash amount");
+        require(flashAmount <= userPrincipal * 4, "Max 5x leverage");
+
+        address asset = vault.asset();
+        IERC20(asset).safeTransferFrom(msg.sender, address(this), userPrincipal);
+
+        bytes memory data = abi.encode(FlashData({
+            user: msg.sender,
+            userPrincipal: userPrincipal,
+            flashAmount: flashAmount,
+            minKLPOut: minKLPOut
+        }));
+
+        vault.flashLoan(this, asset, flashAmount, data);
+    }
+
+    /**
+     * @notice IERC3156 Callback for flash leverage.
+     */
+    function onFlashLoan(
+        address initiator,
+        address token,
+        uint256 amount,
+        uint256 fee,
+        bytes calldata data
+    ) external override returns (bytes32) {
+        require(msg.sender == address(vault), "Only vault");
+        require(initiator == address(this), "Unauthorized initiator");
+
+        FlashData memory fData = abi.decode(data, (FlashData));
+        uint256 totalAsset = fData.userPrincipal + amount;
+
+        // 1. Deposit total into vault
+        IERC20(token).safeIncreaseAllowance(address(vault), totalAsset);
+        uint256 shares = vault.deposit(totalAsset, address(this));
+        require(shares >= fData.minKLPOut, "Slippage exceeded");
+
+        // 2. Update position
+        Position storage position = positions[fData.user];
+        position.collateralAmount += shares;
+
+        // 3. Calculate required kUSD to repay flash loan + fee
+        uint256 amountToRepay = amount + fee;
+        
+        // We need to mint enough kUSD to swap for amountToRepay
+        position.debtAmount += amountToRepay; 
+
+        _enforceMintRatio(position);
+        _enforceMinHealth(position);
+
+        kusd.mint(address(this), amountToRepay);
+        IERC20(address(kusd)).safeIncreaseAllowance(dexAggregator, amountToRepay);
+
+        // 4. Swap kUSD for asset to repay flash loan
+        uint256 assetReceived = _swap(address(kusd), token, amountToRepay);
+        require(assetReceived >= amountToRepay, "Swap insufficient for repayment");
+
+        // 5. Approve repayment
+        IERC20(token).safeIncreaseAllowance(msg.sender, amountToRepay);
+
+        emit FlashLeverageExecuted(fData.user, fData.userPrincipal, amount, shares);
+        return keccak256("ERC3156FlashBorrower.onFlashLoan");
     }
 
     function fold(uint256 amountToBorrow, uint256 minKLPOut) external nonReentrant whenNotPaused {

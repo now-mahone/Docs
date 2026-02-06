@@ -29,7 +29,7 @@ contract KerneVaultTest is Test {
         vm.prank(admin);
         vault.setFounder(admin);
 
-        asset.mint(user, 100 ether);
+        asset.mint(user, 1_000_000 ether);
 
         vm.label(admin, "Admin");
         vm.label(bot, "Bot");
@@ -44,7 +44,7 @@ contract KerneVaultTest is Test {
         vault.deposit(10 ether, user);
         vm.stopPrank();
 
-        // Account for 1000 dead shares minted to admin on first deposit
+        // Account for 1000 dead shares (10^3) due to _decimalsOffset
         uint256 userShares = vault.balanceOf(user);
         assertGt(userShares, 0);
         // totalAssets should be 10 ether
@@ -66,10 +66,16 @@ contract KerneVaultTest is Test {
         // totalAssets = on-chain (5 ether) + off-chain (5.5 ether) = 10.5 ether
         assertEq(vault.totalAssets(), 10.5 ether);
 
-        // 4. Withdraw (Should fail due to buffer)
+        // 4. Request Withdrawal (Should fail due to buffer when claiming)
         vm.startPrank(user);
+        // We can only request what we have. userShares corresponds to ~10 ether.
+        // Since it's the only user, they own almost all assets.
+        uint256 assetsToWithdraw = vault.convertToAssets(userShares);
+        uint256 requestId = vault.requestWithdrawal(assetsToWithdraw);
+        
+        vm.warp(block.timestamp + 7 days);
         vm.expectRevert("Insufficient liquid buffer");
-        vault.withdraw(10.5 ether, user, user);
+        vault.claimWithdrawal(requestId);
         vm.stopPrank();
 
         // 5. Return funds AND update off-chain assets to 0
@@ -77,34 +83,38 @@ contract KerneVaultTest is Test {
         vm.prank(bot);
         vault.updateOffChainAssets(0);
 
-        // 6. Withdraw all
+        // 6. Claim Withdrawal
         vm.startPrank(user);
-        vault.redeem(userShares, user, user);
+        vault.claimWithdrawal(requestId);
         vm.stopPrank();
 
-        // User should get their proportional share of 10.5 ether
-        // userShares / (userShares + 1000) * 10.5 ether
-        // Since userShares is huge, it's almost exactly 10.5 ether
-        assertApproxEqAbs(asset.balanceOf(user), 90 ether + 10.5 ether, 1e10);
+        // User should get their assets back
+        assertApproxEqAbs(asset.balanceOf(user), 1_000_000 ether - 10 ether + assetsToWithdraw, 1e10);
     }
 
     function testInsufficientBuffer() public {
         // 1. Deposit
         vm.startPrank(user);
-        asset.approve(address(vault), 10 ether);
-        vault.deposit(10 ether, user);
+        asset.approve(address(vault), 100 ether);
+        vault.deposit(100 ether, user);
         vm.stopPrank();
 
         // 2. Sweep
         vm.startPrank(admin);
         vault.setTreasury(exchange);
-        vault.sweepToExchange(9 ether);
+        vault.sweepToExchange(95 ether); // Leave 5 ether
         vm.stopPrank();
 
-        // 3. Withdraw 5 ether (only 1 ether left)
+        // Update off-chain assets to keep totalAssets consistent
+        vm.prank(bot);
+        vault.updateOffChainAssets(95 ether);
+
+        // 3. Request Withdrawal 10 ether (only 5 ether left)
         vm.startPrank(user);
+        uint256 requestId = vault.requestWithdrawal(10 ether);
+        vm.warp(block.timestamp + 7 days);
         vm.expectRevert("Insufficient liquid buffer");
-        vault.withdraw(5 ether, user, user);
+        vault.claimWithdrawal(requestId);
         vm.stopPrank();
     }
 

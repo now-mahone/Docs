@@ -1,82 +1,89 @@
 import asyncio
 import os
-from web3 import AsyncWeb3, WebsocketProvider
-from web3.middleware import async_geth_poa_middleware
+from web3 import Web3
 from loguru import logger
 from dotenv import load_dotenv
+
+# Created: 2026-01-23
+# Updated: 2026-02-05 (Switched to Sync Web3 + to_thread for stability)
 
 load_dotenv()
 
 class VaultEventListener:
     """
-    Asynchronous event listener for the KerneVault contract.
+    Event listener for the KerneVault contract using sync Web3 in threads.
     Monitors on-chain activity to trigger immediate rebalancing.
     """
-    def __init__(self, vault_address, abi, queue: asyncio.Queue, wss_url: str = None):
+    def __init__(self, vault_address, abi, queue: asyncio.Queue, rpc_url: str = None):
         self.vault_address = vault_address
         self.abi = abi
         self.queue = queue
-        self.wss_url = wss_url or os.getenv("WSS_URL")
+        self.rpc_url = rpc_url or os.getenv("RPC_URL")
         
-        if not self.wss_url:
-            # Fallback to a derived WSS URL if possible, though usually provided by user
-            rpc_url = os.getenv("RPC_URL", "")
-            if "https://" in rpc_url:
-                self.wss_url = rpc_url.replace("https://", "wss://")
-                logger.warning(f"WSS_URL not found, attempting fallback: {self.wss_url}")
-        
+        # Handle comma-separated RPCs
+        if self.rpc_url and "," in self.rpc_url:
+            self.rpc_url = self.rpc_url.split(",")[0]
+            
         self.w3 = None
-        self.contract = None
+        self.last_block = None
 
-    async def _connect(self):
-        """Robust connection logic with retries."""
-        while True:
-            try:
-                if not self.wss_url:
-                    raise ValueError("WSS_URL is missing. Cannot start event listener.")
-                
-                self.w3 = AsyncWeb3(WebsocketProvider(self.wss_url))
-                self.w3.middleware_onion.inject(async_geth_poa_middleware, layer=0)
-                
-                if await self.w3.is_connected():
-                    logger.info(f"✅ VaultEventListener connected to {self.wss_url}")
-                    self.contract = self.w3.eth.contract(address=self.vault_address, abi=self.abi)
-                    return
-            except Exception as e:
-                logger.error(f"❌ WebSocket connection failed: {e}. Retrying in 5s...")
-                await asyncio.sleep(5)
+    def _connect_sync(self):
+        """Sync connection logic."""
+        try:
+            self.w3 = Web3(Web3.HTTPProvider(self.rpc_url))
+            if self.w3.is_connected():
+                logger.info(f"✅ VaultEventListener connected to {self.rpc_url}")
+                self.last_block = self.w3.eth.block_number
+                return True
+        except Exception as e:
+            logger.error(f"❌ Connection failed: {e}")
+        return False
 
     async def listen(self):
         """
         Subscribes to logs for the vault contract and pushes events to the queue.
+        Uses to_thread to avoid blocking the event loop.
         """
         while True:
-            await self._connect()
-            try:
-                # We use polling for new entries as it's more stable across various RPC providers
-                # than raw subscriptions in some web3.py versions.
-                deposit_filter = await self.contract.events.Deposit.create_filter(fromBlock='latest')
-                withdraw_filter = await self.contract.events.Withdraw.create_filter(fromBlock='latest')
+            connected = await asyncio.to_thread(self._connect_sync)
+            if not connected:
+                await asyncio.sleep(5)
+                continue
                 
-                logger.info(f"📡 Listening for Deposit/Withdraw events on {self.vault_address}")
+            try:
+                logger.info(f"📡 Listening for events on {self.vault_address} via polling")
                 
                 while True:
                     try:
-                        # Check Deposit events
-                        for event in await deposit_filter.get_new_entries():
-                            logger.info(f"🔔 Event Detected: Deposit | {event['args']['assets']} assets")
-                            await self.queue.put(("Deposit", event))
+                        current_block = await asyncio.to_thread(lambda: self.w3.eth.block_number)
                         
-                        # Check Withdraw events
-                        for event in await withdraw_filter.get_new_entries():
-                            logger.info(f"🔔 Event Detected: Withdraw | {event['args']['assets']} assets")
-                            await self.queue.put(("Withdraw", event))
+                        if self.last_block and current_block > self.last_block:
+                            # Poll for Deposit events
+                            deposit_logs = await asyncio.to_thread(self.w3.eth.get_logs, {
+                                'fromBlock': self.last_block + 1,
+                                'toBlock': current_block,
+                                'address': self.vault_address,
+                                'topics': ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'] # Deposit topic
+                            })
+                            for log in deposit_logs:
+                                logger.info(f"🔔 Event Detected: Deposit")
+                                await self.queue.put(("Deposit", log))
+
+                            # Poll for Withdraw events
+                            withdraw_logs = await asyncio.to_thread(self.w3.eth.get_logs, {
+                                'fromBlock': self.last_block + 1,
+                                'toBlock': current_block,
+                                'address': self.vault_address,
+                                'topics': ['0xfbe9912c4310c28110314c0f7b2291e5b200ac8c7c3b925843392a3516001815'] # Withdraw topic
+                            })
+                            for log in withdraw_logs:
+                                logger.info(f"🔔 Event Detected: Withdraw")
+                                await self.queue.put(("Withdraw", log))
+
+                            self.last_block = current_block
                             
-                        await asyncio.sleep(2) # Prevent CPU pegging
+                        await asyncio.sleep(10) # Poll every 10 seconds
                     except Exception as e:
-                        if "filter not found" in str(e).lower():
-                            logger.warning("Filter expired, recreating...")
-                            break # Inner loop break to recreate filters
                         logger.error(f"Error polling events: {e}")
                         await asyncio.sleep(5)
                         

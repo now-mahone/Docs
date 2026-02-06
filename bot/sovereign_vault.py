@@ -97,3 +97,32 @@ class SovereignVault:
                 hl.execute_order("ETH", delta, "sell")
             else:
                 hl.execute_order("ETH", abs(delta), "buy")
+
+    def sync_l1_assets_to_vault(self):
+        """
+        Reports the Hyperliquid L1 equity back to the KerneVault contract.
+        This fulfills the 'Sovereign Vault' native L1 settlement requirement.
+        """
+        hl = self.exchange.get_exchange("hyperliquid")
+        if not hl:
+            return False
+            
+        equity_usd = hl.get_total_equity()
+        price = hl.get_market_price("ETH")
+        equity_eth = equity_usd / price if price > 0 else 0
+        
+        logger.info(f"Syncing L1 Assets to Vault: {equity_eth:.4f} ETH (${equity_usd:.2f})")
+        
+        try:
+            # Convert ETH to Wei for the contract call
+            equity_wei = int(equity_eth * 1e18)
+            
+            # Call updateL1Assets on the vault
+            tx_hash = self.chain.update_l1_assets(equity_wei)
+            if tx_hash:
+                logger.success(f"L1 Assets synced to vault: {tx_hash}")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Failed to sync L1 assets: {e}")
+            return False

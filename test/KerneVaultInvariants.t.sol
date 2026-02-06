@@ -51,6 +51,7 @@ contract KerneVaultInvariants is Test {
         uint256 totalAssets = vault.totalAssets();
         uint256 onChainBalance = asset.balanceOf(address(vault));
         uint256 offChainAssets = vault.offChainAssets();
+        uint256 l1Assets = vault.l1Assets();
         
         address node = vault.verificationNode();
         uint256 verifiedAssets = 0;
@@ -62,9 +63,13 @@ contract KerneVaultInvariants is Test {
                 verifiedAssets = abi.decode(data, (uint256));
             }
         }
-        uint256 reserve = verifiedAssets > 0 ? verifiedAssets : vault.hedgingReserve();
         
-        assertEq(totalAssets, onChainBalance + offChainAssets + reserve, "Accounting mismatch");
+        if (verifiedAssets > 0) {
+            assertEq(totalAssets, onChainBalance + verifiedAssets, "Accounting mismatch (Verified)");
+        } else {
+            uint256 reserve = vault.hedgingReserve();
+            assertEq(totalAssets, onChainBalance + offChainAssets + l1Assets + reserve, "Accounting mismatch (Reported)");
+        }
     }
 
     /// @notice Invariant: getSolvencyRatio() must be consistent with totalAssets/totalSupply

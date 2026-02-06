@@ -83,10 +83,16 @@ This document tracks all capital movements, wallet balances, and protocol-owned 
 | 2026-01-17 | PLANNED | Hot Wallet | ZIN Pool | $80 | USDC/WETH | Base | - | ZIN Pool seeding (planned) |
 | 2026-01-18 | SEED | Trezor Hot Wallet | ZIN Pool | 39.772851 | USDC | Base | - | ZIN Pool seed (from Trezor) |
 | 2026-01-18 | SEED | Trezor Hot Wallet | ZIN Pool | 0.01178582 | WETH | Base | - | ZIN Pool seed (from Trezor) |
+| 2026-02-04 | ONRAMP | BMO | Burner Wallet | 362 | USDC | Polygon | - | Shadow Onramp Phase 1 Complete (Trezor) |
 
 ---
 
-## Current Balances (Last Updated: 2026-01-18)
+## Current Balances (Last Updated: 2026-02-04)
+
+### Burner Wallet (Trezor - `0x14f0...3946`)
+| Token | Amount | USD Value | Network |
+|-------|--------|-----------|---------|
+| USDC | 362 | $362 | Polygon |
 
 ### Hot Wallet (`0x57D4...0A99`)
 | Token | Amount | USD Value | Network |
@@ -112,12 +118,16 @@ This document tracks all capital movements, wallet balances, and protocol-owned 
 
 ---
 
-## CEX Accounts
+## CEX & Fiat Accounts
 
 ### Hyperliquid
 - **Deposit Address:** `0x57D400cED462a01Ed51a5De038F204Df49690A99`
 - **Balance:** ~$32.82 USDC (as of 2026-01-13)
 - **Purpose:** Delta-neutral hedging
+
+### PayTrie (Fiat On-Ramp)
+- **Account Email:** ProtonMail (Primary)
+- **Purpose:** CAD to USDC bridge
 
 ---
 
