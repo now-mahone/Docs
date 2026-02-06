@@ -1,6 +1,7 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-05 20:38] - Capital Operations: Successfully bridged 362.3 USDC from Polygon to Base. Fixed critical Polygon gas pricing (500 Gwei priority) in `bot/capital_router.py` and cleared stuck nonces. All changes pushed to private repo. - Status: SUCCESS
 [2026-02-05 19:55] - Capital Operations: Bridged 362.3 USDC from Polygon to Base via Li.Fi (near protocol). Bridge TX: 0xb552597ea0fc0c70c63925024cfbb1904d88b0f2e7b2847b0d970039d4faa494. Received 361.39 USDC on Base. Fixed Polygon gas pricing in capital_router.py (500 Gwei priority / 1000 Gwei max). Cleared 2 stuck nonces on Polygon. Hot Wallet Base balance: 361.39 USDC. - Status: SUCCESS
 [2026-02-05 15:57] - Capital Operations: Houdini Swap (Order: 2CzTkoEDhrYK2tMETvwVTR) is active and waiting for deposit. Scofield instructed to send 362.3 USDC from Trezor to 0x8bfb...f120. - Status: COMPLETED
 [2026-02-05 15:30] - Capital Router: Built autonomous capital operations system (`bot/capital_router.py`). Supports multi-chain balance scanning (Base, Arbitrum, Optimism, Polygon, Ethereum + Hyperliquid), Li.Fi bridging, same-chain swaps, HL deposits, auto-allocation per strategy, and USDC collection. CLI commands: scan, bridge, swap, deposit-hl, withdraw-hl, collect, allocate. Corrected capital base to $500 CAD (~$367 USDC) per Scofield. - Status: SUCCESS
