@@ -74,7 +74,7 @@ The protocol is designed for institutional-grade capital preservation with autom
 ### Base Network (Primary)
 | Contract | Address | Verified |
 |----------|---------|----------|
-| KerneVault (ERC-4626) | `0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695` | Yes |
+| KerneVault (ERC-4626) | `0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC` | Yes |
 | KerneIntentExecutor (ZIN) | `0x04F52F9F4dAb1ba2330841Af85dAeeB8eaC9E995` | Yes |
 | KerneZINPool | `0xB9BdF6F3Fc3819b61f6fE799bE1395501822d0c7` | Yes |
 | KerneTreasury | `0x0067F4957dea17CF76665F6A6585F6a904362106` | Yes |
@@ -96,7 +96,7 @@ The protocol is designed for institutional-grade capital preservation with autom
 | KERNE OFT (LayerZero) | `0x087365f83caF2E2504c399330F5D15f62Ae7dAC3` | Yes |
 
 ### Primary Contract for Tracking (TVL Source)
-- **Base Vault:** `0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695`
+- **Base Vault:** `0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC`
 - **Arbitrum Vault:** `0x503D930dF68a68cdFeb8DEa173ADD8DD377841FF`
 
 ---
@@ -123,7 +123,7 @@ The protocol is designed for institutional-grade capital preservation with autom
 | Logo | Upload `kerne-logo.png` (256x256+) |
 | Screenshots | Screenshots of the Terminal dashboard |
 | Blockchain(s) | Base, Arbitrum One |
-| Smart Contract (Base) | `0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695` |
+| Smart Contract (Base) | `0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC` |
 | Smart Contract (Arbitrum) | `0x503D930dF68a68cdFeb8DEa173ADD8DD377841FF` |
 | Twitter | @KerneProtocol |
 | Email | kerne.systems@protonmail.com |

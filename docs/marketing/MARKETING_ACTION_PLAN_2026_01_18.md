@@ -142,7 +142,7 @@ What we built:
 - kUSD synthetic dollar with PSM
 
 Live contracts:
-- Vault: 0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695
+- Vault: 0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC
 - ZIN Pool: 0xB9BdF6F3Fc3819b61f6fE799bE1395501822d0c7
 
 Would love feedback from the community!

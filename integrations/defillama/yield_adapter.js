@@ -3,7 +3,7 @@ const axios = require("axios");
 // Created: 2026-01-13
 // Yield Adapter for DefiLlama yield-server
 
-const VAULT_ADDRESS = "0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695";
+const VAULT_ADDRESS = "0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC";
 const WETH_ADDRESS = "0x4200000000000000000000000000000000000006";
 
 async function apy() {

@@ -169,7 +169,7 @@ Here's how 🧵
 
 - **ZIN Pool:** https://basescan.org/address/0xB9BdF6F3Fc3819b61f6fE799bE1395501822d0c7
 - **ZIN Executor:** https://basescan.org/address/0x04F52F9F4dAb1ba2330841Af85dAeeB8eaC9E995
-- **KerneVault:** https://basescan.org/address/0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695
+- **KerneVault:** https://basescan.org/address/0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC
 
 ---
 

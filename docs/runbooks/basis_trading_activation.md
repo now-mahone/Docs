@@ -54,7 +54,7 @@ Based on `capital_router.py` DEFAULT_ALLOCATION (55% to HL):
    This converts 150 USDC into ~0.055 WETH (at ~$2,700/ETH).
 
 2. **Deposit WETH into KerneVault**
-   The vault at `0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695` accepts WETH deposits via ERC-4626 `deposit()`.
+   The vault at `0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC` accepts WETH deposits via ERC-4626 `deposit()`.
    
    > **NOTE**: The vault's `totalAssets()` call is currently failing. This needs investigation — possible causes:
    > - Contract may be paused
@@ -126,13 +126,13 @@ The `check_vault_assets.py` script throws `BadFunctionCallOutput`. Possible caus
 **Investigation**: 
 ```bash
 # Check if contract exists and has code
-cast code 0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695 --rpc-url https://mainnet.base.org
+cast code 0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC --rpc-url https://mainnet.base.org
 
 # Check the asset
-cast call 0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695 "asset()(address)" --rpc-url https://mainnet.base.org
+cast call 0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC "asset()(address)" --rpc-url https://mainnet.base.org
 
 # Check if paused
-cast call 0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695 "paused()(bool)" --rpc-url https://mainnet.base.org
+cast call 0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC "paused()(bool)" --rpc-url https://mainnet.base.org
 ```
 
 ### 2. Capital Efficiency

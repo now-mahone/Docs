@@ -78,7 +78,7 @@ contract DeployKUSDMinter is Script {
     address constant KUSD = 0x257579db2702BAeeBFAC5c19d354f2FF39831299;
     
     // KerneVault (from TREASURY_LEDGER.md)
-    address constant KERNE_VAULT = 0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695;
+    address constant KERNE_VAULT = 0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC;
     
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -162,7 +162,7 @@ contract FullLeverageSetup is Script {
     address constant WETH = 0x4200000000000000000000000000000000000006;
     address constant USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
     address constant KUSD = 0x257579db2702BAeeBFAC5c19d354f2FF39831299;
-    address constant KERNE_VAULT = 0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695;
+    address constant KERNE_VAULT = 0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC;
     
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");

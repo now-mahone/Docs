@@ -51,7 +51,7 @@ Kerne Protocol enables users to earn stable, market-agnostic yield by combining 
 
 | Contract | Address | Purpose |
 |----------|---------|---------|
-| KerneVault | `0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695` | ERC-4626 delta-neutral yield vault |
+| KerneVault | `0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC` | ERC-4626 delta-neutral yield vault |
 | KerneTreasury | `0x0067F4957dea17CF76665F6A6585F6a904362106` | Protocol treasury management |
 | KerneInsuranceFund | `0x3C93E231a3b74659ABfCA95dFf2eC9a8525b08B9` | Tail risk coverage fund |
 | KerneStaking | `0x032Af1631671126A689614c0c957De774b45D582` | KERNE token staking |

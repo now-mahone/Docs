@@ -9,7 +9,7 @@ Deploy a KerneVault on Arbitrum One to unlock native Arbitrum deposits and expan
 ---
 
 ## Current State
-- **Base Vault Deployed:** `0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695`
+- **Base Vault Deployed:** `0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC`
 - **Arbitrum Vault:** Not deployed
 - **Deployment Script:** `script/DeployArbitrumVault.s.sol`
 - **Target Asset:** wstETH (Arbitrum)

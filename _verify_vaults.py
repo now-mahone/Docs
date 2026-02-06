@@ -16,7 +16,7 @@ def rpc_call(url, method, params):
 # Base vault
 print("=== BASE VAULT ===")
 base_url = "https://base-mainnet.g.alchemy.com/v2/demo"
-base_vault = "0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695"
+base_vault = "0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC"
 
 code = rpc_call(base_url, "eth_getCode", [base_vault, "latest"])
 print(f"Code: {(len(code)-2)//2} bytes")

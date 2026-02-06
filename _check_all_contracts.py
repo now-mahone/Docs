@@ -4,7 +4,7 @@ w3 = Web3(Web3.HTTPProvider("https://mainnet.base.org"))
 print(f"Connected: {w3.is_connected()}")
 
 contracts = {
-    "KerneVault": "0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695",
+    "KerneVault": "0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC",
     "KerneIntentExecutor (ZIN)": "0x04F52F9F4dAb1ba2330841Af85dAeeB8eaC9E995",
     "KerneZINPool": "0xB9BdF6F3Fc3819b61f6fE799bE1395501822d0c7",
     "KerneTreasury": "0x0067F4957dea17CF76665F6A6585F6a904362106",

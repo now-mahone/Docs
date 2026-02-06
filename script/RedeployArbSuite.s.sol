@@ -40,7 +40,7 @@ contract RedeployArbSuite is Script {
             admin,
             address(treasury),
             insuranceFund,
-            0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695, // Vault
+            0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC, // Vault
             0x7286200Ba4C6Ed5041df55965c484a106F4716FD, // PSM
             aeroRouter,
             uniRouter,

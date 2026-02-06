@@ -1,11 +1,11 @@
-// Created: 2026-02-05
+# Created: 2026-02-05
 import os
 import json
 import time
 from loguru import logger
-from bot.exchange_manager import ExchangeManager
-from bot.chain_manager import ChainManager
-from bot.apy_calculator import APYCalculator
+from exchange_manager import ExchangeManager
+from chain_manager import ChainManager
+from apy_calculator import APYCalculator
 
 class BasisYieldMonitor:
     """
@@ -33,13 +33,7 @@ class BasisYieldMonitor:
             leverage = 3.0
             expected_apy = APYCalculator.calculate_expected_apy(
                 leverage=leverage,
-                funding_rate=hourly_funding / 3, # APYCalculator expects 8h rate or similar? 
-                # Actually APYCalculator.calculate_expected_apy uses:
-                # annual_funding = funding_rate * 3 * 365
-                # So it expects an 8h rate (3 times a day).
-                # HL is hourly, so we pass hourly_funding * 8 / 3? No.
-                # Let's just pass the hourly rate and adjust the calculator logic or our input.
-                funding_rate=hourly_funding / 3, # If we want to use the calculator's *3*365
+                funding_rate=hourly_funding * 8 / 3, # Convert hourly to 8h rate for calculator
                 staking_yield=staking_yield,
                 spread_edge=0.0005, # 5bps spread capture
                 turnover_rate=0.1, # 10% daily turnover

@@ -32,7 +32,7 @@ This document tracks all capital movements, wallet balances, and protocol-owned 
 
 | Contract | Address | Purpose |
 |----------|---------|---------|
-| KerneVault | `0xDF9a2f5152c533F7fcc3bAdEd41e157C9563C695` | Main yield vault |
+| KerneVault | `0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC` | Main yield vault |
 | ZIN Pool | `0xB9BdF6F3Fc3819b61f6fE799bE1395501822d0c7` | Intent execution liquidity |
 | ZIN Executor | `0x04F52F9F4dAb1ba2330841Af85dAeeB8eaC9E995` | Intent fulfillment contract |
 | KerneTreasury | `0xB656440287f8A1112558D3df915b23326e9b89ec` | Protocol treasury |
