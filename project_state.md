@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-07 15:53] - EMAIL OUTREACH BYPASS: Rewrote `bot/email_manager.py` to support generic SMTP providers (Resend, SendGrid, etc.) to bypass the ProtonMail Bridge paid-plan requirement. Updated `bot/.env.example` with instructions for Resend.com (free tier). The system now supports both legacy Proton Bridge and standard SMTP API keys. - Status: SUCCESS
+
 [2026-02-07 15:45] - PROTONMAIL BRIDGE INSTALLER: Created `bot/bridge/` directory with one-click Bridge setup infrastructure. `INSTALL_BRIDGE.bat` (double-click launcher), `install_bridge.ps1` (PowerShell script that downloads ~70MB Bridge installer, runs wizard, guides SMTP password config, optionally adds Bridge to Windows startup), `README.md` (full setup docs with SMTP settings table and architecture diagram), `.gitignore` (excludes .exe binaries). Bridge is required for `bot/email_manager.py` to send emails via localhost:1025 STARTTLS. - Status: SUCCESS
 
 [2026-02-07 15:34] - AUTONOMOUS PROTONMAIL OUTREACH: Implemented `bot/email_manager.py` — full autonomous email outreach system via ProtonMail Bridge SMTP. Features: institutional pitch generation (tier-based personalization by balance/asset), duplicate prevention (SHA-256 hashed recipient tracking), daily rate limiting (20/day), 60s cooldown between sends, batch outreach with stats tracking. Integrated into `bot/lead_scanner_v3.py` — when AUTONOMOUS_OUTREACH=true, lead scans automatically trigger email outreach to enriched leads. Added ProtonMail config to `bot/.env.example`. Requires ProtonMail Bridge running locally. - Status: SUCCESS

@@ -1,20 +1,20 @@
 # Created: 2026-02-07
 """
-Autonomous ProtonMail Outreach Manager for Kerne Protocol.
+Autonomous Email Outreach Manager for Kerne Protocol.
 
-Uses ProtonMail Bridge SMTP to send institutional outreach emails
-to whale leads discovered by the lead scanner.
+Uses SMTP (Resend, SendGrid, or ProtonMail Bridge) to send institutional 
+outreach emails to whale leads discovered by the lead scanner.
 
 Requirements:
-- ProtonMail Bridge running locally (https://proton.me/mail/bridge)
-- Bridge generates an app-specific password for SMTP auth
+- SMTP credentials from a provider (e.g., Resend.com, SendGrid, or ProtonMail Bridge)
 - Environment variables configured in bot/.env
 
 Environment Variables:
-    PROTON_SMTP_HOST: ProtonMail Bridge SMTP host (default: 127.0.0.1)
-    PROTON_SMTP_PORT: ProtonMail Bridge SMTP port (default: 1025)
-    PROTON_EMAIL: Your ProtonMail address (default: contact@kerne.systems)
-    PROTON_PASSWORD: Bridge-generated app password (REQUIRED)
+    SMTP_HOST: SMTP server host (e.g., smtp.resend.com or 127.0.0.1)
+    SMTP_PORT: SMTP server port (e.g., 465, 587, or 1025)
+    SMTP_USER: SMTP username (often your email or 'resend')
+    SMTP_PASS: SMTP password or API key (REQUIRED)
+    FROM_EMAIL: The email address to send from (default: contact@kerne.systems)
     AUTONOMOUS_OUTREACH: Set to "true" to enable autonomous sending
 """
 
@@ -43,13 +43,15 @@ EMAIL_COOLDOWN_SECONDS = 60
 
 
 class EmailManager:
-    """Manages autonomous email outreach via ProtonMail Bridge SMTP."""
+    """Manages autonomous email outreach via SMTP."""
 
     def __init__(self):
-        self.smtp_host: str = os.getenv("PROTON_SMTP_HOST", "127.0.0.1")
-        self.smtp_port: int = int(os.getenv("PROTON_SMTP_PORT", "1025"))
-        self.email_user: str = os.getenv("PROTON_EMAIL", "contact@kerne.systems")
-        self.email_pass: Optional[str] = os.getenv("PROTON_PASSWORD")
+        # Support both new SMTP_ and legacy PROTON_ env vars for backward compatibility
+        self.smtp_host: str = os.getenv("SMTP_HOST") or os.getenv("PROTON_SMTP_HOST", "127.0.0.1")
+        self.smtp_port: int = int(os.getenv("SMTP_PORT") or os.getenv("PROTON_SMTP_PORT", "1025"))
+        self.smtp_user: str = os.getenv("SMTP_USER") or os.getenv("PROTON_EMAIL", "contact@kerne.systems")
+        self.email_pass: Optional[str] = os.getenv("SMTP_PASS") or os.getenv("PROTON_PASSWORD")
+        self.from_email: str = os.getenv("FROM_EMAIL", "contact@kerne.systems")
         self.from_name: str = "Kerne Protocol"
         self.outreach_log: Dict = self._load_outreach_log()
 
@@ -111,11 +113,11 @@ class EmailManager:
         self._save_outreach_log()
 
     def is_configured(self) -> bool:
-        """Check if ProtonMail Bridge credentials are configured."""
+        """Check if SMTP credentials are configured."""
         if not self.email_pass:
             logger.error(
-                "PROTON_PASSWORD not set. Install ProtonMail Bridge and set the "
-                "bridge-generated password in bot/.env"
+                "SMTP_PASS (or PROTON_PASSWORD) not set in bot/.env. "
+                "Please configure your SMTP provider credentials."
             )
             return False
         return True
@@ -128,7 +130,7 @@ class EmailManager:
         body_text: Optional[str] = None,
     ) -> bool:
         """
-        Send an email via ProtonMail Bridge SMTP.
+        Send an email via SMTP.
 
         Args:
             recipient_email: Target email address
@@ -150,10 +152,10 @@ class EmailManager:
             return False
 
         msg = MIMEMultipart("alternative")
-        msg["From"] = f"{self.from_name} <{self.email_user}>"
+        msg["From"] = f"{self.from_name} <{self.from_email}>"
         msg["To"] = recipient_email
         msg["Subject"] = subject
-        msg["Reply-To"] = self.email_user
+        msg["Reply-To"] = self.from_email
 
         # Plain text fallback
         if not body_text:
@@ -166,30 +168,31 @@ class EmailManager:
         msg.attach(MIMEText(body_html, "html"))
 
         try:
-            # ProtonMail Bridge uses STARTTLS on port 1025
-            context = ssl.create_default_context()
-            with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=30) as server:
-                server.ehlo()
-                server.starttls(context=context)
-                server.ehlo()
-                server.login(self.email_user, self.email_pass)
-                server.sendmail(self.email_user, recipient_email, msg.as_string())
+            # Use SMTP_SSL for port 465, otherwise use STARTTLS
+            if self.smtp_port == 465:
+                context = ssl.create_default_context()
+                with smtplib.SMTP_SSL(self.smtp_host, self.smtp_port, context=context, timeout=30) as server:
+                    server.login(self.smtp_user, self.email_pass)
+                    server.sendmail(self.from_email, recipient_email, msg.as_string())
+            else:
+                context = ssl.create_default_context()
+                with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=30) as server:
+                    server.ehlo()
+                    if self.smtp_port != 1025: # Bridge doesn't always need starttls first
+                        server.starttls(context=context)
+                        server.ehlo()
+                    server.login(self.smtp_user, self.email_pass)
+                    server.sendmail(self.from_email, recipient_email, msg.as_string())
 
             logger.success(f"Email sent to {recipient_email}")
             self._record_sent(recipient_email, subject)
             return True
 
         except smtplib.SMTPAuthenticationError as e:
-            logger.error(
-                f"SMTP auth failed. Ensure ProtonMail Bridge is running and "
-                f"PROTON_PASSWORD is the bridge-generated password. Error: {e}"
-            )
+            logger.error(f"SMTP auth failed for {self.smtp_user}. Check credentials. Error: {e}")
             return False
         except smtplib.SMTPConnectError as e:
-            logger.error(
-                f"Cannot connect to ProtonMail Bridge at {self.smtp_host}:{self.smtp_port}. "
-                f"Ensure Bridge is running. Error: {e}"
-            )
+            logger.error(f"Cannot connect to SMTP server at {self.smtp_host}:{self.smtp_port}. Error: {e}")
             return False
         except Exception as e:
             logger.error(f"Failed to send email to {recipient_email}: {e}")
