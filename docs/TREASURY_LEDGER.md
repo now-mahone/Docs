@@ -84,21 +84,25 @@ This document tracks all capital movements, wallet balances, and protocol-owned 
 | 2026-01-18 | SEED | Trezor Hot Wallet | ZIN Pool | 39.772851 | USDC | Base | - | ZIN Pool seed (from Trezor) |
 | 2026-01-18 | SEED | Trezor Hot Wallet | ZIN Pool | 0.01178582 | WETH | Base | - | ZIN Pool seed (from Trezor) |
 | 2026-02-04 | ONRAMP | BMO | Burner Wallet | 362 | USDC | Polygon | - | Shadow Onramp Phase 1 Complete (Trezor) |
+| 2026-02-07 | ALLOCATE | Hot Wallet | KerneVault | 119.30 | USDC | Base | 0x152203a5 | Swap to 0.057025 WETH + Deposit |
+| 2026-02-07 | BRIDGE | Hot Wallet | Arbitrum | 87.10 | USDC | Base | 0x6acb2927 | Bridged for HL margin |
+| 2026-02-07 | DEPOSIT | Arbitrum | HL Bridge | 87.17 | USDC | Arbitrum | 0x3041dad3 | Hyperliquid Deposit |
 
 ---
 
-## Current Balances (Last Updated: 2026-02-04)
+## Current Balances (Last Updated: 2026-02-07)
 
 ### Burner Wallet (Trezor - `0x14f0...3946`)
 | Token | Amount | USD Value | Network |
 |-------|--------|-----------|---------|
-| USDC | 362 | $362 | Polygon |
+| MATIC | 1.0 | ~$0.35 | Polygon |
 
 ### Hot Wallet (`0x57D4...0A99`)
 | Token | Amount | USD Value | Network |
 |-------|--------|-----------|---------|
 | ETH | ~ | ~$140 | Trezor (Primary) |
-| ETH | ~ | ~$40 | Base (A99) |
+| ETH | 0.0015 | ~$3.15 | Base (A99) |
+| USDC | ~5.0 | ~$5.00 | Base (A99) |
 
 ### Gnosis Safe: Kerne Treasury Trezor (`0xa295...68E5`)
 | Token | Amount | USD Value | Network |
@@ -111,10 +115,10 @@ This document tracks all capital movements, wallet balances, and protocol-owned 
 | USDC | 39.772851 | ~$39.76 | Base |
 | WETH | 0.01178582 | ~$39.58 | Base |
 
-### KerneVault (`0xDF9a...c695`)
+### KerneVault (`0x8005...c1cF2AC`)
 | Token | Amount | USD Value | Network |
 |-------|--------|-----------|---------|
-| WETH | TBD | TBD | Base |
+| WETH | 0.057025 | ~$119.00 | Base |
 
 ---
 
@@ -122,7 +126,7 @@ This document tracks all capital movements, wallet balances, and protocol-owned 
 
 ### Hyperliquid
 - **Deposit Address:** `0x57D400cED462a01Ed51a5De038F204Df49690A99`
-- **Balance:** ~$32.82 USDC (as of 2026-01-13)
+- **Balance:** ~$119.37 USDC ($32.20 existing + $87.17 incoming)
 - **Purpose:** Delta-neutral hedging
 
 ### PayTrie (Fiat On-Ramp)
@@ -135,11 +139,11 @@ This document tracks all capital movements, wallet balances, and protocol-owned 
 
 | Category | USD Value | Notes |
 |----------|-----------|-------|
-| Hot Wallet | ~$180 | Trezor + Base A99 |
-| Protocol Contracts | ~$79.34 | ZIN Pool seed (USDC + WETH) |
+| Hot Wallet | ~$148 | Trezor + Base A99 |
+| Protocol Contracts | ~$198 | Vault ($119) + ZIN ($79) |
 | Gnosis Safe | ~$35 | Treasury safe |
-| CEX (Hyperliquid) | ~$33 | Hedging collateral |
-| **TOTAL** | ~$327.34 | Approximate |
+| CEX (Hyperliquid) | ~$119 | Hedging collateral (inc. transit) |
+| **TOTAL** | ~$500.00 | Approximate |
 
 ---
 
