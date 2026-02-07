@@ -7,7 +7,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Shield, BarChart3, Landmark, Lock, Activity, Cpu, Database, Network, Wallet, Eye, HandCoins } from 'lucide-react';
 import { motion, useScroll, useTransform, useMotionValue, useSpring, animate, useInView } from 'framer-motion';
-import dynamic from 'next/dynamic';
 import Footer from '@/components/Footer';
 import Navbar from '@/components/Navbar';
 import BacktestedPerformance from '@/components/BacktestedPerformance';
@@ -34,11 +33,6 @@ function CountUp({ value, decimals = 0, prefix = "", suffix = "" }: { value: num
 
   return <span ref={nodeRef}>{prefix}{value.toFixed(decimals)}{suffix}</span>;
 }
-
-const HeroBackground = dynamic(() => import('@/components/HeroBackground'), { 
-  ssr: false,
-  loading: () => <div className="absolute inset-0 bg-[#ffffff]" />
-});
 
 function PillButton({ href, children, icon: Icon, className = "", variant = "primary" }: { href: string; children: React.ReactNode; icon?: React.ElementType; className?: string; variant?: "primary" | "secondary" | "outline" | "green" }) {
   const baseStyles = "relative px-10 font-bold rounded-sm transition-all flex items-center justify-center text-s border-none outline-none shadow-none group h-12 gap-2";
@@ -109,9 +103,6 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#ffffff] text-[#000000] font-sans selection:bg-[#000000] overflow-x-hidden">
-      {/* 3D Dynamic Background Disabled for Stability */}
-      {/* <HeroBackground /> */}
-
       {/* Background patterns inspired by Morpho/Ironfish */}
       <div className="fixed inset-0 z-0 opacity-[0.03] pointer-events-none text-[#000000]">
         <div className="absolute inset-0 bg-[radial-gradient(currentColor_1px,transparent_1px)] [background-size:40px_40px]" />

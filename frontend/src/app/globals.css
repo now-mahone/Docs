@@ -81,10 +81,10 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50 shadow-none! transition-none!;
+    @apply border-[#000000] shadow-none transition-none;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-[#ffffff] text-[#000000];
   }
   /* Font heading class for TASA Orbiter */
   .font-heading {
