@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-07 13:30] - Production Deployment Prep: Verified February frontend at `m-vercel.vercel.app` — GREEN LIGHT (hero, nav, 20.4% APY, all rendering). Confirmed `kerne.ai` returns Vercel `DEPLOYMENT_NOT_FOUND` (domain exists on Vercel infra but old deployment is gone). Created deployment runbook at `docs/runbooks/VERCEL_PRODUCTION_DEPLOYMENT_2026_02_07.md`. REMAINING: Manual Vercel Dashboard action required to add `kerne.ai` domain to the m-vercel project (or reconnect old project to `kerne-feb-2026` repo). Working directory: `d:\KERNE\kerne-feb`. - Status: AWAITING_MANUAL_VERCEL_ACTION
+
 [2026-02-06 19:03] - Repository Convergence: Mahone and Scofield's working directories have been successfully merged and combined. The divergence that began around January 8th has been resolved, with all of Mahone's frontend work and updates transferred into Scofield's primary folder structure. The project now operates from a single unified codebase in `z:\kerne-main`. - Status: SUCCESS
 
 [2026-02-06 10:45] - FREE API CONNECTOR LAYER INTEGRATED: Created `bot/api_connector.py` — unified API connector aggregating 7+ free public APIs (CoinGecko, DeFiLlama, Binance, Bybit, OKX, Hyperliquid, Lido). Wired live data into: (1) `bot/basis_yield_monitor.py` — replaced hardcoded 3.5% staking yield with live LSTYieldFeed data, (2) `bot/engine.py` — replaced hardcoded staking_yield with live API data, (3) `bot/main.py` — integrated APIRefreshLoop startup with stats server on port 8787. Fixed import sys bug in api_connector.py. All 7 sources verified working. - Status: SUCCESS
