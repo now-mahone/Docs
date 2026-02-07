@@ -6,6 +6,7 @@ from typing import List, Set, Dict
 from web3 import Web3
 from dotenv import load_dotenv
 from loguru import logger
+from bot.email_manager import EmailManager
 
 # Load environment variables
 load_dotenv(dotenv_path="bot/.env")
@@ -150,6 +151,45 @@ def get_institutional_leads():
         writer.writerows(all_leads_data)
 
     logger.info(f"Saved {len(all_leads_data)} institutional leads to {csv_file}")
+
+    # ── Autonomous Outreach Integration ──────────────────────────────
+    if os.getenv("AUTONOMOUS_OUTREACH", "").lower() == "true":
+        logger.info("AUTONOMOUS_OUTREACH enabled. Initiating email outreach...")
+        try:
+            email_mgr = EmailManager()
+            if email_mgr.is_configured():
+                # Build lead list for outreach (requires enriched data with emails)
+                outreach_leads = []
+                for lead in all_leads_data:
+                    if lead.get("Email"):
+                        outreach_leads.append({
+                            "email": lead["Email"],
+                            "address": lead["Address"],
+                            "balance": lead["Balance"],
+                            "asset": lead["Asset"],
+                        })
+
+                if outreach_leads:
+                    stats = email_mgr.get_outreach_stats()
+                    logger.info(f"Outreach stats before send: {stats}")
+                    results = email_mgr.send_batch_outreach(outreach_leads)
+                    logger.info(f"Outreach results: {results}")
+                else:
+                    logger.info(
+                        "No leads with email addresses. Add 'Email' column to "
+                        "institutional_leads.csv to enable autonomous outreach."
+                    )
+            else:
+                logger.warning(
+                    "Email manager not configured. Set PROTON_PASSWORD in bot/.env"
+                )
+        except Exception as e:
+            logger.error(f"Autonomous outreach failed: {e}")
+    else:
+        logger.info(
+            "Autonomous outreach disabled. Set AUTONOMOUS_OUTREACH=true in bot/.env to enable."
+        )
+
 
 if __name__ == "__main__":
     get_institutional_leads()
