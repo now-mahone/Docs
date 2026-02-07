@@ -8,3 +8,4 @@ broadcast/
 .vscode/
 __pycache__/
 *.pyc
+.vercel
