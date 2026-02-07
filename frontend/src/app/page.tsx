@@ -60,10 +60,13 @@ function PillButton({ href, children, icon: Icon, className = "", variant = "pri
 
 export default function LandingPage() {
   const [ethPrice, setEthPrice] = useState(3000);
-  const apy = 12.42;
+  const [liveApy, setLiveApy] = useState<number | null>(null);
+  const [stakingYield, setStakingYield] = useState(3.21);
+  const [fundingRate, setFundingRate] = useState(0.0342);
 
   useEffect(() => {
-    const fetchPrice = async () => {
+    const fetchData = async () => {
+      // Fetch ETH price
       try {
         const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT');
         const data = await res.json();
@@ -71,8 +74,28 @@ export default function LandingPage() {
       } catch (e) {
         console.error("Failed to fetch ETH price", e);
       }
+
+      // Fetch live APY from our API
+      try {
+        const res = await fetch('/api/apy');
+        const data = await res.json();
+        if (data.apy !== null && data.apy !== undefined) {
+          setLiveApy(data.apy);
+        }
+        if (data.staking_yield) {
+          setStakingYield(parseFloat((data.staking_yield * 100).toFixed(2)));
+        }
+        if (data.breakdown?.best_funding_annual_pct) {
+          // Convert annual % to approximate 8h rate for display
+          const annual = data.breakdown.best_funding_annual_pct / 100;
+          const rate8h = annual / (3 * 365);
+          setFundingRate(parseFloat((rate8h * 100).toFixed(4)));
+        }
+      } catch (e) {
+        console.error("Failed to fetch live APY", e);
+      }
     };
-    fetchPrice();
+    fetchData();
   }, []);
 
   const { scrollYProgress } = useScroll();
@@ -80,8 +103,8 @@ export default function LandingPage() {
   const scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.98]);
 
   const [calculatorAmount, setCalculatorAmount] = useState(10);
-  const calculatorApy = 20.4;
-  const yearlyCalculationUSD = Math.round(calculatorAmount * ethPrice * (calculatorApy / 100));
+  const displayApy = liveApy !== null ? liveApy : 20.4;
+  const yearlyCalculationUSD = Math.round(calculatorAmount * ethPrice * (displayApy / 100));
   const monthlyCalculationUSD = Math.round(yearlyCalculationUSD / 12);
 
   return (
@@ -103,7 +126,7 @@ export default function LandingPage() {
             <h1 className="font-heading font-medium tracking-tight leading-[0.95] text-[#000000] mb-8">
               The future of onchain yield.<br />
               Live at an APY of<br />
-              <span className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"><CountUp value={20.4} decimals={1} suffix="%" /></span>
+              <span className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"><CountUp value={displayApy} decimals={1} suffix="%" /></span>
             </h1>
 
             <p className="text-l md:text-l text-[#000000] max-w-2xl mx-auto mb-10 font-medium leading-relaxed">
@@ -162,10 +185,10 @@ export default function LandingPage() {
                   <div className="p-6 bg-gradient-to-b from-[#22252a] from-0% via-[#16191c] via-40% to-[#000000] to-100% rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
                     <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">ETH funding rate</div>
                     <div>
-                      <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.0342%</div>
-                      <div className="flex items-center gap-1 text-s text-[#37d097] font-medium">
-                        <span>↑</span>
-                        <span>Positive</span>
+                      <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">{fundingRate}%</div>
+                      <div className={`flex items-center gap-1 text-s font-medium ${fundingRate >= 0 ? 'text-[#37d097]' : 'text-[#ff6b6b]'}`}>
+                        <span>{fundingRate >= 0 ? '↑' : '↓'}</span>
+                        <span>{fundingRate >= 0 ? 'Positive' : 'Negative'}</span>
                       </div>
                     </div>
                   </div>
@@ -174,7 +197,7 @@ export default function LandingPage() {
                   <div className="p-6 bg-gradient-to-b from-[#22252a] from-0% via-[#16191c] via-40% to-[#000000] to-100% rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
                     <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">wstETH APY%</div>
                     <div>
-                      <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">3.21%</div>
+                      <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">{stakingYield}%</div>
                       <div className="text-s text-[#444a4f] font-medium">*Lido Data</div>
                     </div>
                   </div>
