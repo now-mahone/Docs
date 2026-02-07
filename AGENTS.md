@@ -139,21 +139,22 @@ We are currently defining the mechanism and setting up the environment.
 
 ### CRITICAL: PRIVATE REPOSITORY ONLY
 **The ONLY repository for all code pushes/pulls is the PRIVATE repo:**
-- **Repository:** `enerzy17/kerne-vercel`
-- **URL:** `https://github.com/enerzy17/kerne-vercel`
-- **Remote Name:** `vercel` (Primary) / `private` (Org Backup)
+- **Repository:** `enerzy17/kerne-feb-2026`
+- **URL:** `https://github.com/enerzy17/kerne-feb-2026`
+- **Remote Name:** `february` (Primary)
 - **Access:** ONLY Scofield and Mahone have access. No public code leaks.
 
 **DO NOT push to any public repository.** The `origin` remote has been removed to prevent accidental public exposure.
 
-### Current Git Remotes (as of 2026-01-08):
+### Current Git Remotes (as of 2026-02-06):
+- `february` → https://github.com/enerzy17/kerne-feb-2026.git (PRIMARY - all pushes go here)
+- `vercel` → https://github.com/enerzy17/kerne-vercel.git (Legacy/Backup)
 - `private` → https://github.com/kerne-protocol/kerne-main.git (Org Backup)
-- `vercel` → https://github.com/enerzy17/kerne-vercel.git (PRIMARY - all pushes go here)
 
 ### At the START of every task:
 1.  **Pull latest changes** before doing ANY work:
     ```bash
-    git pull private main
+    git pull february main
     ```
 2.  If there are merge conflicts, STOP and alert the user immediately.
 
@@ -162,7 +163,7 @@ We are currently defining the mechanism and setting up the environment.
     ```bash
     git add -A
     git commit -m "[YYYY-MM-DD] <area>: <brief description>"
-    git push private main
+    git push february main
     ```
 
 ### Commit Message Format:

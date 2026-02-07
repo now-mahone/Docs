@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-06 19:03] - Repository Convergence: Mahone and Scofield's working directories have been successfully merged and combined. The divergence that began around January 8th has been resolved, with all of Mahone's frontend work and updates transferred into Scofield's primary folder structure. The project now operates from a single unified codebase in `z:\kerne-main`. - Status: SUCCESS
+
 [2026-02-06 10:45] - FREE API CONNECTOR LAYER INTEGRATED: Created `bot/api_connector.py` — unified API connector aggregating 7+ free public APIs (CoinGecko, DeFiLlama, Binance, Bybit, OKX, Hyperliquid, Lido). Wired live data into: (1) `bot/basis_yield_monitor.py` — replaced hardcoded 3.5% staking yield with live LSTYieldFeed data, (2) `bot/engine.py` — replaced hardcoded staking_yield with live API data, (3) `bot/main.py` — integrated APIRefreshLoop startup with stats server on port 8787. Fixed import sys bug in api_connector.py. All 7 sources verified working. - Status: SUCCESS
 
 [2026-02-06 06:55] - VAULT SEEDED — TVL ESTABLISHED: Successfully seeded KerneVault with 0.079361 WETH (~$152) via seed_vault.py. Executed 4 on-chain transactions: (1) USDC Approve (TX: 0xf122225d), (2) Swap 150 USDC → 0.078361 WETH via Uniswap V3 at $1,915/ETH (TX: 0x3f2ce35c), (3) WETH Approve (TX: 0x559fb784), (4) Deposit 0.079361 WETH into KerneVault receiving 79.361265 shares (TX: 0x8f29958e). Vault now shows: totalAssets=0.079361 WETH, totalSupply=79.361265 shares. Remaining deployer balance: 211.39 USDC, 0.001617 ETH. Fixed seed_vault.py bugs: EIP-1559 gas pricing conflict, web3.py rawTransaction attribute. - Status: SUCCESS
@@ -40,6 +42,7 @@
 Kerne is a delta-neutral synthetic dollar protocol, leveraging LST collateral and hedging to provide institutional grade yield and capital efficiency.
 ## Log
 <!-- NOTE: New entries go at the TOP (reverse chronological order - newest first) -->
+- [2026-02-06 19:03] - Action Taken - Repository Convergence: Mahone and Scofield's working directories merged. Divergence from Jan 8th resolved, Mahone's frontend work transferred to Scofield's folder. Unified codebase in `z:\kerne-main`. - Status: SUCCESS
 - [2026-02-06 10:45] - Action Taken - Integrated `bot/api_connector.py` (7+ free APIs). Wired live data into basis_yield_monitor.py, engine.py, and main.py — replacing all hardcoded staking yields with live feeds. Fixed import sys bug. - Status: SUCCESS
 - [2026-02-06 06:55] - Action Taken - Seeded KerneVault with 0.079361 WETH (~$152 TVL) via seed_vault.py (Uniswap V3 swap + ERC-4626 deposit). 4 TXs confirmed on Base. Fixed seed_vault.py bugs (EIP-1559 gas, rawTransaction). - Status: SUCCESS
 - [2026-02-05 23:27] - Action Taken - Implemented `bot/basis_yield_monitor.py` and enhanced `bot/sentinel_monitor.py` with Basis Trade Profit Guard. - Status: SUCCESS
@@ -599,3 +602,292 @@ Kerne is a delta-neutral synthetic dollar protocol, leveraging LST collateral an
  
  [ 2 0 2 6 - 0 1 - 2 9   1 4 : 3 1 ]   -   S t r a t e g y :   P i v o t e d   t o   Z e r o - C o s t   F a r c a s t e r   M i r r o r i n g   f o r   L e a d   # 1   o u t r e a c h .   -   S t a t u s :   S U C C E S S[2026-02-02 11:58] - Strategy Alignment - Scofield confirmed billionaire roadmap via Genesis Document.
 [2026-02-02 11:59] - Action Taken - Updated project_state.md with comprehensive history. - Status: SUCCESS
+
+## Mahone Frontend Work Log - Post Divergence Jan 10 to Feb 5 2026
+
+[2026-01-10 01:00] - Visual Overhaul Phase 2: Terminal Dashboard redesigned - Status: SUCCESS
+[2026-01-10 13:00] - Redesign and Stabilization Phase complete - Status: SUCCESS
+[2026-01-10 13:05] - Font Update: Switched to Sora - Status: SUCCESS
+[2026-01-10 13:15] - Visual Refinement: Hero header resized - Status: SUCCESS
+[2026-01-10 13:30] - Infrastructure Redesign complete - Status: SUCCESS
+[2026-01-10 13:40] - Infrastructure Refinement complete - Status: SUCCESS
+[2026-01-10 15:55] - Visual Asset Integration complete - Status: SUCCESS
+[2026-01-10 16:05] - Hero and Infrastructure Refinement complete - Status: SUCCESS
+[2026-01-10 16:55] - Institutional Reliability Redesign complete - Status: SUCCESS
+[2026-01-10 22:55] - Design Refinement: Section header spacing - Status: SUCCESS
+[2026-01-10 23:10] - Visual Alignment: Image hover disabled - Status: SUCCESS
+[2026-01-11 11:20] - Partner Belt Enhancement complete - Status: SUCCESS
+[2026-01-11 11:35] - Landing Page Refinements complete - Status: SUCCESS
+[2026-01-11 11:48] - Yield Calculator Refinements complete - Status: SUCCESS
+[2026-01-11 11:58] - Yield Calculator Polish complete - Status: SUCCESS
+[2026-01-11 12:10] - Yield Calculator Redesign complete - Status: SUCCESS
+[2026-01-12 12:10] - Vertical Spacing Refinement complete - Status: SUCCESS
+[2026-01-12 13:40] - Visual Flow Polish complete - Status: SUCCESS
+[2026-01-12 13:48] - Landing Page Expansion complete - Status: SUCCESS
+[2026-01-12 14:00] - Card and Header Refinement complete - Status: SUCCESS
+[2026-01-12 14:18] - Palette and Styling Refinement complete - Status: SUCCESS
+[2026-01-12 14:35] - Animation and UI Refinement complete - Status: SUCCESS
+[2026-01-12 15:06] - UI Polish and Interaction complete - Status: SUCCESS
+[2026-01-12 15:20] - Logo and Interaction Stabilization complete - Status: SUCCESS
+[2026-01-12 15:54] - Protocol TVL Widget Update complete - Status: SUCCESS
+[2026-01-12 16:40] - UI Enhancement: Added icons to sections - Status: SUCCESS
+[2026-01-12 16:53] - Structural Redesign: Unified grid layout - Status: SUCCESS
+[2026-01-12 17:00] - Structural Polish: Removed experimental borders - Status: SUCCESS
+[2026-01-12 17:10] - Directives: Harmonized about page - Status: SUCCESS
+[2026-01-12 17:23] - Content Realignment: Moved Mathematical Precision - Status: SUCCESS
+[2026-01-12 17:48] - Content Realignment: Moved Mathematical Precision into Institutional Pillars section - Status: SUCCESS
+[2026-01-14 15:27] - Changed footer to be consistent across all pages - Status: SUCCESS
+[2026-01-14 15:50] - Litepaper: Refined Yield Composition Model bars and labels - Status: SUCCESS
+[2026-01-14 16:07] - Institutional: Redesigned onboarding page - Status: SUCCESS
+[2026-01-14 16:22] - Institutional: Reordered layout to align with mockup - Status: SUCCESS
+[2026-01-14 16:33] - Institutional: Restructured page with stacked header and full-width form - Status: SUCCESS
+[2026-01-14 16:40] - Institutional: Centered header and moved feature cards - Status: SUCCESS
+[2026-01-14 16:50] - Institutional: Centered hero layout and polished form typography - Status: SUCCESS
+[2026-01-14 16:57] - Institutional: Balanced section spacing - Status: SUCCESS
+[2026-01-14 17:04] - Institutional: Set label/placeholder font size to match feature cards - Status: SUCCESS
+[2026-01-14 17:33] - Institutional: Tightened card-to-form gap - Status: SUCCESS
+[2026-01-14 18:33] - Institutional: Converted Allocation input to radio-style buttons - Status: SUCCESS
+[2026-01-14 19:42] - Institutional: Implemented circular radio buttons for Allocation - Status: SUCCESS
+[2026-01-14 19:56] - Institutional: Decreased inter-field spacing - Status: SUCCESS
+[2026-01-14 20:14] - Housekeeping: Added + suffix to Protocol TVL widget - Status: SUCCESS
+[2026-01-14 20:22] - Footer: Restructured to 7-column grid layout - Status: SUCCESS
+[2026-01-15 13:52] - Transparency: Implemented Bento Box UI system with 8 cards - Status: SUCCESS
+[2026-01-15 14:23] - Transparency: Tightened Bento Box container width - Status: SUCCESS
+[2026-01-15 14:33] - Transparency: Aligned Bento Box section padding and width - Status: SUCCESS
+[2026-01-15 14:40] - Transparency: Fixed Bento Box section width to match site-wide grid spacing - Status: SUCCESS
+[2026-01-15 14:50] - Transparency: Aligned Bento Box section structure - Status: SUCCESS
+[2026-01-15 15:21] - Assets: Updated k-mg.png protocol visual in Bento Box - Status: SUCCESS
+[2026-01-15 15:34] - Transparency: Bento Box styling updates - Status: SUCCESS
+[2026-01-15 15:44] - Transparency: Removed redundant Asset Composition section - Status: SUCCESS
+[2026-01-15 21:04] - Transparency: Swapped positions of Verify on Basescan and Architecture cards - Status: SUCCESS
+[2026-01-15 21:13] - Transparency: Updated Basescan to official BaseScan formatting - Status: SUCCESS
+[2026-01-15 21:24] - Transparency: Updated asset composition pie chart colors - Status: SUCCESS
+[2026-01-15 21:29] - Deployment: Pushed latest transparency page changes to mahone/m-vercel - Status: SUCCESS
+[2026-01-15 22:04] - Transparency: Updated pie chart colors - Status: SUCCESS
+[2026-01-15 22:18] - Transparency: Changed Buffer pie chart color - Status: SUCCESS
+[2026-01-15 22:33] - Transparency: Changed Risk management framework to 2x2 grid layout - Status: SUCCESS
+[2026-01-16 11:43] - Home: Updated Engineered for excellence section - Status: SUCCESS
+[2026-01-16 12:05] - Home: Added Kerne ecosystem section with 3 horizontal alternating cards - Status: SUCCESS
+[2026-01-16 13:38] - Home: Changed Kerne ecosystem section background - Status: SUCCESS
+[2026-01-16 13:46] - Palette: Replaced all instances of #757575 with #737581 - Status: SUCCESS
+[2026-01-16 13:53] - Home: Updated Kerne ecosystem section subtitle - Status: SUCCESS
+[2026-01-16 14:09] - Site-wide: Updated all section backgrounds - Status: REVERTED
+[2026-01-16 14:45] - Site-wide: Reverted section backgrounds back to bg-white - Status: SUCCESS
+[2026-01-16 16:05] - Home: Added unique colored borders to Kerne ecosystem cards - Status: SUCCESS
+[2026-01-16 16:14] - Home: Created animated SVG components for Kerne ecosystem cards - Status: SUCCESS
+[2026-01-16 16:40] - Home: Added interactive circle animation to homepage hero section - Status: SUCCESS
+[2026-01-16 16:50] - Home: Updated interactive animation shape from circle to balance scales - Status: SUCCESS
+[2026-01-16 16:57] - Home: Adjusted scale animation position - Status: SUCCESS
+[2026-01-16 17:00] - Home: Reverted interactive animation from balance scales back to simple circle - Status: SUCCESS
+[2026-01-16 17:05] - Home: Updated interactive circle animation density and dots - Status: SUCCESS
+[2026-01-16 17:11] - Home: Updated interactive circle animation colors - Status: SUCCESS
+[2026-01-16 17:15] - Home: Fixed circle animation opacity - Status: SUCCESS
+[2026-01-16 17:18] - Home: Updated circle animation colors - Status: REVERTED
+[2026-01-16 17:23] - Home: Reverted circle animation colors to subtle transition - Status: SUCCESS
+[2026-01-16 17:26] - Home: Added random glow effect to circle animation - Status: SUCCESS
+[2026-01-16 17:35] - Home: Resized circle animation - Status: REVERTED
+[2026-01-16 17:41] - Home: Simplified circle animation - Status: SUCCESS
+[2026-01-17 14:15] - Home: Corrected section order on homepage - Status: SUCCESS
+[2026-01-22 13:57] - Redesign revert: Reverted website from complete redesign reset back to previous working state - Status: SUCCESS
+[2026-01-22 14:08] - Monochrome reset: Complete color strip for new design system - Status: SUCCESS
+[2026-01-22 14:27] - Fonts: Fixed TASA Orbiter font implementation - Status: SUCCESS
+[2026-01-22 14:37] - Home: Redesigned hero section for user-friendly approach - Status: SUCCESS
+[2026-01-22 14:43] - Home: Refined hero text sizing and line breaks - Status: SUCCESS
+[2026-01-22 14:50] - Home: Updated hero text and removed PiggyBank icon - Status: SUCCESS
+[2026-01-22 14:56] - Home: Added CountUp animation to APY in hero header - Status: SUCCESS
+[2026-01-22 15:02] - Home: Restructured hero header into three distinct lines - Status: SUCCESS
+[2026-01-22 15:13] - Home: Increased hero header line height and updated APY - Status: SUCCESS
+[2026-01-22 15:17] - Home: Refined CountUp animation - Status: SUCCESS
+[2026-01-22 15:34] - Home: Restructured Yield Calculator layout - Status: SUCCESS
+[2026-01-22 15:42] - Home: Refined Yield Calculator alignment - Status: SUCCESS
+[2026-01-22 15:56] - Home: Replaced The Kerne ecosystem section with Backtested Performance chart - Status: SUCCESS
+[2026-01-22 16:21] - Home: Fixed vertical spacing for Yield Calculator and Backtested Performance - Status: SUCCESS
+[2026-01-22 16:25] - Home: Standardized hero section bottom padding - Status: SUCCESS
+[2026-01-22 16:30] - Home: Unified hero section padding to py-32 - Status: SUCCESS
+[2026-01-22 16:35] - Typography: Standardized all header sizes site-wide via globals.css - Status: SUCCESS
+[2026-01-22 16:42] - Typography: Removed inline text-size overrides from all h3 tags on homepage - Status: SUCCESS
+[2026-01-22 16:45] - Typography: Site-wide h3 standardization complete - Status: SUCCESS
+[2026-01-22 18:09] - Typography: Site-wide text size standardization complete - Status: SUCCESS
+[2026-01-22 18:21] - Units: Site-wide spacing unit standardization complete - Status: SUCCESS
+[2026-01-22 20:22] - Monochrome: Site-wide monochrome color scheme complete - Status: SUCCESS
+[2026-01-22 20:26] - Text: Site-wide text size standardization complete - Status: SUCCESS
+[2026-01-22 20:30] - Spacing: Site-wide spacing unit standardization complete - Status: SUCCESS
+[2026-01-22 20:34] - Text: Fixed remaining text-sm inconsistencies - Status: SUCCESS
+[2026-01-22 20:39] - Typography: Standardized h1 line-height to leading-[0.95] - Status: SUCCESS
+[2026-01-22 20:54] - Home: Added Kerne Explained section below Backtested Performance - Status: SUCCESS
+[2026-01-22 20:59] - Home: Refined Kerne Explained section layout - Status: SUCCESS
+[2026-01-22 21:06] - Home: Enhanced Kerne Explained section typography - Status: SUCCESS
+[2026-01-22 21:17] - Home: Increased descriptive text size - Status: SUCCESS
+[2026-01-22 21:23] - Home: Consolidated Kerne Explained delta-neutral description text - Status: SUCCESS
+[2026-01-22 21:28] - Home: Expanded institutional requirements text - Status: SUCCESS
+[2026-01-22 21:32] - Home: Fixed Kerne Explained text width - Status: SUCCESS
+[2026-01-22 21:38] - Home: Restructured Institutional reliability section - Status: SUCCESS
+[2026-01-22 21:44] - Home: Removed Engineered for excellence section - Status: SUCCESS
+[2026-01-22 21:53] - Home: Updated Contact section to incentivize deposits - Status: SUCCESS
+[2026-01-22 22:10] - About: Redesigned mission section - Status: SUCCESS
+[2026-01-22 22:58] - Transparency: Removed entire Bento Box section for complete redesign - Status: SUCCESS
+[2026-01-22 23:09] - Transparency: Implemented new Bento Box layout from scratch - Status: SUCCESS
+[2026-01-22 23:16] - Transparency: Removed redundant Verification layers section - Status: SUCCESS
+[2026-01-22 23:23] - Transparency/About: Fixed section spacing - Status: SUCCESS
+[2026-01-22 23:28] - About: Combined hero and mission sections - Status: SUCCESS
+[2026-01-22 23:32] - About: Matched hero-to-card spacing with transparency page - Status: SUCCESS
+[2026-01-23 21:28] - Design: Added circular borders to all icons site-wide - Status: SUCCESS
+[2026-01-23 21:50] - Design: Added new color palette to CSS - Status: SUCCESS
+[2026-01-23 22:03] - Home: Applied new color scheme to hero section and yield calculator - Status: SUCCESS
+[2026-01-23 22:10] - Home: Added smooth gradients to hero APY and yield calculator cards - Status: SUCCESS
+[2026-01-24 13:04] - Home: Updated Backtested Performance section colors - Status: SUCCESS
+[2026-01-24 13:15] - Home: Refined Backtested Performance section styling - Status: SUCCESS
+[2026-01-24 14:57] - Home: Updated Kerne explained section colors - Status: SUCCESS
+[2026-01-24 15:06] - Home: Fixed Kerne explained card gradients and text colors - Status: SUCCESS
+[2026-01-24 15:21] - Home: Updated Institutional reliability section colors - Status: SUCCESS
+[2026-01-24 15:30] - Home: Fixed Institutional reliability section icon backgrounds - Status: SUCCESS
+[2026-01-24 16:30] - Home: Updated Institutional reliability and Contact sections - Status: SUCCESS
+[2026-01-24 17:00] - Home: Changed gradient angle from 90° to 110° - Status: SUCCESS
+[2026-01-24 17:21] - Home: Replaced placeholder images in Kerne Explained section - Status: SUCCESS
+[2026-01-24 17:26] - Home: Fixed Kerne Explained images - Status: SUCCESS
+[2026-01-24 17:31] - Home: Removed white edges from Kerne Explained images - Status: SUCCESS
+[2026-01-24 19:19] - Home: Implemented animated moving gradient effect - Status: SUCCESS
+[2026-01-24 19:24] - Home: Simplified gradient to 2 colors - Status: SUCCESS
+[2026-01-26 12:24] - About: Applied new color scheme to main/hero section - Status: SUCCESS
+[2026-01-26 13:06] - About: Fixed institutional pillar images - Status: SUCCESS
+[2026-01-26 13:11] - About: Fixed institutional pillar images with Next.js Image props - Status: SUCCESS
+[2026-01-26 16:38] - Transparency: Applied new color scheme to transparency page - Status: SUCCESS
+[2026-01-26 16:57] - Institutional: Unified page layout with site-wide card structure - Status: SUCCESS
+[2026-01-26 17:15] - Site-wide: Implemented gradient section backgrounds - Status: SUCCESS
+[2026-01-26 17:31] - Site-wide: Completed gradient background implementation - Status: SUCCESS
+[2026-01-26 17:50] - About/Transparency: Restructured section layouts - Status: SUCCESS
+[2026-01-26 20:16] - About: Restructured page sections for clearer visual hierarchy - Status: SUCCESS
+[2026-01-26 20:25] - Transparency: Restructured page sections matching about page pattern - Status: SUCCESS
+[2026-01-26 20:30] - Institutional: Restructured page to match about/transparency pattern - Status: SUCCESS
+[2026-01-26 20:36] - Privacy/Cookies: Website redesign - cookie policy consolidation - Status: SUCCESS
+[2026-01-27 14:08] - Middleware: Removed Genesis access gate from /terminal page - Status: SUCCESS
+[2026-01-27 15:39] - Terminal: Redesigned terminal page with site-wide grid system - Status: SUCCESS
+[2026-01-27 15:43] - Terminal: REVERTED terminal page redesign - Status: SUCCESS
+[2026-01-28 11:52] - Home: Updated Ecosystem Partners section to Ecosystem Infrastructure - Status: SUCCESS
+[2026-01-28 12:08] - Home: Fixed Ecosystem Infrastructure logos - Status: SUCCESS
+[2026-01-28 12:13] - Home: Fixed logo rendering issue - Status: SUCCESS
+[2026-01-28 12:16] - Home: Simplified logo CSS filter - Status: Debugging
+[2026-01-28 12:18] - Home: Applied inline style filter for SVG logo rendering - Status: Final Fix
+[2026-01-28 12:35] - Home: Optimized Ecosystem Infrastructure logo rendering - Status: SUCCESS
+[2026-01-28 12:49] - Home: Standardized Ecosystem Infrastructure logo heights - Status: SUCCESS
+[2026-01-28 12:57] - Home: Refined CoW Protocol logo scale - Status: SUCCESS
+[2026-01-28 13:00] - Home: Visual weight calibration for infrastructure logos - Status: SUCCESS
+[2026-01-28 13:21] - Home: Restored Hyperliquid logo height - Status: SUCCESS
+[2026-01-28 13:30] - Site-wide: Redesigned all primary buttons from pill-shaped to rounded rectangles - Status: SUCCESS
+[2026-01-28 13:45] - Header: Refactored repeated header code into global Navbar component - Status: SUCCESS
+[2026-01-28 13:52] - Header: Redesigned Navbar to floating bar structure - Status: SUCCESS
+[2026-01-28 14:00] - Header: Unified Navbar alignment with site sections - Status: SUCCESS
+[2026-01-28 14:04] - Header: Refined Navbar vertical spacing - Status: SUCCESS
+[2026-01-28 14:10] - Header: Synchronized Navbar internal padding - Status: SUCCESS
+[2026-01-28 14:15] - Header: Increased Navbar clearance to 12px - Status: SUCCESS
+[2026-01-28 14:20] - Header: Refined Navbar border color - Status: SUCCESS
+[2026-01-28 15:08] - Header: Enhanced Navbar aesthetics - Status: SUCCESS
+[2026-01-28 16:37] - Home: Implemented CSS Mesh Gradient animation - Status: SUCCESS
+[2026-01-28 16:48] - Home: Updated Yield Calculator heading - Status: SUCCESS
+[2026-01-28 17:04] - Palette: Updated teal color - Status: SUCCESS
+[2026-01-28 17:10] - Home: Unified Yield Calculator card gradients - Status: SUCCESS
+[2026-01-28 17:25] - Palette: Updated dark green color - Status: SUCCESS
+[2026-01-28 17:38] - Home: Updated Backtested performance section text - Status: SUCCESS
+[2026-01-28 18:06] - Home: Overhauled Backtested Performance simulation - Status: SUCCESS
+[2026-01-28 19:52] - Home: Fixed Backtested Performance x-axis - Status: SUCCESS
+[2026-01-28 20:01] - Home: Visual overhaul of Backtested Performance chart - Status: SUCCESS
+[2026-01-28 20:08] - Home: Refined Backtested Performance chart - Status: SUCCESS
+[2026-01-28 20:25] - Home: Updated Backtested Performance chart styling - Status: SUCCESS
+[2026-01-28 20:38] - Home: Final institutional refinements to performance chart - Status: SUCCESS
+[2026-01-28 20:58] - Typography: Complete site-wide typography audit completed - Status: SUCCESS
+[2026-01-28 21:04] - Typography: Site-wide typography remediation complete - Status: SUCCESS
+[2026-01-28 21:25] - Header: Investigated Navbar top-spacing - Status: SUCCESS
+[2026-01-28 21:33] - Header: Increased Navbar max-width - Status: SUCCESS
+[2026-01-28 21:41] - Header: Extended Navbar width to 1920px - Status: SUCCESS
+[2026-01-28 21:48] - Header: Navbar cleanup - Status: SUCCESS
+[2026-01-28 21:56] - Design: Navbar refinements - Status: SUCCESS
+[2026-01-28 22:26] - Design: Navbar icon update - Status: SUCCESS
+[2026-01-28 22:33] - Design: Homepage and Footer refinements - Status: SUCCESS
+[2026-01-28 22:42] - Design: Hero section spacing fix - Status: SUCCESS
+[2026-01-28 23:23] - Design: Button and Icon refinements - Status: SUCCESS
+[2026-01-28 23:35] - Design: Button and Icon refinements - Status: SUCCESS
+[2026-01-29 12:22] - Home: Removed fade-in animation from Yield Calculator - Status: SUCCESS
+[2026-01-29 12:25] - Header: Fixed logo snap on refresh - Status: SUCCESS
+[2026-01-29 12:32] - Header: Added slide-down animation to Navbar - Status: SUCCESS
+[2026-01-29 13:12] - Site-wide: Comprehensive copywriting and terminology standardization - Status: SUCCESS
+[2026-01-29 13:34] - Home: Updated Yield Calculator header capitalization - Status: SUCCESS
+[2026-01-29 13:47] - Site-wide: Institutional copywriting overhaul - Status: SUCCESS
+[2026-01-29 13:57] - About: Terminology standardization - Status: SUCCESS
+[2026-01-29 14:06] - Site-wide: Institutional copywriting finalization - Status: SUCCESS
+[2026-01-29 14:18] - About: Security section restoration - Status: SUCCESS
+[2026-01-29 14:21] - Site-wide: Institutional copywriting overhaul finalization - Status: SUCCESS
+[2026-01-29 14:31] - Project: Maintenance - Status: SUCCESS
+[2026-01-29 15:38] - Home: Updated Ecosystem infrastructure section - Status: SUCCESS
+[2026-01-29 15:57] - Site-wide: Institutional copywriting refinements - Status: SUCCESS
+[2026-01-29 16:10] - Home: Refined hero body text - Status: SUCCESS
+[2026-01-29 16:13] - Footer: Link updates - Status: SUCCESS
+[2026-01-30 11:34] - Git: Sync attempt - Status: NOTE
+[2026-01-30 11:37] - Terminal: Rebuild initiation - Status: SUCCESS
+[2026-01-30 11:44] - Terminal: Custom terminal header - Status: SUCCESS
+[2026-01-30 12:21] - Terminal: Interface V1.3 - Status: SUCCESS
+[2026-01-30 12:27] - Terminal: Layout refinements - Status: SUCCESS
+[2026-01-30 12:35] - Terminal: Interface V1.3 Components - Status: SUCCESS
+[2026-01-30 12:41] - Terminal: UI Flattening and Spacing - Status: SUCCESS
+[2026-01-30 14:38] - Terminal: UI Standard Restoration - Status: SUCCESS
+[2026-01-30 14:50] - Terminal: UI Refinement - Status: SUCCESS
+[2026-01-30 14:55] - Terminal: Layout Restructure - Status: SUCCESS
+[2026-01-30 16:43] - Terminal: Grid Expansion - Status: SUCCESS
+[2026-01-30 17:55] - Terminal: Institutional Layout Finalization - Status: SUCCESS
+[2026-01-30 18:13] - Terminal: Metric Card Swap - Status: SUCCESS
+[2026-01-30 18:24] - Terminal: UI Revert and Refinement - Status: SUCCESS
+[2026-01-30 18:34] - Terminal: Redesign - Status: SUCCESS
+[2026-01-30 18:42] - Terminal: Performance Chart Update - Status: SUCCESS
+[2026-01-30 18:53] - Terminal: Market Comparison Chart - Status: SUCCESS
+[2026-01-30 19:02] - Terminal: Asset Composition Card - Status: SUCCESS
+[2026-01-30 19:07] - Terminal: Metric Card Swaps and Risk Disclosure - Status: SUCCESS
+[2026-01-30 20:07] - Terminal: Chain Selection Dropdown - Status: SUCCESS
+[2026-01-30 22:10] - Terminal: Fixed Navbar Layout Shift - Status: SUCCESS
+[2026-01-30 22:25] - Terminal: Chain Logos in Dropdown - Status: SUCCESS
+[2026-01-30 22:30] - Terminal: Dropdown UI Refinement - Status: SUCCESS
+[2026-01-30 22:38] - Terminal: Rename Optimism to OP Mainnet - Status: SUCCESS
+[2026-01-30 22:51] - Home: Reverted Base logo - Status: SUCCESS
+[2026-01-30 23:08] - Terminal: Logo standardization - Status: SUCCESS
+[2026-01-30 23:15] - Terminal: UI Cleanup - Status: SUCCESS
+[2026-01-30 23:22] - Terminal: Interactive Modal and Chart Polish - Status: SUCCESS
+[2026-01-30 23:35] - Terminal: Reown AppKit Integration - Status: SUCCESS
+[2026-01-31 15:37] - Design: Site-wide gradient and border standardization complete - Status: SUCCESS
+[2026-01-31 15:44] - Terminal: Added blur/opacity effect to User Earnings and User Balance cards - Status: SUCCESS
+[2026-01-31 17:25] - Terminal: Connect Wallet Redesign and Institutional Branding - Status: SUCCESS
+[2026-01-31 18:45] - Wallet: Custom Wallet Modal - Reown Removed - Status: SUCCESS
+[2026-01-31 19:11] - Wallet: Wallet Dropdown Blur Effect - Status: SUPERSEDED
+[2026-01-31 19:20] - Wallet: Dropdown Styling Unification - Status: SUCCESS
+[2026-01-31 20:15] - Terminal: Terminal Page Design Standards Audit - Status: SUCCESS
+[2026-01-31 20:45] - Typography: Typography Standardization Script and Comprehensive Audit - Status: SUCCESS
+[2026-01-31 21:15] - Vault: VaultInteraction Card Redesign and Final Polish - Status: SUCCESS
+[2026-02-03 17:00] - Terminal: Website UX and Typography Refinements - Status: SUCCESS
+[2026-02-03 17:15] - Transparency: Transparency Page Pie Chart Color Update - Status: SUCCESS
+[2026-02-03 17:30] - Terminal: Terminal Dashboard Refinement and Graph Optimization - Status: SUCCESS
+[2026-02-03 18:00] - Terminal: Terminal Page UI Polish and Navigation Refinements - Status: SUCCESS
+[2026-02-03 18:30] - Terminal: Terminal Page UI Refinement and Navigation Update - Status: SUCCESS
+[2026-02-03 19:00] - Terminal: Terminal Chart Polish and Asset Composition Fix - Status: SUCCESS
+[2026-02-03 19:15] - Terminal: Terminal Chart Standardisation and Sidebar Refinement - Status: SUCCESS
+[2026-02-03 19:30] - Terminal: Terminal Dashboard UI standardisation Complete - Status: SUCCESS
+[2026-02-03 19:45] - Terminal: Terminal Dashboard UI Refinement and Legend Polish - Status: SUCCESS
+[2026-02-03 20:00] - Terminal: Terminal Chart Range and Dashboard standardisation - Status: SUCCESS
+[2026-02-03 20:15] - Terminal: Terminal Dashboard UI standardisation and Chart UX Fix - Status: SUCCESS
+[2026-02-03 20:30] - Terminal: Terminal Dashboard Symmetry and Edge-to-Edge Alignment - Status: SUCCESS
+[2026-02-03 20:45] - Terminal: Terminal Dashboard Symmetry and Alignment Synthesis - Status: SUCCESS
+[2026-02-03 21:00] - Terminal: Terminal Page Graph UI Refinement - Status: SUCCESS
+[2026-02-03 21:15] - Terminal: Terminal Dashboard UI Refinement Phase 2 - Status: SUCCESS
+[2026-02-04 14:30] - Terminal: Terminal Wallet Connection Dropdown Enhancement - Status: SUCCESS
+[2026-02-04 15:00] - Design: Site-Wide 4px Border Radius and Institutional Refinements - Status: SUCCESS
+[2026-02-04 15:30] - Institutional: Institutional Page Copywriting Refinements - Status: SUCCESS
+[2026-02-05 14:00] - Home: Homepage Earnings Rounding - Status: SUCCESS
+[2026-02-05 14:30] - Home: Homepage and Terminal Dashboard Chart Refinements - Status: SUCCESS
+[2026-02-05 18:30] - Project: Reformatted project_state.md to simple chronological entries - Status: SUCCESS
+[2026-02-05 18:40] - Mobile: Site-wide mobile spacing optimization complete - Status: SUCCESS
+[2026-02-05 18:50] - Spacing: Standardized all section spacing to pt-32 pb-32 (128px) across entire site - Status: SUCCESS
+[2026-02-05 18:55] - Spacing: Fixed hero section card overlap by removing negative margins - Status: SUCCESS
+[2026-02-05 19:02] - Mobile: Fixed mission card border responsiveness on About page - Status: SUCCESS
+[2026-02-05 19:06] - Mobile: Optimized charts across homepage and terminal for smaller screens - Status: SUCCESS
+[2026-02-05 19:10] - Mobile: Fixed chart legends overlapping by refining responsive flex directions and chart margins - Status: SUCCESS
+[2026-02-05 19:20] - Mobile: Refined terminal chart container heights and overflow to prevent legend bleeding - Status: SUCCESS
+[2026-02-05 19:28] - Mobile: Standardized p-6 padding across all terminal cards and components for mobile consistency - Status: SUCCESS
+[2026-02-05 19:35] - Desktop: Restored terminal graph heights and alignment while maintaining mobile optimizations - Status: SUCCESS
+[2026-02-05 19:42] - Terminal: Centered legend boxes vertically in graph cards to fix visual imbalance - Status: REVERTED
+[2026-02-05 19:51] - Home: Standardized Ecosystem Infrastructure logo sizes and padding for mobile consistency - Status: SUCCESS
