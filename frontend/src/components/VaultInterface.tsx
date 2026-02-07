@@ -118,40 +118,40 @@ export function VaultInterface() {
   }, [depositAmount, allowance]);
 
   return (
-    <Card className="bg-card border-border rounded-xl shadow-sm overflow-hidden">
-      <CardHeader className="border-b border-border bg-grey-50/50">
-        <CardTitle className="text-sm font-heading font-bold text-muted-foreground uppercase tracking-widest">
-          Vault_Interaction_Core
+    <Card className="bg-white border-[#f1f1ed] rounded-sm overflow-hidden">
+      <CardHeader className="border-b border-[#f1f1ed] bg-[#f9f9f4]/30 px-6 py-4">
+        <CardTitle className="text-xs font-bold text-zinc-400 uppercase tracking-tight">
+          Vault Interaction
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
         <Tabs defaultValue="deposit" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-grey-100 rounded-lg p-1">
+          <TabsList className="grid w-full grid-cols-2 bg-[#f1f1ed] rounded-full p-1.5 h-12">
             <TabsTrigger 
               value="deposit" 
-              className="rounded-md data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm font-heading font-bold"
+              className="rounded-full data-[state=active]:bg-white data-[state=active]:text-primary font-bold text-xs"
             >
-              DEPOSIT
+              Deposit
             </TabsTrigger>
             <TabsTrigger 
               value="withdraw" 
-              className="rounded-md data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm font-heading font-bold"
+              className="rounded-full data-[state=active]:bg-white data-[state=active]:text-primary font-bold text-xs"
             >
-              WITHDRAW
+              Withdraw
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="deposit" className="mt-6 space-y-6">
+          <TabsContent value="deposit" className="mt-8 space-y-6">
             {credits !== null && (
-              <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg flex justify-between items-center">
-                <span className="text-[10px] font-sans text-primary uppercase tracking-widest font-bold">Kerne_Credits_Accrued</span>
-                <span className="text-sm font-sans font-bold text-primary">{credits.toFixed(2)} PTS</span>
+              <div className="px-4 py-3 bg-primary/5 border border-primary/10 rounded-sm flex justify-between items-center">
+                <span className="text-xs font-bold text-primary tracking-tight">Kerne Credits</span>
+                <span className="text-xs font-bold text-primary">{credits.toFixed(2)} pts</span>
               </div>
             )}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-sans font-bold text-muted-foreground">
-                <span>ASSET: WETH</span>
-                <span>BALANCE: {wethBalance ? formatUnits(wethBalance, 18) : '0.00'}</span>
+            <div className="space-y-3">
+              <div className="flex justify-between text-xs font-bold text-zinc-400">
+                <span>Asset: WETH</span>
+                <span>Balance: {wethBalance ? formatUnits(wethBalance, 18) : '0.00'}</span>
               </div>
               <div className="relative">
                 <Input
@@ -159,27 +159,29 @@ export function VaultInterface() {
                   placeholder="0.00"
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value)}
-                  className="bg-white border-border rounded-lg font-sans font-bold text-lg h-12 focus-visible:ring-primary/20"
+                  className="bg-zinc-50 border-zinc-100 rounded-sm font-bold text-l h-14 focus-visible:ring-primary/20 px-4"
                 />
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => wethBalance && setDepositAmount(formatUnits(wethBalance, 18))}
-                  className="absolute right-2 top-2 text-xs font-sans font-bold hover:bg-grey-100 rounded-md"
+                  className="absolute right-3 top-3.5 text-xs font-bold hover:bg-white rounded-sm px-2 h-7"
                 >
-                  MAX
+                  Max
                 </Button>
               </div>
             </div>
 
             {projection && (
-              <div className="p-4 bg-grey-50 border border-dashed border-border font-sans text-xs space-y-1 rounded-lg">
-                <div className="text-muted-foreground uppercase tracking-tighter font-bold">Yield_Projection (12.4% APY)</div>
-                <div className="text-primary font-bold">
-                  [EST_WEEKLY_REVENUE: +{projection.weekly} ETH]
+              <div className="p-4 bg-zinc-50 rounded-sm space-y-2 border border-zinc-100">
+                <div className="text-xs font-bold text-zinc-400 uppercase tracking-tight">Yield Projection (12.4% APY)</div>
+                <div className="flex justify-between items-center">
+                   <span className="text-xs font-medium text-zinc-500">Weekly</span>
+                   <span className="text-xs font-bold text-[#000000]">+{projection.weekly} ETH</span>
                 </div>
-                <div className="text-primary-dark font-bold">
-                  [EST_ANNUAL_REVENUE: +{projection.annual} ETH]
+                <div className="flex justify-between items-center">
+                   <span className="text-xs font-medium text-zinc-500">Annual</span>
+                   <span className="text-xs font-bold text-primary">+{projection.annual} ETH</span>
                 </div>
               </div>
             )}
@@ -188,26 +190,26 @@ export function VaultInterface() {
               <Button
                 onClick={handleApprove}
                 disabled={isPending || !depositAmount}
-                className="w-full bg-primary text-primary-foreground hover:bg-primary-dark rounded-lg font-heading font-bold h-12 shadow-sm transition-all"
+                className="w-full bg-primary text-white hover:bg-primary-dark rounded-full font-bold h-14 transition-all text-s"
               >
-                {isPending ? 'PROCESSING...' : 'APPROVE_WETH'}
+                {isPending ? 'Processing...' : 'Approve WETH'}
               </Button>
             ) : (
               <Button
                 onClick={handleDeposit}
                 disabled={isPending || !depositAmount}
-                className="w-full bg-primary text-primary-foreground hover:bg-primary-dark rounded-lg font-heading font-bold h-12 shadow-sm transition-all"
+                className="w-full bg-primary text-white hover:bg-primary-dark rounded-full font-bold h-14 transition-all text-s"
               >
-                {isPending ? 'PROCESSING...' : 'CONFIRM_DEPOSIT'}
+                {isPending ? 'Processing...' : 'Confirm Deposit'}
               </Button>
             )}
           </TabsContent>
 
-          <TabsContent value="withdraw" className="mt-6 space-y-6">
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-sans font-bold text-muted-foreground">
-                <span>ASSET: KERNE-V1</span>
-                <span>VAULT_BALANCE: {convertToAssets ? formatUnits(convertToAssets, 18) : '0.00'} WETH</span>
+          <TabsContent value="withdraw" className="mt-8 space-y-6">
+            <div className="space-y-3">
+              <div className="flex justify-between text-xs font-bold text-zinc-400">
+                <span>Asset: Kerne V1</span>
+                <span>Balance: {convertToAssets ? formatUnits(convertToAssets, 18) : '0.00'} WETH</span>
               </div>
               <div className="relative">
                 <Input
@@ -215,15 +217,15 @@ export function VaultInterface() {
                   placeholder="0.00"
                   value={withdrawAmount}
                   onChange={(e) => setWithdrawAmount(e.target.value)}
-                  className="bg-white border-border rounded-lg font-sans font-bold text-lg h-12 focus-visible:ring-primary/20"
+                  className="bg-zinc-50 border-zinc-100 rounded-sm font-bold text-l h-14 focus-visible:ring-primary/20 px-4"
                 />
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => convertToAssets && setWithdrawAmount(formatUnits(convertToAssets, 18))}
-                  className="absolute right-2 top-2 text-xs font-sans font-bold hover:bg-grey-100 rounded-md"
+                  className="absolute right-3 top-3.5 text-xs font-bold hover:bg-white rounded-sm px-2 h-7"
                 >
-                  MAX
+                  Max
                 </Button>
               </div>
             </div>
@@ -231,9 +233,9 @@ export function VaultInterface() {
             <Button
               onClick={handleWithdraw}
               disabled={isPending || !withdrawAmount}
-              className="w-full bg-grey-100 text-foreground hover:bg-grey-200 rounded-lg font-heading font-bold h-12 shadow-sm transition-all"
+              className="w-full bg-[#191919] text-white hover:bg-[#1f1f1f] rounded-full font-bold h-14 transition-all text-s"
             >
-              {isPending ? 'PROCESSING...' : 'CONFIRM_WITHDRAWAL'}
+              {isPending ? 'Processing...' : 'Confirm Withdrawal'}
             </Button>
           </TabsContent>
         </Tabs>

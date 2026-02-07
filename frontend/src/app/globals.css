@@ -3,16 +3,24 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --color-primary: #4c7be7;
-  --color-primary-dark: #0d33ec;
-  --color-grey-50: #f9f9f4;
-  --color-grey-100: #f1f1ed;
-  --color-grey-800: #1f1f1f;
-  --color-grey-900: #191919;
+  --color-primary: #000000;
+  --color-primary-dark: #000000;
+  --color-grey-50: #ffffff;
+  --color-grey-100: #ffffff;
+  --color-grey-800: #000000;
+  --color-grey-900: #000000;
+  
+  /* Kerne Brand Colors - Tailwind Utilities */
+  --color-green: #37d097;
+  --color-teal: #19b097;
+  --color-lightest-grey: #d4dce1;
+  --color-light-grey: #aab9be;
+  --color-grey: #444a4f;
+  --color-dark-grey: #22252a;
   
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-heading: var(--font-heading);
+  --font-heading: 'TASA Orbiter', sans-serif;
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -44,7 +52,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
+  --radius-sm: 4px;
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
@@ -54,80 +62,128 @@
 }
 
 :root {
-  --radius: 0.5rem;
+  --radius: 1rem;
   --background: #ffffff;
-  --foreground: #191919;
-  --card: #f9f9f4;
-  --card-foreground: #191919;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
   --popover: #ffffff;
-  --popover-foreground: #191919;
-  --primary: #4c7be7;
+  --popover-foreground: #000000;
+  --primary: #000000;
   --primary-foreground: #ffffff;
-  --secondary: #0d33ec;
+  --secondary: #000000;
   --secondary-foreground: #ffffff;
-  --muted: #f1f1ed;
-  --muted-foreground: #1f1f1f;
-  --accent: #f1f1ed;
-  --accent-foreground: #4c7be7;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: #f1f1ed;
-  --input: #f1f1ed;
-  --ring: #4c7be7;
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --muted: #ffffff;
+  --muted-foreground: #000000;
+  --accent: #ffffff;
+  --accent-foreground: #000000;
+  --destructive: #000000;
+  --border: #000000;
+  --input: #ffffff;
+  --ring: #000000;
+  --chart-1: #000000;
+  --chart-2: #000000;
+  --chart-3: #000000;
+  --chart-4: #000000;
+  --chart-5: #000000;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #000000;
+  --sidebar-primary: #000000;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ffffff;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #000000;
+  --sidebar-ring: #000000;
+  
+  /* Kerne Color Palette - New Design System */
+  --color-green: #37d097;
+  --color-teal: #19b097;
+  --color-lightest-grey: #d4dce1;
+  --color-light-grey: #aab9be;
+  --color-grey: #444a4f;
+  --color-dark-grey: #22252a;
 }
 
 .dark {
-  --background: #191919;
-  --foreground: #f9f9f4;
-  --card: #1f1f1f;
-  --card-foreground: #f9f9f4;
-  --popover: #191919;
-  --popover-foreground: #f9f9f4;
-  --primary: #4c7be7;
-  --primary-foreground: #ffffff;
-  --secondary: #0d33ec;
-  --secondary-foreground: #ffffff;
-  --muted: #1f1f1f;
-  --muted-foreground: #f1f1ed;
-  --accent: #1f1f1f;
-  --accent-foreground: #4c7be7;
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: #1f1f1f;
-  --input: #1f1f1f;
-  --ring: #4c7be7;
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #000000;
+  --card-foreground: #ffffff;
+  --popover: #000000;
+  --popover-foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #ffffff;
+  --secondary-foreground: #000000;
+  --muted: #000000;
+  --muted-foreground: #ffffff;
+  --accent: #000000;
+  --accent-foreground: #ffffff;
+  --destructive: #ffffff;
+  --border: #ffffff;
+  --input: #000000;
+  --ring: #ffffff;
+  --chart-1: #ffffff;
+  --chart-2: #ffffff;
+  --chart-3: #ffffff;
+  --chart-4: #ffffff;
+  --chart-5: #ffffff;
+  --sidebar: #000000;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #000000;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #ffffff;
+  --sidebar-ring: #ffffff;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/50 shadow-none! transition-none!;
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* Font heading class for TASA Orbiter */
+  .font-heading {
+    font-family: 'TASA Orbiter', sans-serif;
+  }
+  
+  /* Standardized header sizes across the entire website */
+  h1 {
+    @apply text-5xl md:text-7xl font-heading font-medium tracking-tight;
+  }
+  h2 {
+    @apply text-4xl md:text-5xl font-heading font-medium tracking-tight;
+  }
+  h3 {
+    @apply text-2xl font-heading font-medium tracking-tight;
+  }
+  h4 {
+    @apply text-xl font-heading font-medium;
+  }
+  
+  /* Standardized text sizes for all non-header text (xs, s, m, l, xl) */
+  .text-xs {
+    @apply text-[11px];
+  }
+  .text-s {
+    @apply text-sm;
+  }
+  .text-m {
+    @apply text-base;
+  }
+  .text-l {
+    @apply text-lg;
+  }
+  .text-xl {
+    @apply text-3xl;
+  }
+  
+  /* Custom height utility for buttons (60px = 3.75rem) */
+  .h-15 {
+    height: 3.75rem;
   }
 }
 
@@ -140,6 +196,18 @@
     0% { transform: translateX(100%); }
     100% { transform: translateX(0); }
   }
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @keyframes mesh-gradient {
+    0% { background-position: 0% 0%; }
+    25% { background-position: 50% 100%; }
+    50% { background-position: 100% 0%; }
+    75% { background-position: 50% 100%; }
+    100% { background-position: 0% 0%; }
+  }
   .animate-marquee {
     animation: marquee 40s linear infinite;
   }
@@ -149,8 +217,43 @@
   .pause-marquee {
     animation-play-state: paused;
   }
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+  }
+  .animate-mesh {
+    background-size: 400% 400%;
+    animation: mesh-gradient 15s ease infinite;
+  }
 }
 
-/* @tailwind base; */
-/* @tailwind components; */
-/* @tailwind utilities; */
+/* WalletConnect Modal Styling */
+@layer components {
+  /* Target WalletConnect modal backdrop */
+  wcm-modal,
+  w3m-modal,
+  [data-walletconnect-modal] {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 10000 !important;
+  }
+
+  /* Add backdrop blur and prevent scrolling */
+  wcm-modal::before,
+  w3m-modal::before {
+    content: '' !important;
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    z-index: -1 !important;
+  }
+
+  /* Style the modal container */
+  wcm-modal > div,
+  w3m-modal > div {
+    border-radius: 1px !important;
+  }
+}
+

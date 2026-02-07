@@ -1,15 +1,10 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Manrope } from "next/font/google";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
 import { AccessGate } from "@/components/AccessGate";
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  variable: "--font-heading",
-});
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -18,10 +13,10 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   title: "KERNE | The Yield-Bearing Stablecoin Ecosystem",
-  description: "Institutional-grade delta-neutral assets on Base. 100% Transparent. 100% On-Chain.",
+  description: "Institutional grade delta neutral assets on Base. 100% Transparent. 100% On-Chain.",
   openGraph: {
     title: "KERNE | The Yield-Bearing Stablecoin Ecosystem",
-    description: "Institutional-grade delta-neutral assets on Base. 100% Transparent. 100% On-Chain.",
+    description: "Institutional grade delta neutral assets on Base. 100% Transparent. 100% On-Chain.",
     url: "https://kerne.finance",
     siteName: "Kerne Protocol",
     images: [
@@ -37,7 +32,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "KERNE | The Yield-Bearing Stablecoin Ecosystem",
-    description: "Institutional-grade delta-neutral assets on Base. 100% Transparent. 100% On-Chain.",
+    description: "Institutional grade delta neutral assets on Base. 100% Transparent. 100% On-Chain.",
     creator: "@KerneProtocol",
     images: ["https://kerne.finance/terminal-preview.png"],
   },
@@ -50,7 +45,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${spaceGrotesk.variable} ${manrope.variable} font-sans antialiased bg-white text-zinc-900 selection:bg-primary/20`}>
+      <head>
+        {/* TASA Orbiter font via Google Fonts CDN */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=TASA+Orbiter:wght@400..800&display=swap" rel="stylesheet" />
+      </head>
+      <body className={`${manrope.variable} font-sans antialiased bg-[#ffffff] text-[#000000] selection:bg-[#000000]/10`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
@@ -65,7 +66,7 @@ export default function RootLayout({
                 theme="light" 
               position="bottom-right" 
               toastOptions={{
-                className: "font-sans uppercase text-[10px] tracking-widest border-zinc-200 bg-white text-zinc-900 shadow-xl",
+                className: "font-sans uppercase text-xs tracking-widest border-[#000000]/10 bg-white text-[#000000]",
               }}
               />
             </Providers>

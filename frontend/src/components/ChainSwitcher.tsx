@@ -28,20 +28,20 @@ export function ChainSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/50 border border-zinc-800 hover:border-emerald-500/50 transition-all rounded-sm text-[10px] font-bold uppercase tracking-widest">
-          <Globe size={12} className="text-emerald-500" />
+        <button className="flex items-center gap-2 px-4 py-2 bg-[#f9f9f4] border border-[#f1f1ed] hover:border-primary/50 transition-all rounded-full text-xs font-bold text-[#000000]">
+          <Globe size={14} className="text-primary" />
           <span>{currentChain.name}</span>
-          <ChevronDown size={12} className="text-zinc-500" />
+          <ChevronDown size={14} className="text-zinc-400" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="bg-obsidian border-zinc-800 font-mono">
+      <DropdownMenuContent align="end" className="bg-white border-[#f1f1ed] rounded-sm p-1 min-w-[140px]">
         {chains.map((chain) => (
           <DropdownMenuItem
             key={chain.id}
-            onClick={() => switchChain({ chainId: chain.id })}
-            className="text-[10px] uppercase tracking-widest focus:bg-emerald-500/10 focus:text-emerald-500 cursor-pointer gap-2"
+            onClick={() => switchChain?.({ chainId: chain.id })}
+            className="text-xs font-bold text-[#1f1f1f] focus:bg-[#f9f9f4] focus:text-primary cursor-pointer gap-3 px-3 py-2 rounded-sm transition-colors"
           >
-            <span>{chain.icon}</span>
+            <span className="text-[14px]">{chain.icon}</span>
             {chain.name}
           </DropdownMenuItem>
         ))}

@@ -32,53 +32,57 @@ export function AccessGate({ children }: { children: React.ReactNode }) {
     }
   };
 
-  if (isLoading) return <div className="min-h-screen bg-white" />;
+  if (isLoading) return <div className="min-h-screen bg-[#f9f9f4]" />;
 
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#f9f9f4] flex flex-col items-center justify-center p-6 font-sans">
-        <div className="w-full max-w-md space-y-8 text-center">
-          <div className="flex justify-center mb-8">
+        <div className="w-full max-w-md space-y-10 text-center">
+          <div className="flex justify-center mb-12">
             <Image src="/kerne-lockup.svg" alt="Kerne Logo" width={180} height={40} priority />
           </div>
           
-          <div className="space-y-2">
-            <h1 className="text-2xl font-heading font-bold tracking-tight text-[#191919]">
-              Institutional Access Only
+          <div className="space-y-3">
+            <h1 className=" font-heading font-medium tracking-tight text-[#000000]">
+              Institutional access
             </h1>
-            <p className="text-sm text-zinc-500">
-              The platform is currently undergoing a scheduled architectural upgrade. Please enter your access code to proceed.
+            <p className="text-[#1f1f1f] font-medium text-s leading-relaxed">
+              The Kerne infrastructure is currently undergoing a scheduled architectural upgrade. Please enter your terminal access code to proceed.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-12 space-y-6">
             <div className="relative">
               <input
                 type="password"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                placeholder="Enter Access Code"
-                className={`w-full px-4 py-4 bg-white border ${error ? 'border-red-500' : 'border-zinc-200'} rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#4c7be7]/20 transition-all text-center font-mono tracking-widest`}
+                placeholder="Terminal Access Code"
+                className={`w-full px-6 py-5 bg-[#f1f1ed] border ${error ? 'border-[#0d33ec]' : 'border-[#f1f1ed]'} rounded-sm focus:outline-none focus:ring-2 focus:ring-[#4c7be7]/20 transition-all text-center font-mono tracking-[0.5em] text-l font-bold text-[#000000]`}
                 autoFocus
               />
               {error && (
-                <p className="absolute -bottom-6 left-0 right-0 text-[10px] text-red-500 font-bold uppercase tracking-tight">
-                  Invalid Access Code. Please try again.
+                <p className="absolute -bottom-8 left-0 right-0 text-xs text-[#0d33ec] font-bold uppercase tracking-tight">
+                  Invalid authentication code. Please verify credentials.
                 </p>
               )}
             </div>
             
             <button
               type="submit"
-              className="w-full py-4 bg-[#4c7be7] text-white font-heading font-bold rounded-xl shadow-md hover:bg-[#0d33ec] transition-all transform active:scale-[0.98]"
+              className="w-full py-5 bg-[#4c7be7] text-[#f9f9f4] font-bold rounded-sm hover:bg-[#0d33ec] transition-all transform active:scale-[0.98] text-s tracking-tight uppercase"
             >
-              AUTHENTICATE
+              Authenticate Session
             </button>
           </form>
 
-          <p className="pt-8 text-[10px] text-zinc-400 uppercase tracking-widest">
-            © 2026 Kerne Protocol. Secure Transmission Active.
-          </p>
+          <div className="pt-12 flex flex-col items-center gap-4">
+             <div className="h-1.5 w-1.5 rounded-full bg-[#4c7be7]" />
+             <p className="text-xs text-zinc-400 font-bold uppercase tracking-widest leading-relaxed">
+               Verified Cryptographic Transmission <br />
+               © 2026 Kerne Protocol
+             </p>
+          </div>
         </div>
       </div>
     );

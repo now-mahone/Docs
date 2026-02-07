@@ -1,105 +1,125 @@
-// Created: 2025-12-30
+// Created: 2025-12-30 | Updated for Consistency: 2026-01-13 | Monochrome: 2026-01-22
 'use client';
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Eye, Shield, Lock } from 'lucide-react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
-
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.6 }
-};
+import Footer from '@/components/Footer';
+import Navbar from '@/components/Navbar';
 
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-emerald-500/30">
-      {/* Navigation */}
-      <nav className="flex justify-between items-center px-8 py-6 border-b border-border/50 backdrop-blur-md sticky top-0 z-50">
-        <Link href="/" className="flex items-center gap-2 group">
-          <ArrowLeft size={18} className="text-muted-foreground group-hover:text-foreground transition-colors" />
-          <span className="text-xl font-bold tracking-tighter uppercase">Kerne</span>
-        </Link>
-        <div className="flex items-center gap-4">
-          <div className="text-[10px] text-emerald-500 uppercase tracking-[0.2em] font-bold">
-            Privacy_Protocol_v1.0
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-[#ffffff] text-[#000000] font-sans selection:bg-[#000000] overflow-x-hidden">
+      {/* Background patterns */}
+      <div className="fixed inset-0 z-0 opacity-[0.03] pointer-events-none text-[#000000]">
+        <div className="absolute inset-0 bg-[radial-gradient(currentColor_1px,transparent_1px)] [background-size:40px_40px]" />
+      </div>
 
-      {/* Hero */}
-      <section className="px-8 pt-24 pb-16 max-w-4xl mx-auto text-center">
-        <motion.h1 
-          className="text-5xl md:text-7xl font-bold tracking-tighter mb-6 uppercase"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          Privacy <br />
-          <span className="text-emerald-500">Policy.</span>
-        </motion.h1>
-        <motion.p 
-          className="text-muted-foreground text-lg leading-relaxed max-w-2xl mx-auto"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          Your privacy is paramount. We are committed to protecting your data and ensuring transparency in how we operate.
-        </motion.p>
-      </section>
+      <Navbar />
 
-      {/* Content */}
-      <section className="px-8 py-20 max-w-3xl mx-auto">
-        <motion.div className="prose prose-invert max-w-none space-y-12" variants={fadeInUp} initial="initial" whileInView="whileInView">
-          <div>
-            <h2 className="text-2xl font-bold uppercase tracking-tight mb-4 flex items-center gap-3">
-              <Eye className="text-emerald-500" size={24} />
-              1. Data Collection
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Kerne Protocol is a decentralized platform. We do not collect personal information such as names, email addresses, or physical locations. Our interface interacts directly with your self-custodial wallet.
+      <main className="relative z-10 pt-24">
+        {/* Simple Header */}
+        <section className="relative px-6 md:px-12 pt-32 pb-16 border-b border-[#000000] bg-white">
+          <div className="max-w-7xl mx-auto h-full px-6 md:px-12">
+            <h1 className="font-heading font-medium tracking-tight mb-4 text-[#000000]">
+              Privacy Policy
+            </h1>
+            <p className="text-s text-[#000000] font-medium uppercase tracking-widest leading-relaxed">
+              Last Updated: January 13, 2026
             </p>
           </div>
+        </section>
 
-          <div>
-            <h2 className="text-2xl font-bold uppercase tracking-tight mb-4 flex items-center gap-3">
-              <Shield className="text-emerald-500" size={24} />
-              2. On-Chain Data
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Please be aware that all transactions on the Base network are public. Your wallet address and transaction history are visible to anyone on the blockchain. This is a fundamental characteristic of decentralized finance.
-            </p>
+        {/* Content Section */}
+        <section className="py-24 bg-white">
+          <div className="max-w-7xl mx-auto px-6 md:px-12 text-[#000000] font-medium leading-relaxed space-y-12">
+            <div>
+              <h2 className="font-heading font-medium text-[#000000] mb-6">1. Privacy Philosophy</h2>
+              <p className="text-[#000000] mb-4">
+                Kerne Protocol is built on the principles of decentralization, anonymity, and data sovereignty. We believe that financial privacy is a fundamental human right. Our interface is designed to provide institutional-grade access to the protocol without compromising your personal identity.
+              </p>
+              <p className="text-[#000000]">
+                This document outlines our commitment to your privacy and the limited technical data processed when you interact with our decentralized application (dApp).
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-heading font-medium text-[#000000] mb-6">2. Data Non-Collection</h2>
+              <p className="text-[#000000] mb-4">
+                Kerne Protocol does not collect, store, or process any Personally Identifiable Information (PII). This includes:
+              </p>
+              <ul className="list-disc list-inside text-[#000000] space-y-2 ml-4">
+                <li>Your name or physical address.</li>
+                <li>Your email address or phone number.</li>
+                <li>Your IP address (which is anonymized at the edge).</li>
+                <li>Government-issued identification numbers.</li>
+              </ul>
+              <p className="text-[#000000] mt-4">
+                Your primary identifier is your self-custodial wallet address. This address is public on the Base network by design.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-heading font-medium text-[#000000] mb-6">3. Public Ledger Transparency</h2>
+              <p className="text-[#000000] mb-4">
+                By interacting with Kerne Protocol, you acknowledge that all transactions—including deposits, minting kUSD, and withdrawals—are recorded on the Base blockchain. Blockchains are public ledgers that are immutable and transparent.
+              </p>
+              <p className="text-[#000000]">
+                Anyone with access to the Base network can view your transaction history, balance, and protocol interactions associated with your public wallet address.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-heading font-medium text-[#000000] mb-6">4. Processing of Technical Data</h2>
+              <p className="text-[#000000] mb-4">
+                To provide a high-performance interface and prevent adversarial attacks, our infrastructure may process transitory technical data. This includes:
+              </p>
+              <ul className="list-disc list-inside text-[#000000] space-y-2 ml-4">
+                <li>Usage Statistics: Anonymized interaction data (buttons clicked, pages viewed) used to refine the protocol UI.</li>
+                <li>RPC Calls: Data sent between your wallet and the blockchain nodes. We recommend using privacy-focused RPC providers.</li>
+                <li>Wallet Metadata: Information provided by wallet connectors (e.g., WalletConnect, RainbowKit) to manage connection states.</li>
+              </ul>
+            </div>
+
+            <div>
+              <h2 className="font-heading font-medium text-[#000000] mb-6">5. Third-Party Services</h2>
+              <p className="text-[#000000] mb-4">
+                Our interface utilizes industry-standard libraries and infrastructure providers. These third parties include:
+              </p>
+              <ul className="list-disc list-inside text-[#000000] space-y-2 ml-4">
+                <li>Hosting Providers: (e.g., Vercel) to deliver the frontend interface.</li>
+                <li>Analytics: (e.g., Cloudflare) for DDOS protection and traffic routing.</li>
+                <li>Wallet Service Providers: To enable secure connection to your self-custodial assets.</li>
+              </ul>
+            </div>
+
+            <div>
+              <h2 className="font-heading font-medium text-[#000000] mb-6">6. Your Rights</h2>
+              <p className="text-[#000000]">
+                Because we do not store your data, we cannot "delete" it upon request. Your data sovereignty is absolute because you control your private keys. To cease sharing data with the Protocol, simply disconnect your wallet and stop accessing the Site.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-heading font-medium text-[#000000] mb-6">7. Cookie Policy</h2>
+              <p className="text-[#000000] mb-4">
+                Our website uses minimal cookies to ensure functionality and enhance user experience. These include:
+              </p>
+              <ul className="list-disc list-inside text-[#000000] space-y-2 ml-4">
+                <li>Essential Cookies: Required for website security and wallet session persistence.</li>
+                <li>Preference Cookies: Store your interface preferences and terminal settings.</li>
+                <li>Analytics Cookies: Privacy-preserving, anonymized data used solely to improve the institutional user experience.</li>
+              </ul>
+              <p className="text-[#000000] mt-4">
+                You may configure your browser to block or alert you about cookies, though some site features may not function correctly. These cookies do not store personally identifiable information (PII).
+              </p>
+            </div>
           </div>
+        </section>
+      </main>
 
-          <div>
-            <h2 className="text-2xl font-bold uppercase tracking-tight mb-4 flex items-center gap-3">
-              <Lock className="text-emerald-500" size={24} />
-              3. Security Measures
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We employ industry-standard security protocols to protect our interface and your interaction with the protocol. We never have access to your private keys or seed phrases.
-            </p>
-          </div>
-
-          <div className="p-8 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl">
-            <h3 className="text-lg font-bold uppercase mb-4 text-emerald-500">Commitment</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              We will never sell your data to third parties. Our goal is to provide a secure, private, and institutional-grade experience for all users.
-            </p>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Footer */}
-      <footer className="px-8 py-20 text-center border-t border-border/50">
-        <Link href="/terms" className="text-emerald-500 font-bold uppercase tracking-widest hover:underline mx-4">
-          Terms of Service
-        </Link>
-        <Link href="/risk" className="text-emerald-500 font-bold uppercase tracking-widest hover:underline mx-4">
-          Cookie Policy
-        </Link>
-      </footer>
+      <Footer />
     </div>
   );
 }

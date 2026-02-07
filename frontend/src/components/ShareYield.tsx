@@ -28,7 +28,7 @@ export default function ShareYield({ userAddress, yieldPercent = "12.42" }: Shar
   return (
     <button
       onClick={handleShare}
-      className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 font-mono text-[10px] uppercase tracking-widest hover:bg-emerald-500 hover:text-black transition-all group"
+      className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 font-mono text-xs uppercase tracking-widest hover:bg-emerald-500 hover:text-black transition-all group"
     >
       {copied ? <Check size={12} /> : <Share2 size={12} className="group-hover:scale-110 transition-transform" />}
       {copied ? "COPIED" : "Share_Proof_of_Yield"}

@@ -39,8 +39,8 @@ export const SolvencyChart: React.FC<SolvencyChartProps> = ({ breakdown }) => {
               index % 2 === 0 ? 'bg-zinc-500' : 'bg-zinc-700'
             }`} />
             <div className="flex flex-col">
-              <span className="text-[10px] text-zinc-500 uppercase tracking-widest">{item.name}</span>
-              <span className="text-sm font-bold text-zinc-200">{item.value} ETH</span>
+              <span className="text-xs text-zinc-500 uppercase tracking-widest">{item.name}</span>
+              <span className="text-s font-bold text-zinc-200">{item.value} ETH</span>
             </div>
           </div>
         ))}
