@@ -1,105 +1,110 @@
-// Created: 2025-12-30
+// Created: 2025-12-30 | Updated for Consistency: 2026-01-13 | Monochrome: 2026-01-22
 'use client';
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, FileText, ShieldCheck, Scale } from 'lucide-react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
-
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.6 }
-};
+import Footer from '@/components/Footer';
+import Navbar from '@/components/Navbar';
 
 export default function TermsOfService() {
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-emerald-500/30">
-      {/* Navigation */}
-      <nav className="flex justify-between items-center px-8 py-6 border-b border-border/50 backdrop-blur-md sticky top-0 z-50">
-        <Link href="/" className="flex items-center gap-2 group">
-          <ArrowLeft size={18} className="text-muted-foreground group-hover:text-foreground transition-colors" />
-          <span className="text-xl font-bold tracking-tighter uppercase">Kerne</span>
-        </Link>
-        <div className="flex items-center gap-4">
-          <div className="text-[10px] text-emerald-500 uppercase tracking-[0.2em] font-bold">
-            Terms_Protocol_v1.0
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-[#ffffff] text-[#000000] font-sans selection:bg-[#000000] overflow-x-hidden">
+      {/* Background patterns */}
+      <div className="fixed inset-0 z-0 opacity-[0.03] pointer-events-none text-[#000000]">
+        <div className="absolute inset-0 bg-[radial-gradient(currentColor_1px,transparent_1px)] [background-size:40px_40px]" />
+      </div>
 
-      {/* Hero */}
-      <section className="px-8 pt-24 pb-16 max-w-4xl mx-auto text-center">
-        <motion.h1 
-          className="text-5xl md:text-7xl font-bold tracking-tighter mb-6 uppercase"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          Terms of <br />
-          <span className="text-emerald-500">Service.</span>
-        </motion.h1>
-        <motion.p 
-          className="text-muted-foreground text-lg leading-relaxed max-w-2xl mx-auto"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          By using the Kerne Protocol interface, you agree to the following terms and conditions.
-        </motion.p>
-      </section>
+      <Navbar />
 
-      {/* Content */}
-      <section className="px-8 py-20 max-w-3xl mx-auto">
-        <motion.div className="prose prose-invert max-w-none space-y-12" variants={fadeInUp} initial="initial" whileInView="whileInView">
-          <div>
-            <h2 className="text-2xl font-bold uppercase tracking-tight mb-4 flex items-center gap-3">
-              <Scale className="text-emerald-500" size={24} />
-              1. Protocol Usage
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Kerne Protocol is a decentralized financial tool. Users are responsible for their own funds and interactions with the smart contracts. We do not provide financial advice.
+      <main className="relative z-10 pt-24">
+        {/* Simple Header */}
+        <section className="relative px-6 md:px-12 pt-32 pb-16 border-b border-[#000000] bg-white">
+          <div className="max-w-7xl mx-auto h-full px-6 md:px-12">
+            <h1 className="font-heading font-medium tracking-tight mb-4 text-[#000000]">
+              Terms of Service
+            </h1>
+            <p className="text-s text-[#000000] font-medium uppercase tracking-widest leading-relaxed">
+              Last Updated: January 13, 2026
             </p>
           </div>
+        </section>
 
-          <div>
-            <h2 className="text-2xl font-bold uppercase tracking-tight mb-4 flex items-center gap-3">
-              <ShieldCheck className="text-emerald-500" size={24} />
-              2. Risk Acknowledgment
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              DeFi involves significant risks, including smart contract vulnerabilities and market volatility. By using Kerne, you acknowledge and accept these risks.
-            </p>
+        {/* Content Section */}
+        <section className="py-24 bg-white">
+          <div className="max-w-7xl mx-auto px-6 md:px-12 text-[#000000] font-medium leading-relaxed space-y-12">
+            <div>
+              <h2 className="font-heading font-medium text-[#000000] mb-6">1. Protocol Acceptance</h2>
+              <p className="text-[#000000] mb-4">
+                By accessing or using the Kerne Protocol interface (the "Site") and the associated decentralized smart contracts, you acknowledge that you have read, understood, and agreed to be bound by these Terms of Service. If you do not agree to these terms, you must immediately cease all use of the Site and the Protocol.
+              </p>
+              <p className="text-[#000000]">
+                Kerne Protocol is a suite of autonomous smart contracts deployed on the Base network. The interface provided via this Site is merely one method of interacting with the underlying decentralized infrastructure.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-heading font-medium text-[#000000] mb-6">2. Eligibility and Responsibility</h2>
+              <p className="text-[#000000] mb-4">
+                You represent and warrant that you are of legal age to form a binding contract and are not prohibited from using the Protocol under any applicable laws. You are solely responsible for ensuring that your use of the Protocol complies with the laws of your jurisdiction.
+              </p>
+              <p className="text-[#000000]">
+                You represent that you have sufficient technical knowledge to understand the risks associated with cryptographic systems, decentralized finance (DeFi), and the specific mechanisms of the Kerne synthetic asset engine.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-heading font-medium text-[#000000] mb-6">3. No Financial Advice</h2>
+              <p className="text-[#000000] mb-4">
+                Kerne Protocol and its contributors do not provide financial, investment, legal, or tax advice. All information provided on the Site is for informational purposes only. The yield projections and historical data presented are estimates and simulations; they do not guarantee future performance.
+              </p>
+              <p className="text-[#000000]">
+                You acknowledge that you are acting on your own volition and are responsible for your own investment decisions.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-heading font-medium text-[#000000] mb-6">4. Risk of Loss</h2>
+              <p className="text-[#000000] mb-4">
+                The use of Kerne Protocol involves significant risk, including the potential for complete loss of capital.
+              </p>
+              <p className="text-[#000000] mb-4">
+                 Risk vectors include, but are not limited to: smart contract vulnerabilities, Oracle failures, liquidation events due to collateral ratio drops, LST/ETH depegging, and Centralized Exchange (CEX) counterparty risk where hedging positions are maintained.
+              </p>
+              <p className="text-[#000000]">
+                Kerne utilizes an autonomous hedging engine. While designed with multiple circuit-breakers, extreme market conditions or unprecedented volatility may lead to cascading system failures.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-heading font-medium text-[#000000] mb-6">5. Performance Fees</h2>
+              <p className="text-[#000000] mb-4">
+                Kerne Protocol applies a performance fee (typically 20%) on generated yield. This fee is automatically captured by the smart contracts and used for protocol sustainability, insurance fund growth, and developer incentives.
+              </p>
+              <p className="text-[#000000]">
+                 Fees are subject to change via governed protocol parameters. Kerne does not charge management fees or entry/exit fees on the standard vault architecture.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-heading font-medium text-[#000000] mb-6">6. Disclaimer of Warranties</h2>
+              <p className="text-[#000000] mb-4">
+                The site and the protocol are provided on an "as is" and "as available" basis. Kerne Protocol expressly disclaims all warranties of any kind, whether express or implied, including but not limited to the implied warranties of merchantability, fitness for a particular purpose, and non-infringement.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-heading font-medium text-[#000000] mb-6">7. Limitation of Liability</h2>
+              <p className="text-[#000000]">
+                In no event shall Kerne Protocol, its contributors, or its affiliates be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenue, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses, resulting from your access to or use of (or inability to access or use) the protocol.
+              </p>
+            </div>
           </div>
+        </section>
+      </main>
 
-          <div>
-            <h2 className="text-2xl font-bold uppercase tracking-tight mb-4 flex items-center gap-3">
-              <FileText className="text-emerald-500" size={24} />
-              3. Compliance
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Users are responsible for ensuring their use of the protocol complies with local laws and regulations in their jurisdiction.
-            </p>
-          </div>
-
-          <div className="p-8 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl">
-            <h3 className="text-lg font-bold uppercase mb-4 text-emerald-500">Disclaimer</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              The protocol is provided "as is" without warranties of any kind. Use at your own risk.
-            </p>
-          </div>
-        </motion.div>
-      </section>
-
-      {/* Footer */}
-      <footer className="px-8 py-20 text-center border-t border-border/50">
-        <Link href="/privacy" className="text-emerald-500 font-bold uppercase tracking-widest hover:underline mx-4">
-          Privacy Policy
-        </Link>
-        <Link href="/risk" className="text-emerald-500 font-bold uppercase tracking-widest hover:underline mx-4">
-          Cookie Policy
-        </Link>
-      </footer>
+      <Footer />
     </div>
   );
 }

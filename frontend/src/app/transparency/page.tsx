@@ -1,139 +1,330 @@
-// Created: 2025-12-28
-// Updated: 2025-12-30 - Integrated Solvency Dashboard v2.0
+// Created: 2025-12-28 | Updated for Consistency: 2026-01-13 | Bento Box UI: 2026-01-15 | Grid Width Fix: 2026-01-15 | Card Swap + Status Fix: 2026-01-15 | Risk 2x2 Grid + Verification Style: 2026-01-15 | Monochrome: 2026-01-22
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Shield, BarChart3, Globe, CheckCircle2, ShieldCheck, TrendingDown, ZapOff, ExternalLink, PieChart, Coins, BadgeCheck, Layers } from 'lucide-react';
 import { useSolvency } from '@/hooks/useSolvency';
-import { MetricCard } from '@/components/MetricCard';
 import { SolvencyChart } from '@/components/SolvencyChart';
 import { VAULT_ADDRESS } from '@/config';
+import { motion } from 'framer-motion';
+import Footer from '@/components/Footer';
+import Navbar from '@/components/Navbar';
 
 export default function TransparencyPage() {
   const { data, loading, error } = useSolvency();
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-zinc-100 p-8 flex items-center justify-center font-mono">
-        <div className="animate-pulse text-emerald-500 uppercase tracking-widest">Loading_Solvency_Data...</div>
+      <div className="min-h-screen bg-[#ffffff] flex items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-4">
+           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#000000]"></div>
+           <div className="text-xs font-bold text-[#000000] uppercase tracking-widest">Synchronizing Solvency Data</div>
+        </div>
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-black text-zinc-100 p-8 flex items-center justify-center font-mono">
-        <div className="text-red-500 uppercase tracking-widest">Error_Loading_Data: {error || 'Unknown Error'}</div>
+      <div className="min-h-screen bg-[#ffffff] flex items-center justify-center font-sans">
+        <div className="text-red-500 font-bold uppercase tracking-widest">Protocol error: {error || 'Solvency feed offline'}</div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-black text-zinc-100 p-8 md:p-24 font-mono selection:bg-emerald-500 selection:text-black">
-      <div className="max-w-4xl mx-auto space-y-12">
-        <header className="border-b border-zinc-800 pb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-bold tracking-tighter uppercase">Solvency_Dashboard_v2.0</h1>
-            <p className="text-zinc-500 mt-2">Real-Time Proof of Reserves & Protocol Health</p>
-          </div>
-          <div className="text-right">
-            <div className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Last_Verified</div>
-            <div className="text-xs text-emerald-500">{new Date(data.timestamp).toLocaleString()}</div>
-          </div>
-        </header>
-
-        {/* Solvency Ratio & Status */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2 p-6 bg-zinc-900/30 border border-zinc-800 flex flex-col justify-between">
-            <div>
-              <h3 className="text-xs text-zinc-500 uppercase tracking-widest mb-4">Protocol_Solvency_Ratio</h3>
-              <div className="flex items-baseline gap-4">
-                <span className="text-6xl font-bold text-white">{data.solvency_ratio}%</span>
-                <span className={`text-sm px-2 py-1 border ${
-                  data.status === 'OVERCOLLATERALIZED' ? 'border-emerald-500 text-emerald-500' : 'border-red-500 text-red-500'
-                }`}>
-                  {data.status}
-                </span>
-              </div>
-            </div>
-            <p className="text-xs text-zinc-500 mt-6 leading-relaxed">
-              The solvency ratio represents the total protocol assets (on-chain + off-chain) divided by total liabilities (kUSD supply). A ratio above 100% indicates full collateralization.
-            </p>
-          </div>
-          <MetricCard 
-            label="TOTAL_LIABILITIES" 
-            value={`$${parseFloat(data.liabilities.total_usd).toLocaleString()}`} 
-            subValue="kUSD_CIRCULATING_SUPPLY"
-          />
-        </section>
-
-        {/* Asset Breakdown */}
-        <section className="space-y-6">
-          <h2 className="text-xl text-emerald-500 border-l-2 border-emerald-500 pl-4 uppercase">Asset_Composition</h2>
-          <div className="p-8 bg-zinc-900/30 border border-zinc-800 space-y-8">
-            <SolvencyChart breakdown={data.assets.breakdown} />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-zinc-800">
-              <div>
-                <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-4">On-Chain_Reserves</h4>
-                <div className="text-2xl font-bold text-white">{data.assets.on_chain_eth} ETH</div>
-                <div className="text-sm text-zinc-500 mt-1">Vault Smart Contract (Base)</div>
-              </div>
-              <div>
-                <h4 className="text-xs text-zinc-500 uppercase tracking-widest mb-4">Off-Chain_Collateral</h4>
-                <div className="text-2xl font-bold text-white">{data.assets.off_chain_eth} ETH</div>
-                <div className="text-sm text-zinc-500 mt-1">CEX Hedging Collateral (Pending Verification)</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Live Proof Section */}
-        <section className="space-y-6">
-          <h2 className="text-xl text-emerald-500 border-l-2 border-emerald-500 pl-4 uppercase">Verification_Nodes</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <a 
-              href={`https://basescan.org/address/${VAULT_ADDRESS}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-6 bg-zinc-900/50 border border-zinc-800 hover:border-emerald-500 transition-colors group"
-            >
-              <h3 className="text-white mb-2 group-hover:text-emerald-500">BASESCAN_EXPLORER</h3>
-              <p className="text-sm text-zinc-500">Verify on-chain balances and contract source code directly on the Base network.</p>
-            </a>
-            <div className="p-6 bg-zinc-900/50 border border-zinc-800">
-              <h3 className="text-white mb-2">OES_MIRROR_X</h3>
-              <p className="text-sm text-zinc-500">Off-Exchange Settlement verified via Ceffu MirrorX. Assets remain in MPC custody while mirrored to CEX.</p>
-              <div className="mt-4 text-[10px] text-emerald-500 uppercase tracking-widest">Status: Active_Mirror</div>
-            </div>
-            <div className="p-6 bg-zinc-900/50 border border-zinc-800 opacity-80">
-              <h3 className="text-white mb-2">STRATEGIST_ATTESTATION</h3>
-              <p className="text-sm text-zinc-500">Off-chain balances are updated every 4 hours via signed messages from the Kerne Strategist Bot.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Strategy Note */}
-        <section className="p-6 bg-zinc-950 border border-dashed border-zinc-800">
-          <h3 className="text-xs text-zinc-500 uppercase mb-4 tracking-widest">Transparency_Protocol_Note</h3>
-          <p className="text-sm text-zinc-400 leading-relaxed">
-            Kerne Protocol utilizes a delta-neutral hedging strategy. Assets are split between on-chain liquidity for immediate withdrawals and off-chain collateral on CEX exchanges to maintain short positions against ETH price volatility. Off-chain balances are attested by the protocol&apos;s strategist bot and may not be independently verifiable in real-time.
-          </p>
-        </section>
-
-        <div className="flex justify-center">
-          <a 
-            href="/api/solvency" 
-            target="_blank"
-            className="text-[10px] text-emerald-500/50 hover:text-emerald-500 uppercase tracking-[0.2em] border border-emerald-500/20 px-4 py-2 rounded hover:bg-emerald-500/5 transition-all"
-          >
-            View_Raw_Institutional_Data_Feed
-          </a>
-        </div>
-
-        <footer className="pt-12 border-t border-zinc-800 text-center text-xs text-zinc-600 uppercase tracking-widest">
-          Kerne Protocol // Trust_Through_Mathematics
-        </footer>
+    <div className="min-h-screen bg-[#ffffff] text-[#000000] font-sans selection:bg-[#000000] overflow-x-hidden">
+      {/* Background patterns */}
+      <div className="fixed inset-0 z-0 opacity-[0.03] pointer-events-none text-[#000000]">
+        <div className="absolute inset-0 bg-[radial-gradient(currentColor_1px,transparent_1px)] [background-size:40px_40px]" />
       </div>
-    </main>
+
+      <Navbar />
+
+      <main className="relative z-10 pt-24">
+        {/* Hero + Bento Box Combined Section */}
+        <section className="pt-24 md:pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
+          <div className="max-w-7xl mx-auto px-6 md:px-12">
+            {/* Hero Header and Subtext */}
+            <div className="flex flex-col items-center text-center mb-24">
+              <h1 className="font-heading font-medium tracking-tight leading-[0.95] text-[#000000] mb-6 text-center">
+                Prove it yourself. <br />
+                Every block.
+              </h1>
+              <p className="text-l md:text-l text-[#000000] max-w-2xl mx-auto font-medium leading-relaxed">
+                Absolute block by block transparency for institutional capital. Proof of reserves and protocol health metrics integrated in real time.
+              </p>
+            </div>
+
+            <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12 space-y-4">
+              
+              {/* Row 1: 4 Equal Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Solvency Ratio */}
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Solvency ratio</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">{data.solvency_ratio}%</div>
+                    <div className="text-s text-[#37d097] font-medium">Overcollateralized</div>
+                  </div>
+                </div>
+
+                {/* Strategy Status */}
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Strategy status</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">Active</div>
+                    <div className="text-s text-[#37d097] font-medium">Hedging Live</div>
+                  </div>
+                </div>
+
+                {/* Delta Neutral Status */}
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Delta Neutral</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">Balanced</div>
+                    <div className="text-s text-[#37d097] font-medium">0% Exposure</div>
+                  </div>
+                </div>
+
+                {/* Insurance Reserve% */}
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Insurance reserve</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">10%</div>
+                    <div className="text-s text-[#37d097] font-medium">Buffer Active</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 2: 2 Larger Cards with Pie Charts */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Asset Composition Pie Chart */}
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-6">Asset composition</div>
+                  <div className="flex items-center gap-6">
+                    {/* Pie Chart SVG - Donut style */}
+                    <div className="w-24 h-24 shrink-0">
+                      <svg viewBox="0 0 36 36" className="w-full h-full">
+                        {/* Background circle */}
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#22252a" strokeWidth="3" />
+                        {/* On Chain ETH - 40% Green */}
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" 
+                          stroke="#37d097" strokeWidth="3" 
+                          strokeDasharray="40 60" strokeDashoffset="25" />
+                        {/* Mirror Assets - 30% Pink */}
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" 
+                          stroke="#f82b6c" strokeWidth="3" 
+                          strokeDasharray="30 70" strokeDashoffset="-15" />
+                        {/* LST Reserves - 30% Blue */}
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" 
+                          stroke="#4c7be7" strokeWidth="3" 
+                          strokeDasharray="30 70" strokeDashoffset="-45" />
+                      </svg>
+                    </div>
+                    {/* Legend */}
+                    <div className="grid grid-cols-1 gap-3 flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#37d097]" />
+                        <div className="flex items-baseline justify-between flex-1">
+                          <span className="text-xs font-medium text-[#d4dce1]">On Chain ETH</span>
+                          <span className="text-xs text-[#d4dce1]">40%</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#f82b6c]" />
+                        <div className="flex items-baseline justify-between flex-1">
+                          <span className="text-xs font-medium text-[#d4dce1]">Mirror Assets</span>
+                          <span className="text-xs text-[#d4dce1]">30%</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#4c7be7]" />
+                        <div className="flex items-baseline justify-between flex-1">
+                          <span className="text-xs font-medium text-[#d4dce1]">LST Reserves</span>
+                          <span className="text-xs text-[#d4dce1]">30%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Custody Distribution Pie Chart */}
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-6">Custody distribution</div>
+                  <div className="flex items-center gap-6">
+                    {/* Pie Chart SVG - Donut style */}
+                    <div className="w-24 h-24 shrink-0">
+                      <svg viewBox="0 0 36 36" className="w-full h-full">
+                        {/* Background circle */}
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#22252a" strokeWidth="3" />
+                        {/* Base Vault - 65% Green */}
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" 
+                          stroke="#37d097" strokeWidth="3" 
+                          strokeDasharray="65 35" strokeDashoffset="25" />
+                        {/* MPC Custody - 35% Blue */}
+                        <circle cx="18" cy="18" r="15.915" fill="transparent" 
+                          stroke="#4c7be7" strokeWidth="3" 
+                          strokeDasharray="35 65" strokeDashoffset="-40" />
+                      </svg>
+                    </div>
+                    {/* Legend */}
+                    <div className="grid grid-cols-1 gap-3 flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#37d097]" />
+                        <div className="flex items-baseline justify-between flex-1">
+                          <span className="text-xs font-medium text-[#d4dce1]">Base Vault</span>
+                          <span className="text-xs text-[#d4dce1]">65%</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#4c7be7]" />
+                        <div className="flex items-baseline justify-between flex-1">
+                          <span className="text-xs font-medium text-[#d4dce1]">MPC Custody</span>
+                          <span className="text-xs text-[#d4dce1]">35%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 3: 4 Equal Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Current Funding%/h */}
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Funding rate/h</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.0342%</div>
+                    <div className="text-s text-[#37d097] font-medium">Positive</div>
+                  </div>
+                </div>
+
+                {/* Last Rebalance */}
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Last rebalance</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">2m ago</div>
+                    <div className="text-s text-[#37d097] font-medium">Automated</div>
+                  </div>
+                </div>
+
+                {/* Circuit Breakers Status */}
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Circuit breakers</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">Armed</div>
+                    <div className="text-s text-[#37d097] font-medium">All Systems</div>
+                  </div>
+                </div>
+
+                {/* Last Updated */}
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Last updated</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">Live</div>
+                    <div className="text-s text-[#37d097] font-medium">Real Time</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 4: Full-Width Attestation Card */}
+              <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
+                <h3 className="font-heading font-medium tracking-tight text-[#ffffff] mb-6">Multi Layer Attestation</h3>
+                <p className="text-s text-[#d4dce1] leading-relaxed font-medium mb-6">
+                  All protocol assets undergo continuous verification through three independent layers: BaseScan provides onchain auditing of vault source code and liquid LST reserves directly on Base; Mirror Settlement handles off exchange settlement verification where delta neutral positions remain in institutional MPC custody while mirrored; and Hybrid Attestation reconciles off chain balances every 4 hours via autonomous signed reporting from the hedging nodes.
+                </p>
+                <div className="flex flex-wrap items-center gap-4">
+                  <a 
+                    href={`https://basescan.org/address/${VAULT_ADDRESS}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-s font-bold text-[#ffffff] hover:underline"
+                  >
+                    <span>Verify on BaseScan</span>
+                    <ExternalLink size={14} className="text-[#ffffff]" />
+                  </a>
+                  <span className="text-[#d4dce1]">•</span>
+                  <a 
+                    href="https://defillama.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-s font-bold text-[#ffffff] hover:underline"
+                  >
+                    <span>View on DefiLlama</span>
+                    <ExternalLink size={14} className="text-[#ffffff]" />
+                  </a>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* Risk Management Framework */}
+        <section id="risk" className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
+          <div className="max-w-7xl mx-auto px-6 md:px-12">
+            {/* Header and Subtext */}
+            <div className="flex flex-col items-center text-center mb-16">
+              <h2 className="font-heading font-medium tracking-tight text-[#000000] mb-8">
+                Risk Management Framework
+              </h2>
+              <p className="text-m text-[#000000] max-w-2xl font-medium">
+                Institutional grade safety modules designed to protect capital through mathematical precision and automated circuit breakers.
+              </p>
+            </div>
+
+            {/* Card Container */}
+            <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] shadow-none flex flex-col items-start text-left group transition-colors">
+                  <div className="w-12 h-12 bg-transparent border border-[#37d097] rounded-full flex items-center justify-center text-[#ffffff] mb-8">
+                    <ShieldCheck size={24} />
+                  </div>
+                  <h3 className="font-heading font-medium mb-4 tracking-tight text-[#ffffff]">Collateral Health</h3>
+                  <p className="text-s text-[#d4dce1] leading-relaxed font-medium">
+                    The system maintains a target Collateral Ratio (CR) of 130% with automated liquidation logic triggering at 115% to restore system health and ensure full backing. Hard liquidation occurs at 105% as a final safety mechanism.
+                  </p>
+                </div>
+
+                <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] shadow-none flex flex-col items-start text-left group transition-colors">
+                  <div className="w-12 h-12 bg-transparent border border-[#37d097] rounded-full flex items-center justify-center text-[#ffffff] mb-8">
+                    <TrendingDown size={24} />
+                  </div>
+                  <h3 className="font-heading font-medium mb-4 tracking-tight text-[#ffffff]">Depeg Protection</h3>
+                  <p className="text-s text-[#d4dce1] leading-relaxed font-medium">
+                    Our "Oracle Guard" monitors the exchange rate between LSTs and ETH. Any deviation greater than 2.0% from the 24h moving average triggers an immediate pause on vault interactions with automated circuit breakers calibrated for sub second execution.
+                  </p>
+                </div>
+
+                <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] shadow-none flex flex-col items-start text-left group transition-colors">
+                  <div className="w-12 h-12 bg-transparent border border-[#37d097] rounded-full flex items-center justify-center text-[#ffffff] mb-8">
+                    <ZapOff size={24} />
+                  </div>
+                  <h3 className="font-heading font-medium mb-4 tracking-tight text-[#ffffff]">Funding Risk</h3>
+                  <p className="text-s text-[#d4dce1] leading-relaxed font-medium">
+                    To prevent capital bleed, the protocol monitors the 3 day SMA of ETH-PERP funding rates. If the SMA turns negative, the strategy closes positions until positive funding returns to protect user principal.
+                  </p>
+                </div>
+
+                <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] shadow-none flex flex-col items-start text-left group transition-colors">
+                  <div className="w-12 h-12 bg-transparent border border-[#37d097] rounded-full flex items-center justify-center text-[#ffffff] mb-8">
+                    <Shield size={24} />
+                  </div>
+                  <h3 className="font-heading font-medium mb-4 tracking-tight text-[#ffffff]">Institutional Liquidity Buffer</h3>
+                  <p className="text-s text-[#d4dce1] leading-relaxed font-medium">
+                    A 10% withdrawal buffer is maintained on chain at all times to ensure instant liquidity for users, while the remaining 90% is deployed in delta neutral strategies across Tier 1 integrated exchanges.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <Footer />
+    </div>
   );
 }

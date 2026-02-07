@@ -41,17 +41,17 @@ export default function AccessPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white font-mono flex flex-col items-center justify-center p-4">
-      <div className="max-w-md w-full space-y-8 border border-zinc-800 p-8 bg-zinc-950/50 backdrop-blur-xl relative overflow-hidden">
+    <div className="min-h-screen bg-[#191919] text-[#ffffff] font-sans flex flex-col items-center justify-center p-4">
+      <div className="max-w-md w-full space-y-8 border border-[#1f1f1f] p-8 bg-[#000000] relative overflow-hidden rounded-sm shadow-2xl">
         {/* Decorative scanline effect */}
-        <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-10 bg-[length:100%_2px,3px_100%]" />
+        <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(76,123,231,0.06),rgba(13,51,236,0.02),rgba(76,123,231,0.06))] z-10 bg-[length:100%_2px,3px_100%]" />
         
         <div className="text-center space-y-4 relative z-20">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zinc-900 border border-zinc-800 mb-4">
-            <Lock className="w-8 h-8 text-zinc-400" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#191919] border border-[#1f1f1f] mb-4">
+            <Lock className="w-8 h-8 text-[#ffffff]/60" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tighter uppercase">Genesis Access Required</h1>
-          <p className="text-zinc-500 text-sm leading-relaxed">
+          <h1 className=" font-heading font-medium tracking-tighter uppercase text-[#ffffff]">Genesis Access Required</h1>
+          <p className="text-[#ffffff] opacity-60 text-s leading-relaxed font-medium">
             Kerne Protocol is currently in a private Genesis Phase. 
             Access is restricted to institutional partners and whitelisted whales.
           </p>
@@ -59,17 +59,17 @@ export default function AccessPage() {
 
         <form onSubmit={handleVerify} className="space-y-6 relative z-20">
           <div className="space-y-2">
-            <label className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 ml-1">
+            <label className="text-xs uppercase tracking-[0.2em] text-[#ffffff] opacity-40 ml-1 font-bold">
               Enter Access Code
             </label>
             <div className="relative">
-              <TerminalIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" />
+              <TerminalIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#ffffff]/40" />
               <input
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 placeholder="KERNE-XXXX-XXXX"
-                className="w-full bg-black border border-zinc-800 py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-white transition-colors placeholder:text-zinc-800"
+                className="w-full bg-[#191919] border border-[#1f1f1f] py-3 pl-10 pr-4 text-s focus:outline-none focus:border-[#4c7be7] transition-colors placeholder:text-[#ffffff]/20 font-sans"
                 autoFocus
               />
             </div>
@@ -78,37 +78,37 @@ export default function AccessPage() {
           <button
             type="submit"
             disabled={status === 'verifying' || status === 'success'}
-            className="w-full bg-white text-black py-3 text-sm font-bold uppercase tracking-widest hover:bg-zinc-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full bg-[#ffffff] text-[#000000] py-3 text-s font-bold uppercase tracking-widest hover:bg-[#f1f1ed] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 rounded-full"
           >
             {status === 'verifying' ? 'Verifying...' : 'Authenticate'}
             <ChevronRight className="w-4 h-4" />
           </button>
 
           {message && (
-            <div className={`text-center text-[10px] uppercase tracking-widest ${
-              status === 'error' ? 'text-red-500' : 'text-emerald-500'
+            <div className={`text-center text-xs uppercase tracking-widest font-bold ${
+              status === 'error' ? 'text-[#0d33ec]' : 'text-[#19b097]'
             }`}>
               {message}
             </div>
           )}
         </form>
 
-        <div className="pt-8 border-t border-zinc-900 text-center relative z-20">
-          <p className="text-[10px] text-zinc-600 uppercase tracking-widest mb-4">
+        <div className="pt-8 border-t border-[#1f1f1f] text-center relative z-20">
+          <p className="text-xs text-[#ffffff] opacity-40 uppercase tracking-widest mb-4 font-bold">
             No access code?
           </p>
           <button 
             onClick={() => router.push('/institutional')}
-            className="text-[10px] text-zinc-400 hover:text-white uppercase tracking-widest underline underline-offset-4"
+            className="text-xs text-[#4c7be7] hover:text-[#0d33ec] uppercase tracking-widest underline underline-offset-4 font-bold transition-colors"
           >
             Request Institutional Onboarding
           </button>
         </div>
       </div>
 
-      <div className="mt-8 flex items-center gap-4 text-zinc-800 relative z-20">
+      <div className="mt-8 flex items-center gap-4 text-[#ffffff] opacity-20 relative z-20">
         <Shield className="w-4 h-4" />
-        <span className="text-[10px] uppercase tracking-[0.3em]">Secure Terminal v2.0.4</span>
+        <span className="text-xs uppercase tracking-[0.2em] font-bold">Secure Terminal v2.0.4</span>
       </div>
     </div>
   );

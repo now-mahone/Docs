@@ -13,13 +13,13 @@ export default function PartnerPortal() {
   const kerneFee = annualProfit * 0.15;
 
   return (
-    <div className="min-h-screen bg-black text-green-500 font-mono p-8 md:p-24">
-      <div className="max-w-4xl mx-auto border border-green-900 p-8 bg-zinc-950 shadow-2xl">
-        <header className="mb-12 border-b border-green-900 pb-4">
-          <h1 className="text-4xl font-bold tracking-tighter uppercase">
+    <div className="min-h-screen bg-[#191919] text-[#19b097] font-sans p-8 md:p-24 selection:bg-[#4c7be7]/20">
+      <div className="max-w-4xl mx-auto border border-[#37bf8d]/20 p-8 bg-[#000000] shadow-2xl rounded-sm">
+        <header className="mb-12 border-b border-[#37bf8d]/20 pb-4">
+          <h1 className=" font-heading font-medium tracking-tighter uppercase text-[#ffffff]">
             Kerne Infrastructure-as-a-Service
           </h1>
-          <p className="text-zinc-500 mt-2">
+          <p className="text-[#ffffff] opacity-40 mt-2 font-bold text-xs uppercase tracking-widest">
             [SYSTEM STATUS: OPERATIONAL] [VERSION: 1.0.4]
           </p>
         </header>
@@ -27,13 +27,13 @@ export default function PartnerPortal() {
         <section className="space-y-8">
           <div className="flex flex-col md:flex-row justify-between items-start gap-6">
             <div className="flex-1">
-              <h2 className="text-2xl font-semibold mb-4 text-white">
+              <h2 className=" font-heading font-medium mb-4 text-[#ffffff]">
                 {">"} The White-Label Solution
               </h2>
-              <p className="text-zinc-400 leading-relaxed">
-                Deploy your own institutional-grade delta-neutral vault in minutes. 
-                Kerne provides the smart contracts, the hedging engine, and the 
-                real-time monitoring infrastructure. You provide the capital and 
+              <p className="text-[#ffffff] opacity-60 leading-relaxed font-medium">
+                Deploy your own institutional-grade delta neutral vault in minutes.
+                Kerne provides the smart contracts, the hedging engine, and the
+                real time monitoring infrastructure. You provide the capital and
                 the brand.
               </p>
             </div>
@@ -41,119 +41,119 @@ export default function PartnerPortal() {
               <a 
                 href="/docs/white_label_pitch_v2.md" 
                 download
-                className="inline-block border border-green-500 text-green-500 px-6 py-3 text-sm hover:bg-green-500 hover:text-black transition-all uppercase font-bold tracking-widest"
+                className="inline-block border border-[#19b097] text-[#19b097] px-6 py-3 text-s hover:bg-[#19b097] hover:text-[#000000] transition-all uppercase font-bold tracking-widest rounded-full"
               >
-                Download Pitch Deck (PDF)
+                Download Pitch Deck
               </a>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="border border-zinc-800 p-6 bg-black">
-              <h3 className="text-xl font-bold mb-2 text-green-400">Setup Fee</h3>
-              <p className="text-3xl font-bold text-white">$5,000</p>
-              <p className="text-xs text-zinc-500 mt-2">One-time deployment cost</p>
-              <button className="mt-4 w-full border border-green-900 py-2 text-xs hover:bg-green-900 transition-colors">
+            <div className="border border-[#1f1f1f] p-8 bg-[#191919] rounded-sm shadow-lg">
+              <h3 className=" font-heading font-medium mb-2 text-[#37bf8d]">Setup Fee</h3>
+              <p className="text-xl font-heading font-medium text-[#ffffff]">$5,000</p>
+              <p className="text-xs text-[#ffffff] opacity-20 mt-2 uppercase font-bold tracking-tight">One-time deployment cost</p>
+              <button className="mt-6 w-full border border-[#19b097]/30 text-[#19b097] py-2 text-xs font-bold hover:bg-[#19b097]/10 transition-colors uppercase rounded-sm">
                 PAY VIA kUSD
               </button>
             </div>
-            <div className="border border-zinc-800 p-6 bg-black">
-              <h3 className="text-xl font-bold mb-2 text-green-400">Performance Fee</h3>
-              <p className="text-3xl font-bold text-white">15%</p>
-              <p className="text-xs text-zinc-500 mt-2">On generated yield only</p>
+            <div className="border border-[#1f1f1f] p-8 bg-[#191919] rounded-sm shadow-lg">
+              <h3 className=" font-heading font-medium mb-2 text-[#37bf8d]">Performance Fee</h3>
+              <p className="text-xl font-heading font-medium text-[#ffffff]">15%</p>
+              <p className="text-xs text-[#ffffff] opacity-20 mt-2 uppercase font-bold tracking-tight">On generated yield only</p>
             </div>
-            <div className="border border-zinc-800 p-6 bg-black">
-              <h3 className="text-xl font-bold mb-2 text-green-400">Min. TVL</h3>
-              <p className="text-3xl font-bold text-white">$1M</p>
-              <p className="text-xs text-zinc-500 mt-2">Target for white-label</p>
+            <div className="border border-[#1f1f1f] p-8 bg-[#191919] rounded-sm shadow-lg">
+              <h3 className=" font-heading font-medium mb-2 text-[#37bf8d]">Min. TVL</h3>
+              <p className="text-xl font-heading font-medium text-[#ffffff]">$1M+</p>
+              <p className="text-xs text-[#ffffff] opacity-20 mt-2 uppercase font-bold tracking-tight">Target for white-label</p>
             </div>
           </div>
 
-          <div className="border border-green-900 p-8 bg-zinc-950/50">
-            <h2 className="text-2xl font-semibold mb-6 text-white">
+          <div className="border border-[#37bf8d]/20 p-8 bg-[#191919]/50 rounded-sm">
+            <h2 className=" font-heading font-medium mb-6 text-[#ffffff]">
               {">"} Revenue Simulator
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               <div className="space-y-6">
                 <div>
-                  <label className="block text-xs text-zinc-500 mb-2 uppercase">Target TVL ($)</label>
+                  <label className="block text-xs text-[#ffffff] opacity-40 mb-2 uppercase font-bold tracking-widest">Target TVL ($)</label>
                   <input 
                     type="range" min="100000" max="10000000" step="100000"
                     value={simTvl} onChange={(e) => setSimTvl(Number(e.target.value))}
-                    className="w-full accent-green-500"
+                    className="w-full accent-[#37bf8d]"
                   />
-                  <div className="text-xl font-bold mt-2">${simTvl.toLocaleString()}</div>
+                  <div className="text-xl font-heading font-medium mt-2 text-[#ffffff]">${simTvl.toLocaleString()}</div>
                 </div>
                 <div>
-                  <label className="block text-xs text-zinc-500 mb-2 uppercase">Expected APY (%)</label>
+                  <label className="block text-xs text-[#ffffff] opacity-40 mb-2 uppercase font-bold tracking-widest">Expected APY (%)</label>
                   <input 
                     type="range" min="1" max="30" step="0.5"
                     value={simApy} onChange={(e) => setSimApy(Number(e.target.value))}
-                    className="w-full accent-green-500"
+                    className="w-full accent-[#37bf8d]"
                   />
-                  <div className="text-xl font-bold mt-2">{simApy}%</div>
+                  <div className="text-xl font-heading font-medium mt-2 text-[#ffffff]">{simApy}%</div>
                 </div>
               </div>
-              <div className="bg-black p-6 border border-zinc-800 space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-500 text-sm">Gross Annual Profit</span>
-                  <span className="text-white font-bold">${annualProfit.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+              <div className="bg-[#000000] p-6 border border-[#1f1f1f] space-y-4 rounded-sm">
+                <div className="flex justify-between items-center text-s font-medium">
+                  <span className="text-[#ffffff] opacity-40">Gross Annual Profit</span>
+                  <span className="text-[#ffffff] font-bold">${annualProfit.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-500 text-sm">Kerne Infrastructure Fee (15%)</span>
-                  <span className="text-red-900">-${kerneFee.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                <div className="flex justify-between items-center text-s font-medium">
+                  <span className="text-[#ffffff] opacity-40">Kerne Infrastructure Fee (15%)</span>
+                  <span className="text-[#0d33ec]">-${kerneFee.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
                 </div>
-                <div className="pt-4 border-t border-zinc-800 flex justify-between items-center">
-                  <span className="text-green-400 font-bold">Net Partner Revenue</span>
-                  <span className="text-2xl font-bold text-white">${partnerShare.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
+                <div className="pt-4 border-t border-[#1f1f1f] flex justify-between items-center">
+                  <span className="text-[#19b097] font-bold">Net Partner Revenue</span>
+                  <span className="text-xl font-heading font-medium text-[#ffffff]">${partnerShare.toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
                 </div>
               </div>
             </div>
           </div>
 
           <div>
-            <h2 className="text-2xl font-semibold mb-4 text-white">
+            <h2 className=" font-heading font-medium mb-4 text-[#ffffff]">
               {">"} Included Infrastructure
             </h2>
-            <ul className="list-none space-y-2 text-zinc-400">
-              <li>[+] Custom ERC-4626 Vault Deployment</li>
-              <li>[+] Dedicated Python Hedging Instance</li>
-              <li>[+] Real-time Discord/Telegram Alerts</li>
-              <li>[+] Transparency Dashboard Integration</li>
-              <li>[+] 24/7 Technical Support</li>
+            <ul className="list-none space-y-3 text-[#ffffff] opacity-60 font-medium">
+              <li className="flex items-center gap-2">[+] <span className="opacity-100">Custom ERC-4626 Vault Deployment</span></li>
+              <li className="flex items-center gap-2">[+] <span className="opacity-100">Dedicated Python Hedging Instance</span></li>
+              <li className="flex items-center gap-2">[+] <span className="opacity-100">Real-time Discord/Telegram Alerts</span></li>
+              <li className="flex items-center gap-2">[+] <span className="opacity-100">Transparency Dashboard Integration</span></li>
+              <li className="flex items-center gap-2">[+] <span className="opacity-100">24/7 Technical Support</span></li>
             </ul>
           </div>
 
-          <div className="mt-12 pt-8 border-t border-green-900">
-            <h2 className="text-2xl font-semibold mb-6 text-white">
+          <div className="mt-12 pt-12 border-t border-[#1f1f1f]">
+            <h2 className=" font-heading font-medium mb-8 text-[#ffffff]">
               {">"} Request Onboarding
             </h2>
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <input 
                   type="text" 
                   placeholder="INSTITUTION NAME" 
-                  className="bg-black border border-zinc-800 p-4 text-green-500 focus:border-green-500 outline-none"
+                  className="bg-[#191919] border border-[#1f1f1f] p-4 text-[#ffffff] focus:border-[#19b097] outline-none rounded-sm font-sans font-medium"
                 />
                 <input 
                   type="email" 
                   placeholder="CONTACT EMAIL" 
-                  className="bg-black border border-zinc-800 p-4 text-green-500 focus:border-green-500 outline-none"
+                  className="bg-[#191919] border border-[#1f1f1f] p-4 text-[#ffffff] focus:border-[#19b097] outline-none rounded-sm font-sans font-medium"
                 />
               </div>
               <textarea 
                 placeholder="DEPLOYMENT REQUIREMENTS / TARGET TVL" 
                 rows={4}
-                className="w-full bg-black border border-zinc-800 p-4 text-green-500 focus:border-green-500 outline-none"
+                className="w-full bg-[#191919] border border-[#1f1f1f] p-4 text-[#ffffff] focus:border-[#19b097] outline-none rounded-sm font-sans font-medium"
               ></textarea>
               <button 
                 type="submit"
-                className="w-full bg-green-600 text-black px-8 py-4 font-bold hover:bg-green-400 transition-colors uppercase tracking-widest"
+                className="w-full bg-[#19b097] text-[#ffffff] px-8 py-5 font-bold hover:bg-[#37bf8d] transition-all uppercase tracking-widest rounded-full text-s shadow-lg"
               >
                 Submit Infrastructure Request
               </button>
             </form>
-            <p className="text-xs text-zinc-600 mt-4">
+            <p className="text-xs text-[#ffffff] opacity-20 mt-6 font-bold uppercase tracking-widest text-center">
               * All requests are routed to our institutional desk for manual review.
             </p>
           </div>

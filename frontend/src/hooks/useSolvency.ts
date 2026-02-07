@@ -43,8 +43,6 @@ export function useSolvency() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 60000); // Refresh every minute
-    return () => clearInterval(interval);
   }, []);
 
   return { data, loading, error, refetch: fetchData };

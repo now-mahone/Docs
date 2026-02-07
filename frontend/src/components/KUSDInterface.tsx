@@ -186,244 +186,198 @@ export function KUSDInterface() {
   }, [collateralAmount, debtAmount]);
 
   return (
-    <Card className="bg-black border-zinc-800 rounded-none">
-      <CardHeader className="border-b border-zinc-800">
-        <CardTitle className="text-sm font-mono text-zinc-400 uppercase tracking-widest">
-          kUSD_Synthetic_Dollar_Minter
+    <Card className="bg-white border-[#f1f1ed] rounded-sm overflow-hidden mt-6">
+      <CardHeader className="border-b border-[#f1f1ed] bg-[#f9f9f4]/30 px-6 py-4">
+        <CardTitle className="text-xs font-bold text-zinc-400 uppercase tracking-tight">
+          kUSD Synthetic Minter
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="p-3 bg-zinc-900 border border-zinc-800 font-mono">
-            <div className="text-[10px] text-zinc-500 uppercase">kUSD_Balance</div>
-            <div className="text-lg text-white">{kusdBalance ? Number(formatUnits(kusdBalance, 18)).toFixed(2) : '0.00'}</div>
+        <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="px-4 py-3 bg-[#f1f1ed]/30 rounded-sm border border-[#f1f1ed]">
+            <div className="text-xs font-bold text-zinc-400 uppercase tracking-tight">kUSD Balance</div>
+            <div className="text-l font-heading font-medium text-[#000000] mt-1">
+              {kusdBalance ? Number(formatUnits(kusdBalance, 18)).toFixed(2) : '0.00'}
+            </div>
           </div>
-          <div className="p-3 bg-zinc-900 border border-zinc-800 font-mono">
-            <div className="text-[10px] text-zinc-500 uppercase">Health_Factor</div>
-            <div className={`text-lg ${Number(healthFactor || 0n) > 1.2e18 ? 'text-emerald-500' : Number(healthFactor || 0n) > 1.1e18 ? 'text-amber-500' : 'text-red-500'}`}>
+          <div className="px-4 py-3 bg-[#f1f1ed]/30 rounded-sm border border-[#f1f1ed]">
+            <div className="text-xs font-bold text-zinc-400 uppercase tracking-tight">Health Factor</div>
+            <div className={`text-l font-heading font-medium mt-1 ${Number(healthFactor || 0n) > 1.2e18 ? 'text-primary' : 'text-red-500'}`}>
               {healthFactor ? (Number(formatUnits(healthFactor, 18))).toFixed(2) : 'N/A'}
-            </div>
-          </div>
-          <div className="p-3 bg-zinc-900 border border-zinc-800 font-mono">
-            <div className="text-[10px] text-zinc-500 uppercase">Collateral_Ratio</div>
-            <div className={`text-lg ${isHealthy ? 'text-emerald-500' : 'text-red-500'}`}>
-              {currentCR ? `${currentCR.toFixed(1)}%` : 'N/A'}
-            </div>
-          </div>
-          <div className="p-3 bg-zinc-900 border border-zinc-800 font-mono">
-            <div className="text-[10px] text-zinc-500 uppercase">Liq_Price_(kLP)</div>
-            <div className="text-lg text-red-400">
-              {liquidationPrice ? `$${Number(liquidationPrice).toFixed(2)}` : 'N/A'}
             </div>
           </div>
         </div>
 
         <Tabs defaultValue="mint" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-zinc-900 rounded-none p-1">
-            <TabsTrigger value="mint" className="rounded-none font-mono">MINT</TabsTrigger>
-            <TabsTrigger value="leverage" className="rounded-none font-mono">LEVERAGE</TabsTrigger>
-            <TabsTrigger value="fold" className="rounded-none font-mono">FOLD</TabsTrigger>
-            <TabsTrigger value="burn" className="rounded-none font-mono">REPAY</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 bg-[#f1f1ed] rounded-full p-1.5 h-12">
+            <TabsTrigger value="mint" className="rounded-full data-[state=active]:bg-white data-[state=active]:text-primary font-bold text-xs">Mint</TabsTrigger>
+            <TabsTrigger value="leverage" className="rounded-full data-[state=active]:bg-white data-[state=active]:text-primary font-bold text-xs">Leverage</TabsTrigger>
+            <TabsTrigger value="fold" className="rounded-full data-[state=active]:bg-white data-[state=active]:text-primary font-bold text-xs">Fold</TabsTrigger>
+            <TabsTrigger value="burn" className="rounded-full data-[state=active]:bg-white data-[state=active]:text-primary font-bold text-xs">Repay</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="fold" className="mt-6 space-y-4">
-            <div className="p-3 bg-blue-950/20 border border-blue-900/50 font-mono text-[10px] text-blue-500 uppercase mb-4">
-              Recursive Folding: Flash-mint kUSD to increase collateral exposure in a single transaction.
+          <TabsContent value="fold" className="mt-8 space-y-6">
+            <div className="px-4 py-3 bg-primary/5 border border-primary/10 rounded-sm text-xs font-medium text-primary">
+              Recursive Folding: Flash-mint kUSD to increase collateral exposure instantly.
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="p-3 bg-zinc-900 border border-zinc-800 font-mono">
-                <div className="text-[10px] text-zinc-500 uppercase">Projected_APY</div>
-                <div className="text-lg text-blue-400">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 bg-[#f1f1ed]/30 rounded-sm border border-[#f1f1ed]">
+                <div className="text-xs font-bold text-zinc-400 uppercase">Projected APY</div>
+                <div className="text-l font-heading font-medium text-primary mt-1">
                   {projectedFoldAPY ? `${projectedFoldAPY.toFixed(2)}%` : '15.40%'}
                 </div>
               </div>
-              <div className="p-3 bg-zinc-900 border border-zinc-800 font-mono">
-                <div className="text-[10px] text-zinc-500 uppercase">Risk_Level</div>
-                <div className={`text-lg ${!foldAmount ? 'text-emerald-500' : Number(foldAmount) > Number(formatUnits(collateralAmount || 0n, 18)) * 2 ? 'text-red-500' : 'text-amber-500'}`}>
-                  {!foldAmount ? 'LOW' : Number(foldAmount) > Number(formatUnits(collateralAmount || 0n, 18)) * 2 ? 'HIGH' : 'MED'}
+              <div className="p-4 bg-[#f1f1ed]/30 rounded-sm border border-[#f1f1ed]">
+                <div className="text-xs font-bold text-zinc-400 uppercase">Risk Level</div>
+                <div className={`text-l font-heading font-bold mt-1 ${!foldAmount ? 'text-primary' : 'text-red-500'}`}>
+                  {!foldAmount ? 'Low' : 'Med'}
                 </div>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono text-zinc-500 uppercase">Fold_Amount_(kUSD)</label>
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-zinc-400">Fold Amount (kUSD)</label>
               <Input
                 type="number"
                 placeholder="0.00 kUSD"
                 value={foldAmount}
                 onChange={(e) => setFoldAmount(e.target.value)}
-                className="bg-zinc-950 border-zinc-800 rounded-none font-mono"
+                className="bg-[#f9f9f4] border-[#f1f1ed] rounded-sm font-bold text-l h-14 px-4 shadow-none"
               />
             </div>
 
-            <Button
+            <button
               onClick={handleFold}
               disabled={isPending || !foldAmount}
-              className="w-full bg-blue-600 text-white hover:bg-blue-700 rounded-none font-mono"
+              className="w-full bg-primary text-[#f9f9f4] hover:bg-primary-dark rounded-full font-bold h-14 transition-all text-s"
             >
-              EXECUTE_FOLD
-            </Button>
+              Execute Fold
+            </button>
           </TabsContent>
 
-          <TabsContent value="leverage" className="mt-6 space-y-4">
-            <div className="p-3 bg-emerald-950/20 border border-emerald-900/50 font-mono text-[10px] text-emerald-500 uppercase mb-4">
-              One-Click Leverage: Deposit WETH, Mint kLP, and Mint kUSD in a single transaction.
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono text-zinc-500 uppercase">Deposit_WETH</label>
+          <TabsContent value="leverage" className="mt-8 space-y-6">
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-zinc-400">Deposit WETH</label>
               <div className="relative">
                 <Input
                   type="number"
                   placeholder="0.00 WETH"
                   value={leverageWeth}
                   onChange={(e) => setLeverageWeth(e.target.value)}
-                  className="bg-zinc-950 border-zinc-800 rounded-none font-mono"
+                  className="bg-[#f9f9f4] border-[#f1f1ed] rounded-sm font-bold text-l h-14 px-4 shadow-none"
                 />
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => assetBalance && setLeverageWeth(formatUnits(assetBalance, 18))}
-                  className="absolute right-2 top-1 text-[10px] font-mono"
+                  className="absolute right-3 top-3.5 text-xs font-bold hover:bg-white rounded-sm px-2 h-7 shadow-none"
                 >
-                  MAX
+                  Max
                 </Button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono text-zinc-500 uppercase">Mint_kUSD_Debt</label>
-              <Input
-                type="number"
-                placeholder="0.00 kUSD"
-                value={leverageKusd}
-                onChange={(e) => setLeverageKusd(e.target.value)}
-                className="bg-zinc-950 border-zinc-800 rounded-none font-mono"
-              />
-            </div>
-
             {needsAssetApproval ? (
-              <Button
+              <button
                 onClick={handleApproveAsset}
                 disabled={isPending}
-                className="w-full bg-white text-black hover:bg-zinc-200 rounded-none font-mono"
+                className="w-full bg-primary text-[#f9f9f4] hover:bg-primary-dark rounded-full font-bold h-14 transition-all text-s"
               >
-                APPROVE_WETH
-              </Button>
+                Approve WETH
+              </button>
             ) : (
-              <Button
+              <button
                 onClick={handleLeverage}
                 disabled={isPending || !leverageWeth}
-                className="w-full bg-emerald-600 text-white hover:bg-emerald-700 rounded-none font-mono"
+                className="w-full bg-primary text-[#f9f9f4] hover:bg-primary-dark rounded-full font-bold h-14 transition-all text-s"
               >
-                EXECUTE_LEVERAGE
-              </Button>
+                Execute Leverage
+              </button>
             )}
           </TabsContent>
 
-          <TabsContent value="mint" className="mt-6 space-y-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono text-zinc-500 uppercase">Add_kLP_Collateral</label>
+          <TabsContent value="mint" className="mt-8 space-y-6">
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-zinc-400">Add kLP Collateral</label>
               <div className="relative">
                 <Input
                   type="number"
                   placeholder="0.00 kLP"
                   value={collateralToAdd}
                   onChange={(e) => setCollateralToAdd(e.target.value)}
-                  className="bg-zinc-950 border-zinc-800 rounded-none font-mono"
+                  className="bg-zinc-50 border-zinc-100 rounded-sm font-bold text-l h-14 px-4"
                 />
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => klpBalance && setCollateralToAdd(formatUnits(klpBalance, 18))}
-                  className="absolute right-2 top-1 text-[10px] font-mono"
+                  className="absolute right-3 top-3.5 text-xs font-bold hover:bg-white rounded-sm px-2 h-7"
                 >
-                  MAX
+                  Max
                 </Button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono text-zinc-500 uppercase">Mint_kUSD_Debt</label>
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-zinc-400">Mint kUSD Debt</label>
               <Input
                 type="number"
                 placeholder="0.00 kUSD"
                 value={mintAmount}
                 onChange={(e) => setMintAmount(e.target.value)}
-                className="bg-zinc-950 border-zinc-800 rounded-none font-mono"
+                className="bg-zinc-50 border-zinc-100 rounded-sm font-bold text-l h-14 px-4"
               />
             </div>
 
             {needsKLPApproval ? (
-              <Button
+              <button
                 onClick={handleApproveKLP}
                 disabled={isPending}
-                className="w-full bg-white text-black hover:bg-zinc-200 rounded-none font-mono"
+                className="w-full bg-primary text-white hover:bg-primary-dark rounded-full font-bold h-14 shadow-sm transition-all text-s"
               >
-                APPROVE_kLP
-              </Button>
+                Approve kLP
+              </button>
             ) : (
-              <Button
+              <button
                 onClick={handleMint}
                 disabled={isPending || (!mintAmount && !collateralToAdd)}
-                className="w-full bg-emerald-600 text-white hover:bg-emerald-700 rounded-none font-mono"
+                className="w-full bg-primary text-white hover:bg-primary-dark rounded-full font-bold h-14 shadow-sm transition-all text-s"
               >
-                CONFIRM_MINT
-              </Button>
+                Confirm Mint
+              </button>
             )}
           </TabsContent>
 
-          <TabsContent value="burn" className="mt-6 space-y-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono text-zinc-500 uppercase">Repay_kUSD_Debt</label>
+          <TabsContent value="burn" className="mt-8 space-y-6">
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-zinc-400">Repay kUSD Debt</label>
               <div className="relative">
                 <Input
                   type="number"
                   placeholder="0.00 kUSD"
                   value={repayAmount}
                   onChange={(e) => setRepayAmount(e.target.value)}
-                  className="bg-zinc-950 border-zinc-800 rounded-none font-mono"
+                  className="bg-zinc-50 border-zinc-100 rounded-sm font-bold text-l h-14 px-4"
                 />
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setRepayAmount(formatUnits(debtAmount, 18))}
-                  className="absolute right-2 top-1 text-[10px] font-mono"
+                  className="absolute right-3 top-3.5 text-xs font-bold hover:bg-white rounded-sm px-2 h-7"
                 >
-                  MAX
+                  Max
                 </Button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-mono text-zinc-500 uppercase">Remove_kLP_Collateral</label>
-              <div className="relative">
-                <Input
-                  type="number"
-                  placeholder="0.00 kLP"
-                  value={collateralToRemove}
-                  onChange={(e) => setCollateralToRemove(e.target.value)}
-                  className="bg-zinc-950 border-zinc-800 rounded-none font-mono"
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setCollateralToRemove(formatUnits(collateralAmount, 18))}
-                  className="absolute right-2 top-1 text-[10px] font-mono"
-                >
-                  MAX
-                </Button>
-              </div>
-            </div>
-
-            <Button
+            <button
               onClick={handleBurn}
               disabled={isPending || (!repayAmount && !collateralToRemove)}
-              className="w-full bg-zinc-100 text-black hover:bg-zinc-300 rounded-none font-mono"
+              className="w-full bg-[#191919] text-[#f9f9f4] hover:bg-[#1f1f1f] rounded-full font-bold h-14 transition-all text-s"
             >
-              CONFIRM_REPAYMENT
-            </Button>
+              Confirm Repayment
+            </button>
           </TabsContent>
         </Tabs>
       </CardContent>

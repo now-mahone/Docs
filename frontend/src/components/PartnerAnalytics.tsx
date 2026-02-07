@@ -35,11 +35,11 @@ export function PartnerAnalytics({ vaultAddress }: PartnerAnalyticsProps) {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <Card className="bg-zinc-900/50 border-zinc-800 rounded-none">
         <CardHeader className="pb-2">
-          <CardTitle className="text-[10px] font-mono text-zinc-500 uppercase">Vault_TVL</CardTitle>
+          <CardTitle className="text-xs font-mono text-zinc-500 uppercase">Vault_TVL</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-xl font-mono text-white">{stats.total.toFixed(2)} ETH</div>
-          <div className="text-[10px] font-mono text-zinc-600 mt-1">
+          <div className="text-xs font-mono text-zinc-600 mt-1">
             {((stats.offChain / stats.total) * 100 || 0).toFixed(2)}% UTILIZED
           </div>
         </CardContent>
@@ -47,21 +47,21 @@ export function PartnerAnalytics({ vaultAddress }: PartnerAnalyticsProps) {
 
       <Card className="bg-zinc-900/50 border-zinc-800 rounded-none">
         <CardHeader className="pb-2">
-          <CardTitle className="text-[10px] font-mono text-zinc-500 uppercase">Performance_Fee</CardTitle>
+          <CardTitle className="text-xs font-mono text-zinc-500 uppercase">Performance_Fee</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-xl font-mono text-emerald-500">{stats.fee.toFixed(1)}%</div>
-          <div className="text-[10px] font-mono text-zinc-600 mt-1">BESPOKE CONFIGURATION</div>
+          <div className="text-xs font-mono text-zinc-600 mt-1">BESPOKE CONFIGURATION</div>
         </CardContent>
       </Card>
 
       <Card className="bg-zinc-900/50 border-zinc-800 rounded-none">
         <CardHeader className="pb-2">
-          <CardTitle className="text-[10px] font-mono text-zinc-500 uppercase">Est_Monthly_Revenue</CardTitle>
+          <CardTitle className="text-xs font-mono text-zinc-500 uppercase">Est_Monthly_Revenue</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-xl font-mono text-blue-400">${(stats.monthlyRevenue * 3000).toFixed(2)}</div>
-          <div className="text-[10px] font-mono text-zinc-600 mt-1">BASED ON 15% PROJECTED APY</div>
+          <div className="text-xs font-mono text-zinc-600 mt-1">BASED ON 15% PROJECTED APY</div>
         </CardContent>
       </Card>
     </div>

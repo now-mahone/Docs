@@ -10,101 +10,116 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
+  ReferenceLine,
+  Area,
+  AreaChart,
+  ComposedChart,
 } from 'recharts';
 
 interface PerformanceChartProps {
   data: Array<{
     time: string;
-    eth: number;
-    simulated: number;
-    actual: number | null;
+    apy: number;
+    avg: number;
+    isBiWeekly?: boolean;
   }>;
 }
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-gradient-to-b from-[#22252a] to-[#000000] rounded-sm p-4 shadow-lg border border-[#444a4f]">
+        <p className="text-xs font-bold text-[#ffffff] mb-2">{label}</p>
+        <p className="text-xs font-medium text-[#37d097]">
+          Kerne APY: {payload[0].value.toFixed(2)}%
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export const PerformanceChart: React.FC<PerformanceChartProps> = ({ data }) => {
+  const average = data.length > 0 ? data[0].avg : 0;
+
   return (
-    <div className="w-full h-full min-h-[350px]">
+    <div className="w-full h-full min-h-[300px] lg:min-h-[450px]">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart
+        <ComposedChart
           data={data}
           margin={{
-            top: 20,
-            right: 30,
-            left: 0,
-            bottom: 0,
+            top: 10,
+            right: 10,
+            left: -20,
+            bottom: 20,
           }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+          <ReferenceLine 
+            y={average} 
+            stroke="#444a4f" 
+            strokeWidth={2}
+            label={{ 
+              value: `Avg ${average}%`, 
+              position: 'insideBottomRight', 
+              fill: '#444a4f', 
+              fontSize: 10, 
+              fontWeight: 700, 
+              offset: 10 
+            }} 
+          />
+          <CartesianGrid stroke="#22252a" vertical={false} horizontal={true} strokeDasharray="none" />
           <XAxis 
             dataKey="time" 
-            stroke="#71717a" 
-            fontSize={10}
+            stroke="#aab9be" 
+            style={{ fontSize: '11px', fontWeight: 500 }}
             tickLine={false}
             axisLine={false}
-            minTickGap={30}
+            tick={(props: any) => {
+              const { x, y, payload } = props;
+              const entry = data[payload.index];
+              if (entry && entry.isBiWeekly) {
+                const isLast = payload.index === data.length - 1;
+                return (
+                  <g transform={`translate(${x},${y})`}>
+                    <text 
+                      x={0} 
+                      y={0} 
+                      dy={16} 
+                      textAnchor={isLast ? "end" : "middle"} 
+                      fill="#aab9be" 
+                      fontSize="11px" 
+                      fontWeight={500}
+                    >
+                      {payload.value}
+                    </text>
+                  </g>
+                );
+              }
+              return null;
+            }}
+            interval={0}
           />
           <YAxis 
-            stroke="#71717a" 
-            fontSize={10}
+            stroke="#aab9be" 
+            style={{ fontSize: '11px', fontWeight: 500 }}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => `$${value.toFixed(2)}`}
-            domain={['auto', 'auto']}
+            tickFormatter={(value: number) => `${value}%`}
+            domain={[10, 30]}
+            tick={{ fill: '#aab9be' }}
+            label={{ value: 'APY (%)', angle: -90, position: 'insideLeft', style: { fontSize: '11px', fontWeight: 600, fill: '#aab9be', textAnchor: 'middle' }, dx: -10 }}
           />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: '#09090b',
-              border: '1px solid #27272a',
-              fontSize: '12px',
-              fontFamily: 'monospace',
-              borderRadius: '4px',
-            }}
-            itemStyle={{ fontSize: '10px' }}
-            formatter={(value: any) => [`$${parseFloat(value).toFixed(4)}`, '']}
-          />
-          <Legend 
-            verticalAlign="top" 
-            height={36}
-            iconType="circle"
-            wrapperStyle={{
-              fontSize: '10px',
-              fontFamily: 'monospace',
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              paddingBottom: '20px'
-            }}
-          />
+          <Tooltip content={<CustomTooltip />} />
           <Line
-            name="ETH_PRICE_INDEX"
+            name="Kerne APY"
             type="linear"
-            dataKey="eth"
-            stroke="#3b82f6"
-            strokeWidth={1.5}
+            dataKey="apy"
+            stroke="#37d097"
+            strokeWidth={3}
             dot={false}
-            activeDot={{ r: 3 }}
+            activeDot={{ r: 6, stroke: '#16191c', strokeWidth: 2 }}
           />
-          <Line
-            name="KERNE_SIMULATED"
-            type="linear"
-            dataKey="simulated"
-            stroke="#eab308"
-            strokeWidth={1.5}
-            strokeDasharray="3 3"
-            dot={false}
-            activeDot={{ r: 3 }}
-          />
-          <Line
-            name="KERNE_ACTUAL"
-            type="linear"
-            dataKey="actual"
-            stroke="#10b981"
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 4 }}
-            connectNulls={false}
-          />
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
