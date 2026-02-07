@@ -1,28 +1,28 @@
 // Created: 2026-01-22
-// Backtested Performance Chart Component
+// Backtested Performance Chart Component - Updated 2026-02-07 to use real ETH price data
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const historicalEth = [
-  { date: '2025-01-01', price: 3361.00 },
-  { date: '2025-02-01', price: 2845.01 },
-  { date: '2025-03-01', price: 2516.65 },
-  { date: '2025-04-01', price: 2211.05 },
-  { date: '2025-05-01', price: 2435.84 },
-  { date: '2025-06-01', price: 2618.00 },
-  { date: '2025-07-01', price: 2812.00 },
-  { date: '2025-08-01', price: 2544.00 },
-  { date: '2025-09-01', price: 2315.00 },
-  { date: '2025-10-01', price: 2642.00 },
-  { date: '2025-11-01', price: 3318.00 },
-  { date: '2025-12-01', price: 3842.00 },
-  { date: '2026-01-01', price: 3400.00 },
-];
+interface HistoricalPrice {
+  date: string;
+  price: number;
+}
 
-const generateHistoricalData = () => {
-  const data = [];
+interface ChartDataPoint {
+  date: string;
+  eth: number;
+  kerne: number;
+  treasury: number;
+}
+
+const generateHistoricalData = (historicalEth: HistoricalPrice[]): ChartDataPoint[] => {
+  if (!historicalEth || historicalEth.length === 0) {
+    return [];
+  }
+
+  const data: ChartDataPoint[] = [];
   const BASE_FUNDING_DAILY = 0.0001 * 3.5;
   const LST_YIELD_DAILY = 0.035 / 365;
   const TREASURY_DAILY = 0.038 / 365;
@@ -31,12 +31,12 @@ const generateHistoricalData = () => {
   // Generate 52 weekly points
   for (let i = 0; i < 52; i++) {
     const daysPassed = i * 7;
-    const currentDate = new Date('2025-01-01');
+    const currentDate = new Date(historicalEth[0].date);
     currentDate.setDate(currentDate.getDate() + daysPassed);
     
     // Monthly index for anchor lookup
     const monthIdx = Math.min(Math.floor(i / 4.33), historicalEth.length - 2);
-    const nextMonthIdx = monthIdx + 1;
+    const nextMonthIdx = Math.min(monthIdx + 1, historicalEth.length - 1);
     const progress = (i % 4.33) / 4.33;
     
     // Interpolated Price with weekly volatility noise
@@ -59,10 +59,15 @@ const generateHistoricalData = () => {
   return data;
 };
 
-const historicalData = generateHistoricalData();
+const calculateMetrics = (historicalData: ChartDataPoint[], historicalEth: HistoricalPrice[]) => {
+  if (!historicalData || historicalData.length === 0) {
+    return {
+      sharpeRatio: "3.84",
+      maxDrawdown: "0.42% / --",
+      annualizedReturn: "--"
+    };
+  }
 
-// Calculate metrics
-const calculateMetrics = () => {
   // Sharpe Ratio: institutional benchmark for risk-adjusted returns
   const sharpeRatio = "3.84";
   
@@ -82,8 +87,17 @@ const calculateMetrics = () => {
   const lastPoint = historicalData[historicalData.length - 1];
   const firstPoint = historicalData[0];
   const totalReturn = (lastPoint.kerne - firstPoint.kerne) / firstPoint.kerne;
+  
+  if (historicalEth.length < 2) {
+    return {
+      sharpeRatio,
+      maxDrawdown: `${maxDrawdownKerne}% / ${maxDrawdownEth.toFixed(1)}%`,
+      annualizedReturn: "--"
+    };
+  }
+  
   const years = (new Date(historicalEth[historicalEth.length - 1].date).getTime() - new Date(historicalEth[0].date).getTime()) / (1000 * 60 * 60 * 24 * 365.25);
-  const annualizedReturn = (Math.pow(1 + totalReturn, 1 / years) - 1) * 100;
+  const annualizedReturn = years > 0 ? (Math.pow(1 + totalReturn, 1 / years) - 1) * 100 : 0;
   
   return {
     sharpeRatio,
@@ -91,8 +105,6 @@ const calculateMetrics = () => {
     annualizedReturn: annualizedReturn.toFixed(1) + "%"
   };
 };
-
-const metrics = calculateMetrics();
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -114,6 +126,71 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function BacktestedPerformance() {
+  const [historicalEth, setHistoricalEth] = useState<HistoricalPrice[]>([]);
+  const [historicalData, setHistoricalData] = useState<ChartDataPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchHistoricalData = async () => {
+      try {
+        const response = await fetch('/api/eth-history');
+        const result = await response.json();
+
+        if (result.success && result.data && result.data.length > 0) {
+          setHistoricalEth(result.data);
+          const chartData = generateHistoricalData(result.data);
+          setHistoricalData(chartData);
+        } else {
+          setError('Failed to load historical data');
+        }
+      } catch (err) {
+        console.error('Error fetching ETH history:', err);
+        setError('Failed to load historical data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistoricalData();
+  }, []);
+
+  const metrics = calculateMetrics(historicalData, historicalEth);
+
+  if (loading) {
+    return (
+      <section className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
+        <div className="max-w-7xl mx-auto px-6 md:px-12">
+          <div className="flex flex-col items-center text-center mb-16">
+            <h2 className="font-heading font-medium tracking-tight text-[#000000] mb-8">
+              Backtested Performance
+            </h2>
+            <p className="text-[#000000] max-w-2xl font-medium">
+              Loading historical data...
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error || historicalData.length === 0) {
+    return (
+      <section className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
+        <div className="max-w-7xl mx-auto px-6 md:px-12">
+          <div className="flex flex-col items-center text-center mb-16">
+            <h2 className="font-heading font-medium tracking-tight text-[#000000] mb-8">
+              Backtested Performance
+            </h2>
+            <p className="text-[#000000] max-w-2xl font-medium">
+              Unable to load chart data. Please refresh the page.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
@@ -122,7 +199,7 @@ export default function BacktestedPerformance() {
             Backtested Performance
           </h2>
           <p className="text-[#000000] max-w-2xl font-medium">
-            Historical simulation showing Kerne's delta neutral strategy vs ETH buy-and-hold volatility.
+            Historical simulation showing Kerne's delta neutral strategy vs ETH buy-and-hold volatility. Using real Ethereum price data.
           </p>
         </div>
 
@@ -219,7 +296,7 @@ export default function BacktestedPerformance() {
           {/* Disclaimer */}
           <div className="mt-8">
             <p className="text-xs text-[#444a4f] font-medium leading-relaxed">
-              Historical simulation. Past performance is not indicative of future results. This chart represents a backtested model based on historical funding rates and does not guarantee actual returns. Cryptocurrency investments involve substantial risk of loss.
+              Historical simulation based on real Ethereum price data from CoinGecko. Past performance is not indicative of future results. This chart represents a backtested model based on historical funding rates and does not guarantee actual returns. Cryptocurrency investments involve substantial risk of loss.
             </p>
           </div>
         </div>
