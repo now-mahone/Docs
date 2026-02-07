@@ -173,6 +173,15 @@ Examples:
 - `[2026-01-08] bot: Fix hedging engine threshold`
 - `[2026-01-08] docs: Update mechanism spec`
 
+### Monthly Repository Rotation Protocol
+To maintain a clean history and organized workflow, we rotate the primary repository every month.
+- **Naming Convention:** `kerne-[month]-[year]` (e.g., `kerne-feb-2026`, `kerne-march-2026`).
+- **Process:**
+    1.  At the start of each month, create a new private repository with the new name.
+    2.  Push the current state of the codebase to the new repository.
+    3.  Update `AGENTS.md` to reflect the new repository as the primary remote.
+    4.  Add the new remote to the local git configuration (e.g., `march`).
+
 ---
 
 ## 8. TESTING STRATEGY
