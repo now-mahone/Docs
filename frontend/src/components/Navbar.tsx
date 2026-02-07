@@ -23,7 +23,7 @@ export default function Navbar() {
   const navLinks = [
     { name: 'About', href: '/about' },
     { name: 'Transparency', href: '/transparency' },
-    { name: 'Documentation', href: 'https://docs.kerne.ai' },
+    { name: 'Documentation', href: '/documentation' },
   ].filter(link => {
     if (pathname === '/terminal' && link.name === 'Documentation') {
       return false;
@@ -57,27 +57,15 @@ export default function Navbar() {
           </div>
           
           <div className="hidden lg:flex flex-1 justify-end items-center gap-12 text-s font-bold tracking-tight text-[#000000] mr-12 ml-12">
-            {navLinks.map((link) => 
-              link.href.startsWith('http') ? (
-                <a 
-                  key={link.href}
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="transition-colors text-s hover:text-[#000000]"
-                >
-                  {link.name}
-                </a>
-              ) : (
-                <Link 
-                  key={link.href}
-                  href={link.href} 
-                  className={`transition-colors text-s ${pathname === link.href ? 'text-[#000000]' : 'hover:text-[#000000]'}`}
-                >
-                  {link.name}
-                </Link>
-              )
-            )}
+            {navLinks.map((link) => (
+              <Link 
+                key={link.href}
+                href={link.href} 
+                className={`transition-colors text-s ${pathname === link.href ? 'text-[#000000]' : 'hover:text-[#000000]'}`}
+              >
+                {link.name}
+              </Link>
+            ))}
           </div>
 
           <div className="flex justify-end items-center gap-3">
@@ -125,33 +113,20 @@ export default function Navbar() {
               <div className="bg-[#ffffff]/80 backdrop-blur-md border border-[#aab9be] rounded-sm overflow-hidden px-4">
                 {/* Navigation Links */}
                 <div className="flex flex-col">
-                  {navLinks.map((link, index) => 
-                    link.href.startsWith('http') ? (
-                      <a
-                        key={link.href}
-                        href={link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={closeMobileMenu}
-                        className={`py-4 text-s font-bold transition-colors text-[#000000] hover:bg-[#f5f5f5] ${index !== navLinks.length - 1 ? 'border-b border-[#aab9be]' : ''}`}
-                      >
-                        {link.name}
-                      </a>
-                    ) : (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        onClick={closeMobileMenu}
-                        className={`py-4 text-s font-bold transition-colors ${
-                          pathname === link.href 
-                            ? 'text-[#000000] bg-[#f5f5f5]' 
-                            : 'text-[#000000] hover:bg-[#f5f5f5]'
-                        } ${index !== navLinks.length - 1 ? 'border-b border-[#aab9be]' : ''}`}
-                      >
-                        {link.name}
-                      </Link>
-                    )
-                  )}
+                  {navLinks.map((link, index) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMobileMenu}
+                      className={`py-4 text-s font-bold transition-colors ${
+                        pathname === link.href 
+                          ? 'text-[#000000] bg-[#f5f5f5]' 
+                          : 'text-[#000000] hover:bg-[#f5f5f5]'
+                      } ${index !== navLinks.length - 1 ? 'border-b border-[#aab9be]' : ''}`}
+                    >
+                      {link.name}
+                    </Link>
+                  ))}
                   
                   {/* Mobile Terminal Button */}
                   <div className="sm:hidden border-t border-[#aab9be] pt-4 pb-4">
