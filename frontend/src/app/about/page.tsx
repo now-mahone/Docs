@@ -74,13 +74,15 @@ export default function AboutPage() {
                     <p className="text-m text-[#d4dce1] font-medium leading-relaxed mb-8">
                       Kerne represents a fundamental shift in how institutional capital accesses sustainable yield in DeFi. We believe the future of finance requires infrastructure that can generate returns without relying on token emissions, unsustainable APYs, or speculative mechanisms.
                     </p>
-                    <Link 
-                      href="/litepaper" 
+                    <a 
+                      href="https://docs.kerne.ai/litepaper" 
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 text-m text-[#ffffff] font-bold hover:underline transition-all"
                     >
                       Read Litepaper
                       <ArrowRight size={20} />
-                    </Link>
+                    </a>
                   </div>
                 </div>
               </div>
