@@ -68,6 +68,9 @@ export default function TerminalPage() {
     const startDate = new Date();
     startDate.setDate(endDate.getDate() - daysToGenerate);
 
+    let highest = -Infinity;
+    let lowest = Infinity;
+
     for (let i = 0; i <= daysToGenerate; i++) {
       const currentDate = new Date(startDate);
       currentDate.setDate(startDate.getDate() + i);
@@ -76,15 +79,19 @@ export default function TerminalPage() {
       // Generate realistic APY fluctuations around the current live APY
       const volatility = Math.sin(i * 0.2) * 2.5 + (Math.cos(i * 0.45) * 1.5);
       const apy = avgApy + volatility;
+      const roundedApy = parseFloat(apy.toFixed(2));
+
+      if (roundedApy > highest) highest = roundedApy;
+      if (roundedApy < lowest) lowest = roundedApy;
       
       data.push({
         time: dateStr,
-        apy: parseFloat(apy.toFixed(2)),
+        apy: roundedApy,
         avg: avgApy,
         isBiWeekly: i % 14 === 0 || i === daysToGenerate
       });
     }
-    return data;
+    return { data, highest, lowest };
   }, [apyData]);
 
   const comparisonData = useMemo(() => {
@@ -255,7 +262,7 @@ export default function TerminalPage() {
               </div>
               
               <div className="flex-1 w-full min-h-0 relative">
-                <PerformanceChart data={chartData} />
+                <PerformanceChart data={chartData.data} />
               </div>
             </div>
 
@@ -286,18 +293,18 @@ export default function TerminalPage() {
                   <div className="pt-4 border-t border-[#22252a] space-y-4">
                     <div className="flex justify-between items-center gap-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#444a4f] shrink-0" />
-                        <span className="text-xs font-medium text-[#444a4f]">Performance Fee</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#aab9be] shrink-0" />
+                        <span className="text-xs font-medium text-[#aab9be]">90d Highest APY</span>
                       </div>
-                      <span className="text-xs font-bold text-[#444a4f] whitespace-nowrap">0.00%</span>
+                      <span className="text-xs font-bold text-[#ffffff] whitespace-nowrap">{chartData.highest.toFixed(2)}%</span>
                     </div>
 
                     <div className="flex justify-between items-center gap-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#444a4f] shrink-0" />
-                        <span className="text-xs font-medium text-[#444a4f]">Management Fee</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#aab9be] shrink-0" />
+                        <span className="text-xs font-medium text-[#aab9be]">90d Lowest APY</span>
                       </div>
-                      <span className="text-xs font-bold text-[#444a4f] whitespace-nowrap">0.00%</span>
+                      <span className="text-xs font-bold text-[#ffffff] whitespace-nowrap">{chartData.lowest.toFixed(2)}%</span>
                     </div>
                   </div>
 
