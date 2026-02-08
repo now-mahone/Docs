@@ -239,7 +239,7 @@ Same as DappRadar submission above. Emphasize:
 | 1 | DappRadar | Web Form | [ ] Ready to submit |
 | 2 | DeBank | Email | [ ] Ready to send |
 | 3 | DeFi Safety | Web Form | [ ] Ready to submit |
-| 4 | Base Ecosystem | TBD | [ ] Check submission process |
+| 4 | Base Ecosystem | GitHub PR to base/web | [x] PR #2956 submitted 2026-02-08 |
 
 ---
 
@@ -256,4 +256,4 @@ After each submission:
 | DappRadar | | | | |
 | DeBank | | | | |
 | DeFi Safety | | | | |
-| Base Ecosystem | | | | |
+| Base Ecosystem | 2026-02-08 | PR #2956 pending review | | https://github.com/base/web/pull/2956 |
