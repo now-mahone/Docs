@@ -8,13 +8,13 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // Calculate date range (last 3 years for historical perspective)
+    // Calculate date range (rolling 1 year window)
     const now = new Date();
-    const threeYearsAgo = new Date();
-    threeYearsAgo.setMonth(now.getMonth() - 36);
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(now.getFullYear() - 1);
     
     const toTimestamp = Math.floor(now.getTime() / 1000);
-    const fromTimestamp = Math.floor(threeYearsAgo.getTime() / 1000);
+    const fromTimestamp = Math.floor(oneYearAgo.getTime() / 1000);
 
     // Fetch real ETH historical prices from CoinGecko
     const response = await fetch(
@@ -36,36 +36,29 @@ export async function GET() {
     const data = await response.json();
 
     // CoinGecko returns { prices: [[timestamp, price], ...] }
-    // Convert to monthly data points (first day of each month)
+    // Keep daily data points (1 year = ~365 points)
     const prices = data.prices || [];
     
-    const monthlyPrices: { date: string; price: number }[] = [];
-    const monthsProcessed = new Set<string>();
+    const dailyPrices: { date: string; price: number }[] = [];
 
     for (const [timestamp, price] of prices) {
       const date = new Date(timestamp);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      
-      // Only keep first price of each month
-      if (!monthsProcessed.has(monthKey)) {
-        monthsProcessed.add(monthKey);
-        monthlyPrices.push({
-          date: date.toISOString().split('T')[0], // YYYY-MM-DD format
-          price: parseFloat(price.toFixed(2)),
-        });
-      }
+      dailyPrices.push({
+        date: date.toISOString().split('T')[0], // YYYY-MM-DD format
+        price: parseFloat(price.toFixed(2)),
+      });
     }
 
     // Sort by date ascending
-    monthlyPrices.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    dailyPrices.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return NextResponse.json({
       success: true,
-      data: monthlyPrices,
-      dataPoints: monthlyPrices.length,
+      data: dailyPrices,
+      dataPoints: dailyPrices.length,
       dateRange: {
-        from: monthlyPrices[0]?.date || null,
-        to: monthlyPrices[monthlyPrices.length - 1]?.date || null,
+        from: dailyPrices[0]?.date || null,
+        to: dailyPrices[dailyPrices.length - 1]?.date || null,
       },
     });
   } catch (error: any) {

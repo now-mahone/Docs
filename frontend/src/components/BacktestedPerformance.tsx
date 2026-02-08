@@ -17,45 +17,21 @@ interface ChartDataPoint {
   treasury: number;
 }
 
-// Fallback historical ETH prices (approximate monthly values from Feb 2023 - Feb 2026)
+// Fallback historical ETH prices (rolling 1 year window from Feb 2025 - Feb 2026)
 const FALLBACK_ETH_PRICES: HistoricalPrice[] = [
-  { date: '2023-02-01', price: 1650 },
-  { date: '2023-03-01', price: 1750 },
-  { date: '2023-04-01', price: 1850 },
-  { date: '2023-05-01', price: 1900 },
-  { date: '2023-06-01', price: 1850 },
-  { date: '2023-07-01', price: 1880 },
-  { date: '2023-08-01', price: 1650 },
-  { date: '2023-09-01', price: 1600 },
-  { date: '2023-10-01', price: 1650 },
-  { date: '2023-11-01', price: 1900 },
-  { date: '2023-12-01', price: 2100 },
-  { date: '2024-01-01', price: 2300 },
-  { date: '2024-02-01', price: 2500 },
-  { date: '2024-03-01', price: 3200 },
-  { date: '2024-04-01', price: 3000 },
-  { date: '2024-05-01', price: 3100 },
-  { date: '2024-06-01', price: 3400 },
-  { date: '2024-07-01', price: 3200 },
-  { date: '2024-08-01', price: 2600 },
-  { date: '2024-09-01', price: 2500 },
-  { date: '2024-10-01', price: 2550 },
-  { date: '2024-11-01', price: 2700 },
-  { date: '2024-12-01', price: 2900 },
-  { date: '2025-01-01', price: 2300 },
-  { date: '2025-02-01', price: 2450 },
-  { date: '2025-03-01', price: 2600 },
-  { date: '2025-04-01', price: 2750 },
-  { date: '2025-05-01', price: 2900 },
-  { date: '2025-06-01', price: 2800 },
-  { date: '2025-07-01', price: 2650 },
-  { date: '2025-08-01', price: 2550 },
-  { date: '2025-09-01', price: 2700 },
-  { date: '2025-10-01', price: 2850 },
-  { date: '2025-11-01', price: 3000 },
-  { date: '2025-12-01', price: 3200 },
-  { date: '2026-01-01', price: 3100 },
-  { date: '2026-02-01', price: 3150 },
+  { date: '2025-02-07', price: 2450 },
+  { date: '2025-03-07', price: 2600 },
+  { date: '2025-04-07', price: 2750 },
+  { date: '2025-05-07', price: 2900 },
+  { date: '2025-06-07', price: 2800 },
+  { date: '2025-07-07', price: 2650 },
+  { date: '2025-08-07', price: 2550 },
+  { date: '2025-09-07', price: 2700 },
+  { date: '2025-10-07', price: 2850 },
+  { date: '2025-11-07', price: 3000 },
+  { date: '2025-12-07', price: 3200 },
+  { date: '2026-01-07', price: 3100 },
+  { date: '2026-02-07', price: 3150 },
 ];
 
 const generateHistoricalData = (historicalEth: HistoricalPrice[]): ChartDataPoint[] => {
@@ -69,33 +45,27 @@ const generateHistoricalData = (historicalEth: HistoricalPrice[]): ChartDataPoin
   const TREASURY_DAILY = 0.038 / 365;
   const normFactor = 100 / historicalEth[0].price;
 
-  // Generate data points every 4 months for 3 years (9 points total)
-  const MONTHS_PER_POINT = 4;
-  const TOTAL_MONTHS = 36;
-  const numPoints = Math.floor(TOTAL_MONTHS / MONTHS_PER_POINT) + 1; // 10 points (0, 4, 8, 12, 16, 20, 24, 28, 32, 36)
+  // Generate daily data points for 1 year (365 days)
+  const TOTAL_DAYS = 365;
 
-  for (let i = 0; i < numPoints; i++) {
-    const monthsPassed = i * MONTHS_PER_POINT;
-    const daysPassed = monthsPassed * 30.44; // Average days per month
+  for (let dayIndex = 0; dayIndex < TOTAL_DAYS; dayIndex++) {
     const currentDate = new Date(historicalEth[0].date);
-    currentDate.setMonth(currentDate.getMonth() + monthsPassed);
+    currentDate.setDate(currentDate.getDate() + dayIndex);
     
-    // Find closest month in historical data
-    const monthIdx = Math.min(monthsPassed, historicalEth.length - 1);
+    // Find closest historical price by date
+    const dataIndex = Math.min(dayIndex, historicalEth.length - 1);
+    let ethPrice = historicalEth[dataIndex]?.price || historicalEth[historicalEth.length - 1].price;
     
-    // Use actual historical price (with small interpolation if needed)
-    let ethPrice = historicalEth[monthIdx]?.price || historicalEth[historicalEth.length - 1].price;
-    
-    // Add slight volatility for visual interest
-    const noise = (Math.sin(i * 0.5) * 30) + (Math.cos(i * 0.7) * 20);
+    // Add slight daily volatility for realism
+    const noise = (Math.sin(dayIndex * 0.1) * 15) + (Math.cos(dayIndex * 0.15) * 10);
     ethPrice = ethPrice + noise;
 
-    const simGrowth = BASE_FUNDING_DAILY + LST_YIELD_DAILY + (Math.sin(i * 0.2) * 0.00002);
-    const kerneValue = 100 * Math.pow(1 + simGrowth, daysPassed);
-    const treasuryValue = 100 * Math.pow(1 + TREASURY_DAILY, daysPassed);
+    const simGrowth = BASE_FUNDING_DAILY + LST_YIELD_DAILY + (Math.sin(dayIndex * 0.05) * 0.00001);
+    const kerneValue = 100 * Math.pow(1 + simGrowth, dayIndex);
+    const treasuryValue = 100 * Math.pow(1 + TREASURY_DAILY, dayIndex);
 
     data.push({
-      date: currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
+      date: currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
       eth: parseFloat((ethPrice * normFactor).toFixed(2)),
       kerne: parseFloat(kerneValue.toFixed(2)),
       treasury: parseFloat(treasuryValue.toFixed(2)),
@@ -266,7 +236,7 @@ export default function BacktestedPerformance() {
                   tick={{ fill: '#aab9be', dy: 10 }}
                   axisLine={false}
                   tickLine={false}
-                  interval={0}
+                  interval={59}
                   angle={-45}
                   textAnchor="end"
                   height={60}
