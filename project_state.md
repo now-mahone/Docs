@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-07 18:25] - CHART GRID STYLING: Removed vertical grid lines from Backtested Performance chart and ensured horizontal grid lines are solid. Improved chart clarity for institutional presentation. - Status: SUCCESS
+
 [2026-02-07 18:22] - CHART GRID STYLING: Changed Backtested Performance chart grid lines from dashed/dotted to solid for a cleaner, more institutional aesthetic. Updated `CartesianGrid` component in `BacktestedPerformance.tsx`. - Status: SUCCESS
 
 [2026-02-07 18:15] - SHARPE RATIO CALCULATION: Replaced hardcoded Sharpe Ratio (3.84) with a real-time mathematical calculation based on the historical ETH price data and simulated Kerne strategy returns. Updated `generateHistoricalData` to include daily compounding and realistic funding rate volatility (~2.5% annualized vol). Implemented full Sharpe Ratio formula ((Annualized Return - Risk Free Rate) / Annualized Volatility) using a 3.8% Treasury benchmark as the risk-free rate. Also implemented real-time Max Drawdown calculation for both Kerne and ETH based on the rolling 1-year daily dataset. This ensures institutional-grade metric accuracy for the backtested performance chart. - Status: SUCCESS
