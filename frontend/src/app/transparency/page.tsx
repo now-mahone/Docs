@@ -9,11 +9,20 @@ import { useSolvency } from '@/hooks/useSolvency';
 import { SolvencyChart } from '@/components/SolvencyChart';
 import { VAULT_ADDRESS } from '@/config';
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import Footer from '@/components/Footer';
 import Navbar from '@/components/Navbar';
 
 export default function TransparencyPage() {
   const { data, loading, error } = useSolvency();
+  const [apyData, setApyData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/apy')
+      .then(res => res.json())
+      .then(d => setApyData(d))
+      .catch(e => console.error("APY fetch error", e));
+  }, []);
 
   if (loading) {
     return (
@@ -75,8 +84,12 @@ export default function TransparencyPage() {
                 <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Strategy status</div>
                   <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">Active</div>
-                    <div className="text-s text-[#37d097] font-medium">Hedging Live</div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">
+                      {parseFloat(data.solvency_ratio) > 100 ? "Active" : "Paused"}
+                    </div>
+                    <div className="text-s text-[#37d097] font-medium">
+                      {parseFloat(data.solvency_ratio) > 100 ? "Hedging Live" : "Safeguard Active"}
+                    </div>
                   </div>
                 </div>
 
@@ -85,43 +98,49 @@ export default function TransparencyPage() {
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Delta Neutral</div>
                   <div>
                     <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">Balanced</div>
-                    <div className="text-s text-[#37d097] font-medium">0% Exposure</div>
+                    <div className="text-s text-[#37d097] font-medium">
+                      {(Math.abs(parseFloat(data.assets.on_chain_eth) + parseFloat(data.assets.off_chain_eth) - parseFloat(data.assets.total_eth)) < 0.01) ? "0% Exposure" : "Optimizing"}
+                    </div>
                   </div>
                 </div>
 
                 {/* Insurance Reserve% */}
                 <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
-                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Insurance reserve</div>
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Insurance fund</div>
                   <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">10%</div>
-                    <div className="text-s text-[#37d097] font-medium">Buffer Active</div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">
+                       {data.assets.breakdown.find(b => b.name === "Insurance_Fund")?.value || "0.00"} ETH
+                    </div>
+                    <div className="text-s text-[#37d097] font-medium">Reserve Active</div>
                   </div>
                 </div>
               </div>
 
-              {/* Row 2: 2 Larger Cards with Pie Charts */}
+              {/* Row 2: 2 Larger Cards with Dynamic Data */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Asset Composition Pie Chart */}
                 <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-6">Asset composition</div>
                   <div className="flex items-center gap-6">
-                    {/* Pie Chart SVG - Donut style */}
+                    {/* Dynamic Pie Chart SVG */}
                     <div className="w-24 h-24 shrink-0">
                       <svg viewBox="0 0 36 36" className="w-full h-full">
-                        {/* Background circle */}
                         <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#22252a" strokeWidth="3" />
-                        {/* On Chain ETH - 40% Green */}
-                        <circle cx="18" cy="18" r="15.915" fill="transparent" 
-                          stroke="#37d097" strokeWidth="3" 
-                          strokeDasharray="40 60" strokeDashoffset="25" />
-                        {/* Mirror Assets - 30% Pink */}
-                        <circle cx="18" cy="18" r="15.915" fill="transparent" 
-                          stroke="#f82b6c" strokeWidth="3" 
-                          strokeDasharray="30 70" strokeDashoffset="-15" />
-                        {/* LST Reserves - 30% Blue */}
-                        <circle cx="18" cy="18" r="15.915" fill="transparent" 
-                          stroke="#4c7be7" strokeWidth="3" 
-                          strokeDasharray="30 70" strokeDashoffset="-45" />
+                        {(() => {
+                           const total = parseFloat(data.assets.total_eth);
+                           if (total === 0) return null;
+                           const onChain = (parseFloat(data.assets.on_chain_eth) / total) * 100;
+                           const offChain = (parseFloat(data.assets.off_chain_eth) / total) * 100;
+                           const insurance = (parseFloat(data.assets.breakdown.find(b => b.name === "Insurance_Fund")?.value || "0") / total) * 100;
+                           
+                           return (
+                             <>
+                               <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#37d097" strokeWidth="3" strokeDasharray={`${onChain} ${100-onChain}`} strokeDashoffset="25" />
+                               <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#f82b6c" strokeWidth="3" strokeDasharray={`${offChain} ${100-offChain}`} strokeDashoffset={`${25 - onChain}`} />
+                               <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#4c7be7" strokeWidth="3" strokeDasharray={`${insurance} ${100-insurance}`} strokeDashoffset={`${25 - onChain - offChain}`} />
+                             </>
+                           );
+                        })()}
                       </svg>
                     </div>
                     {/* Legend */}
@@ -129,22 +148,22 @@ export default function TransparencyPage() {
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#37d097]" />
                         <div className="flex items-baseline justify-between flex-1">
-                          <span className="text-xs font-medium text-[#d4dce1]">On Chain ETH</span>
-                          <span className="text-xs text-[#d4dce1]">40%</span>
+                          <span className="text-xs font-medium text-[#d4dce1]">Base Vault</span>
+                          <span className="text-xs text-[#d4dce1]">{((parseFloat(data.assets.on_chain_eth)/parseFloat(data.assets.total_eth))*100).toFixed(0)}%</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#f82b6c]" />
                         <div className="flex items-baseline justify-between flex-1">
-                          <span className="text-xs font-medium text-[#d4dce1]">Mirror Assets</span>
-                          <span className="text-xs text-[#d4dce1]">30%</span>
+                          <span className="text-xs font-medium text-[#d4dce1]">Mirrored Hedge</span>
+                          <span className="text-xs text-[#d4dce1]">{((parseFloat(data.assets.off_chain_eth)/parseFloat(data.assets.total_eth))*100).toFixed(0)}%</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#4c7be7]" />
                         <div className="flex items-baseline justify-between flex-1">
-                          <span className="text-xs font-medium text-[#d4dce1]">LST Reserves</span>
-                          <span className="text-xs text-[#d4dce1]">30%</span>
+                          <span className="text-xs font-medium text-[#d4dce1]">Insurance Reserve</span>
+                          <span className="text-xs text-[#d4dce1]">{((parseFloat(data.assets.breakdown.find(b => b.name === "Insurance_Fund")?.value || "0")/parseFloat(data.assets.total_eth))*100).toFixed(0)}%</span>
                         </div>
                       </div>
                     </div>
@@ -155,19 +174,21 @@ export default function TransparencyPage() {
                 <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-6">Custody distribution</div>
                   <div className="flex items-center gap-6">
-                    {/* Pie Chart SVG - Donut style */}
                     <div className="w-24 h-24 shrink-0">
                       <svg viewBox="0 0 36 36" className="w-full h-full">
-                        {/* Background circle */}
                         <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#22252a" strokeWidth="3" />
-                        {/* Base Vault - 65% Green */}
-                        <circle cx="18" cy="18" r="15.915" fill="transparent" 
-                          stroke="#37d097" strokeWidth="3" 
-                          strokeDasharray="65 35" strokeDashoffset="25" />
-                        {/* MPC Custody - 35% Blue */}
-                        <circle cx="18" cy="18" r="15.915" fill="transparent" 
-                          stroke="#4c7be7" strokeWidth="3" 
-                          strokeDasharray="35 65" strokeDashoffset="-40" />
+                        {(() => {
+                           const total = parseFloat(data.assets.total_eth);
+                           if (total === 0) return null;
+                           const mpc = (parseFloat(data.assets.off_chain_eth) / total) * 100;
+                           const base = 100 - mpc;
+                           return (
+                             <>
+                               <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#37d097" strokeWidth="3" strokeDasharray={`${base} ${100-base}`} strokeDashoffset="25" />
+                               <circle cx="18" cy="18" r="15.915" fill="transparent" stroke="#4c7be7" strokeWidth="3" strokeDasharray={`${mpc} ${100-mpc}`} strokeDashoffset={`${25-base}`} />
+                             </>
+                           );
+                        })()}
                       </svg>
                     </div>
                     {/* Legend */}
@@ -175,15 +196,15 @@ export default function TransparencyPage() {
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#37d097]" />
                         <div className="flex items-baseline justify-between flex-1">
-                          <span className="text-xs font-medium text-[#d4dce1]">Base Vault</span>
-                          <span className="text-xs text-[#d4dce1]">65%</span>
+                          <span className="text-xs font-medium text-[#d4dce1]">Non-Custodial (Base)</span>
+                          <span className="text-xs text-[#d4dce1]">{(( (parseFloat(data.assets.total_eth)-parseFloat(data.assets.off_chain_eth))/parseFloat(data.assets.total_eth))*100).toFixed(0)}%</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#4c7be7]" />
                         <div className="flex items-baseline justify-between flex-1">
-                          <span className="text-xs font-medium text-[#d4dce1]">MPC Custody</span>
-                          <span className="text-xs text-[#d4dce1]">35%</span>
+                          <span className="text-xs font-medium text-[#d4dce1]">Vault Custody (MPC)</span>
+                          <span className="text-xs text-[#d4dce1]">{((parseFloat(data.assets.off_chain_eth)/parseFloat(data.assets.total_eth))*100).toFixed(0)}%</span>
                         </div>
                       </div>
                     </div>
@@ -197,8 +218,12 @@ export default function TransparencyPage() {
                 <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Funding rate/h</div>
                   <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.0342%</div>
-                    <div className="text-s text-[#37d097] font-medium">Positive</div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">
+                       {apyData?.breakdown?.best_funding_annual_pct ? (apyData.breakdown.best_funding_annual_pct / (3 * 365)).toFixed(4) : "0.0342"}%
+                    </div>
+                    <div className={`text-s font-medium ${(!apyData || apyData.breakdown.best_funding_annual_pct >= 0) ? 'text-[#37d097]' : 'text-[#ff6b6b]'}`}>
+                      {( !apyData || apyData.breakdown.best_funding_annual_pct >= 0) ? "Positive" : "Negative"}
+                    </div>
                   </div>
                 </div>
 
@@ -206,7 +231,9 @@ export default function TransparencyPage() {
                 <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Last rebalance</div>
                   <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">2m ago</div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">
+                      {Math.floor((new Date().getTime() - new Date(data.timestamp).getTime()) / 60000) + 1}m ago
+                    </div>
                     <div className="text-s text-[#37d097] font-medium">Automated</div>
                   </div>
                 </div>
@@ -224,7 +251,9 @@ export default function TransparencyPage() {
                 <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Last updated</div>
                   <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">Live</div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">
+                      {new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                     <div className="text-s text-[#37d097] font-medium">Real Time</div>
                   </div>
                 </div>

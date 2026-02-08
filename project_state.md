@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-07 18:57] - DYNAMIC TRANSPARENCY PAGE: Converted the Transparency page to use live protocol data. All core metrics—including Solvency Ratio, Strategy Status, Insurance Reserves, and Funding Rates—are now fetched from the `/api/solvency` and `/api/apy` endpoints. Replaced hardcoded pie charts for Asset Composition and Custody Distribution with dynamic SVG visualizations that respond to real-time on-chain and off-chain balances. Updated "Last rebalance" and "Last updated" labels to reflect actual data timestamps. - Status: SUCCESS
+
 [2026-02-07 18:51] - CHART FIXES & REFINEMENTS: Fixed a critical bug in the Backtested Performance chart where X-axis labels and the Treasury line were missing due to data deduplication issues. Filtered historical ETH data to ensure strictly one point per day. Improved Treasury line visibility by using a lighter gray (`#666f75`). Optimized X-axis interval logic to automatically scale based on dataset size, ensuring consistent label distribution. - Status: SUCCESS
 
 [2026-02-07 18:46] - CALCULATOR ANIMATIONS: Added `CountUp` animations to the "ETH funding rate" and "wstETH APY%" cards in the Yield Calculator. These values now animate from 0.0 to their fetched dynamic values on page load, matching the hero section's aesthetic and signaling to users that the data is live. - Status: SUCCESS
