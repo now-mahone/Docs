@@ -39,15 +39,21 @@ export async function GET() {
     // Keep daily data points (1 year = ~365 points)
     const prices = data.prices || [];
     
-    const dailyPrices: { date: string; price: number }[] = [];
+    // Deduplicate to one price per day (CoinGecko sometimes returns multiple points per day)
+    const dailyMap = new Map<string, number>();
 
     for (const [timestamp, price] of prices) {
-      const date = new Date(timestamp);
-      dailyPrices.push({
-        date: date.toISOString().split('T')[0], // YYYY-MM-DD format
-        price: parseFloat(price.toFixed(2)),
-      });
+      const dateStr = new Date(timestamp).toISOString().split('T')[0]; // YYYY-MM-DD
+      // Keep the last price seen for each day
+      dailyMap.set(dateStr, price);
     }
+
+    const dailyPrices: { date: string; price: number }[] = Array.from(dailyMap.entries()).map(
+      ([date, price]) => ({
+        date,
+        price: parseFloat(price.toFixed(2)),
+      })
+    );
 
     // Sort by date ascending
     dailyPrices.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());

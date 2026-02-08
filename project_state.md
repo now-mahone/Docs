@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-07 18:51] - CHART FIXES & REFINEMENTS: Fixed a critical bug in the Backtested Performance chart where X-axis labels and the Treasury line were missing due to data deduplication issues. Filtered historical ETH data to ensure strictly one point per day. Improved Treasury line visibility by using a lighter gray (`#666f75`). Optimized X-axis interval logic to automatically scale based on dataset size, ensuring consistent label distribution. - Status: SUCCESS
+
 [2026-02-07 18:46] - CALCULATOR ANIMATIONS: Added `CountUp` animations to the "ETH funding rate" and "wstETH APY%" cards in the Yield Calculator. These values now animate from 0.0 to their fetched dynamic values on page load, matching the hero section's aesthetic and signaling to users that the data is live. - Status: SUCCESS
 
 [2026-02-07 18:42] - UI ANIMATION STABILIZATION: Modified `LandingPage` logic to "freeze" the dynamic APY value once it is successfully fetched from the API. This prevents the `CountUp` animation from resetting mid-way if additional state updates occur, ensuring it only animates up once per page load as requested. - Status: SUCCESS

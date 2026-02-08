@@ -59,14 +59,17 @@ const generateHistoricalData = (historicalEth: HistoricalPrice[]): ChartDataPoin
 
     // Simulate Kerne Growth with realistic funding rate volatility
     // Funding rates fluctuate daily; this adds a ~2.5% annualized volatility component
-    const fundingVolatility = (Math.sin(dayIndex * 0.2) * 0.0006) + (Math.cos(dayIndex * 0.45) * 0.0004);
+    const fundingVolatility = (Math.sin(dayIndex * 0.2) * 0.0004) + (Math.cos(dayIndex * 0.45) * 0.0003);
     const kerneDailyReturn = BASE_FUNDING_DAILY + LST_YIELD_DAILY + fundingVolatility;
     
     kernePrincipal = kernePrincipal * (1 + kerneDailyReturn);
     treasuryPrincipal = treasuryPrincipal * (1 + TREASURY_DAILY);
 
+    // Format date string to ensure uniqueness for Recharts keys
+    const dateLabel = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
     data.push({
-      date: dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+      date: dateLabel,
       eth: parseFloat(normalizedEth.toFixed(2)),
       kerne: parseFloat(kernePrincipal.toFixed(2)),
       treasury: parseFloat(treasuryPrincipal.toFixed(2)),
@@ -258,7 +261,7 @@ export default function BacktestedPerformance() {
                   tick={{ fill: '#aab9be', dy: 10 }}
                   axisLine={false}
                   tickLine={false}
-                  interval={59}
+                  interval={Math.floor(historicalData.length / 6)}
                   angle={-45}
                   textAnchor="end"
                   height={60}
@@ -291,7 +294,7 @@ export default function BacktestedPerformance() {
                 <Line 
                   type="linear" 
                   dataKey="treasury" 
-                  stroke="#444a4f" 
+                  stroke="#666f75" 
                   strokeWidth={2}
                   name="Treasury/Fintech (3.8% APY)"
                   dot={false}
