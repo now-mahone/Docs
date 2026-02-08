@@ -27,4 +27,3 @@ The result is a **5x leveraged position** (50 ETH position backed by 10 ETH prin
 - **Cost of Leverage**: The cost of borrowing ETH must be lower than the staking yield + points value for the loop to remain profitable.
 
 ---
-*Created: 2026-01-26*

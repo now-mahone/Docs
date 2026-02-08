@@ -7,4 +7,3 @@ Kerne employs several sophisticated mechanisms to drive TVL growth and yield.
 * [Delta-Neutral Hedging Engine](hedging.md)
 
 ---
-*Created: 2026-01-26*

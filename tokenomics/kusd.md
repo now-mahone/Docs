@@ -18,4 +18,3 @@ Unlike traditional stablecoins, kUSD is natively yield-bearing. The yield genera
 As Kerne scales, kUSD will transition from a simple derivative to a **Collateralized Debt Position (CDP)** asset. Users will be able to lock their yield-bearing KerneVault shares to mint kUSD, unlocking liquid capital while continuing to earn staking rewards and protocol points.
 
 ---
-*Created: 2026-01-26*

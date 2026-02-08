@@ -46,4 +46,3 @@ The SDK supports submitting transactions via private RPCs (like Flashbots) to pr
 For "Pro Mode" vaults, the SDK includes built-in helpers for `IComplianceHook` integration, allowing for automated KYC/AML verification before transaction submission.
 
 ---
-*Created: 2026-01-26*

@@ -27,4 +27,3 @@ Kerne follows a hyper-aggressive 12-month roadmap to achieve protocol dominance 
 - **TGE & Prisoner's Dilemma**: Execute the token generation event and lock in TVL.
 
 ---
-*Created: 2026-01-26*

@@ -27,4 +27,3 @@ The risk management core. It performs sub-millisecond VaR (Value at Risk) analys
 Kerne doesn't just hedge 1:1. The engine uses a proprietary model called the **Scofield Point** to optimize leverage. In periods of high funding rates, the engine may increase leverage to maximize return-on-equity, while maintaining a strict safety buffer in the Insurance Fund.
 
 ---
-*Created: 2026-01-26*

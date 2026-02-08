@@ -17,4 +17,3 @@ Sentinel has the authority to pause protocol operations if it detects abnormal o
 The `KerneIntentExecutor` and `KerneZINPool` contracts include Sentinel-enforced limits on intent sizes, gas costs, and stale price data, preventing "fat finger" errors or malicious intent fulfillment.
 
 ---
-*Created: 2026-01-26*

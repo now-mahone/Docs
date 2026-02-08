@@ -23,4 +23,3 @@ Kerne implements a self-reinforcing economic loop:
 KERNE follows a "Low Float, High FDV" strategy initially, with the majority of the supply locked in the **Prisoner's Dilemma Airdrop** and long-term vesting schedules to ensure price stability during the growth phase.
 
 ---
-*Created: 2026-01-26*

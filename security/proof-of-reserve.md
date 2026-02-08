@@ -16,4 +16,3 @@ The protocol implements an automated PoR system that provides real-time, cryptog
 All core protocol parameters and treasury funds are managed via a multi-sig wallet (Gnosis Safe) with key signers distributed across the core team. For institutional capital, Kerne supports integration with qualified custodians like Fireblocks and Coinbase Prime.
 
 ---
-*Created: 2026-01-26*

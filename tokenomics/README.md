@@ -7,4 +7,3 @@ Kerne's economic model is built on a reflexive flywheel designed to reward long-
 * [Points & Airdrop Strategy](airdrop.md)
 
 ---
-*Created: 2026-01-26*

@@ -1,4 +1,3 @@
-// Created: 2026-02-07
 
 # Institutional On-Ramp
 
@@ -55,4 +54,3 @@ Kerne actively pursues partnerships with:
 - **RWA issuers** seeking liquidity and distribution
 
 ---
-*Created: 2026-02-07*
