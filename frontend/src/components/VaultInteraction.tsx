@@ -1,7 +1,7 @@
 // Created: 2026-01-30
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -16,9 +16,21 @@ export function VaultInteraction() {
   const { isConnected } = useAccount();
   const [amount, setAmount] = useState('');
   const [selectedChain, setSelectedChain] = useState('Base');
+  const [ethPrice, setEthPrice] = useState(3150);
 
-  // Hardcoded price for UI refinement phase, matching terminal simulation
-  const ethPrice = 2400;
+  useEffect(() => {
+    const fetchPrice = async () => {
+      try {
+        const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT');
+        const data = await res.json();
+        if (data.price) setEthPrice(parseFloat(data.price));
+      } catch (e) {
+        console.error("Failed to fetch ETH price in VaultInteraction", e);
+      }
+    };
+    fetchPrice();
+  }, []);
+
   const usdValue = amount ? (parseFloat(amount) * ethPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00';
 
   const chainLogos: { [key: string]: string } = {
@@ -92,7 +104,7 @@ export function VaultInteraction() {
               <input 
                 type="number"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e: any) => setAmount(e.target.value)}
                 placeholder="0.00"
                 className="w-full bg-[#22252a] border border-[#444a4f] rounded-sm px-5 py-4 text-[#ffffff] font-medium focus:border-[#37d097] outline-none transition-colors shadow-none placeholder:font-medium placeholder:text-s placeholder:text-[#aab9be] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
@@ -129,7 +141,7 @@ export function VaultInteraction() {
               <input 
                 type="number"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e: any) => setAmount(e.target.value)}
                 placeholder="0.00"
                 className="w-full bg-[#22252a] border border-[#444a4f] rounded-sm px-5 py-4 text-[#ffffff] font-medium focus:border-[#37d097] outline-none transition-colors shadow-none placeholder:font-medium placeholder:text-s placeholder:text-[#aab9be] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />

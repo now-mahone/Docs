@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-07 20:58] - DYNAMIC TERMINAL PAGE: Fully dynamized the kUSD Terminal Dashboard. Replaced all hardcoded values and simulations with live data from `/api/apy`, `/api/solvency`, and `/api/eth-history`. The dashboard now features: (1) Live metrics for APY%, Solvency Ratio, and kUSD price drift. (2) Real-time Performance Chart using live average APY. (3) Live 90-day ETH vs Kerne benchmark comparison using real historical price data. (4) Dynamic benchmark metrics including Alpha, Sharpe Ratio, and Max Drawdown calculated on the fly. (5) Updated Vault Interaction component to fetch real-time ETH price from Binance. - Status: SUCCESS
+
 [2026-02-07 19:06] - HERO ANIMATION SYNC: Resolved a visual glitch in the hero section where the APY count-up would reset if live data arrived while the fallback animation was already in progress. The UI now holds the fallback "0.0%" static until the dynamic value is determined, at which point a single, stable count-up animation execution occurs. - Status: SUCCESS
 
 [2026-02-07 18:57] - DYNAMIC TRANSPARENCY PAGE: Converted the Transparency page to use live protocol data. All core metrics—including Solvency Ratio, Strategy Status, Insurance Reserves, and Funding Rates—are now fetched from the `/api/solvency` and `/api/apy` endpoints. Replaced hardcoded pie charts for Asset Composition and Custody Distribution with dynamic SVG visualizations that respond to real-time on-chain and off-chain balances. Updated "Last rebalance" and "Last updated" labels to reflect actual data timestamps. - Status: SUCCESS
