@@ -83,7 +83,8 @@ https://twitter.com/KerneProtocol
 kerne.systems@protonmail.com
 ```
 
-**Logo:** Upload `frontend/public/kerne-logo.png` (256x256+)
+**Logo:** Upload `frontend/public/kerne-logo-512.png` (512x512, square, PNG — verified)
+- Backup: `frontend/public/kerne-logo-square.png` (441x441)
 
 **Screenshots:** Upload screenshots from kerne.ai (Terminal, Vault interface, Transparency page)
 - If the site isn't live yet (Mahone fixing Vercel), use the locally built version or wait until Vercel is fixed
@@ -236,7 +237,7 @@ Same as DappRadar submission above. Emphasize:
 
 | # | Platform | Method | Status |
 |---|----------|--------|--------|
-| 1 | DappRadar | Web Form | [ ] Ready to submit |
+| 1 | DappRadar | Web Form | [ ] Ready — manual browser submission required |
 | 2 | DeBank | Email | [ ] Ready to send |
 | 3 | DeFi Safety | Web Form | [ ] Ready to submit |
 | 4 | Base Ecosystem | GitHub PR to base/web | [x] PR #2956 submitted 2026-02-08 |
