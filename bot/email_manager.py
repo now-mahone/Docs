@@ -14,7 +14,7 @@ Environment Variables:
     SMTP_PORT: SMTP server port (e.g., 465, 587, or 1025)
     SMTP_USER: SMTP username (often your email or 'resend')
     SMTP_PASS: SMTP password or API key (REQUIRED)
-    FROM_EMAIL: The email address to send from (default: contact@kerne.systems)
+    FROM_EMAIL: The email address to send from (default: contact@kerne.ai)
     AUTONOMOUS_OUTREACH: Set to "true" to enable autonomous sending
 """
 
@@ -49,9 +49,9 @@ class EmailManager:
         # Support both new SMTP_ and legacy PROTON_ env vars for backward compatibility
         self.smtp_host: str = os.getenv("SMTP_HOST") or os.getenv("PROTON_SMTP_HOST", "127.0.0.1")
         self.smtp_port: int = int(os.getenv("SMTP_PORT") or os.getenv("PROTON_SMTP_PORT", "1025"))
-        self.smtp_user: str = os.getenv("SMTP_USER") or os.getenv("PROTON_EMAIL", "contact@kerne.systems")
+        self.smtp_user: str = os.getenv("SMTP_USER") or os.getenv("PROTON_EMAIL", "contact@kerne.ai")
         self.email_pass: Optional[str] = os.getenv("SMTP_PASS") or os.getenv("PROTON_PASSWORD")
-        self.from_email: str = os.getenv("FROM_EMAIL", "contact@kerne.systems")
+        self.from_email: str = os.getenv("FROM_EMAIL", "contact@kerne.ai")
         self.from_name: str = "Kerne Protocol"
         self.outreach_log: Dict = self._load_outreach_log()
 
@@ -268,7 +268,7 @@ class EmailManager:
             <strong>Current Estimated Yield:</strong> {yield_msg}<br>
             <strong>Supported Assets:</strong> WETH, cbETH, wstETH<br>
             <strong>Network:</strong> Base (Coinbase L2)<br>
-            <strong>Website:</strong> <a href="https://kerne.systems" style="color: #0066cc;">kerne.systems</a>
+            <strong>Website:</strong> <a href="https://kerne.ai" style="color: #0066cc;">kerne.ai</a>
         </p>
     </div>
 
@@ -278,7 +278,7 @@ class EmailManager:
 
     <p style="margin-top: 24px;">Best regards,<br>
     <strong>Kerne Protocol Team</strong><br>
-    <a href="https://kerne.systems" style="color: #0066cc;">kerne.systems</a></p>
+    <a href="https://kerne.ai" style="color: #0066cc;">kerne.ai</a></p>
 
     <hr style="border: none; border-top: 1px solid #eee; margin-top: 32px;">
     <p style="font-size: 11px; color: #999;">

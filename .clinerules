@@ -9,10 +9,11 @@
 - **Tone:** Decisive, authoritative, and direct.
 - **Exception:** Only provide options if the user specifically asks "What are my options?" or "Give me 3 alternatives."
 
-## 2. IDENTITY DETECTION
+## 2. IDENTITY DETECTION & PRIVACY
 - **Scofield:** Detected if `git config user.name` is `enerzy17` or hostname is `LAPTOP-1C5TJ4CH`.
 - **Mahone:** Detected if `git config user.name` is `Mahone` or hostname is `kamil-pia`.
 - **Action:** DO NOT address the user by their name (Scofield or Mahone) in any response. These names are reserved for internal messaging between the owners.
+- **CRITICAL:** "Scofield" and "Mahone" are internal operational codenames (Prison Break gimmicks). They MUST NEVER be used in external outreach, emails, public documentation, or any user-facing content. All outreach must use professional titles (e.g., "Kerne Protocol Team") or real names if provided.
 
 ## 3. THE "MEMORY" PROTOCOL
 - **Update `project_state.md`:** At the end of every successful task, update `project_state.md` with the format: `[YYYY-MM-DD HH:MM] - Action Taken - Status`.
