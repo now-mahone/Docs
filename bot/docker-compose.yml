@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   kerne-bot:
     build: .
@@ -61,7 +59,7 @@ services:
     build: .
     container_name: kerne-guardian
     restart: always
-    command: ["python", "sentinel/risk_engine.py"]
+    command: ["python", "-m", "sentinel.risk_engine"]
     env_file:
       - .env
     volumes:
@@ -87,7 +85,7 @@ services:
     build: .
     container_name: kerne-flash-arb
     restart: always
-    command: ["python", "flash_arb_scanner.py", "--interval", "2.0"]
+    command: ["python", "flash_arb_scanner.py"]
     env_file:
       - .env
     volumes:
@@ -113,7 +111,7 @@ services:
     build: .
     container_name: kerne-zin-solver
     restart: always
-    command: ["python", "solver/zin_solver.py", "--interval", "5"]
+    command: ["python", "-m", "solver.zin_solver", "--interval", "5"]
     env_file:
       - .env
     volumes:
