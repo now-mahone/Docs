@@ -144,7 +144,7 @@ export default function LandingPage() {
                   <CountUp value={frozenApy} decimals={1} suffix="%" />
                 ) : (
                   // Constant display before live data load to prevent layout shift and multiple count-ups
-                  <span>20.4%</span>
+                  <span>0.0%</span>
                 )}
               </span>
             </h1>

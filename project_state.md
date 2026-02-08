@@ -1,7 +1,7 @@
 # Kerne Project State
 
 ## Latest Update
-[2026-02-07 19:02] - HERO ANIMATION SYNC: Resolved a visual glitch in the hero section where the APY count-up would reset if live data arrived while the fallback animation was already in progress. The UI now holds the fallback "20.4%" static until the dynamic value is determined, at which point a single, stable count-up animation execution occurs. - Status: SUCCESS
+[2026-02-07 19:06] - HERO ANIMATION SYNC: Resolved a visual glitch in the hero section where the APY count-up would reset if live data arrived while the fallback animation was already in progress. The UI now holds the fallback "0.0%" static until the dynamic value is determined, at which point a single, stable count-up animation execution occurs. - Status: SUCCESS
 
 [2026-02-07 18:57] - DYNAMIC TRANSPARENCY PAGE: Converted the Transparency page to use live protocol data. All core metrics—including Solvency Ratio, Strategy Status, Insurance Reserves, and Funding Rates—are now fetched from the `/api/solvency` and `/api/apy` endpoints. Replaced hardcoded pie charts for Asset Composition and Custody Distribution with dynamic SVG visualizations that respond to real-time on-chain and off-chain balances. Updated "Last rebalance" and "Last updated" labels to reflect actual data timestamps. - Status: SUCCESS
 
