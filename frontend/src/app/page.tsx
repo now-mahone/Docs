@@ -139,7 +139,14 @@ export default function LandingPage() {
             <h1 className="font-heading font-medium tracking-tight leading-[0.95] text-[#000000] mb-8">
               The future of onchain yield.<br />
               Live at an APY of<br />
-              <span className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"><CountUp value={displayApy} decimals={1} suffix="%" /></span>
+              <span className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh">
+                {frozenApy !== null ? (
+                  <CountUp value={frozenApy} decimals={1} suffix="%" />
+                ) : (
+                  // Constant display before live data load to prevent layout shift and multiple count-ups
+                  <span>20.4%</span>
+                )}
+              </span>
             </h1>
 
             <p className="text-l md:text-l text-[#000000] max-w-2xl mx-auto mb-10 font-medium leading-relaxed">
