@@ -8,13 +8,13 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // Calculate date range (last 13 months for smooth chart)
+    // Calculate date range (last 3 years for historical perspective)
     const now = new Date();
-    const thirteenMonthsAgo = new Date();
-    thirteenMonthsAgo.setMonth(now.getMonth() - 13);
+    const threeYearsAgo = new Date();
+    threeYearsAgo.setMonth(now.getMonth() - 36);
     
     const toTimestamp = Math.floor(now.getTime() / 1000);
-    const fromTimestamp = Math.floor(thirteenMonthsAgo.getTime() / 1000);
+    const fromTimestamp = Math.floor(threeYearsAgo.getTime() / 1000);
 
     // Fetch real ETH historical prices from CoinGecko
     const response = await fetch(

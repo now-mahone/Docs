@@ -17,8 +17,31 @@ interface ChartDataPoint {
   treasury: number;
 }
 
-// Fallback historical ETH prices (approximate monthly values from Jan 2025 - Feb 2026)
+// Fallback historical ETH prices (approximate monthly values from Feb 2023 - Feb 2026)
 const FALLBACK_ETH_PRICES: HistoricalPrice[] = [
+  { date: '2023-02-01', price: 1650 },
+  { date: '2023-03-01', price: 1750 },
+  { date: '2023-04-01', price: 1850 },
+  { date: '2023-05-01', price: 1900 },
+  { date: '2023-06-01', price: 1850 },
+  { date: '2023-07-01', price: 1880 },
+  { date: '2023-08-01', price: 1650 },
+  { date: '2023-09-01', price: 1600 },
+  { date: '2023-10-01', price: 1650 },
+  { date: '2023-11-01', price: 1900 },
+  { date: '2023-12-01', price: 2100 },
+  { date: '2024-01-01', price: 2300 },
+  { date: '2024-02-01', price: 2500 },
+  { date: '2024-03-01', price: 3200 },
+  { date: '2024-04-01', price: 3000 },
+  { date: '2024-05-01', price: 3100 },
+  { date: '2024-06-01', price: 3400 },
+  { date: '2024-07-01', price: 3200 },
+  { date: '2024-08-01', price: 2600 },
+  { date: '2024-09-01', price: 2500 },
+  { date: '2024-10-01', price: 2550 },
+  { date: '2024-11-01', price: 2700 },
+  { date: '2024-12-01', price: 2900 },
   { date: '2025-01-01', price: 2300 },
   { date: '2025-02-01', price: 2450 },
   { date: '2025-03-01', price: 2600 },
@@ -46,28 +69,33 @@ const generateHistoricalData = (historicalEth: HistoricalPrice[]): ChartDataPoin
   const TREASURY_DAILY = 0.038 / 365;
   const normFactor = 100 / historicalEth[0].price;
 
-  // Generate 52 weekly points
-  for (let i = 0; i < 52; i++) {
-    const daysPassed = i * 7;
+  // Generate data points every 4 months for 3 years (9 points total)
+  const MONTHS_PER_POINT = 4;
+  const TOTAL_MONTHS = 36;
+  const numPoints = Math.floor(TOTAL_MONTHS / MONTHS_PER_POINT) + 1; // 10 points (0, 4, 8, 12, 16, 20, 24, 28, 32, 36)
+
+  for (let i = 0; i < numPoints; i++) {
+    const monthsPassed = i * MONTHS_PER_POINT;
+    const daysPassed = monthsPassed * 30.44; // Average days per month
     const currentDate = new Date(historicalEth[0].date);
-    currentDate.setDate(currentDate.getDate() + daysPassed);
+    currentDate.setMonth(currentDate.getMonth() + monthsPassed);
     
-    // Monthly index for anchor lookup
-    const monthIdx = Math.min(Math.floor(i / 4.33), historicalEth.length - 2);
-    const nextMonthIdx = Math.min(monthIdx + 1, historicalEth.length - 1);
-    const progress = (i % 4.33) / 4.33;
+    // Find closest month in historical data
+    const monthIdx = Math.min(monthsPassed, historicalEth.length - 1);
     
-    // Interpolated Price with weekly volatility noise
-    let rawPrice = historicalEth[monthIdx].price * (1 - progress) + historicalEth[nextMonthIdx].price * progress;
-    const noise = (Math.sin(i * 0.9) * 45) + (Math.cos(i * 1.4) * 25);
-    const ethPrice = rawPrice + noise;
+    // Use actual historical price (with small interpolation if needed)
+    let ethPrice = historicalEth[monthIdx]?.price || historicalEth[historicalEth.length - 1].price;
+    
+    // Add slight volatility for visual interest
+    const noise = (Math.sin(i * 0.5) * 30) + (Math.cos(i * 0.7) * 20);
+    ethPrice = ethPrice + noise;
 
     const simGrowth = BASE_FUNDING_DAILY + LST_YIELD_DAILY + (Math.sin(i * 0.2) * 0.00002);
     const kerneValue = 100 * Math.pow(1 + simGrowth, daysPassed);
     const treasuryValue = 100 * Math.pow(1 + TREASURY_DAILY, daysPassed);
 
     data.push({
-      date: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      date: currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short' }),
       eth: parseFloat((ethPrice * normFactor).toFixed(2)),
       kerne: parseFloat(kerneValue.toFixed(2)),
       treasury: parseFloat(treasuryValue.toFixed(2)),
@@ -238,7 +266,10 @@ export default function BacktestedPerformance() {
                   tick={{ fill: '#aab9be', dy: 10 }}
                   axisLine={false}
                   tickLine={false}
-                  interval={typeof window !== 'undefined' && window.innerWidth < 768 ? 10 : 3}
+                  interval={0}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
                 />
                 <YAxis 
                   stroke="#aab9be"
