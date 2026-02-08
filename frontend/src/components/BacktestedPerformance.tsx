@@ -250,7 +250,7 @@ export default function BacktestedPerformance() {
                 data={historicalData}
                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#22252a" vertical={true} horizontal={true} />
+                <CartesianGrid stroke="#22252a" vertical={true} horizontal={true} />
                 <XAxis 
                   dataKey="date" 
                   stroke="#aab9be"

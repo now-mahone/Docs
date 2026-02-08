@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-07 18:22] - CHART GRID STYLING: Changed Backtested Performance chart grid lines from dashed/dotted to solid for a cleaner, more institutional aesthetic. Updated `CartesianGrid` component in `BacktestedPerformance.tsx`. - Status: SUCCESS
+
 [2026-02-07 18:15] - SHARPE RATIO CALCULATION: Replaced hardcoded Sharpe Ratio (3.84) with a real-time mathematical calculation based on the historical ETH price data and simulated Kerne strategy returns. Updated `generateHistoricalData` to include daily compounding and realistic funding rate volatility (~2.5% annualized vol). Implemented full Sharpe Ratio formula ((Annualized Return - Risk Free Rate) / Annualized Volatility) using a 3.8% Treasury benchmark as the risk-free rate. Also implemented real-time Max Drawdown calculation for both Kerne and ETH based on the rolling 1-year daily dataset. This ensures institutional-grade metric accuracy for the backtested performance chart. - Status: SUCCESS
 
 [2026-02-07 17:33] - EXTENDED BACKTESTED PERFORMANCE: Updated Backtested Performance chart from 13 months to 3 years of historical data (Feb 2023 - Feb 2026). Modified `/api/eth-history` endpoint to fetch 36 months from CoinGecko. Updated fallback data array to span full 3 years. Changed chart generation to display data points every 4 months (10 total points) instead of weekly. Updated x-axis to show all labels with 45° angle for readability. Chart now provides longer-term historical perspective of delta-neutral strategy vs ETH volatility. - Status: SUCCESS
