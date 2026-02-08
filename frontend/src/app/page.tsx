@@ -18,7 +18,7 @@ function CountUp({ value, decimals = 0, prefix = "", suffix = "" }: { value: num
 
   useEffect(() => {
     if (isInView && nodeRef.current) {
-      const controls = animate(10, value, {
+      const controls = animate(0, value, {
         duration: 2,
         ease: [0.25, 0.1, 0.25, 1],
         onUpdate(latest: number) {
