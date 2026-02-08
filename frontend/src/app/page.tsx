@@ -109,7 +109,16 @@ export default function LandingPage() {
   const scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.98]);
 
   const [calculatorAmount, setCalculatorAmount] = useState(10);
-  const displayApy = liveApy !== null ? liveApy : 20.4;
+  // Freeze the APY once it's loaded to prevent mid-animation resets
+  const [frozenApy, setFrozenApy] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!loading && liveApy !== null && frozenApy === null) {
+      setFrozenApy(liveApy);
+    }
+  }, [loading, liveApy, frozenApy]);
+
+  const displayApy = frozenApy !== null ? frozenApy : (liveApy !== null ? liveApy : 20.4);
   const effectiveEthPrice = ethPrice || 3150;
   const yearlyCalculationUSD = Math.round(calculatorAmount * effectiveEthPrice * (displayApy / 100));
   const monthlyCalculationUSD = Math.round(yearlyCalculationUSD / 12);

@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-07 18:42] - UI ANIMATION STABILIZATION: Modified `LandingPage` logic to "freeze" the dynamic APY value once it is successfully fetched from the API. This prevents the `CountUp` animation from resetting mid-way if additional state updates occur, ensuring it only animates up once per page load as requested. - Status: SUCCESS
+
 [2026-02-07 18:40] - UI ANIMATION REFINEMENT: Updated `CountUp` component to start animation from 0.0% instead of 10.0%. This prevents jarring visual jumps if the dynamic APY percentage ever settles below the previous 10% baseline. - Status: SUCCESS
 
 [2026-02-07 18:31] - DYNAMIC YIELD CALCULATOR: Converted Yield Calculator on the homepage to be fully dynamic. Removed hardcoded initial values for ETH funding rate and wstETH APY%. The calculator now fetches real-time data from `/api/apy` and Binance ETH price API to compute earnings. Added a loading state and robust fallback handling for API failures. This ensures the landing page "onchain difference" calculations always reflect current market reality. - Status: SUCCESS
