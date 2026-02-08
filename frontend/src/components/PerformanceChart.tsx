@@ -105,7 +105,8 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({ data }) => {
             tickLine={false}
             axisLine={false}
             tickFormatter={(value: number) => `${value}%`}
-            domain={[10, 30]}
+            domain={['auto', 'auto']}
+            allowDecimals={true}
             tick={{ fill: '#aab9be' }}
             label={{ value: 'APY (%)', angle: -90, position: 'insideLeft', style: { fontSize: '11px', fontWeight: 600, fill: '#aab9be', textAnchor: 'middle' }, dx: -10 }}
           />
