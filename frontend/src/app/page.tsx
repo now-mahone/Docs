@@ -198,7 +198,9 @@ export default function LandingPage() {
                   <div className="p-6 bg-gradient-to-b from-[#22252a] from-0% via-[#16191c] via-40% to-[#000000] to-100% rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
                     <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">ETH funding rate</div>
                     <div>
-                      <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">{fundingRate}%</div>
+                      <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">
+                        {fundingRate !== 0 ? <CountUp value={fundingRate} decimals={4} suffix="%" /> : "0.0000%"}
+                      </div>
                       <div className={`flex items-center gap-1 text-s font-medium ${fundingRate >= 0 ? 'text-[#37d097]' : 'text-[#ff6b6b]'}`}>
                         <span>{fundingRate >= 0 ? '↑' : '↓'}</span>
                         <span>{fundingRate >= 0 ? 'Positive' : 'Negative'}</span>
@@ -210,7 +212,9 @@ export default function LandingPage() {
                   <div className="p-6 bg-gradient-to-b from-[#22252a] from-0% via-[#16191c] via-40% to-[#000000] to-100% rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
                     <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">wstETH APY%</div>
                     <div>
-                      <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">{stakingYield}%</div>
+                      <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">
+                        {stakingYield !== 0 ? <CountUp value={stakingYield} decimals={2} suffix="%" /> : "0.00%"}
+                      </div>
                       <div className="text-s text-[#444a4f] font-medium">*Lido Data</div>
                     </div>
                   </div>
