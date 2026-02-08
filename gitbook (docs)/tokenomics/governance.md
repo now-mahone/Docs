@@ -1,4 +1,3 @@
-// Created: 2026-02-07
 
 # Meta-Governance & Bribes
 
@@ -49,4 +48,3 @@ KERNE token holders vote on:
 All governance actions are executed via multi-sig with a 48-hour timelock for transparency.
 
 ---
-*Created: 2026-02-07*

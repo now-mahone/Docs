@@ -1,4 +1,3 @@
-// Created: 2026-02-07
 
 # Regulatory Arbitrage
 
@@ -44,4 +43,3 @@ By proactively building compliance infrastructure, Kerne creates a regulatory mo
 - **Flexible Architecture**: Smart contracts designed with upgradeable compliance modules to adapt to new requirements without protocol migration
 
 ---
-*Created: 2026-02-07*

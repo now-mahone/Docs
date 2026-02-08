@@ -23,4 +23,3 @@ ZIN allows authorized "Solvers" to access Kerne's internal liquidity (ETH, USDC,
 Access to zero-fee flash loans is restricted to the `SOLVER_ROLE`. All executions are subject to the **Sentinel V2** guardrails, which enforce maximum position sizes, minimum profit thresholds, and gas ceilings.
 
 ---
-*Created: 2026-01-26*

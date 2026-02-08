@@ -6,4 +6,3 @@ Kerne is built with institutional-grade security as a foundational requirement.
 * [Glass House Standard (PoR)](proof-of-reserve.md)
 
 ---
-*Created: 2026-01-26*

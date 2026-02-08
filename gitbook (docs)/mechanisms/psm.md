@@ -1,4 +1,3 @@
-// Created: 2026-02-07
 
 # Peg Stability Module (PSM)
 
@@ -48,4 +47,3 @@ The PSM reserves are managed conservatively:
 Sentinel continuously monitors the PSM's reserve ratio and secondary market prices. If kUSD deviates beyond 0.5% from peg, Sentinel can dynamically adjust PSM fees or trigger emergency measures.
 
 ---
-*Created: 2026-02-07*

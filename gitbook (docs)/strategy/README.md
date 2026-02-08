@@ -1,4 +1,3 @@
-// Created: 2026-02-07
 
 # Strategy & Growth
 
@@ -9,4 +8,3 @@ Kerne's growth strategy is built on three pillars: institutional capital capture
 * [The Narrative Cartel](narrative-cartel.md)
 
 ---
-*Created: 2026-02-07*

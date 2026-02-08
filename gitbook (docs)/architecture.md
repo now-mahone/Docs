@@ -31,4 +31,3 @@ A decentralized execution layer that allows authorized solvers to fulfill swaps 
 The "Capital Fortress" of the protocol. The Treasury manages revenue distribution (buybacks and founder fees), while the Insurance Fund provides the margin required for CEX hedging.
 
 ---
-*Created: 2026-01-26*

@@ -22,4 +22,3 @@ At the moment of the Airdrop, users are presented with three choices:
 This structure weaponizes loss aversion to ensure that the majority of TVL remains locked post-TGE, creating a "Supply Shock" that drives token valuation.
 
 ---
-*Created: 2026-01-26*

@@ -1,4 +1,3 @@
-// Created: 2026-02-07
 
 # The Narrative Cartel
 
@@ -59,4 +58,3 @@ Kerne positions itself against competitors on three axes:
 | DefiLlama Ranking | Top 20 by TVL on Base |
 
 ---
-*Created: 2026-02-07*

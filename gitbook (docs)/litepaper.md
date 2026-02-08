@@ -1,4 +1,3 @@
-// Created: 2026-02-07
 
 # Litepaper
 
@@ -78,4 +77,3 @@ The Kerne Protocol represents a paradigm shift in how capital is managed on-chai
 **The universal prime liquidity layer is now live on Base.**
 
 ---
-*Created: 2026-02-07*

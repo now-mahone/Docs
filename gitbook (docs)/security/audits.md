@@ -1,4 +1,3 @@
-// Created: 2026-02-07
 
 # Audits & Invariants
 
@@ -81,4 +80,3 @@ In the event of a detected vulnerability:
 4. Affected users are made whole from the Insurance Fund.
 
 ---
-*Created: 2026-02-07*
