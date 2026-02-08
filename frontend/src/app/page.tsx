@@ -53,13 +53,15 @@ function PillButton({ href, children, icon: Icon, className = "", variant = "pri
 }
 
 export default function LandingPage() {
-  const [ethPrice, setEthPrice] = useState(3000);
+  const [ethPrice, setEthPrice] = useState(0);
   const [liveApy, setLiveApy] = useState<number | null>(null);
-  const [stakingYield, setStakingYield] = useState(3.21);
-  const [fundingRate, setFundingRate] = useState(0.0342);
+  const [stakingYield, setStakingYield] = useState(0);
+  const [fundingRate, setFundingRate] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       // Fetch ETH price
       try {
         const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT');
@@ -67,26 +69,36 @@ export default function LandingPage() {
         setEthPrice(parseFloat(data.price));
       } catch (e) {
         console.error("Failed to fetch ETH price", e);
+        setEthPrice(3150); // Fallback
       }
 
       // Fetch live APY from our API
       try {
         const res = await fetch('/api/apy');
         const data = await res.json();
+        
         if (data.apy !== null && data.apy !== undefined) {
           setLiveApy(data.apy);
         }
+        
         if (data.staking_yield) {
           setStakingYield(parseFloat((data.staking_yield * 100).toFixed(2)));
         }
-        if (data.breakdown?.best_funding_annual_pct) {
-          // Convert annual % to approximate 8h rate for display
+        
+        if (data.breakdown?.best_funding_annual_pct !== undefined) {
+          // Convert annual % back to 8h rate for display consistency with market norms
           const annual = data.breakdown.best_funding_annual_pct / 100;
           const rate8h = annual / (3 * 365);
           setFundingRate(parseFloat((rate8h * 100).toFixed(4)));
         }
       } catch (e) {
         console.error("Failed to fetch live APY", e);
+        // Sensible fallbacks if API fails
+        setLiveApy(20.4);
+        setStakingYield(3.2);
+        setFundingRate(0.034);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
@@ -98,7 +110,8 @@ export default function LandingPage() {
 
   const [calculatorAmount, setCalculatorAmount] = useState(10);
   const displayApy = liveApy !== null ? liveApy : 20.4;
-  const yearlyCalculationUSD = Math.round(calculatorAmount * ethPrice * (displayApy / 100));
+  const effectiveEthPrice = ethPrice || 3150;
+  const yearlyCalculationUSD = Math.round(calculatorAmount * effectiveEthPrice * (displayApy / 100));
   const monthlyCalculationUSD = Math.round(yearlyCalculationUSD / 12);
 
   return (

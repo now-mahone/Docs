@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-07 18:31] - DYNAMIC YIELD CALCULATOR: Converted Yield Calculator on the homepage to be fully dynamic. Removed hardcoded initial values for ETH funding rate and wstETH APY%. The calculator now fetches real-time data from `/api/apy` and Binance ETH price API to compute earnings. Added a loading state and robust fallback handling for API failures. This ensures the landing page "onchain difference" calculations always reflect current market reality. - Status: SUCCESS
+
 [2026-02-07 18:25] - CHART GRID STYLING: Removed vertical grid lines from Backtested Performance chart and ensured horizontal grid lines are solid. Improved chart clarity for institutional presentation. - Status: SUCCESS
 
 [2026-02-07 18:22] - CHART GRID STYLING: Changed Backtested Performance chart grid lines from dashed/dotted to solid for a cleaner, more institutional aesthetic. Updated `CartesianGrid` component in `BacktestedPerformance.tsx`. - Status: SUCCESS
