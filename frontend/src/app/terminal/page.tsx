@@ -427,7 +427,7 @@ export default function TerminalPage() {
             </div>
             
             <a 
-              href="https://docs.kerne.ai"
+              href="https://documentation.kerne.ai"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-[#aab9be] hover:text-[#ffffff] transition-colors"
