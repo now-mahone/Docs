@@ -1,7 +1,28 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-09 13:10] - CI/CD FIX: Removed yield-server-official phantom submodule from git index (was registered as mode 160000 with no .gitmodules entry, breaking actions/checkout@v4). Added to .gitignore. Also added Base Grant Submission guide. Pushed to both february and vercel remotes. - Status: SUCCESS
+
+[2026-02-09 12:33] - DOCUMENTATION MIGRATION: Migrated all internal "documentation" and "litepaper" links to the new external GitBook instance at `https://docs.kerne.ai`. Removed the deprecated `/documentation` and `/litepaper` pages from the frontend to consolidate information and leverage the new static Markdown-based workflow. Updated links across Navbar, Footer, About page, and Terminal dashboard to open in a new tab. - Status: SUCCESS
+
+[2026-02-09 12:21] - APY SYNC & WEBSITE DEPLOYMENT COMPLETE: Synchronized APY logic from primary repository. APY display now anchored to institutional-grade 18.x% range with organic market variation. Resolved Vercel integration issues by performing manual manual deployment update via trigger commit to `m-vercel` (now-mahone). Site confirmed live and correct by Mahone. - Status: SUCCESS
+
+[2026-02-09 12:03] - APY LOGIC SYNC & DEPLOYMENT: Pulled latest APY logic from primary repository (`enerzy17/kerne-feb-2026`). APY display is now anchored to 18.x% with market-driven decimal variation for better institutional credibility. Force-pushed updated codebase to `m-vercel` (now-mahone) to refresh the live website. - Status: SUCCESS
+
+[2026-02-09 12:33] - DOCUMENTATION MIGRATION: Migrated all internal "documentation" and "litepaper" links to the new external GitBook instance at `https://docs.kerne.ai`. Removed the deprecated `/documentation` and `/litepaper` pages from the frontend to consolidate information and leverage the new static Markdown-based workflow. Updated links across Navbar, Footer, About page, and Terminal dashboard to open in a new tab. - Status: SUCCESS
+
+[2026-02-09 12:21] - APY SYNC & WEBSITE DEPLOYMENT COMPLETE: Synchronized APY logic from primary repository. APY display now anchored to institutional-grade 18.x% range with organic market variation. Resolved Vercel integration issues by performing manual manual deployment update via trigger commit to `m-vercel` (now-mahone). Site confirmed live and correct by Mahone. - Status: SUCCESS
+
+[2026-02-09 12:03] - APY LOGIC SYNC & DEPLOYMENT: Pulled latest APY logic from primary repository (`enerzy17/kerne-feb-2026`). APY display is now anchored to 18.x% with market-driven decimal variation for better institutional credibility. Force-pushed updated codebase to `m-vercel` (now-mahone) to refresh the live website. - Status: SUCCESS
+>>>>>>> d7e918f0a8e2bf0d961f3e5cb6487ab767d503d5
 [2026-02-09 11:50] - STRATEGIC RANKING DELIVERED: Provided Scofield with the top 18 strategic priorities for protocol dominance and wealth maximization. Each priority analyzed across 5 paragraphs (What/Why/How/Gain/Worst Case). - Status: SUCCESS
+=======
+[2026-02-09 12:33] - DOCUMENTATION MIGRATION: Migrated all internal "documentation" and "litepaper" links to the new external GitBook instance at `https://docs.kerne.ai`. Removed the deprecated `/documentation` and `/litepaper` pages from the frontend to consolidate information and leverage the new static Markdown-based workflow. Updated links across Navbar, Footer, About page, and Terminal dashboard to open in a new tab. - Status: SUCCESS
+
+[2026-02-09 12:21] - APY SYNC & WEBSITE DEPLOYMENT COMPLETE: Synchronized APY logic from primary repository. APY display now anchored to institutional-grade 18.x% range with organic market variation. Resolved Vercel integration issues by performing manual manual deployment update via trigger commit to `m-vercel` (now-mahone). Site confirmed live and correct by Mahone. - Status: SUCCESS
+
+[2026-02-09 12:03] - APY LOGIC SYNC & DEPLOYMENT: Pulled latest APY logic from primary repository (`enerzy17/kerne-feb-2026`). APY display is now anchored to 18.x% with market-driven decimal variation for better institutional credibility. Force-pushed updated codebase to `m-vercel` (now-mahone) to refresh the live website. - Status: SUCCESS
+>>>>>>> d7e918f0a8e2bf0d961f3e5cb6487ab767d503d5
 
 [2026-02-09 11:10] - APY DISPLAY ANCHORED TO 18.x%: Changed displayed APY from ~48.8% (3x leveraged) to 18.xx% range. Updated /api/apy route (organic 18.20-18.89 variation from live data), /api/stats (DefiLlama source), homepage fallback, terminal fallback, and KerneLive component. Base vault leverage set to 1x. - Status: SUCCESS
 
