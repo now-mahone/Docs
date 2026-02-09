@@ -41,11 +41,12 @@ class BasisYieldMonitor:
             leverage = 3.0
             expected_apy = APYCalculator.calculate_expected_apy(
                 leverage=leverage,
-                funding_rate=hourly_funding * 8 / 3,  # Convert hourly to 8h rate for calculator
+                funding_rate=hourly_funding,
                 staking_yield=staking_yield,
                 spread_edge=0.0005,  # 5bps spread capture
                 turnover_rate=0.1,   # 10% daily turnover
-                cost_rate=0.01       # 1% annual costs
+                cost_rate=0.01,      # 1% annual costs
+                funding_interval_hours=1,  # Hyperliquid uses hourly funding
             )
 
             data = {

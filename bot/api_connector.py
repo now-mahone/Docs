@@ -676,19 +676,20 @@ class ProtocolSnapshot:
         eth_price = prices.get("ETH", 0.0)
         staking_yield = lst_yields.get("wstETH", 0.035)
 
-        # Normalize funding to 8h rate for APYCalculator compatibility
+        # Convert annualized funding back to per-hour rate for APYCalculator
         avg_annual_funding = funding.get("average_annual", 0.0)
-        funding_8h = avg_annual_funding / (3 * 365) if avg_annual_funding else 0.0
+        funding_per_hour = avg_annual_funding / (24 * 365) if avg_annual_funding else 0.0
 
         from apy_calculator import APYCalculator
         leverage = 3.0
         expected_apy = APYCalculator.calculate_expected_apy(
             leverage=leverage,
-            funding_rate=funding_8h,
+            funding_rate=funding_per_hour,
             staking_yield=staking_yield,
             spread_edge=0.0005,
             turnover_rate=0.1,
             cost_rate=0.01,
+            funding_interval_hours=1,  # Using per-hour rate
         )
 
         snapshot = {

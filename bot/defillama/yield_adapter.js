@@ -1,10 +1,10 @@
 const axios = require("axios");
 
 // Kerne Protocol Yield Adapter for DefiLlama
-// VAULT_ADDRESS: 0x5FD0F7eA40984a6a8E9c6f6BDfd297e7dB4448Bd
+// VAULT_ADDRESS: 0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC
 // ASSET: WETH (0x4200000000000000000000000000000000000006)
 
-const VAULT_ADDRESS = "0x5FD0F7eA40984a6a8E9c6f6BDfd297e7dB4448Bd";
+const VAULT_ADDRESS = "0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC";
 const WETH_ADDRESS = "0x4200000000000000000000000000000000000006";
 
 async function apy() {
@@ -23,7 +23,7 @@ async function apy() {
       apyBase: parseFloat(data.current_apy),
       underlyingTokens: [WETH_ADDRESS],
       rewardTokens: [], // Kerne yield is auto-compounding in kLP price
-      url: "https://kerne.finance/terminal"
+      url: "https://kerne.ai/terminal"
     }
   ];
 }
@@ -31,5 +31,5 @@ async function apy() {
 module.exports = {
   timetravel: false,
   apy: apy,
-  url: "https://kerne.finance",
+  url: "https://kerne.ai",
 };

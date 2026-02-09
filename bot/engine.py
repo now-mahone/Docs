@@ -122,7 +122,8 @@ class HedgingEngine:
             target_leverage = self.MIN_LEVERAGE
             if funding_rate > 0:
                 # Aggressive scaling: increase leverage by 1x for every 10% annual funding
-                annual_funding = funding_rate * 3 * 365
+                # funding_rate from HL is per-hour, so annualize with 24 payments/day
+                annual_funding = funding_rate * 24 * 365
                 target_leverage = min(self.MAX_LEVERAGE, self.MIN_LEVERAGE + (annual_funding * 10))
             
             expected_apy = self.apy_calc.calculate_expected_apy(
@@ -131,13 +132,14 @@ class HedgingEngine:
                 staking_yield=staking_yield,
                 spread_edge=0.001, # 10bps from ZIN Solver
                 turnover_rate=0.5,
-                cost_rate=0.005
+                cost_rate=0.005,
+                funding_interval_hours=1,  # Hyperliquid uses hourly funding
             )
             
             logger.info(f"APY Calibration: Target Leverage {target_leverage:.2f}x | Expected APY: {expected_apy*100:.2f}%")
             
             # Explicitly log the Basis Trade (Delta-Neutral) yield component
-            basis_yield = funding_rate * 3 * 365 * target_leverage
+            basis_yield = funding_rate * 24 * 365 * target_leverage
             logger.info(f"📈 Delta-Neutral Basis Yield: {basis_yield*100:.2f}% APY (Funding: {funding_rate*100:.4f}%)")
 
             # Target hedge is 100% of active TVL (Delta Neutral)

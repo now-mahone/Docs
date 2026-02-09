@@ -52,8 +52,19 @@ class APYCalculator:
         spread_edge: float,
         turnover_rate: float,
         cost_rate: float,
+        funding_interval_hours: float = 8.0,
     ) -> float:
-        annual_funding = funding_rate * 3 * 365
+        """Calculate expected APY with venue-aware funding interval.
+
+        Args:
+            funding_rate: The raw funding rate per interval.
+            funding_interval_hours: Hours between funding payments.
+                - Hyperliquid: 1 (hourly funding)
+                - Binance/Bybit/OKX: 8 (8-hour funding)
+            Other args: leverage, staking_yield, spread_edge, turnover_rate, cost_rate.
+        """
+        payments_per_day = 24.0 / funding_interval_hours
+        annual_funding = funding_rate * payments_per_day * 365
         expected_log_return = (
             leverage * annual_funding
             + leverage * staking_yield
