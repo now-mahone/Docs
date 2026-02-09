@@ -14,8 +14,8 @@ All text fields are copy-paste ready. Execute in order.
 
 ### Step 1: Create Account
 1. Go to https://dappradar.com/dashboard/submit-dapp
-2. Sign up with: kerne.systems@protonmail.com
-3. Verify email
+2. Sign up with: kerne.systems@protonmail.com [DONE - 2026-02-08]
+3. Verify email [DONE - 2026-02-08]
 
 ### Step 2: Fill Form (Copy-Paste Values)
 
@@ -237,7 +237,7 @@ Same as DappRadar submission above. Emphasize:
 
 | # | Platform | Method | Status |
 |---|----------|--------|--------|
-| 1 | DappRadar | Web Form | [ ] Ready — manual browser submission required |
+| 1 | DappRadar | Web Form | [x] Submitted 2026-02-08 |
 | 2 | DeBank | Email | [ ] Ready to send |
 | 3 | DeFi Safety | Web Form | [ ] Ready to submit |
 | 4 | Base Ecosystem | GitHub PR to base/web | [x] PR #2956 submitted 2026-02-08 |
@@ -254,7 +254,7 @@ After each submission:
 
 | Platform | Date Submitted | Status | Listed Date | Notes |
 |----------|---------------|--------|-------------|-------|
-| DappRadar | | | | |
+| DappRadar | 2026-02-08 | Submitted — pending review (3-7 business days) | | Account: kerne.systems@protonmail.com |
 | DeBank | | | | |
 | DeFi Safety | | | | |
 | Base Ecosystem | 2026-02-08 | PR #2956 pending review | | https://github.com/base/web/pull/2956 |
