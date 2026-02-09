@@ -23,7 +23,7 @@ export default function Footer() {
           <div className="flex flex-col gap-6">
             <h5 className="text-s font-bold tracking-tight text-[#ffffff] font-heading">Protocol</h5>
             <a href="/terminal" target="_blank" rel="noopener noreferrer" className="text-[#ffffff] font-medium hover:text-[#000000/10] transition-colors text-s">Terminal</a>
-            <a href="https://docs.kerne.ai" target="_blank" rel="noopener noreferrer" className="text-[#ffffff] font-medium hover:text-[#000000/10] transition-colors text-s">Documentation</a>
+            <Link href="/documentation" className="text-[#ffffff] font-medium hover:text-[#000000/10] transition-colors text-s">Documentation</Link>
           </div>
           <div className="flex flex-col gap-6">
             <h5 className="text-s font-bold tracking-tight text-[#ffffff] font-heading">Institutional</h5>
