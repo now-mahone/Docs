@@ -88,6 +88,13 @@
     .sidebar .app-name {
       letter-spacing: 0.15em;
       text-transform: uppercase;
+      text-align: left;
+      padding-left: 0;
+    }
+    
+    .sidebar .app-name img {
+      display: block;
+      margin: 0;
     }
     
     .markdown-section h1 {
@@ -129,7 +136,8 @@
   <div id="app"></div>
   <script>
     window.$docsify = {
-      name: 'KERNE',
+      name: '<img src="kerne-lockup.svg" alt="Kerne" style="width: 95px; height: 20px; filter: brightness(0) invert(1);">',
+      nameLink: '/',
       repo: '',
       loadSidebar: '_sidebar.md',
       subMaxLevel: 3,

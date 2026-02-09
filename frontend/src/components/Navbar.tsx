@@ -23,7 +23,7 @@ export default function Navbar() {
   const navLinks = [
     { name: 'About', href: '/about' },
     { name: 'Transparency', href: '/transparency' },
-    { name: 'Documentation', href: '/documentation' }, // Temporarily using internal route until docs.kerne.ai DNS is configured
+    { name: 'Documentation', href: 'https://documentation.kerne.ai', external: true },
   ];
 
   const closeMobileMenu = () => {
