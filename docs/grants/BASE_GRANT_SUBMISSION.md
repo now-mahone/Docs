@@ -13,11 +13,12 @@ Base's grant program has multiple entry points. Execute in this order until you 
 1. Go to: **https://base.org/ecosystem** → look for "Grants" or "Builder Grants" link
 2. Or try: **https://paragraph.xyz/@grants.base.eth** (Base Grants blog — check for latest round announcements and application links)
 
-### Option B: Base Discord (Most Reliable)
+### Option B: Base Discord
 1. Join Base Discord: **https://discord.gg/buildonbase**
-2. Navigate to **#grants** or **#builder-grants** channel
-3. Look for pinned messages with the current application form link
-4. This is the most reliable way to find the active grant round
+2. There is NO dedicated #grants channel — instead, search for "grant" in the server search bar
+3. Check **#announcements** and **#general** for any grant round announcements
+4. Ask in **#general** or **#dev-support** if there's an active grant application link
+5. DM a Base team member or moderator if needed
 
 ### Option C: Direct Email
 1. Email: **builders@base.org**
@@ -265,7 +266,7 @@ After submitting:
 1. Record the date and any confirmation/tracking ID below
 2. Set a calendar reminder for 7 days to check status
 3. Update project_state.md
-4. If no response in 14 days, follow up via Base Discord #grants channel
+4. If no response in 14 days, follow up via Base Discord or email builders@base.org
 
 ### Submission Record
 | Field | Value |
