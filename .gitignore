@@ -21,3 +21,6 @@ yield-server-official/
 # Shannon AI Pentester (cloned repo - too large for git)
 penetration testing/shannon/
 penetration testing/shannon/.env
+
+# Space-prefixed duplicate directory (Windows artifact)
+[[:space:]]penetration testing/
