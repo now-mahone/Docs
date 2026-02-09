@@ -28,14 +28,20 @@ contract KerneArbExecutor is AccessControl, IERC3156FlashBorrower {
     bool public sentinelActive = true;
     uint256 public minSolvencyThreshold = 10100; // 101%
 
+    /// @notice Whitelist of allowed target addresses for arb steps (DEX routers only)
+    mapping(address => bool) public allowedTargets;
+
     struct ArbStep {
         address target;
         bytes data;
     }
 
+    error TargetNotWhitelisted(address target);
+
     event ArbExecuted(address indexed tokenIn, uint256 amountIn, uint256 profit);
     event ProfitSplit(uint256 treasuryAmount, uint256 insuranceAmount);
     event SentinelToggled(bool active);
+    event TargetWhitelistUpdated(address indexed target, bool allowed);
 
     constructor(address admin, address solver, address _treasury, address _insuranceFund, address _vault) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
@@ -44,6 +50,32 @@ contract KerneArbExecutor is AccessControl, IERC3156FlashBorrower {
         treasury = _treasury;
         insuranceFund = _insuranceFund;
         vault = _vault;
+    }
+
+    /**
+     * @notice Add or remove a target address from the whitelist.
+     * @dev Only DEX routers should be whitelisted (e.g., Aerodrome, Uniswap V3).
+     *      SECURITY FIX: Prevents arbitrary call injection via ArbStep targets.
+     */
+    function setAllowedTarget(address target, bool allowed) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(target != address(0), "Invalid target");
+        // Prevent whitelisting protocol contracts to avoid self-drain
+        require(target != treasury, "Cannot whitelist treasury");
+        require(target != insuranceFund, "Cannot whitelist insurance");
+        require(target != vault, "Cannot whitelist vault");
+        allowedTargets[target] = allowed;
+        emit TargetWhitelistUpdated(target, allowed);
+    }
+
+    /**
+     * @notice Validates that all arb step targets are whitelisted.
+     */
+    function _validateSteps(ArbStep[] memory steps) internal view {
+        for (uint256 i = 0; i < steps.length; i++) {
+            if (!allowedTargets[steps[i].target]) {
+                revert TargetNotWhitelisted(steps[i].target);
+            }
+        }
     }
 
     /**
@@ -87,6 +119,9 @@ contract KerneArbExecutor is AccessControl, IERC3156FlashBorrower {
         uint256 balanceBefore = IERC20(token).balanceOf(address(this));
         
         ArbStep[] memory steps = abi.decode(data, (ArbStep[]));
+        
+        // SECURITY: Validate all targets are whitelisted DEX routers
+        _validateSteps(steps);
         
         // 1. Execute Swaps
         for (uint256 i = 0; i < steps.length; i++) {
@@ -137,6 +172,9 @@ contract KerneArbExecutor is AccessControl, IERC3156FlashBorrower {
     ) external onlyRole(SOLVER_ROLE) {
         _checkSolvency();
         uint256 balanceBefore = IERC20(tokenIn).balanceOf(address(this));
+        
+        // SECURITY: Validate all targets are whitelisted DEX routers
+        _validateSteps(steps);
         
         // 1. Execute Swaps
         for (uint256 i = 0; i < steps.length; i++) {

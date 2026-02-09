@@ -155,8 +155,13 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         _initialize(name_, symbol_, admin_, strategist_, address(0), 0, 1000, false);
     }
 
+    /// @notice The factory address authorized to initialize clones
+    address public factory;
+
     /**
      * @notice Initializer for white-label clones.
+     * @dev SECURITY FIX: Only callable by the factory or when founder is unset AND msg.sender has admin role.
+     *      Prevents front-running initialization of newly deployed clones.
      */
     function initialize(
         address,
@@ -169,6 +174,8 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         bool whitelistEnabled_
     ) external {
         require(founder == address(0), "Already initialized");
+        // SECURITY: Only the factory can initialize clones
+        require(factory == address(0) || msg.sender == factory, "Only factory can initialize");
         _initialize(
             name_,
             symbol_,
@@ -399,10 +406,17 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
 
     function setFounderFee(
         uint256 bps
-    ) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not authorized");
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(bps <= 2000, "Fee too high");
         founderFeeBps = bps;
+    }
+
+    /**
+     * @notice Sets the factory address authorized to initialize clones.
+     * @dev SECURITY FIX: Prevents unauthorized initialization of vault clones.
+     */
+    function setFactory(address _factory) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        factory = _factory;
     }
 
     function setPrimeAccount(address account, bool active) external onlyRole(DEFAULT_ADMIN_ROLE) {

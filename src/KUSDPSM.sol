@@ -52,6 +52,12 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
     mapping(address => uint256) public stableCaps;
     mapping(address => uint256) public currentExposure;
 
+    /// @notice SECURITY: Rate limiting for insurance fund draws (prevents drain attacks)
+    uint256 public insuranceDrawCooldown = 1 hours;
+    uint256 public maxInsuranceDrawPerPeriod;
+    uint256 public lastInsuranceDrawTimestamp;
+    uint256 public insuranceDrawnThisPeriod;
+
     event StableAdded(address indexed stable, uint256 fee, uint256 cap);
     event Swap(address indexed user, address indexed fromToken, address indexed toToken, uint256 amount, uint256 fee);
     event TieredFeeAdded(address indexed stable, uint256 threshold, uint256 feeBps);
@@ -155,14 +161,28 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
         uint256 psmBalance = IERC20(stable).balanceOf(address(this));
         
         if (psmBalance < amountAfterFee && insuranceFund != address(0)) {
-            // Attempt to draw the deficit from the Insurance Fund
             uint256 deficit = amountAfterFee - psmBalance;
-            // We use a low-level call to avoid reverting if the insurance fund claim fails (e.g. cooldown or limit)
+            
+            // SECURITY: Rate limit insurance fund draws to prevent drain attacks
+            if (block.timestamp >= lastInsuranceDrawTimestamp + insuranceDrawCooldown) {
+                // Reset the period
+                insuranceDrawnThisPeriod = 0;
+                lastInsuranceDrawTimestamp = block.timestamp;
+            }
+            
+            // Enforce per-period draw limit (if configured)
+            if (maxInsuranceDrawPerPeriod > 0) {
+                require(
+                    insuranceDrawnThisPeriod + deficit <= maxInsuranceDrawPerPeriod,
+                    "Insurance draw limit exceeded for this period"
+                );
+            }
+            
             (bool success, ) = insuranceFund.call(
                 abi.encodeWithSignature("claim(address,uint256)", address(this), deficit)
             );
-            // If successful, deficit is now in this contract
             if (success) {
+                insuranceDrawnThisPeriod += deficit;
                 psmBalance = IERC20(stable).balanceOf(address(this));
             }
         }
@@ -230,6 +250,18 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
 
     function setMinSolvencyThreshold(uint256 threshold) external onlyRole(DEFAULT_ADMIN_ROLE) {
         minSolvencyThreshold = threshold;
+    }
+
+    /**
+     * @notice Sets the rate limit for insurance fund draws.
+     * @dev SECURITY FIX: Prevents attackers from draining the insurance fund via repeated PSM swaps.
+     * @param _maxPerPeriod Maximum amount drawable per cooldown period (0 = unlimited)
+     * @param _cooldown Cooldown period in seconds before the draw counter resets
+     */
+    function setInsuranceDrawLimits(uint256 _maxPerPeriod, uint256 _cooldown) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_cooldown >= 10 minutes, "Cooldown too short");
+        maxInsuranceDrawPerPeriod = _maxPerPeriod;
+        insuranceDrawCooldown = _cooldown;
     }
 
     function pause() external onlyRole(MANAGER_ROLE) {

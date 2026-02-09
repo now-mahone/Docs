@@ -4,9 +4,21 @@
 
 import { NextResponse } from "next/server";
 
+// ── Security: Symbol Allowlist (SSRF Prevention) ─────────────────────────
+const ALLOWED_SYMBOLS = new Set(["ETH", "BTC", "SOL", "ARB", "OP"]);
+
+function validateSymbol(symbol: string): string {
+  const sanitized = symbol.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  if (!ALLOWED_SYMBOLS.has(sanitized)) {
+    throw new Error(`Invalid symbol: ${symbol}`);
+  }
+  return sanitized;
+}
+
 // ── Funding Rate Fetchers (public, no API keys) ─────────────────────────
 
 async function getHyperliquidFunding(symbol: string = "ETH"): Promise<{ rate: number; annual: number; interval: string } | null> {
+  symbol = validateSymbol(symbol);
   try {
     const res = await fetch("https://api.hyperliquid.xyz/info", {
       method: "POST",
@@ -34,8 +46,9 @@ async function getHyperliquidFunding(symbol: string = "ETH"): Promise<{ rate: nu
 }
 
 async function getBinanceFunding(symbol: string = "ETH"): Promise<{ rate: number; annual: number; interval: string } | null> {
+  symbol = validateSymbol(symbol);
   try {
-    const res = await fetch(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${symbol.toUpperCase()}USDT&limit=1`, {
+    const res = await fetch(`https://fapi.binance.com/fapi/v1/fundingRate?symbol=${encodeURIComponent(symbol)}USDT&limit=1`, {
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return null;
@@ -49,8 +62,9 @@ async function getBinanceFunding(symbol: string = "ETH"): Promise<{ rate: number
 }
 
 async function getBybitFunding(symbol: string = "ETH"): Promise<{ rate: number; annual: number; interval: string } | null> {
+  symbol = validateSymbol(symbol);
   try {
-    const res = await fetch(`https://api.bybit.com/v5/market/tickers?category=linear&symbol=${symbol.toUpperCase()}USDT`, {
+    const res = await fetch(`https://api.bybit.com/v5/market/tickers?category=linear&symbol=${encodeURIComponent(symbol)}USDT`, {
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return null;
@@ -67,8 +81,9 @@ async function getBybitFunding(symbol: string = "ETH"): Promise<{ rate: number; 
 }
 
 async function getOkxFunding(symbol: string = "ETH"): Promise<{ rate: number; annual: number; interval: string } | null> {
+  symbol = validateSymbol(symbol);
   try {
-    const res = await fetch(`https://www.okx.com/api/v5/public/funding-rate?instId=${symbol.toUpperCase()}-USDT-SWAP`, {
+    const res = await fetch(`https://www.okx.com/api/v5/public/funding-rate?instId=${encodeURIComponent(symbol)}-USDT-SWAP`, {
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return null;
