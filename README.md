@@ -1,6 +1,6 @@
 # Introduction
 
-Welcome to **Kerne Protocol** — the Liquidity Black Hole of the decentralized web.
+Welcome to **Kerne Protocol**: the Liquidity Black Hole of the decentralized web.
 
 ## What is Kerne?
 
@@ -18,6 +18,6 @@ Kerne achieves this by:
 
 ## Core Philosophy
 
-Kerne is not just a product; it is a financial machine. Every architectural decision is driven by the goal of maximizing protocol growth and owner wealth. We don't innovate for the sake of it—we integrate battle-tested primitives and weaponize them with superior economic policy.
+Kerne is not just a product; it is a financial machine. Every architectural decision is driven by the goal of maximizing protocol growth and owner wealth. We don't innovate for the sake of it. We integrate battle-tested primitives and weaponize them with superior economic policy.
 
 ---
