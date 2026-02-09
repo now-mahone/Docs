@@ -31,3 +31,4 @@ $ forge fmt
 
 ## Documentation
 Detailed specifications and reports can be found in the `docs/` directory.
+""  
