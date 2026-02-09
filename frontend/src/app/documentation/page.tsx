@@ -9,7 +9,7 @@ export default function DocumentationPage() {
     // Redirect to GitHub Pages URL once DNS is configured
     // For now, show a message
     const timer = setTimeout(() => {
-      window.location.href = 'https://enerzy17.github.io/kerne-feb-2026/';
+      window.location.href = 'https://kerne-protocol.github.io/docs';
     }, 3000);
     
     return () => clearTimeout(timer);
@@ -32,7 +32,7 @@ export default function DocumentationPage() {
         <p className="text-sm text-[#737581] mt-8">
           If you are not redirected automatically, please{' '}
           <a 
-            href="https://enerzy17.github.io/kerne-feb-2026/" 
+            href="https://kerne-protocol.github.io/docs" 
             className="text-[#000000] font-semibold underline"
           >
             click here
