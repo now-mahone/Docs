@@ -1,7 +1,11 @@
 # Kerne Project State
 
 ## Latest Update
-[2026-02-09 14:33] - Documentation: Enabled history mode routing for Docsify documentation. Added `routerMode: 'history'` to remove hash (#/) from URLs. Created 404.html for GitHub Pages SPA routing support. URLs now display as `documentation.kerne.ai` instead of `documentation.kerne.ai/#/`. Pushing to now-mahone/Docs repository. - Status: IN PROGRESS
+[2026-02-09 15:02] - Terminal: Updated footer documentation link from `docs.kerne.ai` to `documentation.kerne.ai` to match the correct domain. All documentation links across the website now point to the unified documentation.kerne.ai domain. - Status: SUCCESS
+
+[2026-02-09 14:42] - Frontend: Removed password gate (AccessGate component) from website. Deleted `AccessGate.tsx` component and `/access` page. Updated `layout.tsx` to remove authentication wrapper. Terminal and all pages now publicly accessible without access code. - Status: SUCCESS
+
+[2026-02-09 14:33] - Documentation: Enabled history mode routing for Docsify documentation. Added `routerMode: 'history'` to remove hash (#/) from URLs. Created 404.html for GitHub Pages SPA routing support. URLs now display as `documentation.kerne.ai` instead of `documentation.kerne.ai/#/`. Currently deploying to now-mahone/Docs repository. - Status: IN PROGRESS
 
 [2026-02-09 14:27] - Documentation: Updated documentation link to open in new tab. Modified Navbar.tsx to use external anchor tags with `target="_blank"` for documentation links on both desktop and mobile views. Footer already had target="_blank" configured. - Status: SUCCESS
 
