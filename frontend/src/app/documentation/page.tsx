@@ -9,7 +9,7 @@ export default function DocumentationPage() {
     // Redirect to GitHub Pages URL once DNS is configured
     // For now, show a message
     const timer = setTimeout(() => {
-      window.location.href = 'https://kerne-protocol.github.io/docs';
+      window.location.href = 'https://now-mahone.github.io/Docs';
     }, 3000);
     
     return () => clearTimeout(timer);
@@ -32,7 +32,7 @@ export default function DocumentationPage() {
         <p className="text-sm text-[#737581] mt-8">
           If you are not redirected automatically, please{' '}
           <a 
-            href="https://kerne-protocol.github.io/docs" 
+            href="https://now-mahone.github.io/Docs" 
             className="text-[#000000] font-semibold underline"
           >
             click here
