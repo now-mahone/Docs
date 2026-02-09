@@ -26,6 +26,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import math
+
 import requests
 from dotenv import load_dotenv
 from loguru import logger
@@ -403,6 +405,127 @@ def fetch_onchain_data(eth_price: float) -> OnChainData:
 
 
 # =============================================================================
+# MULTI-VENUE FUNDING RATE FETCHERS (mirrors frontend /api/apy)
+# =============================================================================
+
+
+def _fetch_binance_funding(symbol: str = "ETH") -> Optional[Dict[str, Any]]:
+    """Fetch latest funding rate from Binance Futures."""
+    try:
+        res = requests.get(
+            f"https://fapi.binance.com/fapi/v1/fundingRate?symbol={symbol.upper()}USDT&limit=1",
+            timeout=10,
+        )
+        if res.ok:
+            data = res.json()
+            if isinstance(data, list) and len(data) > 0:
+                rate = float(data[0].get("fundingRate", 0))
+                return {"rate": rate, "annual": rate * 3 * 365, "interval": "8h"}
+    except Exception as e:
+        logger.debug(f"Binance funding fetch failed: {e}")
+    return None
+
+
+def _fetch_bybit_funding(symbol: str = "ETH") -> Optional[Dict[str, Any]]:
+    """Fetch latest funding rate from Bybit."""
+    try:
+        res = requests.get(
+            f"https://api.bybit.com/v5/market/tickers?category=linear&symbol={symbol.upper()}USDT",
+            timeout=10,
+        )
+        if res.ok:
+            data = res.json()
+            if data.get("retCode") == 0:
+                tickers = data.get("result", {}).get("list", [])
+                if tickers:
+                    rate = float(tickers[0].get("fundingRate", 0))
+                    return {"rate": rate, "annual": rate * 3 * 365, "interval": "8h"}
+    except Exception as e:
+        logger.debug(f"Bybit funding fetch failed: {e}")
+    return None
+
+
+def _fetch_okx_funding(symbol: str = "ETH") -> Optional[Dict[str, Any]]:
+    """Fetch latest funding rate from OKX."""
+    try:
+        res = requests.get(
+            f"https://www.okx.com/api/v5/public/funding-rate?instId={symbol.upper()}-USDT-SWAP",
+            timeout=10,
+        )
+        if res.ok:
+            data = res.json()
+            if data.get("code") == "0":
+                rates = data.get("data", [])
+                if rates:
+                    rate = float(rates[0].get("fundingRate", 0))
+                    return {"rate": rate, "annual": rate * 3 * 365, "interval": "8h"}
+    except Exception as e:
+        logger.debug(f"OKX funding fetch failed: {e}")
+    return None
+
+
+def _fetch_multi_venue_funding() -> Dict[str, Dict[str, Any]]:
+    """Fetch funding rates from Binance, Bybit, OKX. HL is added separately."""
+    venues: Dict[str, Dict[str, Any]] = {}
+
+    bn = _fetch_binance_funding()
+    if bn:
+        venues["binance"] = bn
+
+    bb = _fetch_bybit_funding()
+    if bb:
+        venues["bybit"] = bb
+
+    okx = _fetch_okx_funding()
+    if okx:
+        venues["okx"] = okx
+
+    logger.info(
+        f"Multi-venue funding rates: "
+        + ", ".join(f"{k}={v['rate']*100:.6f}% ({v['interval']})" for k, v in venues.items())
+    )
+    return venues
+
+
+def _fetch_staking_yield() -> float:
+    """Fetch wstETH staking APY from Lido API. Returns decimal (e.g. 0.035)."""
+    # Try SMA APR
+    try:
+        res = requests.get(
+            "https://eth-api.lido.fi/v1/protocol/steth/apr/sma",
+            timeout=10,
+        )
+        if res.ok:
+            data = res.json()
+            sma_apr = data.get("data", {}).get("smaApr")
+            if sma_apr is not None:
+                yield_val = float(sma_apr) / 100
+                logger.info(f"Lido staking APY (SMA): {yield_val*100:.2f}%")
+                return yield_val
+    except Exception:
+        pass
+
+    # Fallback: last APR
+    try:
+        res = requests.get(
+            "https://eth-api.lido.fi/v1/protocol/steth/apr/last",
+            timeout=10,
+        )
+        if res.ok:
+            data = res.json()
+            apr = data.get("data", {}).get("apr")
+            if apr is not None:
+                yield_val = float(apr) / 100
+                logger.info(f"Lido staking APY (last): {yield_val*100:.2f}%")
+                return yield_val
+    except Exception:
+        pass
+
+    logger.warning("Could not fetch Lido staking yield, using 3.5% fallback")
+    return 0.035
+
+
+# =============================================================================
 # REPORT GENERATION
 # =============================================================================
 
@@ -455,69 +578,85 @@ def generate_report() -> PerformanceReport:
     else:
         report.solvency_ratio = 1.0
 
-    # Yield from funding rate
-    # The funding rate is per 8h period. We earn it on the FULL notional of the short.
-    # Effective APY = (annual funding income / total protocol assets) * 100
-    # Also: leveraged APY on equity = raw_rate * effective_leverage * 3 * 365
-    # Plus: wstETH/staking yield on the long side (~3.2% base)
-    WSTETH_STAKING_APY = 0.032  # ~3.2% annual wstETH yield
+    # ── Yield Calculation (mirrors frontend /api/apy exactly) ──────────────
+    # The frontend picks the BEST funding rate across 4 venues (HL, Binance,
+    # Bybit, OKX), applies 3x leverage to BOTH funding AND staking yield,
+    # and uses exponential compounding: APY = exp(logReturn) - 1
+    #
+    # NOTE: Hyperliquid funding is per 1h (annual = rate * 24 * 365)
+    #       Other venues are per 8h (annual = rate * 3 * 365)
 
+    LEVERAGE = 3.0
+    SPREAD_EDGE = 0.0005
+    TURNOVER_RATE = 0.1
+    COST_RATE = 0.01
+
+    # Fetch multi-venue funding rates
+    multi_venue_rates = _fetch_multi_venue_funding()
+
+    # Add Hyperliquid from our already-fetched data
+    if report.hyperliquid.eth_funding_rate != 0:
+        hl_annual = report.hyperliquid.eth_funding_rate * 24 * 365  # HL is 1h interval
+        multi_venue_rates["hyperliquid"] = {
+            "rate": report.hyperliquid.eth_funding_rate,
+            "annual": hl_annual,
+            "interval": "1h",
+        }
+
+    # Fetch staking yield
+    staking_yield = _fetch_staking_yield()
+
+    # Find best positive funding venue
+    best_venue = "none"
+    best_annual_funding = 0.0
+    for name, data in multi_venue_rates.items():
+        if data["annual"] > best_annual_funding:
+            best_annual_funding = data["annual"]
+            best_venue = name
+
+    if best_annual_funding < 0:
+        best_annual_funding = 0.0
+
+    # Calculate protocol APY using same formula as frontend
+    log_return = (
+        LEVERAGE * best_annual_funding
+        + LEVERAGE * staking_yield
+        + TURNOVER_RATE * SPREAD_EDGE
+        - COST_RATE
+    )
+    protocol_apy = (math.exp(log_return) - 1) * 100  # as percentage
+
+    # Daily funding income from our actual HL position
     total_short_notional = sum(
         abs(p["size"]) * report.eth_price_usd
         for p in report.hyperliquid.positions
         if p["coin"] == "ETH" and p["size"] < 0
     )
-
-    if report.hyperliquid.eth_funding_rate != 0 and total_short_notional > 0:
-        # Daily funding income = notional * rate_per_8h * 3 periods/day
+    if total_short_notional > 0 and report.hyperliquid.eth_funding_rate != 0:
+        # HL funding is per 1h, so daily = rate * 24
         report.daily_funding_income_usd = (
-            total_short_notional * abs(report.hyperliquid.eth_funding_rate) * 3
+            total_short_notional * abs(report.hyperliquid.eth_funding_rate) * 24
         )
+    else:
+        report.daily_funding_income_usd = 0.0
 
-        # Annual funding income
-        annual_funding_income = report.daily_funding_income_usd * 365
+    # Effective leverage on our actual position
+    effective_leverage = LEVERAGE
+    if report.hyperliquid.total_margin_used > 0 and total_short_notional > 0:
+        effective_leverage = total_short_notional / report.hyperliquid.total_margin_used
 
-        # Effective leverage = short notional / HL margin used
-        effective_leverage = 1.0
-        if report.hyperliquid.total_margin_used > 0:
-            effective_leverage = total_short_notional / report.hyperliquid.total_margin_used
+    report.annualized_funding_apy = protocol_apy
 
-        # Method 1: APY on total protocol assets (conservative, what depositors see)
-        if report.total_assets_usd > 0:
-            funding_apy_on_total = (annual_funding_income / report.total_assets_usd) * 100
-        else:
-            funding_apy_on_total = 0.0
-
-        # Method 2: Leveraged APY on HL equity (what the short position earns)
-        leveraged_funding_apy = abs(report.hyperliquid.eth_funding_rate) * effective_leverage * 3 * 365 * 100
-
-        # Staking yield on vault assets (long side)
-        total_vault_eth = sum(report.onchain.vault_total_assets.values())
-        staking_income_annual = total_vault_eth * report.eth_price_usd * WSTETH_STAKING_APY
-
-        # Combined protocol APY = (funding income + staking income) / total assets
-        if report.total_assets_usd > 0:
-            combined_apy = ((annual_funding_income + staking_income_annual) / report.total_assets_usd) * 100
-        else:
-            combined_apy = leveraged_funding_apy + (WSTETH_STAKING_APY * 100)
-
-        # Use the combined APY as the headline number (matches frontend /api/apy logic)
-        report.annualized_funding_apy = combined_apy
-
-        # Store additional metrics for detailed reporting
-        report._raw_funding_apy = abs(report.hyperliquid.eth_funding_rate) * 3 * 365 * 100
-        report._leveraged_funding_apy = leveraged_funding_apy
-        report._effective_leverage = effective_leverage
-        report._staking_apy = WSTETH_STAKING_APY * 100
-        report._funding_apy_on_total = funding_apy_on_total
-    elif report.hyperliquid.eth_funding_rate != 0:
-        # No positions but we have a rate — show theoretical
-        report.annualized_funding_apy = abs(report.hyperliquid.eth_funding_rate) * 3 * 365 * 100 * 3  # assume 3x leverage
-        report._raw_funding_apy = abs(report.hyperliquid.eth_funding_rate) * 3 * 365 * 100
-        report._leveraged_funding_apy = report.annualized_funding_apy
-        report._effective_leverage = 3.0
-        report._staking_apy = WSTETH_STAKING_APY * 100
-        report._funding_apy_on_total = 0.0
+    # Store detailed breakdown
+    hl_annual_pct = (report.hyperliquid.eth_funding_rate * 24 * 365 * 100) if report.hyperliquid.eth_funding_rate else 0
+    report._raw_funding_apy = hl_annual_pct
+    report._best_venue = best_venue
+    report._best_annual_funding_pct = best_annual_funding * 100
+    report._leveraged_funding_apy = best_annual_funding * LEVERAGE * 100
+    report._effective_leverage = effective_leverage
+    report._staking_apy = staking_yield * 100
+    report._funding_apy_on_total = protocol_apy
+    report._all_venues = multi_venue_rates
 
     # Health assessment
     report.warnings = []
@@ -605,7 +744,7 @@ def format_markdown(report: PerformanceReport) -> str:
             f"| **Margin Used** | ${report.hyperliquid.total_margin_used:,.2f} |",
             f"| **Withdrawable** | ${report.hyperliquid.withdrawable_usd:,.2f} |",
             f"| **Unrealized P&L** | ${report.hyperliquid.total_unrealized_pnl:+,.2f} |",
-            f"| **ETH Funding Rate** | {report.hyperliquid.eth_funding_rate*100:.6f}% (8h) |",
+            f"| **ETH Funding Rate (HL)** | {report.hyperliquid.eth_funding_rate*100:.6f}% (1h) |",
             f"| **Effective Leverage** | {getattr(report, '_effective_leverage', 0):.1f}x |",
             f"| **Annualized Protocol APY** | {report.annualized_funding_apy:.2f}% |",
             "",
@@ -687,15 +826,15 @@ def format_markdown(report: PerformanceReport) -> str:
             "",
             "| Metric | Value |",
             "|--------|-------|",
-            f"| **ETH Funding Rate (8h)** | {report.hyperliquid.eth_funding_rate*100:.6f}% |",
-            f"| **Raw Funding APY (on notional)** | {getattr(report, '_raw_funding_apy', 0):.2f}% |",
-            f"| **Leveraged Funding APY (on equity)** | {getattr(report, '_leveraged_funding_apy', 0):.2f}% |",
-            f"| **wstETH Staking APY** | {getattr(report, '_staking_apy', 3.2):.1f}% |",
-            f"| **Effective Leverage** | {getattr(report, '_effective_leverage', 0):.1f}x |",
+            f"| **HL Funding Rate (1h)** | {report.hyperliquid.eth_funding_rate*100:.6f}% |",
+            f"| **HL Funding APY (annualized)** | {getattr(report, '_raw_funding_apy', 0):.2f}% |",
+            f"| **Best Venue** | {getattr(report, '_best_venue', 'none')} ({getattr(report, '_best_annual_funding_pct', 0):.2f}% annual) |",
+            f"| **Best Venue × 3x Leverage** | {getattr(report, '_leveraged_funding_apy', 0):.2f}% |",
+            f"| **wstETH Staking APY** | {getattr(report, '_staking_apy', 3.5):.1f}% |",
             f"| **Combined Protocol APY** | **{report.annualized_funding_apy:.2f}%** |",
-            f"| **Est. Daily Funding Income** | ${report.daily_funding_income_usd:,.4f} |",
+            f"| **Est. Daily Funding Income (HL)** | ${report.daily_funding_income_usd:,.4f} |",
             "",
-            "> *Raw funding = rate × 3 × 365. Leveraged = raw × leverage. Combined = (funding income + staking income) / total assets.*",
+            "> *Formula: APY = exp(3 × best_funding + 3 × staking + spread - costs) - 1. Matches kerne.ai live APY.*",
             "",
             "---",
             "",
@@ -755,13 +894,13 @@ def format_discord_embed(report: PerformanceReport) -> Dict[str, Any]:
             "inline": True,
         },
         {
-            "name": "📈 Funding Rate (8h)",
+            "name": "📈 Funding Rate (1h)",
             "value": f"{report.hyperliquid.eth_funding_rate*100:.6f}%",
             "inline": True,
         },
         {
             "name": "🔥 Protocol APY",
-            "value": f"{report.annualized_funding_apy:.2f}%\n(Funding: {getattr(report, '_leveraged_funding_apy', 0):.1f}% + Staking: {getattr(report, '_staking_apy', 3.2):.1f}%)",
+            "value": f"{report.annualized_funding_apy:.2f}%\n(Best: {getattr(report, '_best_venue', '?')} | Staking: {getattr(report, '_staking_apy', 3.5):.1f}%)",
             "inline": True,
         },
         {
@@ -848,13 +987,16 @@ def format_json(report: PerformanceReport) -> Dict[str, Any]:
             "solvency_ratio": report.solvency_ratio,
         },
         "yield": {
-            "eth_funding_rate_8h": report.hyperliquid.eth_funding_rate,
-            "raw_funding_apy_pct": getattr(report, '_raw_funding_apy', 0),
+            "hl_funding_rate_1h": report.hyperliquid.eth_funding_rate,
+            "hl_funding_apy_pct": getattr(report, '_raw_funding_apy', 0),
+            "best_venue": getattr(report, '_best_venue', 'none'),
+            "best_venue_annual_funding_pct": getattr(report, '_best_annual_funding_pct', 0),
             "leveraged_funding_apy_pct": getattr(report, '_leveraged_funding_apy', 0),
-            "staking_apy_pct": getattr(report, '_staking_apy', 3.2),
+            "staking_apy_pct": getattr(report, '_staking_apy', 3.5),
             "effective_leverage": getattr(report, '_effective_leverage', 0),
             "combined_protocol_apy_pct": report.annualized_funding_apy,
             "daily_funding_income_usd": report.daily_funding_income_usd,
+            "all_venues": {k: {"rate": v["rate"], "annual_pct": v["annual"] * 100, "interval": v["interval"]} for k, v in getattr(report, '_all_venues', {}).items()},
         },
         "hyperliquid": {
             "connected": report.hyperliquid.connected,
