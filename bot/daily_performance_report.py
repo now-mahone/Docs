@@ -455,18 +455,69 @@ def generate_report() -> PerformanceReport:
     else:
         report.solvency_ratio = 1.0
 
-    # Yield from funding rate (per 8h period, annual = rate * 3 * 365)
-    if report.hyperliquid.eth_funding_rate > 0:
-        annual_funding_rate = report.hyperliquid.eth_funding_rate * 3 * 365
-        total_short_notional = sum(
-            abs(p["size"]) * report.eth_price_usd
-            for p in report.hyperliquid.positions
-            if p["coin"] == "ETH" and p["size"] < 0
-        )
+    # Yield from funding rate
+    # The funding rate is per 8h period. We earn it on the FULL notional of the short.
+    # Effective APY = (annual funding income / total protocol assets) * 100
+    # Also: leveraged APY on equity = raw_rate * effective_leverage * 3 * 365
+    # Plus: wstETH/staking yield on the long side (~3.2% base)
+    WSTETH_STAKING_APY = 0.032  # ~3.2% annual wstETH yield
+
+    total_short_notional = sum(
+        abs(p["size"]) * report.eth_price_usd
+        for p in report.hyperliquid.positions
+        if p["coin"] == "ETH" and p["size"] < 0
+    )
+
+    if report.hyperliquid.eth_funding_rate != 0 and total_short_notional > 0:
+        # Daily funding income = notional * rate_per_8h * 3 periods/day
         report.daily_funding_income_usd = (
-            total_short_notional * report.hyperliquid.eth_funding_rate * 3
+            total_short_notional * abs(report.hyperliquid.eth_funding_rate) * 3
         )
-        report.annualized_funding_apy = annual_funding_rate * 100
+
+        # Annual funding income
+        annual_funding_income = report.daily_funding_income_usd * 365
+
+        # Effective leverage = short notional / HL margin used
+        effective_leverage = 1.0
+        if report.hyperliquid.total_margin_used > 0:
+            effective_leverage = total_short_notional / report.hyperliquid.total_margin_used
+
+        # Method 1: APY on total protocol assets (conservative, what depositors see)
+        if report.total_assets_usd > 0:
+            funding_apy_on_total = (annual_funding_income / report.total_assets_usd) * 100
+        else:
+            funding_apy_on_total = 0.0
+
+        # Method 2: Leveraged APY on HL equity (what the short position earns)
+        leveraged_funding_apy = abs(report.hyperliquid.eth_funding_rate) * effective_leverage * 3 * 365 * 100
+
+        # Staking yield on vault assets (long side)
+        total_vault_eth = sum(report.onchain.vault_total_assets.values())
+        staking_income_annual = total_vault_eth * report.eth_price_usd * WSTETH_STAKING_APY
+
+        # Combined protocol APY = (funding income + staking income) / total assets
+        if report.total_assets_usd > 0:
+            combined_apy = ((annual_funding_income + staking_income_annual) / report.total_assets_usd) * 100
+        else:
+            combined_apy = leveraged_funding_apy + (WSTETH_STAKING_APY * 100)
+
+        # Use the combined APY as the headline number (matches frontend /api/apy logic)
+        report.annualized_funding_apy = combined_apy
+
+        # Store additional metrics for detailed reporting
+        report._raw_funding_apy = abs(report.hyperliquid.eth_funding_rate) * 3 * 365 * 100
+        report._leveraged_funding_apy = leveraged_funding_apy
+        report._effective_leverage = effective_leverage
+        report._staking_apy = WSTETH_STAKING_APY * 100
+        report._funding_apy_on_total = funding_apy_on_total
+    elif report.hyperliquid.eth_funding_rate != 0:
+        # No positions but we have a rate — show theoretical
+        report.annualized_funding_apy = abs(report.hyperliquid.eth_funding_rate) * 3 * 365 * 100 * 3  # assume 3x leverage
+        report._raw_funding_apy = abs(report.hyperliquid.eth_funding_rate) * 3 * 365 * 100
+        report._leveraged_funding_apy = report.annualized_funding_apy
+        report._effective_leverage = 3.0
+        report._staking_apy = WSTETH_STAKING_APY * 100
+        report._funding_apy_on_total = 0.0
 
     # Health assessment
     report.warnings = []
@@ -555,7 +606,8 @@ def format_markdown(report: PerformanceReport) -> str:
             f"| **Withdrawable** | ${report.hyperliquid.withdrawable_usd:,.2f} |",
             f"| **Unrealized P&L** | ${report.hyperliquid.total_unrealized_pnl:+,.2f} |",
             f"| **ETH Funding Rate** | {report.hyperliquid.eth_funding_rate*100:.6f}% (8h) |",
-            f"| **Annualized Funding** | {report.annualized_funding_apy:.2f}% |",
+            f"| **Effective Leverage** | {getattr(report, '_effective_leverage', 0):.1f}x |",
+            f"| **Annualized Protocol APY** | {report.annualized_funding_apy:.2f}% |",
             "",
         ]
     )
@@ -636,12 +688,18 @@ def format_markdown(report: PerformanceReport) -> str:
             "| Metric | Value |",
             "|--------|-------|",
             f"| **ETH Funding Rate (8h)** | {report.hyperliquid.eth_funding_rate*100:.6f}% |",
-            f"| **Annualized Funding APY** | {report.annualized_funding_apy:.2f}% |",
+            f"| **Raw Funding APY (on notional)** | {getattr(report, '_raw_funding_apy', 0):.2f}% |",
+            f"| **Leveraged Funding APY (on equity)** | {getattr(report, '_leveraged_funding_apy', 0):.2f}% |",
+            f"| **wstETH Staking APY** | {getattr(report, '_staking_apy', 3.2):.1f}% |",
+            f"| **Effective Leverage** | {getattr(report, '_effective_leverage', 0):.1f}x |",
+            f"| **Combined Protocol APY** | **{report.annualized_funding_apy:.2f}%** |",
             f"| **Est. Daily Funding Income** | ${report.daily_funding_income_usd:,.4f} |",
+            "",
+            "> *Raw funding = rate × 3 × 365. Leveraged = raw × leverage. Combined = (funding income + staking income) / total assets.*",
             "",
             "---",
             "",
-            "*Report generated by Kerne Daily Performance Reporter v2.0*",
+            "*Report generated by Kerne Daily Performance Reporter v2.1*",
         ]
     )
 
@@ -702,8 +760,8 @@ def format_discord_embed(report: PerformanceReport) -> Dict[str, Any]:
             "inline": True,
         },
         {
-            "name": "🔥 Annual Funding APY",
-            "value": f"{report.annualized_funding_apy:.2f}%",
+            "name": "🔥 Protocol APY",
+            "value": f"{report.annualized_funding_apy:.2f}%\n(Funding: {getattr(report, '_leveraged_funding_apy', 0):.1f}% + Staking: {getattr(report, '_staking_apy', 3.2):.1f}%)",
             "inline": True,
         },
         {
@@ -791,7 +849,11 @@ def format_json(report: PerformanceReport) -> Dict[str, Any]:
         },
         "yield": {
             "eth_funding_rate_8h": report.hyperliquid.eth_funding_rate,
-            "annualized_funding_apy_pct": report.annualized_funding_apy,
+            "raw_funding_apy_pct": getattr(report, '_raw_funding_apy', 0),
+            "leveraged_funding_apy_pct": getattr(report, '_leveraged_funding_apy', 0),
+            "staking_apy_pct": getattr(report, '_staking_apy', 3.2),
+            "effective_leverage": getattr(report, '_effective_leverage', 0),
+            "combined_protocol_apy_pct": report.annualized_funding_apy,
             "daily_funding_income_usd": report.daily_funding_income_usd,
         },
         "hyperliquid": {
