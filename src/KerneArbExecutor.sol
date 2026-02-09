@@ -31,6 +31,9 @@ contract KerneArbExecutor is AccessControl, IERC3156FlashBorrower {
     /// @notice Whitelist of allowed target addresses for arb steps (DEX routers only)
     mapping(address => bool) public allowedTargets;
 
+    /// @notice SECURITY: Approved flash loan lenders (only trusted internal contracts)
+    mapping(address => bool) public approvedLenders;
+
     struct ArbStep {
         address target;
         bytes data;
@@ -42,6 +45,7 @@ contract KerneArbExecutor is AccessControl, IERC3156FlashBorrower {
     event ProfitSplit(uint256 treasuryAmount, uint256 insuranceAmount);
     event SentinelToggled(bool active);
     event TargetWhitelistUpdated(address indexed target, bool allowed);
+    event ApprovedLenderUpdated(address indexed lender, bool approved);
 
     constructor(address admin, address solver, address _treasury, address _insuranceFund, address _vault) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
@@ -50,6 +54,16 @@ contract KerneArbExecutor is AccessControl, IERC3156FlashBorrower {
         treasury = _treasury;
         insuranceFund = _insuranceFund;
         vault = _vault;
+    }
+
+    /**
+     * @notice Sets an address as an approved flash loan lender.
+     * @dev SECURITY FIX: Only trusted internal contracts (KerneVault, KUSDPSM) should be approved.
+     */
+    function setApprovedLender(address lender, bool approved) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(lender != address(0), "Invalid lender");
+        approvedLenders[lender] = approved;
+        emit ApprovedLenderUpdated(lender, approved);
     }
 
     /**
@@ -115,6 +129,8 @@ contract KerneArbExecutor is AccessControl, IERC3156FlashBorrower {
         bytes calldata data
     ) external override returns (bytes32) {
         require(initiator == address(this), "Unauthorized initiator");
+        // SECURITY FIX: Authenticate the lender (msg.sender) as an approved source
+        require(approvedLenders[msg.sender], "Unapproved lender");
         
         uint256 balanceBefore = IERC20(token).balanceOf(address(this));
         

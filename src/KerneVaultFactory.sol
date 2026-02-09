@@ -79,7 +79,8 @@ contract KerneVaultFactory is Ownable {
             asset, 
             name, 
             symbol, 
-            admin, 
+            admin,
+            admin,  // strategist defaults to admin for factory-deployed vaults
             owner(), 
             config.protocolFounderFeeBps, 
             performanceFeeBps, 

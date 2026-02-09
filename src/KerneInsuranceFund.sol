@@ -72,8 +72,13 @@ contract KerneInsuranceFund is AccessControl, ReentrancyGuard {
 
     /**
      * @notice Socializes a loss across the insurance fund.
+     * @dev SECURITY FIX: Checks msg.sender authorization (not the vault parameter).
+     *      Also validates the vault destination is authorized to prevent misrouting.
      */
     function socializeLoss(address vault, uint256 amount) external nonReentrant {
+        // SECURITY FIX: Authenticate the CALLER, not just the destination
+        require(hasRole(AUTHORIZED_ROLE, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Caller not authorized");
+        // Also validate the vault destination is a known authorized vault
         require(hasRole(AUTHORIZED_ROLE, vault), "Vault not authorized");
         uint256 balance = IERC20(asset).balanceOf(address(this));
         uint256 coverAmount = amount > balance ? balance : amount;

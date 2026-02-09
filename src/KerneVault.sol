@@ -168,6 +168,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         string memory name_,
         string memory symbol_,
         address admin_,
+        address strategist_,
         address founder_,
         uint256 founderFeeBps_,
         uint256 performanceFeeBps_,
@@ -176,11 +177,12 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         require(founder == address(0), "Already initialized");
         // SECURITY: Only the factory can initialize clones
         require(factory == address(0) || msg.sender == factory, "Only factory can initialize");
+        // SECURITY FIX: Use explicit strategist parameter instead of msg.sender
         _initialize(
             name_,
             symbol_,
             admin_,
-            msg.sender,
+            strategist_,
             founder_,
             founderFeeBps_,
             performanceFeeBps_,
@@ -215,7 +217,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         _symbol = symbol_;
 
         _grantRole(DEFAULT_ADMIN_ROLE, admin_);
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        // SECURITY FIX: Removed _grantRole(DEFAULT_ADMIN_ROLE, msg.sender) — 
+        // Factory/deployer should NOT become permanent backdoor admin on all vaults.
+        // Admin role is granted only to the explicit admin_ parameter.
         _grantRole(STRATEGIST_ROLE, strategist_);
         _grantRole(PAUSER_ROLE, admin_);
         _grantRole(PAUSER_ROLE, strategist_);
@@ -279,7 +283,11 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         return (assets * 10000) / liabilities;
     }
 
-    function checkAndPause() external {
+    /**
+     * @notice Checks solvency and pauses if threshold breached.
+     * @dev SECURITY FIX: Restricted to PAUSER_ROLE to prevent griefing via external dependency failures.
+     */
+    function checkAndPause() external onlyRole(PAUSER_ROLE) {
         _updateSolvency(false);
     }
 

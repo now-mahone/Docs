@@ -30,6 +30,12 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
     address public constant UNISWAP_ROUTER = 0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD;
     address public constant AERODROME_ROUTER = 0xCf77A3bA9A5ca399B7c97c478569A74Dd55c726f;
 
+    /// @notice SECURITY: Approved flash loan lenders (only trusted internal contracts)
+    mapping(address => bool) public approvedLenders;
+
+    /// @notice SECURITY: Whitelisted call targets for aggregator swaps (prevents arbitrary call injection)
+    mapping(address => bool) public allowedTargets;
+
     // Sentinel V2 Parameters
     uint256 public maxLatency = 500; // 500ms
     uint256 public maxPriceDeviationBps = 100; // 1% (100 bps)
@@ -68,6 +74,9 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
     event SentinelParamUpdated(string param, uint256 newValue);
     event SentinelStatusToggled(bool active);
 
+    event ApprovedLenderUpdated(address indexed lender, bool approved);
+    event AllowedTargetUpdated(address indexed target, bool allowed);
+
     constructor(address admin, address solver, address _profitVault) {
         require(_profitVault != address(0), "Profit vault cannot be zero");
         profitVault = _profitVault;
@@ -75,6 +84,31 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(SOLVER_ROLE, solver);
         _grantRole(SENTINEL_ROLE, admin);
+
+        // SECURITY: Pre-approve known safe aggregator targets
+        allowedTargets[ONE_INCH_ROUTER] = true;
+        allowedTargets[UNISWAP_ROUTER] = true;
+        allowedTargets[AERODROME_ROUTER] = true;
+    }
+
+    /**
+     * @notice Sets an address as an approved flash loan lender.
+     * @dev Only KerneVault and KUSDPSM should be approved lenders.
+     */
+    function setApprovedLender(address lender, bool approved) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(lender != address(0), "Invalid lender");
+        approvedLenders[lender] = approved;
+        emit ApprovedLenderUpdated(lender, approved);
+    }
+
+    /**
+     * @notice Sets an address as an allowed call target for aggregator swaps.
+     * @dev Only DEX routers/aggregators should be whitelisted.
+     */
+    function setAllowedTarget(address target, bool allowed) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(target != address(0), "Invalid target");
+        allowedTargets[target] = allowed;
+        emit AllowedTargetUpdated(target, allowed);
     }
 
     /**
@@ -153,10 +187,15 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
         uint256 fee,
         bytes calldata data
     ) external override returns (bytes32) {
+        // SECURITY FIX: Authenticate both initiator AND lender (msg.sender)
         require(initiator == address(this), "Untrusted initiator");
+        require(approvedLenders[msg.sender], "Unapproved lender");
         
         (address tokenIn, uint256 amountOut, address user, address target, bytes memory aggregatorData, address solver, uint8 fulfillmentType) = 
             abi.decode(data, (address, uint256, address, address, bytes, address, uint8));
+
+        // SECURITY FIX: Validate target is a whitelisted aggregator/DEX router
+        require(allowedTargets[target], "Target not allowed");
 
         if (fulfillmentType == 0) {
             // Direct fulfillment: Send tokenOut to user at zero cost to them

@@ -4,6 +4,7 @@
 pragma solidity 0.8.24;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { IERC20Metadata } from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -78,7 +79,13 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
         require(block.timestamp <= updatedAt + 24 hours, "Oracle price stale");
 
         uint8 decimals = IAggregatorV3(oracle).decimals();
-        uint256 normalizedPrice = uint256(price) * (10 ** (18 - decimals));
+        // SECURITY FIX: Prevent underflow if oracle decimals > 18
+        uint256 normalizedPrice;
+        if (decimals <= 18) {
+            normalizedPrice = uint256(price) * (10 ** (18 - decimals));
+        } else {
+            normalizedPrice = uint256(price) / (10 ** (decimals - 18));
+        }
         uint256 targetPrice = 1e18; // 1.0 USD in 18 decimals
 
         uint256 threshold = maxDepegBps[stable] == 0 ? DEFAULT_MAX_DEPEG_BPS : maxDepegBps[stable];
@@ -129,17 +136,28 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
         uint256 fee = getFee(stable, amount);
         uint256 amountAfterFee = amount - fee;
 
+        // SECURITY FIX: Normalize decimals between stable and kUSD
+        // If stable is 6 decimals (USDC/USDT) and kUSD is 18 decimals, we must scale up
+        uint8 stableDecimals = IERC20Metadata(stable).decimals();
+        uint8 kusdDecimals = IERC20Metadata(address(kUSD)).decimals();
+        uint256 normalizedAmountAfterFee;
+        if (stableDecimals <= kusdDecimals) {
+            normalizedAmountAfterFee = amountAfterFee * (10 ** (kusdDecimals - stableDecimals));
+        } else {
+            normalizedAmountAfterFee = amountAfterFee / (10 ** (stableDecimals - kusdDecimals));
+        }
+
         currentExposure[stable] += amount;
         IERC20(stable).safeTransferFrom(msg.sender, address(this), amount);
         
         if (mintingEnabled) {
-            // Attempt to mint kUSD if enabled
+            // Attempt to mint kUSD if enabled (use normalized amount)
             (bool success, ) = address(kUSD).call(
-                abi.encodeWithSignature("mint(address,uint256)", msg.sender, amountAfterFee)
+                abi.encodeWithSignature("mint(address,uint256)", msg.sender, normalizedAmountAfterFee)
             );
             require(success, "kUSD minting failed");
         } else {
-            kUSD.safeTransfer(msg.sender, amountAfterFee);
+            kUSD.safeTransfer(msg.sender, normalizedAmountAfterFee);
         }
 
         emit Swap(msg.sender, stable, address(kUSD), amount, fee);
@@ -158,10 +176,21 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
         uint256 fee = getFee(stable, amount);
         uint256 amountAfterFee = amount - fee;
 
+        // SECURITY FIX: Normalize decimals from kUSD to stable
+        // If kUSD is 18 decimals and stable is 6 decimals (USDC/USDT), we must scale down
+        uint8 stableDecimals = IERC20Metadata(stable).decimals();
+        uint8 kusdDecimals = IERC20Metadata(address(kUSD)).decimals();
+        uint256 normalizedAmountAfterFee;
+        if (kusdDecimals >= stableDecimals) {
+            normalizedAmountAfterFee = amountAfterFee / (10 ** (kusdDecimals - stableDecimals));
+        } else {
+            normalizedAmountAfterFee = amountAfterFee * (10 ** (stableDecimals - kusdDecimals));
+        }
+
         uint256 psmBalance = IERC20(stable).balanceOf(address(this));
         
-        if (psmBalance < amountAfterFee && insuranceFund != address(0)) {
-            uint256 deficit = amountAfterFee - psmBalance;
+        if (psmBalance < normalizedAmountAfterFee && insuranceFund != address(0)) {
+            uint256 deficit = normalizedAmountAfterFee - psmBalance;
             
             // SECURITY: Rate limit insurance fund draws to prevent drain attacks
             if (block.timestamp >= lastInsuranceDrawTimestamp + insuranceDrawCooldown) {
@@ -187,7 +216,7 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
             }
         }
 
-        require(psmBalance >= amountAfterFee, "Insufficient stable reserves (Peg Defense Failed)");
+        require(psmBalance >= normalizedAmountAfterFee, "Insufficient stable reserves (Peg Defense Failed)");
 
 
         if (currentExposure[stable] >= amount) {
@@ -197,7 +226,7 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
         }
 
         kUSD.safeTransferFrom(msg.sender, address(this), amount);
-        IERC20(stable).safeTransfer(msg.sender, amountAfterFee);
+        IERC20(stable).safeTransfer(msg.sender, normalizedAmountAfterFee);
 
         emit Swap(msg.sender, address(kUSD), stable, amount, fee);
         emit ExposureUpdated(stable, currentExposure[stable]);
