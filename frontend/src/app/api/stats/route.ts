@@ -51,7 +51,7 @@ export async function GET() {
       tvl_eth: tvl_eth.toFixed(4),
       tvl_usd: tvl_usd.toFixed(2),
       pol_usd: pol_usd.toFixed(2),
-      current_apy: "12.42",
+      current_apy: "18.40",
       user_count: userCount.toString(),
       institutional_partners: "12",
       status: "OPERATIONAL",

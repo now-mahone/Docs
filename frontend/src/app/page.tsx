@@ -94,7 +94,7 @@ export default function LandingPage() {
       } catch (e) {
         console.error("Failed to fetch live APY", e);
         // Sensible fallbacks if API fails
-        setLiveApy(20.4);
+        setLiveApy(18.4);
         setStakingYield(3.2);
         setFundingRate(0.034);
       } finally {
@@ -118,7 +118,7 @@ export default function LandingPage() {
     }
   }, [loading, liveApy, frozenApy]);
 
-  const displayApy = frozenApy !== null ? frozenApy : (liveApy !== null ? liveApy : 20.4);
+  const displayApy = frozenApy !== null ? frozenApy : (liveApy !== null ? liveApy : 18.4);
   const effectiveEthPrice = ethPrice || 3150;
   const yearlyCalculationUSD = Math.round(calculatorAmount * effectiveEthPrice * (displayApy / 100));
   const monthlyCalculationUSD = Math.round(yearlyCalculationUSD / 12);

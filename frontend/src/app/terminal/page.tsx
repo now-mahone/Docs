@@ -23,7 +23,7 @@ export default function TerminalPage() {
     const fetchData = async () => {
       try {
         const [apyRes, solvencyRes, ethRes] = await Promise.all([
-          fetch('/api/apy').then(r => r.json()).catch(() => ({ apy: 20.40 })),
+          fetch('/api/apy').then(r => r.json()).catch(() => ({ apy: 18.40 })),
           fetch('/api/solvency').then(r => r.json()).catch(() => ({ solvency_ratio: 142 })),
           fetch('/api/eth-history').then(r => r.json()).catch(() => ({ success: false, data: [] }))
         ]);
@@ -60,7 +60,7 @@ export default function TerminalPage() {
 
   const chartData = useMemo(() => {
     const data = [];
-    const avgApy = apyData?.apy || 20.40;
+    const avgApy = apyData?.apy || 18.40;
     
     // Use last 90 days from historical ETH if available, otherwise fallback
     const daysToGenerate = 90;
@@ -166,7 +166,7 @@ export default function TerminalPage() {
   }, [comparisonData]);
 
   const cards = [
-    { label: 'APY%', value: (apyData?.apy || 20.40).toFixed(2) + '%', icon: Percent, color: '#37d097' },
+    { label: 'APY%', value: (apyData?.apy || 18.40).toFixed(2) + '%', icon: Percent, color: '#37d097' },
     { label: 'Solvency Ratio', value: solvencyData?.solvency_ratio ? (parseFloat(solvencyData.solvency_ratio)/100).toFixed(2) + 'x' : '1.42x', icon: Scale, color: '#37d097' },
     { label: 'kUSD Price', value: '$1.000' + (Math.floor(Math.random() * 9) + 1), icon: DollarSign, color: '#37d097' },
     { label: 'Cooldown Period', value: 'Instant', icon: Hourglass, color: '#ffffff' },
@@ -315,7 +315,7 @@ export default function TerminalPage() {
                         <span className="text-xs font-medium text-[#aab9be]">Net APY</span>
                       </div>
                       <span className="text-xs font-bold text-[#37d097] whitespace-nowrap">
-                        {(apyData?.apy || 20.40).toFixed(2)}%
+                        {(apyData?.apy || 18.40).toFixed(2)}%
                       </span>
                     </div>
                   </div>

@@ -113,7 +113,7 @@ export default function KerneLive() {
               </div>
               <div className="flex justify-between items-center text-xs font-medium">
                 <span className="text-zinc-500 uppercase tracking-tighter">Total APY</span>
-                <span className="text-[#000000] font-bold">14.2%</span>
+                <span className="text-[#000000] font-bold">18.4%</span>
               </div>
               <div className="flex justify-between items-center text-xs font-medium">
                 <span className="text-zinc-500 uppercase tracking-tighter">Bonus Distributed</span>

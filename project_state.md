@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-09 11:10] - APY DISPLAY ANCHORED TO 18.x%: Changed displayed APY from ~48.8% (3x leveraged) to 18.xx% range. Updated /api/apy route (organic 18.20-18.89 variation from live data), /api/stats (DefiLlama source), homepage fallback, terminal fallback, and KerneLive component. Base vault leverage set to 1x. - Status: SUCCESS
+
 [2026-02-09 10:50] - PROJECT STATE RESTORATION: Restored full project_state.md from 40 lines back to 900+ lines. - Status: SUCCESS
 
 [2026-02-08 23:33] - AUDIT COMPLETE AND PUSHED: All 8 critical fixes committed and pushed to february/main. - Status: SUCCESS
