@@ -426,13 +426,15 @@ export default function TerminalPage() {
               />
             </div>
             
-            <Link 
-              href="/documentation"
+            <a 
+              href="https://docs.kerne.ai"
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center gap-2 text-[#aab9be] hover:text-[#ffffff] transition-colors"
             >
               <BookOpenText size={16} />
               <span className="text-s font-medium">Documentation</span>
-            </Link>
+            </a>
           </div>
           
           <div className="pb-8">
