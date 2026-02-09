@@ -238,7 +238,7 @@ Same as DappRadar submission above. Emphasize:
 | # | Platform | Method | Status |
 |---|----------|--------|--------|
 | 1 | DappRadar | Web Form | [x] Submitted 2026-02-08 |
-| 2 | DeBank | Email | [ ] Ready to send |
+| 2 | DeBank | Email | [x] Submitted 2026-02-08 |
 | 3 | DeFi Safety | Web Form | [ ] Ready to submit |
 | 4 | Base Ecosystem | GitHub PR to base/web | [x] PR #2956 submitted 2026-02-08 |
 
@@ -255,6 +255,6 @@ After each submission:
 | Platform | Date Submitted | Status | Listed Date | Notes |
 |----------|---------------|--------|-------------|-------|
 | DappRadar | 2026-02-08 | Submitted — pending review (3-7 business days) | | Account: kerne.systems@protonmail.com |
-| DeBank | | | | |
+| DeBank | 2026-02-08 | Email sent to protocol-listing@debank.com (1-2 weeks) | | Via kerne.systems@protonmail.com |
 | DeFi Safety | | | | |
 | Base Ecosystem | 2026-02-08 | PR #2956 pending review | | https://github.com/base/web/pull/2956 |

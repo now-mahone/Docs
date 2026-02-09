@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-08 19:03] - DEBANK SUBMISSION COMPLETE: Sent protocol listing request email to protocol-listing@debank.com from kerne.systems@protonmail.com. Email includes full protocol details, contract addresses (Base + Arbitrum), chain IDs, and additional contracts (ZIN Pool, ZIN Executor, KERNE Token, kUSD OFT V2). Expected review: 1-2 weeks. This is the third aggregator submission today (DappRadar, Base Ecosystem, DeBank). - Status: SUBMITTED (PENDING REVIEW)
+
 [2026-02-08 17:29] - DAPPRADAR SUBMISSION COMPLETE: Submitted Kerne Protocol to DappRadar via web form at https://dappradar.com/dashboard/submit-dapp. Account created with kerne.systems@protonmail.com. Submitted with: DApp Name (Kerne Protocol), Website (https://kerne.ai), Category (DeFi/Yield), chains Base + Arbitrum One, contract addresses (Base: 0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC, Arbitrum: 0x503D930dF68a68cdFeb8DEa173ADD8DD377841FF), Twitter (@KerneProtocol), logo (512x512 square PNG), full description, and screenshots. Expected review: 3-7 business days. This is the second aggregator submission after Base Ecosystem Directory (PR #2956). - Status: SUBMITTED (PENDING REVIEW)
 
 [2026-02-08 16:21] - DAPPRADAR PROGRESS: User confirmed account creation on DappRadar. Manual submission of verified protocol data is underway. - Status: IN PROGRESS
