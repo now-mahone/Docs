@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-09 13:38] - BASE GRANT APPLICATION: Signed up to Paragraph (paragraph.xyz) using kerne.systems@protonmail.com to access Base Grants blog and submit grant application. Base Grant Submission guide created at `docs/grants/BASE_GRANT_SUBMISSION.md` with copy-paste ready application content. - Status: IN_PROGRESS
+
 [2026-02-09 13:10] - CI/CD FIX: Removed yield-server-official phantom submodule from git index (was registered as mode 160000 with no .gitmodules entry, breaking actions/checkout@v4). Added to .gitignore. Also added Base Grant Submission guide. Pushed to both february and vercel remotes. - Status: SUCCESS
 
 [2026-02-09 12:33] - DOCUMENTATION MIGRATION: Migrated all internal "documentation" and "litepaper" links to the new external GitBook instance at `https://docs.kerne.ai`. Removed the deprecated `/documentation` and `/litepaper` pages from the frontend to consolidate information and leverage the new static Markdown-based workflow. Updated links across Navbar, Footer, About page, and Terminal dashboard to open in a new tab. - Status: SUCCESS
