@@ -4,7 +4,6 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
-import { AccessGate } from "@/components/AccessGate";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -59,18 +58,16 @@ export default function RootLayout({
           forcedTheme="light"
           disableTransitionOnChange
         >
-          <AccessGate>
-            <Providers>
-              {children}
-              <Toaster 
-                theme="light" 
+          <Providers>
+            {children}
+            <Toaster 
+              theme="light" 
               position="bottom-right" 
               toastOptions={{
                 className: "font-sans uppercase text-xs tracking-widest border-[#000000]/10 bg-white text-[#000000]",
               }}
-              />
-            </Providers>
-          </AccessGate>
+            />
+          </Providers>
         </ThemeProvider>
       </body>
     </html>
