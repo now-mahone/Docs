@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-10 14:08] - Frontend: Implemented Palantir-style character typewriter animations for all H2 headings across the site. Created reusable `TypedHeading` Framer Motion component and applied it to all major pages (Home, About, Transparency, Institutional) and global shared components (KerneExplained, BacktestedPerformance, KerneLive, FAQ). Deployed to m-vercel. - Status: SUCCESS
+
 [2026-02-10 13:46] - Frontend: Updated site titles and Open Graph metadata. Main title now "Kerne - The future of onchain yield" with description "Building the most capital efficient delta neutral infrastructure in DeFi." Added title template "%s - Kerne" for automatic page title formatting. Individual pages (About, Terminal, Transparency, Institutional) are client components and will display templated titles. Deployed to m-vercel. - Status: SUCCESS
 
 [2026-02-10 13:34] - Frontend: Fixed Open Graph metadata domain - Changed from kerne.finance to kerne.ai and added metadataBase for proper URL resolution. Image URLs now use relative paths (/og-image.png) which resolve to https://kerne.ai/og-image.png. Deployed to m-vercel. NOTE: Social platforms cache OG images - may require cache clearing. - Status: SUCCESS

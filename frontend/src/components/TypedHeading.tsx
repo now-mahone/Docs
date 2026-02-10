@@ -30,11 +30,9 @@ export default function TypedHeading({ children, className = "", delay = 0 }: Ty
   const childVariants = {
     hidden: {
       opacity: 0,
-      display: 'none',
     },
     visible: {
       opacity: 1,
-      display: 'inline',
       transition: {
         duration: 0.05,
       },
