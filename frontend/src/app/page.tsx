@@ -9,6 +9,7 @@ import { ArrowRight, Shield, BarChart3, Landmark, Lock, Activity, Cpu, Database,
 import { motion, useScroll, useTransform, useMotionValue, useSpring, animate, useInView } from 'framer-motion';
 import Footer from '@/components/Footer';
 import Navbar from '@/components/Navbar';
+import TypedHeading from '@/components/TypedHeading';
 import BacktestedPerformance from '@/components/BacktestedPerformance';
 import KerneExplained from '@/components/KerneExplained';
 
@@ -257,9 +258,9 @@ export default function LandingPage() {
         <section className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
           <div className="max-w-7xl mx-auto px-6 md:px-12">
             <div className="flex flex-col items-center text-center mb-16">
-              <h2 className="font-heading font-medium tracking-tight text-[#000000] mb-8">
-                  Institutional Reliability
-              </h2>
+              <TypedHeading className="font-heading font-medium tracking-tight text-[#000000] mb-8">
+                Institutional Reliability
+              </TypedHeading>
               <p className="text-m text-[#000000] max-w-2xl font-medium">
                 Engineered for the most demanding capital allocators, Kerne combines absolute transparency with autonomous risk management.
               </p>
@@ -369,9 +370,9 @@ export default function LandingPage() {
         <section className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
           <div className="max-w-7xl mx-auto px-6 md:px-12">
             <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12 flex flex-col items-center text-center">
-              <h2 className="font-heading font-medium tracking-tight text-[#ffffff] mb-8">
+              <TypedHeading className="font-heading font-medium tracking-tight text-[#ffffff] mb-8">
                 Join the Genesis Epoch
-              </h2>
+              </TypedHeading>
               <p className="text-m text-[#d4dce1] max-w-2xl font-medium mb-12">
                 Early depositors secure the highest allocation of Quanta rewards credits. Your first deposit starts earning within 60 seconds. No lockups. No vesting. Withdraw anytime.
               </p>
