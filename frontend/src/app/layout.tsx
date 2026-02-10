@@ -13,6 +13,9 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: "KERNE | The Yield-Bearing Stablecoin Ecosystem",
   description: "Institutional grade delta neutral assets on Base. 100% Transparent. 100% On-Chain.",
+  icons: {
+    icon: "/favicon.svg",
+  },
   openGraph: {
     title: "KERNE | The Yield-Bearing Stablecoin Ecosystem",
     description: "Institutional grade delta neutral assets on Base. 100% Transparent. 100% On-Chain.",
