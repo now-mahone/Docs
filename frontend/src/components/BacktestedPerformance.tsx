@@ -4,6 +4,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import TypedHeading from './TypedHeading';
 
 interface HistoricalPrice {
   date: string;
@@ -210,9 +211,9 @@ export default function BacktestedPerformance() {
       <section className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           <div className="flex flex-col items-center text-center mb-16">
-            <h2 className="font-heading font-medium tracking-tight text-[#000000] mb-8">
+            <TypedHeading className="font-heading font-medium tracking-tight text-[#000000] mb-8">
               Backtested Performance
-            </h2>
+            </TypedHeading>
             <p className="text-[#000000] max-w-2xl font-medium">
               Loading historical data...
             </p>
@@ -227,9 +228,9 @@ export default function BacktestedPerformance() {
     <section className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
         <div className="flex flex-col items-center text-center mb-16">
-          <h2 className="font-heading font-medium tracking-tight text-[#000000] mb-8">
+          <TypedHeading className="font-heading font-medium tracking-tight text-[#000000] mb-8">
             Backtested Performance
-          </h2>
+          </TypedHeading>
           <p className="text-[#000000] max-w-2xl font-medium">
             Historical simulation showing Kerne's delta neutral strategy vs ETH buy-and-hold volatility. Using real Ethereum price data.
           </p>
