@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-10 13:25] - Frontend: Added Open Graph/Twitter preview image (og-image.png) for social media link sharing. Copied KWL.png from root to frontend/public/og-image.png and updated layout.tsx metadata to use new image for Open Graph and Twitter cards (1200x630). Deployed to m-vercel. - Status: SUCCESS
+
 [2026-02-09 18:13] - Frontend: Added favicon.svg to kerne.ai website. Copied kerne-favicon.svg from root to frontend/public/favicon.svg and updated layout.tsx metadata with icons configuration. Deployed to m-vercel remote for kerne.ai website. - Status: SUCCESS
 
 [2026-02-09 15:02] - Terminal: Updated footer documentation link from `docs.kerne.ai` to `documentation.kerne.ai` to match the correct domain. All documentation links across the website now point to the unified documentation.kerne.ai domain. - Status: SUCCESS

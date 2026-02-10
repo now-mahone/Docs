@@ -16,16 +16,18 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.svg",
   },
+  metadataBase: new URL("https://kerne.ai"),
   openGraph: {
     title: "KERNE | The Yield-Bearing Stablecoin Ecosystem",
     description: "Institutional grade delta neutral assets on Base. 100% Transparent. 100% On-Chain.",
-    url: "https://kerne.finance",
+    url: "https://kerne.ai",
     siteName: "Kerne Protocol",
     images: [
       {
-        url: "https://kerne.finance/og-image.png",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
+        alt: "KERNE Protocol",
       },
     ],
     locale: "en_US",
@@ -36,7 +38,7 @@ export const metadata: Metadata = {
     title: "KERNE | The Yield-Bearing Stablecoin Ecosystem",
     description: "Institutional grade delta neutral assets on Base. 100% Transparent. 100% On-Chain.",
     creator: "@KerneProtocol",
-    images: ["https://kerne.finance/og-image.png"],
+    images: ["/og-image.png"],
   },
 };
 
