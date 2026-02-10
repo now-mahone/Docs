@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-09 18:13] - Frontend: Added favicon.svg to kerne.ai website. Copied kerne-favicon.svg from root to frontend/public/favicon.svg and updated layout.tsx metadata with icons configuration. Deployed to m-vercel remote for kerne.ai website. - Status: SUCCESS
+
 [2026-02-09 15:02] - Terminal: Updated footer documentation link from `docs.kerne.ai` to `documentation.kerne.ai` to match the correct domain. All documentation links across the website now point to the unified documentation.kerne.ai domain. - Status: SUCCESS
 
 [2026-02-09 14:42] - Frontend: Removed password gate (AccessGate component) from website. Deleted `AccessGate.tsx` component and `/access` page. Updated `layout.tsx` to remove authentication wrapper. Terminal and all pages now publicly accessible without access code. - Status: SUCCESS
