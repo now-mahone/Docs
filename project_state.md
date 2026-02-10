@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-10 13:34] - Frontend: Fixed Open Graph metadata domain - Changed from kerne.finance to kerne.ai and added metadataBase for proper URL resolution. Image URLs now use relative paths (/og-image.png) which resolve to https://kerne.ai/og-image.png. Deployed to m-vercel. NOTE: Social platforms cache OG images - may require cache clearing. - Status: SUCCESS
+
 [2026-02-10 13:25] - Frontend: Added Open Graph/Twitter preview image (og-image.png) for social media link sharing. Copied KWL.png from root to frontend/public/og-image.png and updated layout.tsx metadata to use new image for Open Graph and Twitter cards (1200x630). Deployed to m-vercel. - Status: SUCCESS
 
 [2026-02-09 18:13] - Frontend: Added favicon.svg to kerne.ai website. Copied kerne-favicon.svg from root to frontend/public/favicon.svg and updated layout.tsx metadata with icons configuration. Deployed to m-vercel remote for kerne.ai website. - Status: SUCCESS
