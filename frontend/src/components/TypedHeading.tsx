@@ -21,7 +21,7 @@ export default function TypedHeading({ children, className = "", delay = 0 }: Ty
     visible: {
       opacity: 1,
       transition: { 
-        staggerChildren: 0.03, 
+        staggerChildren: 0.02, 
         delayChildren: delay
       },
     },
@@ -34,7 +34,7 @@ export default function TypedHeading({ children, className = "", delay = 0 }: Ty
     visible: {
       opacity: 1,
       transition: {
-        duration: 0.05,
+        duration: 0.03,
       },
     },
   };
