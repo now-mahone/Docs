@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-10 20:44] - Frontend: Adjusted hero APY animation timing - reduced stagger from 0.08s to 0.05s for a faster, more responsive feel while maintaining the deliberate typewriter effect. Deployed to m-vercel. - Status: SUCCESS
+
 [2026-02-10 20:40] - Frontend: Fixed layout shift in hero APY animation by adding invisible placeholder (`opacity-0`) while data loads. Prevents content jumping during page load by maintaining the space before animation begins. Deployed to m-vercel. - Status: SUCCESS
 
 [2026-02-10 20:35] - Frontend: Refined hero APY typed animation with slower, more deliberate timing (stagger 0.08s, duration 0.1s). Removed placeholder text so nothing displays until the animation begins, creating a cleaner reveal effect. `TypedText` component now accepts custom timing parameters for flexibility. Deployed to m-vercel. - Status: SUCCESS
