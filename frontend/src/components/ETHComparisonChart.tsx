@@ -49,7 +49,7 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
           margin={{
             top: 10,
             right: 10,
-            left: 0,
+            left: -25,
             bottom: 20,
           }}
         >
@@ -103,7 +103,7 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
               return (
                 <g transform={`translate(${x},${y})`}>
                   <text 
-                    x={15}
+                    x={5}
                     y={0} 
                     dy={4} 
                     textAnchor="start"
