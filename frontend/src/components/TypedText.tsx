@@ -13,9 +13,6 @@ interface TypedTextProps {
 }
 
 export default function TypedText({ children, className = "", delay = 0, staggerSpeed = 0.02, charDuration = 0.03 }: TypedTextProps) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.5 });
-
   const characters = Array.from(children);
 
   const containerVariants = {
@@ -43,11 +40,10 @@ export default function TypedText({ children, className = "", delay = 0, stagger
 
   return (
     <motion.span
-      ref={ref}
       className={className}
       variants={containerVariants}
       initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
+      animate="visible"
     >
       {characters.map((char, index) => (
         <motion.span key={index} variants={childVariants}>
