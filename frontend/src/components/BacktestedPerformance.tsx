@@ -206,17 +206,8 @@ export default function BacktestedPerformance() {
 
   const metrics = calculateMetrics(historicalData, historicalEth);
 
-  if (loading) {
-    return (
-      <div className="w-full h-[600px] md:h-[750px] rounded-sm bg-[#000000] p-8 md:p-12 flex items-center justify-center">
-        <p className="text-[#ffffff] font-medium text-center">Loading historical data...</p>
-      </div>
-    );
-  }
-
-
   return (
-    <div className="w-full h-[600px] md:h-[750px] rounded-sm bg-[#000000] p-8 md:p-12 flex flex-col">
+    <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12">
       <div className="mb-8">
         <h3 className="font-heading font-medium tracking-tight text-[#ffffff] leading-tight mb-2 text-left">
           Historical performance comparison
@@ -226,6 +217,12 @@ export default function BacktestedPerformance() {
         </p>
       </div>
 
+      {loading ? (
+        <div className="w-full h-[300px] md:h-[400px] flex items-center justify-center">
+          <p className="text-[#ffffff] font-medium text-center">Loading historical data...</p>
+        </div>
+      ) : (
+        <>
           {/* Recharts Line Chart */}
           <div className="w-full h-[300px] md:h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -308,12 +305,14 @@ export default function BacktestedPerformance() {
             </div>
           </div>
 
-      {/* Disclaimer */}
-      <div className="mt-auto pt-8 text-left">
-        <p className="text-xs text-[#444a4f] font-medium leading-relaxed">
-          Historical simulation based on Ethereum price data{historicalEth.length > 0 && historicalEth[0].date !== FALLBACK_ETH_PRICES[0].date ? ' from CoinGecko' : ''}. Past performance is not indicative of future results. This chart represents a backtested model based on historical funding rates and does not guarantee actual returns. Cryptocurrency investments involve substantial risk of loss.
-        </p>
-      </div>
+          {/* Disclaimer */}
+          <div className="mt-8 text-left">
+            <p className="text-xs text-[#444a4f] font-medium leading-relaxed">
+              Historical simulation based on Ethereum price data{historicalEth.length > 0 && historicalEth[0].date !== FALLBACK_ETH_PRICES[0].date ? ' from CoinGecko' : ''}. Past performance is not indicative of future results. This chart represents a backtested model based on historical funding rates and does not guarantee actual returns. Cryptocurrency investments involve substantial risk of loss.
+            </p>
+          </div>
+        </>
+      )}
     </div>
   );
 }
