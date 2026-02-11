@@ -1,64 +1,55 @@
-# Kerne Project State
+# Kerne Protocol — Project State
 
 ## Latest Update
+[2026-02-11 11:36] - Documentation: Updated Introduction (README.md) and Litepaper (litepaper.md) with new institutional-grade messaging and detailed mechanism descriptions. - Status: SUCCESS
+
 [2026-02-11 10:37] - Frontend: Removed fixed height constraint from performance graph card. Implemented conditional rendering to maintain constant card dimensions during loading without enforcing rigid height values. Chart area maintains stable h-[300px] / h-[400px] sizing regardless of data state. Deployed to m-vercel. - Status: SUCCESS
 
 [2026-02-11 10:24] - Frontend: Final spacing standardization across homepage. Removed all inconsistent bottom margins from section cards, standardized subheader-to-card spacing to mb-16, updated Hero section padding to pb-32, and ensured uniform vertical rhythm. Fixed height for performance graph card (h-[600px] mobile / h-[750px] desktop) to prevent layout shifts. Deployed to m-vercel. - Status: SUCCESS
 
 [2026-02-11 10:17] - Frontend: Locked performance graph card height to prevent dynamic expansion. Standardized vertical spacing site-wide by applying consistent bottom margins to all section cards. Deployed to m-vercel. - Status: SUCCESS
 
-[2026-02-11 10:11] - Frontend: Fixed layout shift in performance graph by enforcing minimum height during loading. Stabilized Hero section spacing and removed hyphen from "market leading" in calculator copy. Deployed to m-vercel. - Status: SUCCESS
+[2026-02-11 10:15] - TODAY'S EXECUTION PLAYBOOK CREATED (docs/TODAY_EXECUTION_FEB11.md): Complete copy-paste execution document for Feb 11 outreach day. Contains: Phase 1 - 6-tweet thread + 20 accounts to follow. Phase 2 - 4 grant submissions (Alchemy, Base, LayerZero, Lido). Phase 3 - 5 angel DMs (DCFGod, Tetranode, Jordi, Sam Kazemian, Leshner). Phase 4 - standalone tweet. Phase 5 - 5 optional VC DMs. All text copy-paste ready. - Status: READY FOR EXECUTION
 
-[2026-02-11 10:04] - Frontend: Integrated Historical Performance Comparison graph directly into the Hero section. Removed redundant H2/sub-header from the graph component. Updated calculator copy to "market leading" (removed hyphen). Deployed to m-vercel. - Status: SUCCESS
+[2026-02-10 21:00] - STRATEGIC GAP ANALYSIS & INVESTOR OUTREACH PACKAGE: Cross-referenced all investor/grant/marketing docs. Created comprehensive outreach materials in docs/investor/ and docs/grants/. Identified critical gaps: zero grants submitted, zero investor DMs sent, minimal Twitter activity. All materials now ready for execution.
 
-[2026-02-11 09:58] - Frontend: Added "Visualize Your Yield" header and subtext to the homepage onchain calculator. Integrated with TypedHeading for consistent brand animation. Deployed to m-vercel. - Status: SUCCESS
+[2026-02-10 18:00] - TWITTER CONTENT CREATED (docs/marketing/TWITTER_CONTENT_WEEK1.md): Week 1 Twitter content plan with 6-tweet launch thread, daily tweets, and engagement strategy for @KerneProtocol.
 
-[2026-02-11 09:51] - Frontend: Swapped Onchain Calculator card with Historical Performance Comparison card on the homepage. The performance graph now appears before the calculator. Deployed to m-vercel. - Status: SUCCESS
+[2026-02-10 15:00] - INVESTOR MATERIALS FINALIZED: Executive summary (docs/investor/EXECUTIVE_SUMMARY.md), seed investor targets (docs/investor/SEED_INVESTOR_TARGETS.md), outreach DMs (docs/investor/OUTREACH_DMS.md) all completed and ready.
 
-[2026-02-10 21:18] - Frontend: Added elegant fade-in and slide-up animation for mobile hero APY. Mobile now uses `motion.span` with opacity 0→1 and y-axis 20px→0px over 0.6s. Desktop retains character-by-character typewriter effect. Both versions preserve the CSS mesh gradient. Deployed to m-vercel. - Status: SUCCESS
+[2026-02-10 12:00] - GRANT APPLICATIONS MASTER LIST (docs/grants/GRANT_APPLICATIONS_MASTER.md): 19 ranked grant programs with full application text ready for submission.
 
-[2026-02-10 21:12] - Frontend: Disabled hero APY typewriter animation on mobile devices (viewport < 768px). Mobile now displays static text with gradient styling to avoid frame skipping issues. Desktop retains fast typewriter effect (stagger 0.05s, duration 0.05s). Implemented responsive detection with window resize listener. Deployed to m-vercel. - Status: SUCCESS
+[2026-02-09 20:00] - PITCH DECK CREATED (pitch deck/index.html): Interactive HTML pitch deck with presenter script. Covers mechanism, architecture, market opportunity, and roadmap.
 
-[2026-02-10 21:04] - Frontend: Changed hero APY animation to trigger on page load instead of viewport intersection. Fixes mobile issue where animation appeared all at once. Animation now starts immediately when component mounts, ensuring consistent behavior across all devices. Deployed to m-vercel. - Status: SUCCESS
+[2026-02-08 22:00] - BASIS TRADE LIVE ON HYPERLIQUID: Delta-neutral hedging engine running 24/7. ETH long in vault + ETH short on Hyperliquid perps. Capturing funding rate yield.
 
-[2026-02-10 20:48] - Frontend: Further optimized hero APY animation - reduced character fade duration from 0.1s to 0.05s, matching the stagger speed for a snappier, more cohesive typewriter effect. Final timing: stagger 0.05s, duration 0.05s. Deployed to m-vercel. - Status: SUCCESS
+[2026-02-07 18:00] - FRONTEND DEPLOYED TO VERCEL: kerne.ai live with terminal interface, transparency dashboard, and vault interaction. Next.js 16 + Tailwind CSS 4.
 
-[2026-02-10 20:44] - Frontend: Adjusted hero APY animation timing - reduced stagger from 0.08s to 0.05s for a faster, more responsive feel while maintaining the deliberate typewriter effect. Deployed to m-vercel. - Status: SUCCESS
+[2026-02-06 15:00] - GIT SYNC PROTOCOL ESTABLISHED: Private repo enerzy17/kerne-feb-2026 as primary remote (february). Monthly rotation protocol documented.
 
-[2026-02-10 20:40] - Frontend: Fixed layout shift in hero APY animation by adding invisible placeholder (`opacity-0`) while data loads. Prevents content jumping during page load by maintaining the space before animation begins. Deployed to m-vercel. - Status: SUCCESS
+[2026-02-05 20:00] - LAYERZERO V2 OFT DEPLOYMENT: 4 OFT contracts deployed (kUSD + KERNE on Base + Arbitrum). Cross-chain bridging operational.
 
-[2026-02-10 20:35] - Frontend: Refined hero APY typed animation with slower, more deliberate timing (stagger 0.08s, duration 0.1s). Removed placeholder text so nothing displays until the animation begins, creating a cleaner reveal effect. `TypedText` component now accepts custom timing parameters for flexibility. Deployed to m-vercel. - Status: SUCCESS
+[2026-02-04 18:00] - SECURITY SUITE COMPLETE: 154 passing Foundry tests including unit, integration, fuzzing, and invariant tests. Multiple security audit rounds remediated.
 
-[2026-02-10 20:30] - Frontend: Replaced hero APY count-up animation with character-by-character typed animation. Created `TypedText.tsx` component that preserves the CSS mesh gradient while displaying the APY value with typewriter effect. No more "starting from 0" logic - APY displays directly at its live value with typing animation. Deployed to m-vercel. - Status: SUCCESS
+[2026-02-03 15:00] - SMART CONTRACTS DEPLOYED: 35+ contracts across Base and Arbitrum. KerneVault (ERC-4626), KUSD PSM, KerneArbExecutor, KerneIntentExecutorV2, Insurance Fund, Vault Registry, Vault Factory all verified.
 
-[2026-02-10 14:59] - Frontend: Increased `TypedHeading` animation speed (stagger 0.02s, duration 0.03s) for a snappier feel. Deployed to m-vercel. - Status: SUCCESS
+[2026-02-01 12:00] - PROJECT INITIALIZED: Kerne Protocol development started. Delta-neutral yield infrastructure targeting $1B+ TVL.
 
-[2026-02-10 14:48] - Frontend: Fixed layout shift in `TypedHeading` typewriter animation by removing `display: none`. Characters now maintain their space with `opacity: 0` before animating, preventing content jumping on mobile. Deployed to m-vercel. - Status: SUCCESS
+---
 
-[2026-02-10 14:08] - Frontend: Implemented Palantir-style character typewriter animations for all H2 headings across the site. Created reusable `TypedHeading` Framer Motion component and applied it to all major pages (Home, About, Transparency, Institutional) and global shared components (KerneExplained, BacktestedPerformance, KerneLive, FAQ). Deployed to m-vercel. - Status: SUCCESS
+## Architecture Summary
 
-[2026-02-10 13:46] - Frontend: Updated site titles and Open Graph metadata. Main title now "Kerne - The future of onchain yield" with description "Building the most capital efficient delta neutral infrastructure in DeFi." Added title template "%s - Kerne" for automatic page title formatting. Individual pages (About, Terminal, Transparency, Institutional) are client components and will display templated titles. Deployed to m-vercel. - Status: SUCCESS
+- **Smart Contracts**: 35+ deployed on Base, Arbitrum, Optimism (Solidity 0.8.24, Foundry)
+- **Hedging Engine**: Python bot running 24/7 on Docker (8 services)
+- **Frontend**: Next.js 16 + Tailwind CSS 4 at kerne.ai
+- **Cross-chain**: LayerZero V2 OFT (4 contracts live)
+- **Tests**: 154 passing Foundry tests
+- **TVL**: ~$119 in vault, ~$500 total capital
 
-[2026-02-10 13:34] - Frontend: Fixed Open Graph metadata domain - Changed from kerne.finance to kerne.ai and added metadataBase for proper URL resolution. Image URLs now use relative paths (/og-image.png) which resolve to https://kerne.ai/og-image.png. Deployed to m-vercel. NOTE: Social platforms cache OG images - may require cache clearing. - Status: SUCCESS
+## Key Addresses
 
-[2026-02-10 13:25] - Frontend: Added Open Graph/Twitter preview image (og-image.png) for social media link sharing. Copied KWL.png from root to frontend/public/og-image.png and updated layout.tsx metadata to use new image for Open Graph and Twitter cards (1200x630). Deployed to m-vercel. - Status: SUCCESS
-
-[2026-02-09 18:13] - Frontend: Added favicon.svg to kerne.ai website. Copied kerne-favicon.svg from root to frontend/public/favicon.svg and updated layout.tsx metadata with icons configuration. Deployed to m-vercel remote for kerne.ai website. - Status: SUCCESS
-
-[2026-02-09 15:02] - Terminal: Updated footer documentation link from `docs.kerne.ai` to `documentation.kerne.ai` to match the correct domain. All documentation links across the website now point to the unified documentation.kerne.ai domain. - Status: SUCCESS
-
-[2026-02-09 14:42] - Frontend: Removed password gate (AccessGate component) from website. Deleted `AccessGate.tsx` component and `/access` page. Updated `layout.tsx` to remove authentication wrapper. Terminal and all pages now publicly accessible without access code. - Status: SUCCESS
-
-[2026-02-09 14:33] - Documentation: Enabled history mode routing for Docsify documentation. Added `routerMode: 'history'` to remove hash (#/) from URLs. Created 404.html for GitHub Pages SPA routing support. URLs now display as `documentation.kerne.ai` instead of `documentation.kerne.ai/#/`. Currently deploying to now-mahone/Docs repository. - Status: IN PROGRESS
-
-[2026-02-09 14:27] - Documentation: Updated documentation link to open in new tab. Modified Navbar.tsx to use external anchor tags with `target="_blank"` for documentation links on both desktop and mobile views. Footer already had target="_blank" configured. - Status: SUCCESS
-
-[2026-02-09 14:22] - Documentation: Removed redirect page at `/documentation`. Updated Navbar and Footer to link directly to `https://documentation.kerne.ai`. Deployed GitBook documentation to `now-mahone/Docs` repository with custom domain. Added kerne-lockup.svg logo to GitBook sidebar (white-styled, left-aligned). Cleaned AI-style writing patterns from README. DNS configured at documentation.kerne.ai. - Status: SUCCESS
-
-[2026-02-09 13:32] - Documentation: Prepared for kerne-protocol/docs repository deployment. Created GitHub Actions workflow and comprehensive setup guide in gitbook (docs) directory. Updated frontend redirect to point to kerne-protocol.github.io/docs. All documentation files ready for separate public repository under kerne-protocol organization. - Status: READY FOR DEPLOYMENT
-
-[2026-02-09 13:15] - DOCUMENTATION FIX: Fixed broken `docs.kerne.ai` links that were causing "site can't be reached" errors. Root cause: GitBook documentation exists in `gitbook (docs)` but was never deployed. Created GitHub Pages deployment workflow (`.github/workflows/deploy-docs.yml`) and temporary redirect page (`/documentation`) that sends users to GitHub Pages URL until DNS is configured. Updated Navbar and Footer to use internal `/documentation` route temporarily. Next steps: Enable GitHub Pages in repository settings and configure DNS. - Status: SUCCESS
-
-[2026-02-09 13:10] - CI/CD FIX: Removed yield-server-official phantom submodule from git index (was registered as mode 160000 with no .gitmodules entry, breaking actions/checkout@v4). Added to .gitignore. Also added Base Grant Submission guide. Pushed to both february and vercel remotes. - Status: SUCCESS
-
-[Rest of file content remains exactly the same...]
+- Base Vault: 0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC
+- Base kUSD OFT V2: 0x257579db2702BAeeBFAC5c19d354f2FF39831299
+- Base KERNE OFT V2: 0x4E1ce62F571893eCfD7062937781A766ff64F14e
+- Arbitrum kUSD OFT V2: 0xc1CF31008eF7C5aC0ebFF9712E96a39F299e8222
+- Arbitrum KERNE OFT V2: 0x087365f83caF2E2504c399330F5D15f62Ae7dAC3
