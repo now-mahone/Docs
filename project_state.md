@@ -1,6 +1,8 @@
 # Kerne Protocol — Project State
 
 ## Latest Update
+[2026-02-11 13:52] - Documentation: Updated Introduction (README.md) and Litepaper (litepaper.md) with revised institutional-grade content. Removed all AI-like hyphenation patterns (onchain not on-chain, noncustodial not non-custodial, subsecond not sub-second, etc.). Updated messaging to focus on delta neutral infrastructure, recursive leverage, and proof of solvency. - Status: SUCCESS
+
 [2026-02-11 11:36] - Documentation: Updated Introduction (README.md) and Litepaper (litepaper.md) with new institutional-grade messaging and detailed mechanism descriptions. - Status: SUCCESS
 
 [2026-02-11 10:37] - Frontend: Removed fixed height constraint from performance graph card. Implemented conditional rendering to maintain constant card dimensions during loading without enforcing rigid height values. Chart area maintains stable h-[300px] / h-[400px] sizing regardless of data state. Deployed to m-vercel. - Status: SUCCESS
