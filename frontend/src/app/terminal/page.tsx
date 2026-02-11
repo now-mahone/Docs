@@ -23,18 +23,28 @@ export default function TerminalPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [apyRes, solvencyRes, ethRes] = await Promise.all([
+        // Fetch all data with longer timeout for eth-history
+        const [apyRes, solvencyRes] = await Promise.all([
           fetch('/api/apy').then(r => r.json()).catch(() => ({ apy: 18.40 })),
-          fetch('/api/solvency').then(r => r.json()).catch(() => ({ solvency_ratio: 142 })),
-          fetch('/api/eth-history').then(r => r.json()).catch(() => ({ success: false, data: [] }))
+          fetch('/api/solvency').then(r => r.json()).catch(() => ({ solvency_ratio: 142 }))
         ]);
         
         setApyData(apyRes);
         setSolvencyData(solvencyRes);
         
-        if (ethRes.success && ethRes.data && ethRes.data.length > 0) {
-          setHistoricalEth(ethRes.data);
-        } else {
+        // Fetch eth-history separately with longer timeout to ensure it completes
+        try {
+          const ethRes = await fetch('/api/eth-history', {
+            signal: AbortSignal.timeout(30000) // 30 second timeout
+          }).then(r => r.json());
+          
+          if (ethRes.success && ethRes.data && ethRes.data.length > 0) {
+            setHistoricalEth(ethRes.data);
+          } else {
+            throw new Error('No ETH history data returned');
+          }
+        } catch (ethError) {
+          console.warn('ETH history API failed, using fallback data:', ethError);
           // Fallback ETH history data (rolling 180 days to support 6M view)
           const fallback = [];
           const now = new Date();
