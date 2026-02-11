@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-10 21:08] - Frontend: Dramatically slowed hero APY animation timing for mobile compatibility (stagger 0.15s, duration 0.2s, delay 0.5s). Mobile devices may struggle with fast animations causing frame skipping. Much slower timing should allow proper frame rendering on all devices. Deployed to m-vercel. - Status: TESTING
+
 [2026-02-10 21:04] - Frontend: Changed hero APY animation to trigger on page load instead of viewport intersection. Fixes mobile issue where animation appeared all at once. Animation now starts immediately when component mounts, ensuring consistent behavior across all devices. Deployed to m-vercel. - Status: SUCCESS
 
 [2026-02-10 20:48] - Frontend: Further optimized hero APY animation - reduced character fade duration from 0.1s to 0.05s, matching the stagger speed for a snappier, more cohesive typewriter effect. Final timing: stagger 0.05s, duration 0.05s. Deployed to m-vercel. - Status: SUCCESS

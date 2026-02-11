@@ -113,12 +113,22 @@ export default function LandingPage() {
   const [calculatorAmount, setCalculatorAmount] = useState(10);
   // Freeze the APY once it's loaded to prevent mid-animation resets
   const [frozenApy, setFrozenApy] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     if (!loading && liveApy !== null && frozenApy === null) {
       setFrozenApy(liveApy);
     }
   }, [loading, liveApy, frozenApy]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const displayApy = frozenApy !== null ? frozenApy : (liveApy !== null ? liveApy : 18.4);
   const effectiveEthPrice = ethPrice || 3150;
@@ -142,14 +152,19 @@ export default function LandingPage() {
               The future of onchain yield.<br />
               Live at an APY of<br />
               {!loading && frozenApy !== null ? (
-                <TypedText 
-                  className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
-                  staggerSpeed={0.15}
-                  charDuration={0.2}
-                  delay={0.5}
-                >
-                  {`${frozenApy.toFixed(1)}%`}
-                </TypedText>
+                isMobile ? (
+                  <span className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh">
+                    {`${frozenApy.toFixed(1)}%`}
+                  </span>
+                ) : (
+                  <TypedText 
+                    className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
+                    staggerSpeed={0.05}
+                    charDuration={0.05}
+                  >
+                    {`${frozenApy.toFixed(1)}%`}
+                  </TypedText>
+                )
               ) : (
                 <span className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh opacity-0">
                   18.4%
