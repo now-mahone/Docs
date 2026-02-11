@@ -1,6 +1,8 @@
 # Kerne Protocol — Project State
 
 ## Latest Update
+[2026-02-11 14:04] - Documentation: Fixed sidebar navigation (_sidebar.md) to remove remaining hyphens from menu items (Delta Neutral not Delta-Neutral, Zero Fee not Zero-Fee, Meta Governance not Meta-Governance, Institutional Onramp not On-Ramp). - Status: SUCCESS
+
 [2026-02-11 13:52] - Documentation: Updated Introduction (README.md) and Litepaper (litepaper.md) with revised institutional-grade content. Removed all AI-like hyphenation patterns (onchain not on-chain, noncustodial not non-custodial, subsecond not sub-second, etc.). Updated messaging to focus on delta neutral infrastructure, recursive leverage, and proof of solvency. - Status: SUCCESS
 
 [2026-02-11 11:36] - Documentation: Updated Introduction (README.md) and Litepaper (litepaper.md) with new institutional-grade messaging and detailed mechanism descriptions. - Status: SUCCESS

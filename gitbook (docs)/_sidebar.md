@@ -4,9 +4,9 @@
 
 - **Core Mechanisms**
   - [Overview](mechanisms/README.md)
-  - [Delta-Neutral Hedging Engine](mechanisms/hedging.md)
+  - [Delta Neutral Hedging Engine](mechanisms/hedging.md)
   - [Leveraged Yield Loops](mechanisms/yield-loops.md)
-  - [Zero-Fee Intent Network (ZIN)](mechanisms/zin.md)
+  - [Zero Fee Intent Network (ZIN)](mechanisms/zin.md)
   - [Peg Stability Module (PSM)](mechanisms/psm.md)
 
 - **Tokenomics**
@@ -14,7 +14,7 @@
   - [KERNE Token](tokenomics/kerne-token.md)
   - [kUSD Synthetic Dollar](tokenomics/kusd.md)
   - [Points & Airdrop Strategy](tokenomics/airdrop.md)
-  - [Meta-Governance & Bribes](tokenomics/governance.md)
+  - [Meta Governance & Bribes](tokenomics/governance.md)
 
 - **Security & Transparency**
   - [Overview](security/README.md)
@@ -24,7 +24,7 @@
 
 - **Strategy & Roadmap**
   - [The Genesis Roadmap](roadmap.md)
-  - [Institutional On-Ramp](strategy/institutional-on-ramp.md)
+  - [Institutional Onramp](strategy/institutional-on-ramp.md)
   - [Regulatory Arbitrage](strategy/regulatory-arbitrage.md)
   - [The Narrative Cartel](strategy/narrative-cartel.md)
 
