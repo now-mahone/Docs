@@ -194,7 +194,16 @@ export default function LandingPage() {
 
         {/* Yield Calculator Section */}
         <section className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
-          <div className="max-w-7xl w-full mx-auto relative px-6 md:px-12">
+          <div className="max-w-7xl mx-auto px-6 md:px-12">
+            <div className="flex flex-col items-center text-center mb-16">
+              <TypedHeading className="font-heading font-medium tracking-tight text-[#000000] mb-8">
+                Visualize Your Yield
+              </TypedHeading>
+              <p className="text-m text-[#000000] max-w-2xl font-medium">
+                Adjust your position to see how Kerne's delta neutral strategy accelerates your capital through market-leading funding rates and native staking rewards.
+              </p>
+            </div>
+
             <div className="w-full rounded-sm bg-[#000000] p-8 md:p-16 relative shadow-none">
               {/* Two-column layout */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
