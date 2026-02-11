@@ -20,7 +20,7 @@ load_dotenv('bot/.env')
 # Addresses (Base Mainnet)
 USDC = Web3.to_checksum_address("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913")
 WETH = Web3.to_checksum_address("0x4200000000000000000000000000000000000006")
-VAULT = Web3.to_checksum_address("0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC")
+VAULT = Web3.to_checksum_address("0xDA9765F84208F8E94225889B2C9331DCe940fB20")
 DEPLOYER = Web3.to_checksum_address("0x57D400cED462a01Ed51a5De038F204Df49690A99")
 
 # Uniswap V3 SwapRouter02 on Base

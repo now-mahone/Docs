@@ -17,15 +17,29 @@ contract KerneVaultRegistry is Ownable {
 
     constructor() Ownable(msg.sender) {}
 
+    /// @notice Addresses authorized to register vaults (factory, admin)
+    mapping(address => bool) public authorizedRegistrars;
+
+    event RegistrarUpdated(address indexed registrar, bool authorized);
+
+    /**
+     * @notice Sets whether an address is authorized to register vaults.
+     * @dev SECURITY FIX: Prevents registry spam/poisoning with malicious fake vaults.
+     */
+    function setAuthorizedRegistrar(address registrar, bool authorized) external onlyOwner {
+        authorizedRegistrars[registrar] = authorized;
+        emit RegistrarUpdated(registrar, authorized);
+    }
+
     /**
      * @notice Registers a new vault in the system.
      * @param vault The address of the vault (ERC-4626).
      * @param asset The underlying asset of the vault.
      * @param metadata Additional metadata (e.g., IPFS hash of vault config).
+     * @dev SECURITY FIX: Restricted to owner or authorized registrars (e.g., VaultFactory).
      */
     function registerVault(address vault, address asset, string calldata metadata) external {
-        // In a production environment, we might restrict this to the Factory or Admin
-        // For the "Trojan Horse" strategy, we allow anyone to register if it meets our interface
+        require(msg.sender == owner() || authorizedRegistrars[msg.sender], "Not authorized to register");
         require(!isRegistered[vault], "Already registered");
         
         isRegistered[vault] = true;

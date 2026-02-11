@@ -108,7 +108,8 @@ contract KerneSolvencyHardeningTest is Test {
         bytes memory sig = _signAttestation(amount, delta, equity, ts);
         node.submitVerifiedAttestation(address(vault), amount, delta, equity, ts, sig);
 
-        // Call checkAndPause to start insolvency timer
+        // Call checkAndPause to start insolvency timer (requires PAUSER_ROLE)
+        vm.prank(admin);
         vault.checkAndPause();
         
         // Warp past grace period (4 hours)
@@ -133,7 +134,8 @@ contract KerneSolvencyHardeningTest is Test {
         bytes memory sig = _signAttestation(amount, delta, equity, ts);
         node.submitVerifiedAttestation(address(vault), amount, delta, equity, ts, sig);
 
-        // 2. Call checkAndPause once to record insolvency start
+        // 2. Call checkAndPause once to record insolvency start (requires PAUSER_ROLE)
+        vm.prank(admin);
         vault.checkAndPause();
         assertEq(vault.insolventSince(), block.timestamp);
         
@@ -143,6 +145,7 @@ contract KerneSolvencyHardeningTest is Test {
         // 4. Call checkAndPause again, should pause the vault
         // Note: checkAndPause calls _updateSolvency(false) which reverts if paused or grace period passed
         // But we want to check if it paused.
+        vm.prank(admin);
         try vault.checkAndPause() {} catch {}
 
         assertTrue(vault.paused());

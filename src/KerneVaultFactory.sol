@@ -75,24 +75,19 @@ contract KerneVaultFactory is Ownable {
 
         address clone = Clones.clone(implementation);
 
-        KerneVault(clone).initialize(
+        KerneVault(clone).initializeWithConfig(
             asset, 
             name, 
             symbol, 
-            admin, 
+            admin,
+            admin,  // strategist defaults to admin for factory-deployed vaults
             owner(), 
             config.protocolFounderFeeBps, 
             performanceFeeBps, 
-            whitelistEnabled || config.complianceRequired
+            whitelistEnabled || config.complianceRequired,
+            config.complianceHook,
+            config.maxTotalAssets
         );
-
-        if (config.complianceHook != address(0)) {
-            KerneVault(clone).setComplianceHook(config.complianceHook);
-        }
-
-        if (config.maxTotalAssets > 0) {
-            KerneVault(clone).setMaxTotalAssets(config.maxTotalAssets);
-        }
 
         allVaults.push(clone);
         vaultsByDeployer[msg.sender].push(clone);

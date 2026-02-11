@@ -143,7 +143,7 @@ CHAIN_CONFIGS = {
         "rpc_urls": os.getenv("RPC_URL", "https://base.llamarpc.com").split(","),
         "zin_pool": os.getenv("ZIN_POOL_ADDRESS", "0xB9BdF6F3Fc3819b61f6fE799bE1395501822d0c7"),
         "treasury": os.getenv("TREASURY_ADDRESS", "0x0067F4957dea17CF76665F6A6585F6a904362106"),
-        "vault": os.getenv("VAULT_ADDRESS", "0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC"),
+        "vault": os.getenv("VAULT_ADDRESS", "0xDA9765F84208F8E94225889B2C9331DCe940fB20"),
         "tokens": {
             "USDC": {"address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", "decimals": 6},
             "WETH": {"address": "0x4200000000000000000000000000000000000006", "decimals": 18},

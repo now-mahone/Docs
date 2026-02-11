@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Created: 2026-01-17
+// Updated: 2026-02-10 - Security Hardening: Function selector whitelist, flash loan amount validation
 pragma solidity 0.8.24;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -29,6 +30,18 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
     address public constant ONE_INCH_ROUTER = 0x111111125421cA6dc452d289314280a0f8842A65;
     address public constant UNISWAP_ROUTER = 0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD;
     address public constant AERODROME_ROUTER = 0xCf77A3bA9A5ca399B7c97c478569A74Dd55c726f;
+
+    /// @notice SECURITY: Approved flash loan lenders (only trusted internal contracts)
+    mapping(address => bool) public approvedLenders;
+
+    /// @notice SECURITY: Whitelisted call targets for aggregator swaps (prevents arbitrary call injection)
+    mapping(address => bool) public allowedTargets;
+
+    /// @notice SECURITY: Whitelisted function selectors per target (prevents arbitrary call injection)
+    mapping(address => mapping(bytes4 => bool)) public allowedSelectors;
+
+    /// @notice SECURITY: Maximum flash loan amount per intent execution
+    uint256 public maxIntentAmount = 1000 ether;
 
     // Sentinel V2 Parameters
     uint256 public maxLatency = 500; // 500ms
@@ -68,6 +81,10 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
     event SentinelParamUpdated(string param, uint256 newValue);
     event SentinelStatusToggled(bool active);
 
+    event ApprovedLenderUpdated(address indexed lender, bool approved);
+    event AllowedTargetUpdated(address indexed target, bool allowed);
+    event AllowedSelectorUpdated(address indexed target, bytes4 selector, bool allowed);
+
     constructor(address admin, address solver, address _profitVault) {
         require(_profitVault != address(0), "Profit vault cannot be zero");
         profitVault = _profitVault;
@@ -75,6 +92,61 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(SOLVER_ROLE, solver);
         _grantRole(SENTINEL_ROLE, admin);
+
+        // SECURITY: Pre-approve known safe aggregator targets
+        allowedTargets[ONE_INCH_ROUTER] = true;
+        allowedTargets[UNISWAP_ROUTER] = true;
+        allowedTargets[AERODROME_ROUTER] = true;
+    }
+
+    /**
+     * @notice Sets an address as an approved flash loan lender.
+     * @dev Only KerneVault and KUSDPSM should be approved lenders.
+     */
+    function setApprovedLender(address lender, bool approved) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(lender != address(0), "Invalid lender");
+        approvedLenders[lender] = approved;
+        emit ApprovedLenderUpdated(lender, approved);
+    }
+
+    /**
+     * @notice Sets an address as an allowed call target for aggregator swaps.
+     * @dev Only DEX routers/aggregators should be whitelisted.
+     */
+    function setAllowedTarget(address target, bool allowed) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(target != address(0), "Invalid target");
+        // SECURITY: Prevent whitelisting this contract or profit vault
+        require(target != address(this), "Cannot whitelist self");
+        require(target != profitVault, "Cannot whitelist profit vault");
+        allowedTargets[target] = allowed;
+        emit AllowedTargetUpdated(target, allowed);
+    }
+
+    /**
+     * @notice Sets allowed function selectors for a specific target.
+     * @dev SECURITY FIX: Prevents arbitrary call injection by restricting which functions can be called.
+     */
+    function setAllowedSelector(address target, bytes4 selector, bool allowed) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        allowedSelectors[target][selector] = allowed;
+        emit AllowedSelectorUpdated(target, selector, allowed);
+    }
+
+    /**
+     * @notice Batch sets allowed function selectors for a target.
+     */
+    function batchSetAllowedSelectors(address target, bytes4[] calldata selectors, bool allowed) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(selectors.length <= 20, "Too many selectors");
+        for (uint256 i = 0; i < selectors.length; i++) {
+            allowedSelectors[target][selectors[i]] = allowed;
+            emit AllowedSelectorUpdated(target, selectors[i], allowed);
+        }
+    }
+
+    /**
+     * @notice Sets the maximum flash loan amount per intent.
+     */
+    function setMaxIntentAmount(uint256 _maxAmount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        maxIntentAmount = _maxAmount;
     }
 
     /**
@@ -153,10 +225,24 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
         uint256 fee,
         bytes calldata data
     ) external override returns (bytes32) {
+        // SECURITY FIX: Authenticate both initiator AND lender (msg.sender)
         require(initiator == address(this), "Untrusted initiator");
+        require(approvedLenders[msg.sender], "Unapproved lender");
         
         (address tokenIn, uint256 amountOut, address user, address target, bytes memory aggregatorData, address solver, uint8 fulfillmentType) = 
             abi.decode(data, (address, uint256, address, address, bytes, address, uint8));
+
+        // SECURITY FIX: Validate target is a whitelisted aggregator/DEX router
+        require(allowedTargets[target], "Target not allowed");
+
+        // SECURITY FIX: Validate function selector is whitelisted for this target
+        if (aggregatorData.length >= 4) {
+            bytes4 selector = bytes4(aggregatorData);
+            require(allowedSelectors[target][selector], "Function selector not allowed");
+        }
+
+        // SECURITY: Validate flash loan amount bounds
+        require(amount <= maxIntentAmount, "Intent amount exceeds maximum");
 
         if (fulfillmentType == 0) {
             // Direct fulfillment: Send tokenOut to user at zero cost to them

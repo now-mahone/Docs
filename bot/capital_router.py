@@ -145,7 +145,7 @@ WALLETS: List[WalletConfig] = [
 
 # Protocol contracts to scan (Base)
 PROTOCOL_CONTRACTS_BASE = {
-    "KerneVault": "0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC",
+    "KerneVault": "0xDA9765F84208F8E94225889B2C9331DCe940fB20",
     "ZIN Pool (Base)": "0xB9BdF6F3Fc3819b61f6fE799bE1395501822d0c7",
     "Treasury": "0xB656440287f8A1112558D3df915b23326e9b89ec",
     "Insurance Fund": "0x3C93E231a3b74659ABfCA95dFf2eC9a8525b08B9",

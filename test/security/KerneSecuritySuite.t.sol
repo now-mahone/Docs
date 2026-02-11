@@ -31,6 +31,7 @@ contract KerneSecuritySuite is Test {
     address user = address(0x4);
 
     function setUp() public {
+        vm.warp(1000); // Advance past offChainUpdateCooldown (10 min = 600s)
         asset = new MockAsset();
 
         vault = new KerneVault(asset, "Kerne Vault", "kVault", admin, strategist, address(0x5));
@@ -235,7 +236,8 @@ contract KerneSecuritySuite is Test {
         vault.updateOffChainAssets(0); 
         vm.stopPrank();
 
-        // Call checkAndPause to start insolvency timer
+        // Call checkAndPause to start insolvency timer (requires PAUSER_ROLE)
+        vm.prank(admin);
         vault.checkAndPause();
         
         // Warp past grace period (4 hours)
