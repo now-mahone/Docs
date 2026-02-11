@@ -4,7 +4,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Zap, Shield, TrendingUp, DollarSign, Wallet2, Info, ChartArea, HandCoins, Percent, Scale, Hourglass, ChartLine, BookOpenText } from 'lucide-react';
+import { Zap, Shield, TrendingUp, DollarSign, Wallet2, Info, ChartArea, HandCoins, Percent, Scale, Hourglass, ChartLine, BookOpenText, HeartPulse } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { PerformanceChart } from '@/components/PerformanceChart';
 import { ETHComparisonChart } from '@/components/ETHComparisonChart';
@@ -254,61 +254,29 @@ export default function TerminalPage() {
                 <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide block mb-1">LIVE PROTOCOL STATUS</span>
                 <p className="text-xl font-heading font-medium text-[#ffffff]">Protocol Health</p>
               </div>
-              <Shield size={16} className="text-[#37d097] mt-1" />
+              <HeartPulse size={16} className="text-[#aab9be] mt-1" />
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
-                { label: 'Hedge Coverage', value: '100%', sub: 'Fully delta neutral', color: '#37d097' },
-                { label: 'Engine Uptime', value: '99.8%', sub: 'Since Feb 7, 2026', color: '#37d097' },
-                { label: 'Contracts Deployed', value: '35+', sub: 'Base + Arbitrum', color: '#ffffff' },
-                { label: 'Tests Passing', value: '154', sub: 'Unit, fuzz, invariant', color: '#ffffff' },
-                { label: 'Chains Active', value: '3', sub: 'Base, Arbitrum, Optimism', color: '#ffffff' },
-                { label: 'OFT Bridges Live', value: '4', sub: 'LayerZero V2', color: '#ffffff' },
+                { label: 'Hedge coverage', value: '100%', sub: 'Fully delta neutral' },
+                { label: 'Engine uptime', value: '99.8%', sub: 'Since Feb 7, 2026' },
+                { label: 'Contracts deployed', value: '35+', sub: 'Base + Arbitrum' },
+                { label: 'Tests passing', value: '154', sub: 'Unit, fuzz, invariant' },
+                { label: 'Chains active', value: '3', sub: 'Base, Arbitrum, Optimism' },
+                { label: 'OFT bridges live', value: '4', sub: 'LayerZero V2' },
+                { label: 'LST staking yield', value: 'Active', sub: 'cbETH + rETH' },
+                { label: 'Funding rate capture', value: 'Active', sub: 'Basis arbitrage' },
+                { label: 'Basis trade (Hyperliquid)', value: 'Active', sub: 'Delta neutral' },
               ].map((stat, i) => (
-                <div key={i} className="p-5 bg-[#16191c] border border-[#444a4f] rounded-sm">
-                  <span className="text-xs font-medium text-[#aab9be] block mb-2">{stat.label}</span>
-                  <p className="text-2xl font-heading font-medium" style={{ color: stat.color }}>{stat.value}</p>
-                  <span className="text-xs text-[#666b70] mt-1 block">{stat.sub}</span>
+                <div key={i} className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">{stat.label}</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">{stat.value}</div>
+                    <div className="text-s text-[#37d097] font-medium">{stat.sub}</div>
+                  </div>
                 </div>
               ))}
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="p-5 bg-[#16191c] border border-[#444a4f] rounded-sm">
-                <span className="text-xs font-medium text-[#aab9be] block mb-3">Yield Sources</span>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#aab9be]">LST Staking Yield</span>
-                    <span className="text-xs font-bold text-[#37d097]">Active</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#aab9be]">Funding Rate Capture</span>
-                    <span className="text-xs font-bold text-[#37d097]">Active</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#aab9be]">Basis Trade (Hyperliquid)</span>
-                    <span className="text-xs font-bold text-[#37d097]">Active</span>
-                  </div>
-                </div>
-              </div>
-              <div className="p-5 bg-[#16191c] border border-[#444a4f] rounded-sm">
-                <span className="text-xs font-medium text-[#aab9be] block mb-3">Security Status</span>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#aab9be]">Circuit Breakers</span>
-                    <span className="text-xs font-bold text-[#37d097]">Armed</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#aab9be]">Solvency Monitor</span>
-                    <span className="text-xs font-bold text-[#37d097]">Online</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#aab9be]">Insurance Fund</span>
-                    <span className="text-xs font-bold text-[#37d097]">Funded</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
