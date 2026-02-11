@@ -144,7 +144,7 @@ export default function LandingPage() {
               {!loading && frozenApy !== null ? (
                 <TypedText 
                   className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
-                  staggerSpeed={0.08}
+                  staggerSpeed={0.05}
                   charDuration={0.1}
                 >
                   {`${frozenApy.toFixed(1)}%`}
