@@ -40,9 +40,8 @@ export function VaultInteraction() {
   };
 
   return (
-    <div className="p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm h-full flex flex-col relative">
-      <Vault size={16} className="absolute top-3 left-3 text-[#aab9be] flex-shrink-0" />
-      <div className="flex items-start justify-between mb-8 pl-6">
+    <div className="p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm h-full flex flex-col">
+      <div className="flex items-start justify-between mb-8">
         <div className="flex flex-col flex-1">
           <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide">Vault Interaction</span>
           <DropdownMenu modal={false}>
@@ -76,6 +75,7 @@ export function VaultInteraction() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        <Vault size={16} className="text-[#aab9be] flex-shrink-0" />
       </div>
 
       <Tabs defaultValue="deposit" className="flex-1 flex flex-col">

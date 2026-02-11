@@ -1,7 +1,7 @@
 # Kerne Protocol — Project State
 
 ## Latest Update
-[2026-02-11 16:30] - Frontend: Standardized all terminal page cards to have icons in the top-left corner (absolute top-3 left-3). Removed padding from Benchmark Comparison graph container to maximize space and set graph to be flush with bottom/right edges. Optimized ETHComparisonChart by removing internal chart margins and moving X-axis ticks inside the plot area. Pushed to m-vercel. - Status: SUCCESS
+[2026-02-11 16:37] - Frontend: Reverted icon positioning to original right-aligned/flex layout. Restored standard padding to the Benchmark Comparison graph container and optimized chart margins for better spacing. Pushed to m-vercel. - Status: SUCCESS
 
 [2026-02-11 16:21] - Frontend: Eliminated remaining left edge gap by setting negative left margin (-25px) on chart. Y-axis labels now positioned at 5px from edge. Creates perfectly flush left alignment with no wasted space. Pushed to m-vercel. - Status: SUCCESS
 

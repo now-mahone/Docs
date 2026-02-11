@@ -27,13 +27,13 @@ const CustomTooltip = ({ active, payload }: any) => {
 
 export const AssetComposition = () => {
   return (
-    <div className="w-full h-full flex flex-col p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] relative">
-      <PieChartIcon size={16} className="absolute top-3 left-3 text-[#aab9be]" />
-      <div className="flex items-start justify-between mb-8 pl-6">
+    <div className="w-full h-full flex flex-col p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000]">
+      <div className="flex items-start justify-between mb-8">
         <div>
           <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide block mb-1">Portfolio Breakdown</span>
           <p className="text-xl font-heading font-medium text-[#ffffff]">Asset Composition</p>
         </div>
+        <PieChartIcon size={16} className="text-[#aab9be] mt-1" />
       </div>
 
       <div className="flex-1 w-full min-h-0 relative flex flex-col justify-between">
