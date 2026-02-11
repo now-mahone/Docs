@@ -27,6 +27,7 @@ contract KerneArbExecutor is AccessControl, IERC3156FlashBorrower {
     uint256 public minProfitBps = 5;      // 0.05% min profit check
     bool public sentinelActive = true;
     uint256 public minSolvencyThreshold = 10100; // 101%
+    uint256 public constant MAX_ARB_STEPS = 10;
 
     /// @notice Whitelist of allowed target addresses for arb steps (DEX routers only)
     mapping(address => bool) public allowedTargets;
@@ -34,18 +35,24 @@ contract KerneArbExecutor is AccessControl, IERC3156FlashBorrower {
     /// @notice SECURITY: Approved flash loan lenders (only trusted internal contracts)
     mapping(address => bool) public approvedLenders;
 
+    /// @notice SECURITY: Whitelist of allowed function selectors per target
+    mapping(address => mapping(bytes4 => bool)) public allowedSelectors;
+
     struct ArbStep {
         address target;
         bytes data;
     }
 
     error TargetNotWhitelisted(address target);
+    error SelectorNotWhitelisted(address target, bytes4 selector);
+    error TooManySteps(uint256 count);
 
     event ArbExecuted(address indexed tokenIn, uint256 amountIn, uint256 profit);
     event ProfitSplit(uint256 treasuryAmount, uint256 insuranceAmount);
     event SentinelToggled(bool active);
     event TargetWhitelistUpdated(address indexed target, bool allowed);
     event ApprovedLenderUpdated(address indexed lender, bool approved);
+    event AllowedSelectorUpdated(address indexed target, bytes4 indexed selector, bool allowed);
 
     constructor(address admin, address solver, address _treasury, address _insuranceFund, address _vault) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
@@ -74,6 +81,7 @@ contract KerneArbExecutor is AccessControl, IERC3156FlashBorrower {
     function setAllowedTarget(address target, bool allowed) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(target != address(0), "Invalid target");
         // Prevent whitelisting protocol contracts to avoid self-drain
+        require(target != address(this), "Cannot whitelist self");
         require(target != treasury, "Cannot whitelist treasury");
         require(target != insuranceFund, "Cannot whitelist insurance");
         require(target != vault, "Cannot whitelist vault");
@@ -82,12 +90,51 @@ contract KerneArbExecutor is AccessControl, IERC3156FlashBorrower {
     }
 
     /**
-     * @notice Validates that all arb step targets are whitelisted.
+     * @notice Set allowed function selectors for a specific target.
+     * @dev SECURITY: Only whitelisted selectors can be called on whitelisted targets.
+     *      This prevents calling dangerous functions (transferOwnership, approve, etc.) on DEX routers.
+     */
+    function setAllowedSelector(address target, bytes4 selector, bool allowed) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(target != address(0), "Invalid target");
+        allowedSelectors[target][selector] = allowed;
+        emit AllowedSelectorUpdated(target, selector, allowed);
+    }
+
+    /**
+     * @notice Batch set allowed selectors for a target.
+     */
+    function batchSetAllowedSelectors(
+        address target,
+        bytes4[] calldata selectors,
+        bool allowed
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(target != address(0), "Invalid target");
+        require(selectors.length <= 50, "Too many selectors");
+        for (uint256 i = 0; i < selectors.length; i++) {
+            allowedSelectors[target][selectors[i]] = allowed;
+            emit AllowedSelectorUpdated(target, selectors[i], allowed);
+        }
+    }
+
+    /**
+     * @notice Validates that all arb step targets and selectors are whitelisted.
+     * @dev SECURITY: Enforces both target whitelist AND function selector whitelist.
+     *      Also enforces max steps to prevent gas griefing.
      */
     function _validateSteps(ArbStep[] memory steps) internal view {
+        if (steps.length > MAX_ARB_STEPS) {
+            revert TooManySteps(steps.length);
+        }
+        require(steps.length > 0, "No steps provided");
         for (uint256 i = 0; i < steps.length; i++) {
             if (!allowedTargets[steps[i].target]) {
                 revert TargetNotWhitelisted(steps[i].target);
+            }
+            // Extract function selector (first 4 bytes of calldata)
+            require(steps[i].data.length >= 4, "Invalid calldata");
+            bytes4 selector = bytes4(steps[i].data[0]) | (bytes4(steps[i].data[1]) >> 8) | (bytes4(steps[i].data[2]) >> 16) | (bytes4(steps[i].data[3]) >> 24);
+            if (!allowedSelectors[steps[i].target][selector]) {
+                revert SelectorNotWhitelisted(steps[i].target, selector);
             }
         }
     }
@@ -221,10 +268,12 @@ contract KerneArbExecutor is AccessControl, IERC3156FlashBorrower {
     }
 
     function setTreasury(address _treasury) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_treasury != address(0), "Invalid treasury");
         treasury = _treasury;
     }
 
     function setInsuranceFund(address _insuranceFund) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_insuranceFund != address(0), "Invalid insurance fund");
         insuranceFund = _insuranceFund;
     }
 

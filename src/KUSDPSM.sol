@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Created: 2026-01-10
-// Updated: 2026-01-12 - Institutional Deep Hardening: Advanced arbitrage, flash loans, and liquidity routing
+// Updated: 2026-02-10 - Security Hardening: Overflow protection, oracle staleness, flash loan bounds
 pragma solidity 0.8.24;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -76,7 +76,8 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
 
         (, int256 price, , uint256 updatedAt, ) = IAggregatorV3(oracle).latestRoundData();
         require(price > 0, "Invalid oracle price");
-        require(block.timestamp <= updatedAt + 24 hours, "Oracle price stale");
+        // SECURITY FIX: Reduced staleness threshold from 24h to 1h to prevent stale price exploitation
+        require(block.timestamp <= updatedAt + 1 hours, "Oracle price stale");
 
         uint8 decimals = IAggregatorV3(oracle).decimals();
         // SECURITY FIX: Prevent underflow if oracle decimals > 18
@@ -142,7 +143,10 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
         uint8 kusdDecimals = IERC20Metadata(address(kUSD)).decimals();
         uint256 normalizedAmountAfterFee;
         if (stableDecimals <= kusdDecimals) {
-            normalizedAmountAfterFee = amountAfterFee * (10 ** (kusdDecimals - stableDecimals));
+            // SECURITY FIX: Overflow protection for decimal normalization
+            uint256 multiplier = 10 ** (kusdDecimals - stableDecimals);
+            require(amountAfterFee <= type(uint256).max / multiplier, "Overflow: amount too large");
+            normalizedAmountAfterFee = amountAfterFee * multiplier;
         } else {
             normalizedAmountAfterFee = amountAfterFee / (10 ** (stableDecimals - kusdDecimals));
         }
@@ -184,7 +188,10 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
         if (kusdDecimals >= stableDecimals) {
             normalizedAmountAfterFee = amountAfterFee / (10 ** (kusdDecimals - stableDecimals));
         } else {
-            normalizedAmountAfterFee = amountAfterFee * (10 ** (stableDecimals - kusdDecimals));
+            // SECURITY FIX: Overflow protection for decimal normalization
+            uint256 multiplier = 10 ** (stableDecimals - kusdDecimals);
+            require(amountAfterFee <= type(uint256).max / multiplier, "Overflow: amount too large");
+            normalizedAmountAfterFee = amountAfterFee * multiplier;
         }
 
         uint256 psmBalance = IERC20(stable).balanceOf(address(this));
@@ -321,8 +328,12 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
         address token,
         uint256 amount,
         bytes calldata data
-    ) external override nonReentrant returns (bool) {
+    ) external override nonReentrant whenNotPaused returns (bool) {
         require(token == address(kUSD) || supportedStables[token], "Unsupported token");
+        // SECURITY: Validate flash loan amount bounds
+        require(amount > 0, "Flash loan amount must be > 0");
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        require(amount <= balance, "Flash loan exceeds available balance");
         uint256 fee = flashFee(token, amount);
 
         IERC20(token).safeTransfer(address(receiver), amount);

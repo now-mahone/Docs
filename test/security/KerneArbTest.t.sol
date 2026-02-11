@@ -99,6 +99,13 @@ contract KerneArbTest is Test {
         weth.mint(address(dexB), 1000 * 1e18);
 
         weth.mint(address(lender), 1000 * 1e18);
+
+        // Approve lender and whitelist DEX targets (pentest security fixes)
+        vm.startPrank(admin);
+        executor.setApprovedLender(address(lender), true);
+        executor.setAllowedTarget(address(dexA), true);
+        executor.setAllowedTarget(address(dexB), true);
+        vm.stopPrank();
     }
 
     function testArbWithFlashLoan_Success() public {

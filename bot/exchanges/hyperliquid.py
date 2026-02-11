@@ -62,20 +62,48 @@ class HyperliquidExchange(BaseExchange):
             logger.error(f"HL Error equity: {e}")
             return 0.0
 
+    def _get_sz_decimals(self, symbol: str) -> int:
+        """Get the size decimals for a symbol from Hyperliquid meta."""
+        try:
+            meta = self.info.meta_and_asset_ctxs()
+            universe = meta[0]["universe"]
+            for asset in universe:
+                if asset["name"] == symbol:
+                    return int(asset.get("szDecimals", 4))
+            return 4  # Default to 4 decimals
+        except Exception:
+            return 4
+
     def execute_order(self, symbol: str, size: float, side: str) -> bool:
         try:
             is_buy = side.lower() == 'buy'
             price = self.get_market_price(symbol)
             px = price * 1.05 if is_buy else price * 0.95
-            
+
+            # Round size to Hyperliquid's required precision to avoid float_to_wire errors
+            sz_decimals = self._get_sz_decimals(symbol)
+            rounded_size = round(size, sz_decimals)
+
+            if rounded_size <= 0:
+                logger.warning(f"HL: Rounded size is 0 for {symbol} (original: {size}, decimals: {sz_decimals})")
+                return False
+
+            logger.info(f"HL: Executing {side} {rounded_size} {symbol} @ ~${px:.2f} (sz_decimals={sz_decimals})")
+
             order_result = self.exchange.market_open(
                 name=symbol,
                 is_buy=is_buy,
-                sz=size,
+                sz=rounded_size,
                 px=px,
                 slippage=0.05
             )
-            return order_result["status"] == "ok"
+
+            if order_result["status"] == "ok":
+                logger.success(f"HL: Order filled - {side} {rounded_size} {symbol}")
+                return True
+            else:
+                logger.error(f"HL: Order failed - {order_result}")
+                return False
         except Exception as e:
             logger.error(f"HL Error execute: {e}")
             return False

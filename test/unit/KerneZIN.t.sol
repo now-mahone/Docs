@@ -128,6 +128,9 @@ contract KerneZINTest is Test {
         address oneInch = zinExecutor.ONE_INCH_ROUTER();
         usdc.mint(oneInch, INITIAL_LIQUIDITY / 1e12); // 6 decimals
         weth.mint(oneInch, INITIAL_LIQUIDITY);
+
+        // Approve vault as flash loan lender for ZIN executor (pentest security fix)
+        zinExecutor.setApprovedLender(address(vault), true);
         
         // Give user some tokens
         weth.mint(user, USER_BALANCE);
@@ -629,6 +632,10 @@ contract KerneZINTest is Test {
         uint256 aggregatorOut = 11e18;
         address fusionSettler = address(0x123);
         vm.etch(fusionSettler, address(new MockAggregator()).code);
+
+        // Whitelist fusionSettler as allowed target (pentest security fix)
+        vm.prank(admin);
+        zinExecutor.setAllowedTarget(fusionSettler, true);
         
         bytes memory aggregatorData = abi.encodeWithSelector(
             MockAggregator.swap.selector,

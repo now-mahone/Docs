@@ -235,7 +235,8 @@ contract KerneSecuritySuite is Test {
         vault.updateOffChainAssets(0); 
         vm.stopPrank();
 
-        // Call checkAndPause to start insolvency timer
+        // Call checkAndPause to start insolvency timer (requires PAUSER_ROLE)
+        vm.prank(admin);
         vault.checkAndPause();
         
         // Warp past grace period (4 hours)

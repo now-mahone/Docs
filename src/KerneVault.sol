@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Created: 2025-12-28
+// Updated: 2026-02-10 - Security Hardening: Flash loan reentrancy protection, off-chain asset bounds, amount validation
 pragma solidity 0.8.24;
 
 import { ERC4626 } from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
@@ -18,6 +19,8 @@ import { IComplianceHook } from "./interfaces/IComplianceHook.sol";
  * @title KerneVault
  * @author Kerne Protocol
  * @notice A yield-bearing vault implementing ERC-4626 with hybrid on-chain/off-chain accounting.
+ * @dev Security hardened against flash loan reentrancy, off-chain asset manipulation,
+ *      and various economic attack vectors identified in the Claude 4.6 security audit.
  */
 contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLender {
     bytes32 public constant STRATEGIST_ROLE = keccak256("STRATEGIST_ROLE");
@@ -108,6 +111,21 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     /// @notice The cooldown period for withdrawals (default 7 days)
     uint256 public withdrawalCooldown = 7 days;
 
+    /// @notice SECURITY: Flag to prevent cross-function reentrancy during flash loans
+    bool private _flashLoanInProgress;
+
+    /// @notice SECURITY: Maximum percentage change allowed for off-chain asset updates (in bps, e.g., 2000 = 20%)
+    uint256 public maxOffChainChangeRateBps = 2000;
+
+    /// @notice SECURITY: Cooldown between off-chain asset updates
+    uint256 public offChainUpdateCooldown = 10 minutes;
+
+    /// @notice SECURITY: Minimum flash loan amount to prevent dust attacks
+    uint256 public minFlashLoanAmount = 0.01 ether;
+
+    /// @notice SECURITY: Maximum flash loan amount as percentage of vault balance (in bps)
+    uint256 public maxFlashLoanBps = 9000; // 90% of vault balance
+
     struct WithdrawalRequest {
         uint256 assets;
         uint256 shares;
@@ -134,6 +152,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     event WithdrawalCooldownUpdated(uint256 oldCooldown, uint256 newCooldown);
     event L1AssetsUpdated(uint256 oldAmount, uint256 newAmount, uint256 timestamp);
     event L1DepositRequested(uint256 amount, address bridge);
+    event TrustAnchorUpdated(address indexed oldAnchor, address indexed newAnchor);
+    event FlashLoanExecuted(address indexed receiver, address token, uint256 amount, uint256 fee);
+    event OffChainUpdateParamsChanged(uint256 maxChangeRateBps, uint256 cooldown);
 
     /**
      * @param asset_ The underlying asset (e.g., WETH or USDC)
@@ -152,7 +173,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         address exchangeDepositAddress_
     ) ERC4626(asset_) ERC20(name_, symbol_) {
         exchangeDepositAddress = exchangeDepositAddress_;
-        _initialize(name_, symbol_, admin_, strategist_, address(0), 0, 1000, false);
+        _initialize(name_, symbol_, admin_, strategist_, address(0), 0, 1000, false, address(0), 0);
     }
 
     /// @notice The factory address authorized to initialize clones
@@ -186,7 +207,43 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
             founder_,
             founderFeeBps_,
             performanceFeeBps_,
-            whitelistEnabled_
+            whitelistEnabled_,
+            address(0),
+            0
+        );
+    }
+
+    /**
+     * @notice Initializer for white-label clones with full configuration.
+     * @dev Allows factory to set complianceHook and maxTotalAssets during initialization
+     *      without needing admin role post-deployment.
+     */
+    function initializeWithConfig(
+        address asset_,
+        string memory name_,
+        string memory symbol_,
+        address admin_,
+        address strategist_,
+        address founder_,
+        uint256 founderFeeBps_,
+        uint256 performanceFeeBps_,
+        bool whitelistEnabled_,
+        address complianceHook_,
+        uint256 maxTotalAssets_
+    ) external {
+        require(founder == address(0), "Already initialized");
+        require(factory == address(0) || msg.sender == factory, "Only factory can initialize");
+        _initialize(
+            name_,
+            symbol_,
+            admin_,
+            strategist_,
+            founder_,
+            founderFeeBps_,
+            performanceFeeBps_,
+            whitelistEnabled_,
+            complianceHook_,
+            maxTotalAssets_
         );
     }
 
@@ -209,7 +266,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         address founder_,
         uint256 founderFeeBps_,
         uint256 performanceFeeBps_,
-        bool whitelistEnabled_
+        bool whitelistEnabled_,
+        address complianceHook_,
+        uint256 maxTotalAssets_
     ) internal {
         require(admin_ != address(0), "Admin cannot be zero address");
 
@@ -231,6 +290,13 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
             grossPerformanceFeeBps = performanceFeeBps_;
         }
         whitelistEnabled = whitelistEnabled_;
+
+        // Set compliance hook and max total assets during initialization
+        // so the factory doesn't need admin role post-deployment
+        if (complianceHook_ != address(0)) {
+            complianceHook = IComplianceHook(complianceHook_);
+        }
+        maxTotalAssets = maxTotalAssets_;
     }
 
     /**
@@ -328,18 +394,38 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     }
 
     function setTrustAnchor(address _anchor) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        address oldAnchor = trustAnchor;
         trustAnchor = _anchor;
+        emit TrustAnchorUpdated(oldAnchor, _anchor);
     }
 
     // --- Strategist Functions ---
 
     /**
      * @notice Updates the amount of assets held off-chain.
+     * @dev SECURITY HARDENING: Prevents manipulation during flash loans, enforces rate limiting
+     *      and bounds checking to limit damage from compromised strategist keys.
      */
     function updateOffChainAssets(
         uint256 amount
     ) external onlyRole(STRATEGIST_ROLE) {
+        // SECURITY: Prevent cross-function reentrancy during flash loan callbacks
+        require(!_flashLoanInProgress, "Cannot update during flash loan");
+
+        // SECURITY: Rate limit updates to prevent rapid manipulation
+        require(
+            block.timestamp >= lastReportedTimestamp + offChainUpdateCooldown,
+            "Update cooldown not met"
+        );
+
+        // SECURITY: Bound the maximum change per update to prevent catastrophic manipulation
         uint256 oldAmount = offChainAssets;
+        if (oldAmount > 0 && maxOffChainChangeRateBps > 0) {
+            uint256 maxChange = (oldAmount * maxOffChainChangeRateBps) / 10000;
+            uint256 change = amount > oldAmount ? amount - oldAmount : oldAmount - amount;
+            require(change <= maxChange, "Off-chain asset change exceeds max rate");
+        }
+
         offChainAssets = amount;
         lastReportedTimestamp = block.timestamp;
         emit OffChainAssetsUpdated(oldAmount, amount, block.timestamp);
@@ -347,10 +433,12 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
 
     /**
      * @notice Updates the hedging reserve for institutional obfuscation.
+     * @dev SECURITY: Blocked during flash loans to prevent cross-function reentrancy.
      */
     function updateHedgingReserve(
         uint256 amount
     ) external onlyRole(STRATEGIST_ROLE) {
+        require(!_flashLoanInProgress, "Cannot update during flash loan");
         uint256 oldAmount = hedgingReserve;
         hedgingReserve = amount;
         lastReportedTimestamp = block.timestamp;
@@ -359,10 +447,12 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
 
     /**
      * @notice Updates the amount of assets held on Hyperliquid L1.
+     * @dev SECURITY: Blocked during flash loans to prevent cross-function reentrancy.
      */
     function updateL1Assets(
         uint256 amount
     ) external onlyRole(STRATEGIST_ROLE) {
+        require(!_flashLoanInProgress, "Cannot update during flash loan");
         uint256 oldAmount = l1Assets;
         l1Assets = amount;
         lastReportedTimestamp = block.timestamp;
@@ -433,8 +523,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
 
     /**
      * @notice Batch sets the prime status for multiple accounts.
+     * @dev SECURITY: Bounded to prevent gas griefing via unbounded loops.
      */
     function batchSetPrimeAccounts(address[] calldata accounts, bool status) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(accounts.length <= 100, "Batch too large");
         for (uint256 i = 0; i < accounts.length; i++) {
             primeAccounts[accounts[i]].active = status;
         }
@@ -443,6 +535,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     function setTreasury(
         address _treasury
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_treasury != address(0), "Treasury cannot be zero address");
         treasury = _treasury;
     }
 
@@ -460,8 +553,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
      * @notice Batch sets the whitelisted status for multiple accounts.
      * @param accounts Array of addresses to update.
      * @param status True to whitelist, false to remove.
+     * @dev SECURITY: Bounded to prevent gas griefing via unbounded loops.
      */
     function batchSetWhitelisted(address[] calldata accounts, bool status) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(accounts.length <= 100, "Batch too large");
         for (uint256 i = 0; i < accounts.length; i++) {
             whitelisted[accounts[i]] = status;
         }
@@ -483,6 +578,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     function setInsuranceFund(
         address _insuranceFund
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_insuranceFund != address(0), "Insurance fund cannot be zero address");
         insuranceFund = _insuranceFund;
     }
 
@@ -548,6 +644,8 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         uint256 _maxWithdrawLimit,
         uint256 _minSolvencyThreshold
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        // SECURITY: Prevent setting solvency threshold dangerously low (must be >= 90% or disabled)
+        require(_minSolvencyThreshold == 0 || _minSolvencyThreshold >= 9000, "Solvency threshold too low");
         maxDepositLimit = _maxDepositLimit;
         maxWithdrawLimit = _maxWithdrawLimit;
         minSolvencyThreshold = _minSolvencyThreshold;
@@ -557,6 +655,31 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     function setFlashFee(uint256 bps) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(bps <= 100, "Fee too high");
         flashFeeBps = bps;
+    }
+
+    /**
+     * @notice Sets the off-chain asset update parameters.
+     * @dev SECURITY: Controls how much off-chain assets can change per update and how often.
+     * @param _maxChangeRateBps Maximum change per update in basis points (e.g., 2000 = 20%)
+     * @param _cooldown Minimum time between updates in seconds
+     */
+    function setOffChainUpdateParams(uint256 _maxChangeRateBps, uint256 _cooldown) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_maxChangeRateBps <= 5000, "Max change rate too high"); // Cap at 50%
+        require(_cooldown >= 5 minutes, "Cooldown too short");
+        maxOffChainChangeRateBps = _maxChangeRateBps;
+        offChainUpdateCooldown = _cooldown;
+        emit OffChainUpdateParamsChanged(_maxChangeRateBps, _cooldown);
+    }
+
+    /**
+     * @notice Sets flash loan amount limits.
+     * @param _minAmount Minimum flash loan amount
+     * @param _maxBps Maximum flash loan as percentage of vault balance (in bps)
+     */
+    function setFlashLoanLimits(uint256 _minAmount, uint256 _maxBps) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_maxBps <= 10000, "Invalid bps");
+        minFlashLoanAmount = _minAmount;
+        maxFlashLoanBps = _maxBps;
     }
 
     function setWithdrawalCooldown(uint256 _cooldown) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -643,7 +766,11 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     function maxFlashLoan(address token) external view override returns (uint256) {
         if (token != asset()) return 0;
         if (paused()) return 0;
-        return IERC20(token).balanceOf(address(this));
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        if (maxFlashLoanBps > 0) {
+            return (balance * maxFlashLoanBps) / 10000;
+        }
+        return balance;
     }
 
     /**
@@ -677,6 +804,14 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         bytes calldata data
     ) external override nonReentrant whenNotPaused returns (bool) {
         require(token == asset(), "Unsupported token");
+        
+        // SECURITY: Validate flash loan amount bounds
+        require(amount >= minFlashLoanAmount, "Flash loan amount too small");
+        uint256 vaultBalance = IERC20(token).balanceOf(address(this));
+        if (maxFlashLoanBps > 0) {
+            require(amount <= (vaultBalance * maxFlashLoanBps) / 10000, "Flash loan amount too large");
+        }
+        
         uint256 fee = flashFee(token, amount);
         
         // Compliance check for whitelisted vaults
@@ -688,6 +823,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
             require(isCompliant, "Receiver not compliant");
         }
 
+        // SECURITY: Set flash loan flag to prevent cross-function reentrancy
+        // This blocks updateOffChainAssets, updateHedgingReserve, updateL1Assets during callback
+        _flashLoanInProgress = true;
+
         SafeERC20.safeTransfer(IERC20(token), address(receiver), amount);
 
         require(
@@ -697,9 +836,13 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
 
         SafeERC20.safeTransferFrom(IERC20(token), address(receiver), address(this), amount + fee);
         
+        // SECURITY: Clear flash loan flag after repayment
+        _flashLoanInProgress = false;
+        
         // Ensure solvency is maintained after fee collection
         _checkSolvency(false);
         
+        emit FlashLoanExecuted(address(receiver), token, amount, fee);
         return true;
     }
 

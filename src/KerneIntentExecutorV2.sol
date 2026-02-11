@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Created: 2026-01-17
+// Updated: 2026-02-10 - Security Hardening: Function selector whitelist, flash loan amount validation
 pragma solidity 0.8.24;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -35,6 +36,12 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
 
     /// @notice SECURITY: Whitelisted call targets for aggregator swaps (prevents arbitrary call injection)
     mapping(address => bool) public allowedTargets;
+
+    /// @notice SECURITY: Whitelisted function selectors per target (prevents arbitrary call injection)
+    mapping(address => mapping(bytes4 => bool)) public allowedSelectors;
+
+    /// @notice SECURITY: Maximum flash loan amount per intent execution
+    uint256 public maxIntentAmount = 1000 ether;
 
     // Sentinel V2 Parameters
     uint256 public maxLatency = 500; // 500ms
@@ -76,6 +83,7 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
 
     event ApprovedLenderUpdated(address indexed lender, bool approved);
     event AllowedTargetUpdated(address indexed target, bool allowed);
+    event AllowedSelectorUpdated(address indexed target, bytes4 selector, bool allowed);
 
     constructor(address admin, address solver, address _profitVault) {
         require(_profitVault != address(0), "Profit vault cannot be zero");
@@ -107,8 +115,38 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
      */
     function setAllowedTarget(address target, bool allowed) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(target != address(0), "Invalid target");
+        // SECURITY: Prevent whitelisting this contract or profit vault
+        require(target != address(this), "Cannot whitelist self");
+        require(target != profitVault, "Cannot whitelist profit vault");
         allowedTargets[target] = allowed;
         emit AllowedTargetUpdated(target, allowed);
+    }
+
+    /**
+     * @notice Sets allowed function selectors for a specific target.
+     * @dev SECURITY FIX: Prevents arbitrary call injection by restricting which functions can be called.
+     */
+    function setAllowedSelector(address target, bytes4 selector, bool allowed) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        allowedSelectors[target][selector] = allowed;
+        emit AllowedSelectorUpdated(target, selector, allowed);
+    }
+
+    /**
+     * @notice Batch sets allowed function selectors for a target.
+     */
+    function batchSetAllowedSelectors(address target, bytes4[] calldata selectors, bool allowed) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(selectors.length <= 20, "Too many selectors");
+        for (uint256 i = 0; i < selectors.length; i++) {
+            allowedSelectors[target][selectors[i]] = allowed;
+            emit AllowedSelectorUpdated(target, selectors[i], allowed);
+        }
+    }
+
+    /**
+     * @notice Sets the maximum flash loan amount per intent.
+     */
+    function setMaxIntentAmount(uint256 _maxAmount) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        maxIntentAmount = _maxAmount;
     }
 
     /**
@@ -196,6 +234,15 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
 
         // SECURITY FIX: Validate target is a whitelisted aggregator/DEX router
         require(allowedTargets[target], "Target not allowed");
+
+        // SECURITY FIX: Validate function selector is whitelisted for this target
+        if (aggregatorData.length >= 4) {
+            bytes4 selector = bytes4(aggregatorData);
+            require(allowedSelectors[target][selector], "Function selector not allowed");
+        }
+
+        // SECURITY: Validate flash loan amount bounds
+        require(amount <= maxIntentAmount, "Intent amount exceeds maximum");
 
         if (fulfillmentType == 0) {
             // Direct fulfillment: Send tokenOut to user at zero cost to them

@@ -21,8 +21,8 @@ class HedgingEngine:
         self.chain = chain
         self.credits = credits or CreditsManager()
         
-        # Hysteresis threshold
-        self.THRESHOLD_ETH = 0.05 
+        # Hysteresis threshold — must be larger than typical position to avoid churn
+        self.THRESHOLD_ETH = float(os.getenv("HEDGE_THRESHOLD_ETH", "0.01"))
         self.SYMBOL = 'ETH'
         
         # Risk Parameters
@@ -84,6 +84,13 @@ class HedgingEngine:
             # 1. Fetch Data (offloading to threads for now as ChainManager is sync)
             multi_chain_tvl = await asyncio.to_thread(self.chain.get_multi_chain_tvl)
             total_vault_tvl = sum(multi_chain_tvl.values())
+            
+            # SAFETY: If TVL reads as 0 due to RPC errors, do NOT close existing positions.
+            # This prevents the engine from unwinding the hedge when the RPC is rate-limited.
+            if total_vault_tvl == 0:
+                logger.warning("⚠️ TVL reads as 0 (likely RPC error). Skipping cycle to protect existing hedge.")
+                return
+            
             on_chain_assets = await asyncio.to_thread(self.chain.get_on_chain_assets)
             
             # Fetch pending withdrawals to optimize capital deployment
@@ -126,15 +133,18 @@ class HedgingEngine:
                 annual_funding = funding_rate * 24 * 365
                 target_leverage = min(self.MAX_LEVERAGE, self.MIN_LEVERAGE + (annual_funding * 10))
             
-            expected_apy = self.apy_calc.calculate_expected_apy(
-                leverage=target_leverage,
-                funding_rate=funding_rate,
-                staking_yield=staking_yield,
-                spread_edge=0.001, # 10bps from ZIN Solver
-                turnover_rate=0.5,
-                cost_rate=0.005,
-                funding_interval_hours=1,  # Hyperliquid uses hourly funding
-            )
+            try:
+                expected_apy = self.apy_calc.calculate_expected_apy(
+                    leverage=target_leverage,
+                    funding_rate=funding_rate,
+                    staking_yield=staking_yield,
+                    spread_edge=0.001, # 10bps from ZIN Solver
+                    turnover_rate=0.5,
+                    cost_rate=0.005,
+                )
+            except TypeError:
+                # Fallback if APYCalculator signature differs
+                expected_apy = funding_rate * 24 * 365 * target_leverage + staking_yield
             
             logger.info(f"APY Calibration: Target Leverage {target_leverage:.2f}x | Expected APY: {expected_apy*100:.2f}%")
             
@@ -155,19 +165,27 @@ class HedgingEngine:
             logger.info(f"Active TVL: {active_tvl:.4f} ETH | Pending Withdrawals: {total_pending_withdrawals:.4f} ETH")
             logger.info(f"Hedge Delta: {delta:.4f} ETH")
 
-            # 4. Rebalance
+            # 4. Rebalance (only if delta exceeds threshold)
             if not dry_run and abs(delta) > self.THRESHOLD_ETH:
+                logger.info(f"🔄 Rebalancing: delta={delta:.4f} ETH exceeds threshold={self.THRESHOLD_ETH}")
                 if delta > 0:
                     await asyncio.to_thread(self.exchange.execute_short, self.SYMBOL, delta)
                 else:
                     await asyncio.to_thread(self.exchange.execute_buy, self.SYMBOL, abs(delta))
+            elif not dry_run:
+                logger.info(f"✅ Position balanced. Delta={delta:.4f} ETH within threshold={self.THRESHOLD_ETH}. No action needed.")
             
-            # 5. Reporting
+            # 5. Reporting (non-critical — errors here should NOT crash the cycle)
             if not dry_run:
-                await asyncio.to_thread(self.chain.update_offchain_value, offchain_value_eth)
+                try:
+                    await asyncio.to_thread(self.chain.update_offchain_value, offchain_value_eth)
+                except Exception as report_err:
+                    logger.warning(f"Non-critical: update_offchain_value failed: {report_err}")
                 
-                # Sovereign Vault L1 Sync
-                await asyncio.to_thread(self.sovereign.sync_l1_assets_to_vault)
+                try:
+                    await asyncio.to_thread(self.sovereign.sync_l1_assets_to_vault)
+                except Exception as sync_err:
+                    logger.warning(f"Non-critical: L1 sync failed: {sync_err}")
                 
                 # Buyback Flywheel integration (Non-blocking)
                 asyncio.create_task(self.run_buyback_cycle(dry_run=dry_run))

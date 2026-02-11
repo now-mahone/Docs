@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kerne Protocol — Seed Round</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#000;--ci:linear-gradient(180deg,#22252a 0%,#16191c 40%,#000 100%);--t:#fff;--t2:#d4dce1;--t3:#aab9be;--m:#444a4f;--g:#37d097;--tl:#19b097;--r:#ff6b6b;--o:#ffa502;--br:#444a4f;--gr:linear-gradient(110deg,#19b097,#37d097,#19b097)}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--t);overflow:hidden;height:100vh}
+.S{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;padding:48px 160px;opacity:0;transform:translateX(30px);transition:all .4s ease;pointer-events:none;background:var(--bg);overflow-y:auto}
+.S.on{opacity:1;transform:none;pointer-events:all}
+.N{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:12px;z-index:99;background:rgba(0,0,0,.92);backdrop-filter:blur(16px);padding:8px 20px;border-radius:4px;border:1px solid var(--br)}
+.N button{background:0;border:0;color:var(--t3);cursor:pointer;font-size:16px;padding:4px 10px;border-radius:4px}
+.N button:hover{background:#22252a;color:var(--t)}
+.N .c{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--m);min-width:50px;text-align:center}
+.P{position:fixed;top:0;left:0;height:3px;background:var(--gr);transition:width .4s;z-index:99}
+.L{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--g);margin-bottom:12px}
+h1{font-size:54px;font-weight:600;line-height:1.05;letter-spacing:-2px;margin-bottom:18px}
+h2{font-size:40px;font-weight:600;line-height:1.1;letter-spacing:-1.5px;margin-bottom:22px}
+h3{font-size:22px;font-weight:600;margin-bottom:10px}
+.s{font-size:18px;color:var(--t2);line-height:1.5;max-width:620px}
+.p{font-size:16px;color:var(--t2);line-height:1.65;max-width:700px}
+.gt{background:var(--gr);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:400% 400%;animation:mg 15s ease infinite}
+@keyframes mg{0%{background-position:0% 0%}25%{background-position:50% 100%}50%{background-position:100% 0%}75%{background-position:50% 100%}100%{background-position:0% 0%}}
+.g2{display:grid;gap:20px;margin-top:28px;grid-template-columns:1fr 1fr}
+.g3{display:grid;gap:20px;margin-top:28px;grid-template-columns:1fr 1fr 1fr}
+.g4{display:grid;gap:16px;margin-top:24px;grid-template-columns:1fr 1fr 1fr 1fr}
+.K{background:var(--ci);border:1px solid var(--br);border-radius:4px;padding:28px 24px}
+.kl{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--m);margin-bottom:5px}
+.kv{font-size:34px;font-weight:700;letter-spacing:-1px}
+.kd{font-size:13px;color:var(--t2);margin-top:8px;line-height:1.5}
+table{width:100%;border-collapse:collapse;margin-top:18px;font-size:13px}
+th{text-align:left;padding:9px 12px;border-bottom:1px solid var(--br);color:var(--m);font-weight:600;font-size:11px;letter-spacing:1px;text-transform:uppercase}
+td{padding:9px 12px;border-bottom:1px solid rgba(68,74,79,.4);color:var(--t2)}
+.hi{color:var(--g);font-weight:600}.wr{color:var(--r)}.kc{background:rgba(55,208,151,.06);color:var(--t);font-weight:500}
+ul.B{list-style:none;margin-top:14px}
+ul.B li{font-size:15px;color:var(--t2);padding:9px 0 9px 22px;position:relative;line-height:1.5}
+ul.B li::before{content:'';position:absolute;left:0;top:14px;width:6px;height:6px;border-radius:50%;background:var(--g)}
+.H{background:rgba(55,208,151,.06);border:1px solid rgba(55,208,151,.2);border-radius:4px;padding:18px 22px;margin-top:22px}
+.H p{font-size:14px;color:var(--t2);line-height:1.5}
+.F{display:flex;align-items:center;gap:9px;margin-top:18px;flex-wrap:wrap}
+.fb{background:var(--ci);border:1px solid var(--br);border-radius:4px;padding:10px 16px;font-size:13px;font-weight:500}
+.fa{color:var(--g);font-size:16px}
+.tc{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:24px}
+.ai{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid rgba(68,74,79,.4)}
+.ad{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.an{flex:1;font-size:13px;color:var(--t2)}
+.ap{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600}
+.tl{display:flex;margin-top:24px;position:relative}
+.tl::before{content:'';position:absolute;top:16px;left:0;right:0;height:2px;background:var(--br)}
+.ti{flex:1;position:relative;padding-top:32px;padding-right:14px}
+.ti::before{content:'';position:absolute;top:10px;left:0;width:12px;height:12px;border-radius:50%;background:var(--g);border:3px solid var(--bg)}
+.til{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--g);font-weight:600;letter-spacing:1px;margin-bottom:3px}
+.tit{font-size:13px;font-weight:600;margin-bottom:2px}
+.tid{font-size:11px;color:var(--m);line-height:1.3}
+.logo{position:fixed;top:24px;left:32px;z-index:99}
+.logo svg{height:20px;width:auto;fill:#fff}
+.cf{position:fixed;bottom:68px;right:32px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--m);letter-spacing:2px;text-transform:uppercase;z-index:99}
+.TS{justify-content:center;align-items:center;text-align:center}
+.TS h1{font-size:64px;letter-spacing:-3px;max-width:860px}
+.TS .s{max-width:560px;margin:0 auto}
+.tm{margin-top:36px;display:flex;gap:24px;font-size:12px;color:var(--m)}
+.tm span{padding:6px 12px;border:1px solid var(--br);border-radius:4px}
+.sr{display:flex;gap:48px;margin-top:32px}
+.sv{font-size:46px;font-weight:700;letter-spacing:-2px}
+.sl{font-size:12px;color:var(--m);margin-top:2px}
+</style>
+</head>
+<body>
+<div class="logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1962 450"><g><polygon points="150 0 0 0 0 150 75 75 150 0"/><polygon points="0 300 0 450 150 450 75 375 0 300"/><polygon points="450 450 450 300 150 225 300 450 450 450"/><polygon points="450 0 300 0 150 225 450 150 450 0"/></g><g><path d="M746.01,240.75l-59.5,65v91h-54.5V46.75h54.5v187l167-187h69.5l-141.5,154.5,153.5,195.51h-66.5l-122.5-156.01Z"/><path d="M932.01,271.25c0-75,51.5-132.5,129.5-132.5s128,56.5,128,127.5c0,7.5-.5,13.5-1.5,21h-204.5c3.5,41.5,32.5,71,83.5,71,37.5,0,61-18.5,71.5-40.5l48,14c-15.5,34-55,71.5-120.5,71.5-78.5,0-134-52.5-134-132.01ZM1138.01,251.75c-3-38.5-30.5-68-76.5-68s-74.51,32.5-78,68.5l154.5-.5Z"/><path d="M1377.01,142.25v49c-53.5-8-86,19-86,92v113.51h-52.5v-251.51h52.5v40c15-30.5,44.5-48.5,86-43Z"/><path d="M1657.5,249.25v147.5h-52v-138.01c0-44-21-71-62-71-44,0-72.5,33.5-72.5,84v125.01h-52.5v-251.51h52.5v37.5c17.5-25,46.5-44,86.51-44,64.5,0,100,42.5,100,110.5Z"/><path d="M1704.49,271.25c0-75,51.5-132.5,129.5-132.5s128,56.5,128,127.5c0,7.5-.5,13.5-1.5,21h-204.5c3.5,41.5,32.5,71,83.5,71,37.5,0,61-18.5,71.5-40.5l48,14c-15.5,34-55,71.5-120.5,71.5-78.5,0-134-52.5-134-132.01ZM1910.5,251.75c-3-38.5-30.5-68-76.5-68s-74.51,32.5-78,68.5l154.5-.5Z"/></g></svg></div>
+<div class="cf">CONFIDENTIAL — SEED ROUND</div>
+<div class="P" id="pb"></div>
+
+<!-- Slide 1: Title -->
+<div class="S TS on" data-s="0">
+<div class="L">Seed Round — February 2026</div>
+<h1>The Omnichain<br><span class="gt">Yield-Bearing Stablecoin</span></h1>
+<p class="s">Kerne Protocol engineers the most capital-efficient delta-neutral infrastructure in DeFi. kUSD earns yield so you don't have to.</p>
+<div class="tm"><span>kerne.ai</span><span>Raising $3–8M</span><span>$40–100M FDV</span></div>
+</div>
+
+<!-- Slide 2: Problem -->
+<div class="S" data-s="1">
+<div class="L">The Problem</div>
+<h2>$170B+ in stablecoins earning <span class="gt">zero yield</span></h2>
+<p class="p">Holders of USDC and USDT subsidize Circle and Tether's $5B+ annual revenue from Treasury yields — while receiving nothing. Existing yield alternatives are fatally flawed.</p>
+<div class="g3">
+<div class="K"><div class="kl">Ethena (USDe)</div><div class="kv" style="color:var(--r)">Single Strategy</div><p class="kd">100% dependent on basis trade funding rates. Negative yield when rates flip. Centralized custody via Copper/Ceffu.</p></div>
+<div class="K"><div class="kl">MakerDAO (sDAI)</div><div class="kv" style="color:var(--o)">Yield Ceiling</div><p class="kd">Capped at Maker's own lending revenue (3–8% APY). Cannot access external DeFi yield. Governance sclerosis.</p></div>
+<div class="K"><div class="kl">Manual Farming</div><div class="kv" style="color:var(--o)">Complexity</div><p class="kd">Active management across dozens of protocols and chains. Gas costs, rebalancing, and risk monitoring are full-time jobs.</p></div>
+</div>
+</div>
+
+<!-- Slide 3: Solution -->
+<div class="S" data-s="2">
+<div class="L">The Solution</div>
+<h2><span class="gt">kUSD</span> — Earns optimized yield automatically</h2>
+<div class="F">
+<div class="fb">Deposit LST/LRT</div><div class="fa">→</div>
+<div class="fb">Mint kUSD (150% CR)</div><div class="fa">→</div>
+<div class="fb">YRE Routes Yield</div><div class="fa">→</div>
+<div class="fb">kUSD Rebases Daily</div><div class="fa">→</div>
+<div class="fb" style="border-color:var(--g)">12–20% APY</div>
+</div>
+<div class="tc" style="margin-top:28px">
+<div><h3>For Users</h3><ul class="B">
+<li>Deposit yield-bearing collateral (stETH, eETH, rETH, sDAI)</li>
+<li>Receive kUSD that earns yield just by holding it</li>
+<li>Use kUSD anywhere: Aave, Curve, GMX, payments</li>
+<li>wkUSD wrapper for tax-optimized composability</li>
+</ul></div>
+<div><h3>For the Protocol</h3><ul class="B">
+<li>10–20% performance fee on all yield generated</li>
+<li>Minting and redemption fees (0.1–0.5%)</li>
+<li>PSM swap fees on kUSD ↔ USDC</li>
+<li>Liquidation penalties on underwater positions</li>
+</ul></div>
+</div>
+</div>
+
+<!-- Slide 4: Market -->
+<div class="S" data-s="3">
+<div class="L">Market Opportunity</div>
+<h2>Three liquidity wells, <span class="gt">one protocol</span></h2>
+<p class="p">Kerne attacks the three deepest capital pools in DeFi simultaneously — creating a reflexive flywheel where growth in one compounds all others.</p>
+<div class="sr">
+<div><div class="sv gt">$170B+</div><div class="sl">Total Stablecoin Market Cap</div></div>
+<div><div class="sv gt">$80B+</div><div class="sl">TVL in Yield Protocols</div></div>
+<div><div class="sv gt">$10B+</div><div class="sl">Monthly Cross-Chain Volume</div></div>
+</div>
+<div class="H" style="margin-top:24px"><p>Yield-bearing stablecoins have &lt;6% penetration. Thesis: reaches 30–50%+ ($50–85B) within 3 years. <strong style="color:var(--t)">Capturing 3–5% = $2.5–7.5B+ TVL.</strong></p></div>
+</div>
+
+<!-- Slide 5: Architecture -->
+<div class="S" data-s="4">
+<div class="L">Architecture</div>
+<h2>Four-layer stack. <span class="gt">Full-stack primitive.</span></h2>
+<div class="g2">
+<div class="K"><div class="kl">Layer 1 — Vault Layer</div><p class="kd">Isolated vaults per collateral type (stETH, eETH, rETH, cbETH, sDAI, WBTC). Independent parameters prevent cascading failures. ERC-4626 standard.</p></div>
+<div class="K"><div class="kl">Layer 2 — Yield Routing Engine</div><p class="kd">Autonomous yield optimizer across 200+ strategies on 7+ chains. Risk-scored allocation with real-time rebalancing. Core IP and competitive moat.</p></div>
+<div class="K"><div class="kl">Layer 3 — kUSD Stability</div><p class="kd">Overcollateralized minting (150% CR). Peg Stability Module for 1:1 USDC swaps. Protocol-owned liquidity. Reserve fund backstop.</p></div>
+<div class="K"><div class="kl">Layer 4 — KERNE Value Capture</div><p class="kd">Governance token: 50% revenue buy-and-burn, 30% staking distribution, 20% treasury. Fixed 1B supply, permanently deflationary.</p></div>
+</div>
+</div>
+
+<!-- Slide 6: YRE -->
+<div class="S" data-s="5">
+<div class="L">Core Technology</div>
+<h2>The Yield Routing Engine <span class="gt">is the moat</span></h2>
+<div class="g3">
+<div class="K"><div class="kl">Strategy Registry</div><p class="kd">Modular adapters for every DeFi yield source: Aave, Compound, Morpho, Pendle, Curve, EigenLayer AVS, RWA vaults. 30–50 at launch, 1,000+ within a year.</p></div>
+<div class="K"><div class="kl">Risk Scoring Oracle</div><p class="kd">Real-time 0–100 risk score per strategy. Factors: audit status, TVL stability, exploit history, oracle dependency, concentration risk.</p></div>
+<div class="K"><div class="kl">Allocation Optimizer</div><p class="kd">Constrained optimization: maximize yield subject to risk caps, liquidity reserves, cross-chain limits, gas efficiency. Full on-chain transparency.</p></div>
+</div>
+<div class="H"><p><strong style="color:var(--t)">Compounding knowledge advantage:</strong> Every day the YRE operates, it accumulates data. A competitor launching 6 months later starts with zero data and zero track record.</p></div>
+</div>
+
+<!-- Slide 7: Competitive -->
+<div class="S" data-s="6">
+<div class="L">Competitive Landscape</div>
+<h2>Every competitor has a <span class="gt">structural weakness</span></h2>
+<table>
+<thead><tr><th>Protocol</th><th>Yield Source</th><th>Yield</th><th>Multi-Chain</th><th>Transparency</th><th>Key Risk</th></tr></thead>
+<tbody>
+<tr class="kc"><td><strong>Kerne (kUSD)</strong></td><td class="hi">200+ strategies</td><td class="hi">12–20%</td><td class="hi">7+ chains</td><td class="hi">Full on-chain</td><td>New protocol</td></tr>
+<tr><td>Ethena (USDe)</td><td>Basis trade only</td><td>0–35%</td><td>Limited</td><td class="wr">Opaque CeFi</td><td class="wr">Neg. funding</td></tr>
+<tr><td>MakerDAO (sDAI)</td><td>Lending + RWA</td><td>3–8%</td><td>ETH only</td><td>On-chain</td><td>Yield ceiling</td></tr>
+<tr><td>Frax (sFRAX)</td><td>Frax ecosystem</td><td>4–8%</td><td>ETH-centric</td><td>Partial</td><td>Complexity</td></tr>
+<tr><td>Aave (GHO)</td><td>None</td><td>0%</td><td>Limited</td><td>On-chain</td><td>No yield</td></tr>
+<tr><td>Liquity (BOLD)</td><td>None</td><td>0%</td><td>ETH only</td><td>On-chain</td><td>No yield</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- Slide 8: Why Kerne Wins -->
+<div class="S" data-s="7">
+<div class="L">Why Kerne Wins</div>
+<h2>Three structural <span class="gt">differentiators</span></h2>
+<div class="g3">
+<div class="K" style="border-color:rgba(55,208,151,.4)"><div class="kv gt" style="font-size:24px">Yield Diversification</div><p class="kd" style="margin-top:10px">Not dependent on any single strategy. Kerne routes across hundreds of yield sources. When one source underperforms, the YRE shifts to lending, restaking, LPs, and RWAs.</p></div>
+<div class="K" style="border-color:rgba(25,176,151,.4)"><div class="kv gt" style="font-size:24px">Omnichain Native</div><p class="kd" style="margin-top:10px">kUSD natively available on 7+ chains via LayerZero V2 OFT. Users mint and use kUSD wherever they are without bridging friction.</p></div>
+<div class="K" style="border-color:rgba(212,220,225,.3)"><div class="kv" style="font-size:24px;color:var(--t2)">Radical Transparency</div><p class="kd" style="margin-top:10px">Every allocation, yield source, and rebalance recorded on-chain. Real-time dashboards answer "where does the yield come from?" completely.</p></div>
+</div>
+</div>
+
+<!-- Slide 9: Traction -->
+<div class="S" data-s="8">
+<div class="L">Traction</div>
+<h2>Built in 6 weeks. <span class="gt">Live on mainnet.</span></h2>
+<div class="g2">
+<div><h3>What's Live</h3><ul class="B">
+<li>KerneVault (ERC-4626) on Base, Arbitrum, Optimism</li>
+<li>Delta-neutral basis trade on Hyperliquid (20%+ APY backtest)</li>
+<li>kUSD, PSM, Insurance Fund, Treasury deployed</li>
+<li>ZIN (Zero-Fee Intent Network) on Base + Arbitrum</li>
+<li>LayerZero V2 OFT bridging across 3 chains</li>
+<li>154 passing Foundry tests, pentest remediated</li>
+<li>Frontend at kerne.ai, documentation, SDK (24 tests)</li>
+</ul></div>
+<div><h3>Key Metrics</h3>
+<div class="K" style="margin-bottom:12px"><div class="kl">Backtest</div><div class="kv gt">20.3% APY</div><p class="kd">18-month real Binance data, 3x leverage. Sharpe: 33.46. Max DD: 0.15%.</p></div>
+<div class="K" style="margin-bottom:12px"><div class="kl">Chains</div><div class="kv">3 Live</div><p class="kd">Base, Arbitrum, Optimism — full infrastructure each.</p></div>
+<div class="K"><div class="kl">Contracts</div><div class="kv">20+</div><p class="kd">Vault, kUSD, PSM, Insurance, Treasury, OFT, ZIN, Arb, Compliance, Factory, Registry, Oracle.</p></div>
+</div>
+</div>
+</div>
+
+<!-- Slide 10: GTM -->
+<div class="S" data-s="9">
+<div class="L">Go-to-Market</div>
+<h2>Seven-channel <span class="gt">growth engine</span></h2>
+<div class="tc">
+<div><ul class="B">
+<li><strong style="color:var(--t)">Pre-deposit Points</strong> — Blast-style escrow + referral multipliers. Target $50M+ committed.</li>
+<li><strong style="color:var(--t)">Liquidity Mining</strong> — Tiered loyalty (1.5x–3x for 30–180 day deposits). 15% supply over 4 years.</li>
+<li><strong style="color:var(--t)">Integrations</strong> — kUSD on Aave, Curve, Pendle, GMX. Co-marketing per partner.</li>
+<li><strong style="color:var(--t)">Grants</strong> — Pay protocols to integrate. $500K Aave grant = millions in TVL.</li>
+</ul></div>
+<div><ul class="B">
+<li><strong style="color:var(--t)">Content</strong> — 3–5 tweets/day, 2–3 threads/week, weekly Spaces. Dune dashboards.</li>
+<li><strong style="color:var(--t)">Ambassadors</strong> — 50–200 community members. Content, moderation, translation. 1–2% supply.</li>
+<li><strong style="color:var(--t)">Airdrops</strong> — Snapshot competing stablecoin + LST holders. Migration incentives. 2–3% supply.</li>
+</ul></div>
+</div>
+</div>
+
+<!-- Slide 11: Tokenomics -->
+<div class="S" data-s="10">
+<div class="L">Tokenomics</div>
+<h2>KERNE — Fixed supply, <span class="gt">triple-engine accrual</span></h2>
+<div class="tc" style="align-items:center">
+<div>
+<h3>Allocation (1B Fixed Supply)</h3>
+<div class="ai"><div class="ad" style="background:#37d097"></div><div class="an">Core Team & Founders</div><div class="ap">18%</div></div>
+<div class="ai"><div class="ad" style="background:#19b097"></div><div class="an">Early Investors (Seed + Strategic)</div><div class="ap">15%</div></div>
+<div class="ai"><div class="ad" style="background:#ffa502"></div><div class="an">Liquidity Mining</div><div class="ap">20%</div></div>
+<div class="ai"><div class="ad" style="background:#d4dce1"></div><div class="an">Ecosystem Grants & Partnerships</div><div class="ap">10%</div></div>
+<div class="ai"><div class="ad" style="background:#aab9be"></div><div class="an">Airdrops & Retroactive Rewards</div><div class="ap">5%</div></div>
+<div class="ai"><div class="ad" style="background:#444a4f"></div><div class="an">Protocol Treasury</div><div class="ap">20%</div></div>
+<div class="ai"><div class="ad" style="background:#22252a;border:1px solid #444a4f"></div><div class="an">DAO / Governance Reserve</div><div class="ap">12%</div></div>
+</div>
+<div>
+<h3>Value Accrual</h3>
+<div class="K" style="margin-bottom:12px"><div class="kl">Channel 1</div><div class="kv" style="font-size:22px;color:var(--g)">Buy-and-Burn (50%)</div><p class="kd">50% of protocol revenue buys KERNE on open market and burns permanently. Deflationary pressure scales with TVL.</p></div>
+<div class="K" style="margin-bottom:12px"><div class="kl">Channel 2</div><div class="kv" style="font-size:22px;color:var(--tl)">Staking Revenue (30%)</div><p class="kd">30% distributed to KERNE stakers. Real yield, not inflationary emissions. Creates stickiness and reduces sell pressure.</p></div>
+<div class="K"><div class="kl">Channel 3</div><div class="kv" style="font-size:22px;color:var(--t2)">Treasury (20%)</div><p class="kd">20% to protocol treasury for POL, strategic buybacks, operations, and emergency reserves.</p></div>
+</div>
+</div>
+</div>
+
+<!-- Slide 12: Revenue -->
+<div class="S" data-s="11">
+<div class="L">Revenue Model</div>
+<h2>Revenue scales <span class="gt">linearly with TVL</span></h2>
+<div class="g4">
+<div class="K" style="text-align:center"><div class="kl">$1B TVL</div><div class="kv" style="color:var(--g)">$25M</div><p class="kd">Annual Revenue</p><p class="kd" style="margin-top:4px">FDV: $500M–2.5B</p></div>
+<div class="K" style="text-align:center"><div class="kl">$3B TVL</div><div class="kv" style="color:var(--g)">$75M</div><p class="kd">Annual Revenue</p><p class="kd" style="margin-top:4px">FDV: $1.5B–3B</p></div>
+<div class="K" style="text-align:center"><div class="kl">$5B TVL</div><div class="kv" style="color:var(--g)">$125M</div><p class="kd">Annual Revenue</p><p class="kd" style="margin-top:4px">FDV: $2.5B–5B</p></div>
+<div class="K" style="text-align:center"><div class="kl">$10B TVL</div><div class="kv" style="color:var(--g)">$250M</div><p class="kd">Annual Revenue</p><p class="kd" style="margin-top:4px">FDV: $5B–10B</p></div>
+</div>
+<div class="H" style="margin-top:20px"><p><strong style="color:var(--t)">Revenue sources:</strong> 10–20% performance fee on yield (primary), minting/redemption fees, PSM swap fees, liquidation penalties. At 2.5% blended fee rate on TVL, $1B TVL = $25M annual revenue.</p></div>
+</div>
+
+<!-- Slide 13: Roadmap -->
+<div class="S" data-s="12">
+<div class="L">Roadmap</div>
+<h2>From launch to <span class="gt">$1B+ TVL</span></h2>
+<div class="tl">
+<div class="ti"><div class="til">Q1 2026</div><div class="tit">Foundation</div><div class="tid">Core contracts deployed. Basis trade live. Seed round. First audit. Pre-deposit campaign.</div></div>
+<div class="ti"><div class="til">Q2 2026</div><div class="tit">Launch</div><div class="tid">Mainnet launch. kUSD minting live. PSM activated. Liquidity mining. First integrations.</div></div>
+<div class="ti"><div class="til">Q3 2026</div><div class="tit">Expansion</div><div class="tid">5–7 chains live. 50+ YRE strategies. TGE. CEX listings. $500M+ TVL target.</div></div>
+<div class="ti"><div class="til">Q4 2026</div><div class="tit">Escape Velocity</div><div class="tid">Governance transition. RWA collateral. V2 YRE with ML. $1B+ TVL.</div></div>
+</div>
+<div class="H" style="margin-top:24px"><p><strong style="color:var(--t)">Precedent:</strong> Ethena reached $3.6B TVL in ~5 months. Blast reached $2B+ in 3 months pre-launch. $1B+ within 12 months is achievable.</p></div>
+</div>
+
+<!-- Slide 14: Team -->
+<div class="S" data-s="13">
+<div class="L">Team</div>
+<h2>Execution-first <span class="gt">team</span></h2>
+<div class="g2">
+<div class="K"><div class="kl">Founder & CEO</div><h3 style="margin-bottom:6px">Strategy & Architecture</h3><p class="kd">Deep understanding of DeFi yield mechanics, delta-neutral strategies, and protocol economics. Designed the four-layer architecture and go-to-market strategy from first principles.</p></div>
+<div class="K"><div class="kl">Co-Founder</div><h3 style="margin-bottom:6px">Product & Design</h3><p class="kd">Owns the product experience end-to-end — frontend, terminal dashboard, branding, and user flows. Design-driven approach that sets Kerne apart from typical DeFi interfaces.</p></div>
+</div>
+<div class="H" style="margin-top:16px"><p><strong style="color:var(--t)">20+ contracts across 3 chains, full frontend, SDK, hedging bot, and penetration test — shipped in 6 weeks.</strong> Scaling with seed capital: Senior Solidity Engineer, Full-Stack Developer, Growth Lead, Security Engineer, BD Lead. Target: 8-12 person team by month 9.</p></div>
+</div>
+
+<!-- Slide 15: The Ask -->
+<div class="S" data-s="14">
+<div class="L">The Ask</div>
+<h2>Raising $3–8M at <span class="gt">$40–100M FDV</span></h2>
+<div class="tc">
+<div>
+<h3>Round Details</h3>
+<ul class="B">
+<li><strong style="color:var(--t)">Instrument:</strong> SAFT</li>
+<li><strong style="color:var(--t)">Token allocation:</strong> 8–10% of total supply</li>
+<li><strong style="color:var(--t)">Vesting:</strong> 2-year vest, 6-month cliff</li>
+<li><strong style="color:var(--t)">Target close:</strong> Q1 2026</li>
+<li><strong style="color:var(--t)">Lead investor:</strong> Seeking $1–3M lead</li>
+</ul>
+</div>
+<div>
+<h3>Use of Funds</h3>
+<div style="margin-top:14px">
+<div class="ai"><div class="ad" style="background:#37d097"></div><div class="an">Engineering</div><div class="ap">35%</div></div>
+<div class="ai"><div class="ad" style="background:#ff6b6b"></div><div class="an">Security (audits + bounties)</div><div class="ap">20%</div></div>
+<div class="ai"><div class="ad" style="background:#19b097"></div><div class="an">Growth (incentives + POL)</div><div class="ap">20%</div></div>
+<div class="ai"><div class="ad" style="background:#ffa502"></div><div class="an">Operations (legal + infra)</div><div class="ap">15%</div></div>
+<div class="ai"><div class="ad" style="background:#aab9be"></div><div class="an">Reserve buffer</div><div class="ap">10%</div></div>
+</div>
+</div>
+</div>
+<div class="H" style="margin-top:20px"><p><strong style="color:var(--t)">Why now:</strong> Post-halving bull market accelerating. Yield-bearing stablecoin meta proven but no dominant winner. Every week of delay = TVL lost to competitors.</p></div>
+</div>
+
+<!-- Slide 16: Thank You -->
+<div class="S TS" data-s="15">
+<div class="L">Thank You</div>
+<h1 style="font-size:56px"><span class="gt">kerne.ai</span></h1>
+<p class="s" style="margin-top:12px">The omnichain yield-bearing stablecoin.<br>Built for the next $100B in DeFi capital.</p>
+<div class="tm" style="margin-top:32px">
+<span>kerne.ai</span>
+<span>@KerneProtocol</span>
+<span>kerne.systems@protonmail.com</span>
+</div>
+</div>
+
+<div class="N">
+<button onclick="prev()">&#8592;</button>
+<div class="c" id="ctr">1 / 16</div>
+<button onclick="next()">&#8594;</button>
+</div>
+
+<script>
+let cur=0;const slides=document.querySelectorAll('.S');const total=slides.length;const pb=document.getElementById('pb');const ctr=document.getElementById('ctr');
+function go(n){if(n<0||n>=total)return;slides[cur].classList.remove('on');cur=n;slides[cur].classList.add('on');pb.style.width=((cur+1)/total*100)+'%';ctr.textContent=(cur+1)+' / '+total;}
+function next(){go(cur+1)}function prev(){go(cur-1)}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' ')next();if(e.key==='ArrowLeft')prev();if(e.key==='Home')go(0);if(e.key==='End')go(total-1);});
+go(0);
+</script>
+</body>
+</html>
