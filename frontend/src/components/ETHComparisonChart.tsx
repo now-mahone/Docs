@@ -98,8 +98,24 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
             axisLine={false}
             tickFormatter={(value: number) => `$${value.toLocaleString()}`}
             domain={['auto', 'auto']}
-            tick={{ fill: '#aab9be' }}
-            label={{ value: 'Value (USD)', angle: -90, position: 'insideLeft', style: { fontSize: '11px', fontWeight: 600, fill: '#aab9be', textAnchor: 'middle' }, dx: -10 }}
+            tick={(props: any) => {
+              const { x, y, payload } = props;
+              return (
+                <g transform={`translate(${x},${y})`}>
+                  <text 
+                    x={15}
+                    y={0} 
+                    dy={4} 
+                    textAnchor="start"
+                    fill="#aab9be" 
+                    fontSize="11px" 
+                    fontWeight={500}
+                  >
+                    ${payload.value.toLocaleString()}
+                  </text>
+                </g>
+              );
+            }}
           />
           <Tooltip content={<CustomTooltip />} />
           <Area
