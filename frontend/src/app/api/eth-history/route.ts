@@ -90,15 +90,22 @@ export async function GET() {
     // Sort by date ascending
     dailyPrices.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    return NextResponse.json({
-      success: true,
-      data: dailyPrices,
-      dataPoints: dailyPrices.length,
-      dateRange: {
-        from: dailyPrices[0]?.date || null,
-        to: dailyPrices[dailyPrices.length - 1]?.date || null,
+    return NextResponse.json(
+      {
+        success: true,
+        data: dailyPrices,
+        dataPoints: dailyPrices.length,
+        dateRange: {
+          from: dailyPrices[0]?.date || null,
+          to: dailyPrices[dailyPrices.length - 1]?.date || null,
+        },
       },
-    });
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=43200',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('Error fetching ETH historical data:', error);
     
