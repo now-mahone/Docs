@@ -146,8 +146,8 @@ export default function LandingPage() {
 
       <main className="relative z-10 pt-24">
         {/* Massive Hero Section inspired by Cursor/Morpho */}
-        <section className="relative pt-24 md:pt-32 pb-32 overflow-hidden flex flex-col items-center text-center bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
-          <div className="max-w-7xl mx-auto px-6 md:px-12 text-center relative z-20 flex flex-col items-center w-full mb-24">
+        <section className="relative pt-24 md:pt-32 pb-16 overflow-hidden flex flex-col items-center text-center bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
+          <div className="max-w-7xl mx-auto px-6 md:px-12 text-center relative z-20 flex flex-col items-center w-full">
             <h1 className="font-heading font-medium tracking-tight leading-[0.95] text-[#000000] mb-8">
               The future of onchain yield.<br />
               Live at an APY of<br />
@@ -187,8 +187,13 @@ export default function LandingPage() {
               </a>
             </div>
           </div>
+        </section>
 
-          {/* Yield Calculator - Redesigned Layout */}
+        {/* Backtested Performance Section - Appears first now */}
+        <BacktestedPerformance />
+
+        {/* Yield Calculator Section */}
+        <section className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
           <div className="max-w-7xl w-full mx-auto relative px-6 md:px-12">
             <div className="w-full rounded-sm bg-[#000000] p-8 md:p-16 relative shadow-none">
               {/* Two-column layout */}
@@ -274,9 +279,6 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-
-        {/* Backtested Performance Section */}
-        <BacktestedPerformance />
 
         {/* Kerne Explained Section */}
         <KerneExplained />

@@ -1,6 +1,10 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-11 09:51] - Frontend: Swapped Onchain Calculator card with Historical Performance Comparison card on the homepage. The performance graph now appears before the calculator. Deployed to m-vercel. - Status: SUCCESS
+
+[2026-02-10 21:18] - Frontend: Added elegant fade-in and slide-up animation for mobile hero APY. Mobile now uses `motion.span` with opacity 0→1 and y-axis 20px→0px over 0.6s. Desktop retains character-by-character typewriter effect. Both versions preserve the CSS mesh gradient. Deployed to m-vercel. - Status: SUCCESS
+
 [2026-02-10 21:12] - Frontend: Disabled hero APY typewriter animation on mobile devices (viewport < 768px). Mobile now displays static text with gradient styling to avoid frame skipping issues. Desktop retains fast typewriter effect (stagger 0.05s, duration 0.05s). Implemented responsive detection with window resize listener. Deployed to m-vercel. - Status: SUCCESS
 
 [2026-02-10 21:04] - Frontend: Changed hero APY animation to trigger on page load instead of viewport intersection. Fixes mobile issue where animation appeared all at once. Animation now starts immediately when component mounts, ensuring consistent behavior across all devices. Deployed to m-vercel. - Status: SUCCESS
