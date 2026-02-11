@@ -18,6 +18,7 @@ export default function TerminalPage() {
   const [solvencyData, setSolvencyData] = useState<any>(null);
   const [historicalEth, setHistoricalEth] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [timeframe, setTimeframe] = useState<30 | 90 | 180>(90);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,17 +35,17 @@ export default function TerminalPage() {
         if (ethRes.success && ethRes.data && ethRes.data.length > 0) {
           setHistoricalEth(ethRes.data);
         } else {
-          // Fallback ETH history data (rolling 90 days)
+          // Fallback ETH history data (rolling 180 days to support 6M view)
           const fallback = [];
           const now = new Date();
           let basePrice = 2400;
-          for (let i = 90; i >= 0; i--) {
+          for (let i = 180; i >= 0; i--) {
             const d = new Date();
             d.setDate(now.getDate() - i);
             const noise = Math.sin(i * 0.1) * 100 + Math.cos(i * 0.2) * 50;
             fallback.push({
               date: d.toISOString().split('T')[0],
-              price: basePrice + noise + (90 - i) * 5
+              price: basePrice + noise + (180 - i) * 3
             });
           }
           setHistoricalEth(fallback);
@@ -98,8 +99,8 @@ export default function TerminalPage() {
   const comparisonData = useMemo(() => {
     if (historicalEth.length === 0) return [];
     
-    // Take the last 90 days from historical data
-    const last90Days = historicalEth.slice(-90);
+    // Use selected timeframe
+    const lastNDays = historicalEth.slice(-timeframe);
     const data = [];
     
     const BASE_FUNDING_DAILY = (apyData?.breakdown?.best_funding_annual_pct / 100 / 365) || (0.169 / 365);
@@ -107,13 +108,13 @@ export default function TerminalPage() {
     const LEVERAGE = apyData?.breakdown?.leverage || 3.0;
 
     let cumulativeYieldSim = 1.0;
-    const normFactor = 100 / last90Days[0].price;
+    const normFactor = 100 / lastNDays[0].price;
 
-    for (let i = 0; i < last90Days.length; i++) {
-      const dateObj = new Date(last90Days[i].date);
+    for (let i = 0; i < lastNDays.length; i++) {
+      const dateObj = new Date(lastNDays[i].date);
       const dateStr = dateObj.toLocaleDateString('default', { month: 'short', day: 'numeric' });
       
-      const ethPriceNormalized = last90Days[i].price * normFactor;
+      const ethPriceNormalized = lastNDays[i].price * normFactor;
       
       // Simulate Kerne Growth with slight volatility
       const fundingVolatility = (Math.sin(i * 0.2) * 0.0004) + (Math.cos(i * 0.45) * 0.0003);
@@ -124,11 +125,11 @@ export default function TerminalPage() {
         time: dateStr,
         eth: parseFloat(ethPriceNormalized.toFixed(2)),
         simulated: parseFloat((100 * cumulativeYieldSim).toFixed(2)),
-        isBiWeekly: i % 14 === 0 || i === last90Days.length - 1
+        isBiWeekly: i % 14 === 0 || i === lastNDays.length - 1
       });
     }
     return data;
-  }, [historicalEth, apyData]);
+  }, [historicalEth, apyData, timeframe]);
 
   const benchmarkMetrics = useMemo(() => {
     if (comparisonData.length < 2) return { alpha: "0.00%", beta: "0.00x", drawdown: "0.00%", sharpe: "0.00" };
@@ -147,22 +148,39 @@ export default function TerminalPage() {
     const ethReturn = (comparisonData[comparisonData.length - 1].eth - comparisonData[0].eth) / comparisonData[0].eth;
     const alpha = (kerneReturn - ethReturn) * 100;
 
-    // 3. Sharpe Ratio (Annualized)
-    const dailyReturns = [];
+    // 3. Beta Calculation (Covariance / Variance)
+    const kerneReturns = [];
+    const ethReturns = [];
     for (let i = 1; i < comparisonData.length; i++) {
-      dailyReturns.push((comparisonData[i].simulated - comparisonData[i-1].simulated) / comparisonData[i-1].simulated);
+      kerneReturns.push((comparisonData[i].simulated - comparisonData[i-1].simulated) / comparisonData[i-1].simulated);
+      ethReturns.push((comparisonData[i].eth - comparisonData[i-1].eth) / comparisonData[i-1].eth);
     }
-    const avgDaily = dailyReturns.reduce((a, b) => a + b, 0) / dailyReturns.length;
-    const stdDev = Math.sqrt(dailyReturns.reduce((a, b) => a + Math.pow(b - avgDaily, 2), 0) / (dailyReturns.length - 1));
-    const annualReturn = avgDaily * 365;
+    
+    const avgKerne = kerneReturns.reduce((a, b) => a + b, 0) / kerneReturns.length;
+    const avgEth = ethReturns.reduce((a, b) => a + b, 0) / ethReturns.length;
+    
+    let covariance = 0;
+    let ethVariance = 0;
+    for (let i = 0; i < kerneReturns.length; i++) {
+      covariance += (kerneReturns[i] - avgKerne) * (ethReturns[i] - avgEth);
+      ethVariance += Math.pow(ethReturns[i] - avgEth, 2);
+    }
+    covariance /= kerneReturns.length;
+    ethVariance /= ethReturns.length;
+    
+    const beta = ethVariance > 0 ? covariance / ethVariance : 0;
+
+    // 4. Sharpe Ratio (Annualized, no cap)
+    const stdDev = Math.sqrt(kerneReturns.reduce((a, b) => a + Math.pow(b - avgKerne, 2), 0) / (kerneReturns.length - 1));
+    const annualReturn = avgKerne * 365;
     const annualVol = stdDev * Math.sqrt(365);
     const sharpe = annualVol > 0 ? (annualReturn - 0.038) / annualVol : 0;
 
     return {
       alpha: (alpha > 0 ? "+" : "") + alpha.toFixed(2) + "%",
-      beta: "0.02x", // Strategy properties ensure near-zero beta
+      beta: beta.toFixed(2) + "x",
       drawdown: maxDD.toFixed(2) + "%",
-      sharpe: Math.min(sharpe, 6.5).toFixed(2)
+      sharpe: sharpe.toFixed(2)
     };
   }, [comparisonData]);
 
@@ -290,12 +308,48 @@ export default function TerminalPage() {
             <div className="w-full lg:flex-[3] flex flex-col min-w-0 h-[380px] lg:h-full">
               <div className="mb-6 flex justify-between items-start">
                 <div>
-                  <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide block mb-1">PERFORMANCE OVER 90 DAYS</span>
+                  <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide block mb-1">
+                    PERFORMANCE OVER {timeframe === 30 ? '1 MONTH' : timeframe === 90 ? '3 MONTHS' : '6 MONTHS'}
+                  </span>
                   <div className="flex items-baseline gap-2">
                     <p className="text-xl font-heading font-medium text-[#ffffff]">Benchmark Comparison</p>
                   </div>
                 </div>
-                <ChartArea size={16} className="text-[#aab9be] mt-1" />
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 bg-[#16191c] border border-[#444a4f] rounded-sm p-1">
+                    <button
+                      onClick={() => setTimeframe(30)}
+                      className={`px-2 py-1 text-xs font-medium rounded-sm transition-colors ${
+                        timeframe === 30
+                          ? 'bg-[#aab9be] text-[#000000]'
+                          : 'text-[#aab9be] hover:text-[#ffffff]'
+                      }`}
+                    >
+                      1M
+                    </button>
+                    <button
+                      onClick={() => setTimeframe(90)}
+                      className={`px-2 py-1 text-xs font-medium rounded-sm transition-colors ${
+                        timeframe === 90
+                          ? 'bg-[#aab9be] text-[#000000]'
+                          : 'text-[#aab9be] hover:text-[#ffffff]'
+                      }`}
+                    >
+                      3M
+                    </button>
+                    <button
+                      onClick={() => setTimeframe(180)}
+                      className={`px-2 py-1 text-xs font-medium rounded-sm transition-colors ${
+                        timeframe === 180
+                          ? 'bg-[#aab9be] text-[#000000]'
+                          : 'text-[#aab9be] hover:text-[#ffffff]'
+                      }`}
+                    >
+                      6M
+                    </button>
+                  </div>
+                  <ChartArea size={16} className="text-[#aab9be]" />
+                </div>
               </div>
 
               <div className="flex-1 w-full min-h-0 relative">
