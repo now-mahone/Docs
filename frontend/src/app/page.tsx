@@ -9,6 +9,8 @@ import { ArrowRight, Shield, BarChart3, Landmark, Lock, Activity, Cpu, Database,
 import { motion, useScroll, useTransform, useMotionValue, useSpring, animate, useInView } from 'framer-motion';
 import Footer from '@/components/Footer';
 import Navbar from '@/components/Navbar';
+import TypedHeading from '@/components/TypedHeading';
+import TypedText from '@/components/TypedText';
 import BacktestedPerformance from '@/components/BacktestedPerformance';
 import KerneExplained from '@/components/KerneExplained';
 
@@ -111,12 +113,22 @@ export default function LandingPage() {
   const [calculatorAmount, setCalculatorAmount] = useState(10);
   // Freeze the APY once it's loaded to prevent mid-animation resets
   const [frozenApy, setFrozenApy] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     if (!loading && liveApy !== null && frozenApy === null) {
       setFrozenApy(liveApy);
     }
   }, [loading, liveApy, frozenApy]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const displayApy = frozenApy !== null ? frozenApy : (liveApy !== null ? liveApy : 18.4);
   const effectiveEthPrice = ethPrice || 3150;
@@ -134,35 +146,67 @@ export default function LandingPage() {
 
       <main className="relative z-10 pt-24">
         {/* Massive Hero Section inspired by Cursor/Morpho */}
-        <section className="relative pt-24 md:pt-32 pb-32 overflow-hidden flex flex-col items-center text-center bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
-          <div className="max-w-7xl mx-auto px-6 md:px-12 text-center relative z-20 flex flex-col items-center w-full mb-24">
+        <section className="relative pt-24 md:pt-32 pb-16 overflow-hidden flex flex-col items-center text-center bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
+          <div className="max-w-7xl mx-auto px-6 md:px-12 text-center relative z-20 flex flex-col items-center w-full">
             <h1 className="font-heading font-medium tracking-tight leading-[0.95] text-[#000000] mb-8">
               The future of onchain yield.<br />
               Live at an APY of<br />
-              <span className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh">
-                {frozenApy !== null ? (
-                  <CountUp value={frozenApy} decimals={1} suffix="%" />
+              {!loading && frozenApy !== null ? (
+                isMobile ? (
+                  <motion.span 
+                    className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                  >
+                    {`${frozenApy.toFixed(1)}%`}
+                  </motion.span>
                 ) : (
-                  // Constant display before live data load to prevent layout shift and multiple count-ups
-                  <span>0.0%</span>
-                )}
-              </span>
+                  <TypedText 
+                    className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
+                    staggerSpeed={0.05}
+                    charDuration={0.05}
+                  >
+                    {`${frozenApy.toFixed(1)}%`}
+                  </TypedText>
+                )
+              ) : (
+                <span className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh opacity-0">
+                  18.4%
+                </span>
+              )}
             </h1>
 
             <p className="text-l md:text-l text-[#000000] max-w-2xl mx-auto mb-10 font-medium leading-relaxed">
               Building the most capital efficient delta neutral infrastructure in DeFi. Kerne's vaults hedge every position automatically. You deposit ETH. Your capital compounds. That's it.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-24">
               <a href="/terminal" target="_blank" rel="noopener noreferrer" className="relative px-10 font-bold rounded-sm transition-all flex items-center justify-center text-s border-none outline-none shadow-none h-12 gap-2 bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] text-[#ffffff] animate-mesh w-full sm:w-auto">
                 Start Earning
               </a>
             </div>
-          </div>
 
-          {/* Yield Calculator - Redesigned Layout */}
-          <div className="max-w-7xl w-full mx-auto relative px-6 md:px-12">
-            <div className="w-full rounded-sm bg-[#000000] p-8 md:p-16 relative shadow-none">
+            {/* Backtested Performance integrated into Hero */}
+            <div className="w-full mb-32">
+              <BacktestedPerformance />
+            </div>
+          </div>
+        </section>
+
+        {/* Yield Calculator Section */}
+        <section className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
+          <div className="max-w-7xl mx-auto px-6 md:px-12">
+            <div className="flex flex-col items-center text-center mb-16">
+              <TypedHeading className="font-heading font-medium tracking-tight text-[#000000] mb-8">
+                Visualize Your Yield
+              </TypedHeading>
+              <p className="text-m text-[#000000] max-w-2xl font-medium mb-12">
+                Adjust your position to see how Kerne's delta neutral strategy accelerates your capital through market leading funding rates and native staking rewards.
+              </p>
+            </div>
+
+            <div className="w-full rounded-sm bg-[#000000] p-8 md:p-16 relative shadow-none mb-32">
               {/* Two-column layout */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 {/* LEFT COLUMN: Calculator, Title, and Disclaimer */}
@@ -247,26 +291,25 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Backtested Performance Section */}
-        <BacktestedPerformance />
-
         {/* Kerne Explained Section */}
-        <KerneExplained />
+        <div className="mb-32">
+          <KerneExplained />
+        </div>
 
         {/* Institutional Reliability Section */}
         <section className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
           <div className="max-w-7xl mx-auto px-6 md:px-12">
             <div className="flex flex-col items-center text-center mb-16">
-              <h2 className="font-heading font-medium tracking-tight text-[#000000] mb-8">
-                  Institutional Reliability
-              </h2>
-              <p className="text-m text-[#000000] max-w-2xl font-medium">
+              <TypedHeading className="font-heading font-medium tracking-tight text-[#000000] mb-8">
+                Institutional Reliability
+              </TypedHeading>
+              <p className="text-m text-[#000000] max-w-2xl font-medium mb-12">
                 Engineered for the most demanding capital allocators, Kerne combines absolute transparency with autonomous risk management.
               </p>
             </div>
 
             {/* Card Container */}
-            <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12">
+            <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12 mb-32">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
                 <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] shadow-none flex flex-col items-start text-left group transition-colors">
                   <div className="w-12 h-12 bg-transparent border border-[#37d097] rounded-full flex items-center justify-center text-[#ffffff] mb-8">
@@ -369,9 +412,9 @@ export default function LandingPage() {
         <section className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
           <div className="max-w-7xl mx-auto px-6 md:px-12">
             <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12 flex flex-col items-center text-center">
-              <h2 className="font-heading font-medium tracking-tight text-[#ffffff] mb-8">
+              <TypedHeading className="font-heading font-medium tracking-tight text-[#ffffff] mb-8">
                 Join the Genesis Epoch
-              </h2>
+              </TypedHeading>
               <p className="text-m text-[#d4dce1] max-w-2xl font-medium mb-12">
                 Early depositors secure the highest allocation of Quanta rewards credits. Your first deposit starts earning within 60 seconds. No lockups. No vesting. Withdraw anytime.
               </p>

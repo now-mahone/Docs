@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { ArrowLeft, Target, Zap, Shield, Globe, Code, ArrowRight, Database, Cpu, Lock, Activity, Landmark, Network, Wallet, Eye, CheckCircle } from 'lucide-react';
 import Footer from '@/components/Footer';
 import Navbar from '@/components/Navbar';
+import TypedHeading from '@/components/TypedHeading';
 
 function PillButton({ href, children, className = "", variant = "primary" }: { href: string; children: React.ReactNode; className?: string; variant?: "primary" | "secondary" | "outline" }) {
   const baseStyles = "relative px-10 font-bold rounded-sm transition-all flex items-center justify-center text-s border-none outline-none shadow-none group h-12";
@@ -147,9 +148,9 @@ export default function AboutPage() {
           <div className="max-w-7xl mx-auto px-6 md:px-12">
             {/* Header and Subtext */}
             <div className="flex flex-col items-center text-center mb-16">
-              <h2 className="font-heading font-medium tracking-tight text-[#000000] mb-8">
+              <TypedHeading className="font-heading font-medium tracking-tight text-[#000000] mb-8">
                 Security Architecture
-              </h2>
+              </TypedHeading>
               <p className="text-m text-[#000000] max-w-2xl font-medium">
                 Engineered for the most demanding capital allocators, Kerne combines absolute transparency with autonomous risk management.
               </p>

@@ -12,6 +12,7 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import Footer from '@/components/Footer';
 import Navbar from '@/components/Navbar';
+import TypedHeading from '@/components/TypedHeading';
 
 export default function TransparencyPage() {
   const { data, loading, error } = useSolvency();
@@ -297,9 +298,9 @@ export default function TransparencyPage() {
           <div className="max-w-7xl mx-auto px-6 md:px-12">
             {/* Header and Subtext */}
             <div className="flex flex-col items-center text-center mb-16">
-              <h2 className="font-heading font-medium tracking-tight text-[#000000] mb-8">
+              <TypedHeading className="font-heading font-medium tracking-tight text-[#000000] mb-8">
                 Risk Management Framework
-              </h2>
+              </TypedHeading>
               <p className="text-m text-[#000000] max-w-2xl font-medium">
                 Institutional grade safety modules designed to protect capital through mathematical precision and automated circuit breakers.
               </p>

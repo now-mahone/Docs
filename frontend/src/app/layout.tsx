@@ -11,18 +11,26 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "KERNE | The Yield-Bearing Stablecoin Ecosystem",
-  description: "Institutional grade delta neutral assets on Base. 100% Transparent. 100% On-Chain.",
+  title: {
+    default: "Kerne - The future of onchain yield",
+    template: "%s - Kerne",
+  },
+  description: "Building the most capital efficient delta neutral infrastructure in DeFi.",
+  icons: {
+    icon: "/favicon.svg",
+  },
+  metadataBase: new URL("https://kerne.ai"),
   openGraph: {
-    title: "KERNE | The Yield-Bearing Stablecoin Ecosystem",
-    description: "Institutional grade delta neutral assets on Base. 100% Transparent. 100% On-Chain.",
-    url: "https://kerne.finance",
-    siteName: "Kerne Protocol",
+    title: "Kerne - The future of onchain yield",
+    description: "Building the most capital efficient delta neutral infrastructure in DeFi.",
+    url: "https://kerne.ai",
+    siteName: "Kerne",
     images: [
       {
-        url: "https://kerne.finance/terminal-preview.png",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
+        alt: "Kerne Protocol",
       },
     ],
     locale: "en_US",
@@ -30,10 +38,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "KERNE | The Yield-Bearing Stablecoin Ecosystem",
-    description: "Institutional grade delta neutral assets on Base. 100% Transparent. 100% On-Chain.",
+    title: "Kerne - The future of onchain yield",
+    description: "Building the most capital efficient delta neutral infrastructure in DeFi.",
     creator: "@KerneProtocol",
-    images: ["https://kerne.finance/terminal-preview.png"],
+    images: ["/og-image.png"],
   },
 };
 

@@ -9,6 +9,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Footer from '@/components/Footer';
 import Navbar from '@/components/Navbar';
+import TypedHeading from '@/components/TypedHeading';
 
 export default function InstitutionalPage() {
   const [loading, setLoading] = useState(false);
@@ -125,10 +126,12 @@ export default function InstitutionalPage() {
                   </motion.div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-20">
-                    <div className="space-y-4">
-                      <h2 className="font-heading font-medium text-[#ffffff] tracking-tight text-center">Institutional Onboarding</h2>
-                      <p className="text-[#d4dce1] font-medium text-center text-l">Initiate the whitelisting process by completing the brief below.</p>
-                    </div>
+                      <div className="space-y-4">
+                        <TypedHeading className="font-heading font-medium text-[#ffffff] tracking-tight text-center">
+                          Institutional Onboarding
+                        </TypedHeading>
+                        <p className="text-[#d4dce1] font-medium text-center text-l">Initiate the whitelisting process by completing the brief below.</p>
+                      </div>
 
                     <div className="space-y-10 max-w-4xl mx-auto">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
