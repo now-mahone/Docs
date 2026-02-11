@@ -305,7 +305,7 @@ export default function TerminalPage() {
 
             {/* Right Column: Legend Sidebar */}
             <div className="w-full lg:flex-1 flex flex-col min-w-0 pb-4 lg:pb-0 lg:h-full">
-              <div className="flex-1 flex flex-col p-6 bg-[#16191c] border border-[#444a4f] rounded-sm relative z-10">
+              <div className="flex-1 flex flex-col p-6 bg-transparent border border-[#444a4f] rounded-sm relative z-10">
                 <div className="space-y-4">
                   <div className="flex justify-between items-center gap-4">
                     <div className="flex items-center gap-2">
