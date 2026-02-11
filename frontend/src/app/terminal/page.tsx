@@ -249,12 +249,12 @@ export default function TerminalPage() {
             return (
               <div 
                 key={idx} 
-                className="p-6 md:p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#444a4f] rounded-sm flex flex-col justify-between relative overflow-hidden"
+                className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#444a4f] rounded-sm flex flex-col justify-between relative overflow-hidden"
               >
+                <card.icon size={14} className="absolute top-3 left-3 text-[#aab9be]" />
                 <div className={`${shouldBlur ? 'blur-sm opacity-40' : ''} transition-all duration-300`}>
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-4 pl-6">
                     <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide">{card.label}</span>
-                    <card.icon size={14} className="text-[#aab9be]" />
                   </div>
                   <div>
                     <p className="text-xl font-heading font-medium text-[#ffffff]">
@@ -277,12 +277,12 @@ export default function TerminalPage() {
 
           {/* Bottom Row: Protocol Health (4 Cols) and Vault Interaction (2 Cols) */}
           <div className="lg:col-span-4 p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#444a4f] rounded-sm flex flex-col gap-8 relative">
-            <div className="flex justify-between items-start">
+            <HeartPulse size={16} className="absolute top-3 left-3 text-[#aab9be]" />
+            <div className="flex justify-between items-start pl-6">
               <div>
                 <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide block mb-1">LIVE PROTOCOL STATUS</span>
                 <p className="text-xl font-heading font-medium text-[#ffffff]">Protocol Health</p>
               </div>
-              <HeartPulse size={16} className="text-[#aab9be] mt-1" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -313,11 +313,12 @@ export default function TerminalPage() {
           </div>
 
           {/* Historical ETH vs Kerne Comparison */}
-          <div className="lg:col-span-4 p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#444a4f] rounded-sm flex flex-col lg:flex-row gap-8 relative h-auto lg:h-[600px]">
+          <div className="lg:col-span-4 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#444a4f] rounded-sm flex flex-col lg:flex-row relative h-auto lg:h-[600px] overflow-hidden">
+            <ChartArea size={16} className="absolute top-3 left-3 text-[#aab9be] z-20" />
             {/* Left Column: Header + Chart */}
             <div className="w-full lg:flex-[3] flex flex-col min-w-0 h-[380px] lg:h-full">
-              <div className="mb-6 flex justify-between items-start">
-                <div>
+              <div className="p-6 lg:p-8 pb-0 lg:pb-0 flex justify-between items-start">
+                <div className="pl-6">
                   <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide block mb-1">
                     PERFORMANCE OVER {timeframe === 30 ? '1 MONTH' : timeframe === 90 ? '3 MONTHS' : '6 MONTHS'}
                   </span>
@@ -358,7 +359,6 @@ export default function TerminalPage() {
                       6M
                     </button>
                   </div>
-                  <ChartArea size={16} className="text-[#aab9be]" />
                 </div>
               </div>
 
@@ -368,7 +368,7 @@ export default function TerminalPage() {
             </div>
 
             {/* Right Column: Legend Sidebar */}
-            <div className="w-full lg:flex-1 flex flex-col min-w-0 pb-4 lg:pb-0 lg:h-full">
+            <div className="w-full lg:flex-1 flex flex-col min-w-0 p-6 lg:p-8 lg:pl-0 lg:h-full">
               <div className="flex-1 flex flex-col p-6 bg-transparent border border-[#444a4f] rounded-sm relative z-10">
                 <div className="space-y-4">
                   <div className="flex justify-between items-center gap-4">

@@ -1,6 +1,28 @@
 # Kerne Protocol — Project State
 
 ## Latest Update
+[2026-02-11 16:30] - Frontend: Standardized all terminal page cards to have icons in the top-left corner (absolute top-3 left-3). Removed padding from Benchmark Comparison graph container to maximize space and set graph to be flush with bottom/right edges. Optimized ETHComparisonChart by removing internal chart margins and moving X-axis ticks inside the plot area. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 16:21] - Frontend: Eliminated remaining left edge gap by setting negative left margin (-25px) on chart. Y-axis labels now positioned at 5px from edge. Creates perfectly flush left alignment with no wasted space. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 16:16] - Frontend: Removed chart left margin padding (set to 0) now that y-axis labels are positioned inside the chart area. This maximizes chart space utilization and creates a flush edge alignment. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 16:11] - Frontend: Repositioned y-axis tick labels to display inside the chart area on the left side for improved visual hierarchy and cleaner appearance, similar to modern financial charting interfaces. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 15:48] - API: Implemented 24-hour caching for ETH historical price data with Cache-Control headers (s-maxage=86400, stale-while-revalidate=43200). Vercel edge network now serves cached data for 24 hours, drastically reducing CoinGecko API calls and ensuring consistent data across all visits. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 15:42] - Frontend: Fixed CoinGecko API reliability issues by implementing retry logic with exponential backoff (up to 3 retries), special handling for rate limiting (429 errors), 10-second request timeout, and 30-second client-side timeout. Page now waits for data or gracefully falls back to synthetic data if API fails after all retries. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 15:35] - Frontend: Enhanced benchmark comparison graph with timeframe toggle (1M/3M/6M), calculated actual beta using covariance/variance instead of hardcoded value, removed Sharpe ratio cap to display true calculated values. Graph now dynamically updates based on selected timeframe. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 15:17] - Frontend: Changed benchmark comparison legend box background to transparent for consistent styling with metric cards. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 15:09] - Frontend: Changed Live Protocol Status metric card backgrounds to transparent for cleaner visual appearance. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 14:47] - Frontend: Fixed next.config.ts Vercel build error by removing invalid experimental turbo configuration. Build now passing. - Status: SUCCESS
+
+[2026-02-11 14:42] - Frontend: Updated Terminal page Live Protocol Status card. Changed icon from Shield to HeartPulse with light grey color. Implemented 3x3 grid layout with 9 metrics (Hedge Coverage, Engine Uptime, Contracts Deployed, Tests Passing, Chains Active, OFT Bridges Live, LST Staking Yield, Funding Rate Capture, Basis Trade Hyperliquid). Applied Transparency page styling to all grid cards. Pushed to m-vercel. - Status: SUCCESS
+
 [2026-02-11 14:04] - Documentation: Fixed sidebar navigation (_sidebar.md) to remove remaining hyphens from menu items (Delta Neutral not Delta-Neutral, Zero Fee not Zero-Fee, Meta Governance not Meta-Governance, Institutional Onramp not On-Ramp). - Status: SUCCESS
 
 [2026-02-11 13:52] - Documentation: Updated Introduction (README.md) and Litepaper (litepaper.md) with revised institutional-grade content. Removed all AI-like hyphenation patterns (onchain not on-chain, noncustodial not non-custodial, subsecond not sub-second, etc.). Updated messaging to focus on delta neutral infrastructure, recursive leverage, and proof of solvency. - Status: SUCCESS
