@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv('bot/.env')
 
-VAULT_ADDRESS = "0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC"
+VAULT_ADDRESS = "0xDA9765F84208F8E94225889B2C9331DCe940fB20"
 
 # Multi-RPC fallback for reliability
 RPC_URLS = [

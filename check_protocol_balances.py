@@ -8,7 +8,7 @@ def check_balances():
     addresses = {
         "Treasury": "0x57D400cED462a01Ed51a5De038F204Df49690A99",
         "ZIN Pool": "0xB9BdF6F3Fc3819b61f6fE799bE1395501822d0c7",
-        "Vault": "0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC",
+        "Vault": "0xDA9765F84208F8E94225889B2C9331DCe940fB20",
         "PSM": "0x7286200Ba4C6Ed5041df55965c484a106F4716FD"
     }
     
