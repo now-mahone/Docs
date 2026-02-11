@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-10 14:59] - Frontend: Increased `TypedHeading` animation speed (stagger 0.02s, duration 0.03s) for a snappier feel. Deployed to m-vercel. - Status: SUCCESS
+
 [2026-02-10 14:48] - Frontend: Fixed layout shift in `TypedHeading` typewriter animation by removing `display: none`. Characters now maintain their space with `opacity: 0` before animating, preventing content jumping on mobile. Deployed to m-vercel. - Status: SUCCESS
 
 [2026-02-10 14:08] - Frontend: Implemented Palantir-style character typewriter animations for all H2 headings across the site. Created reusable `TypedHeading` Framer Motion component and applied it to all major pages (Home, About, Transparency, Institutional) and global shared components (KerneExplained, BacktestedPerformance, KerneLive, FAQ). Deployed to m-vercel. - Status: SUCCESS
