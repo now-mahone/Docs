@@ -269,7 +269,7 @@ export default function TerminalPage() {
                 { label: 'Funding rate capture', value: 'Active', sub: 'Basis arbitrage' },
                 { label: 'Basis trade (Hyperliquid)', value: 'Active', sub: 'Delta neutral' },
               ].map((stat, i) => (
-                <div key={i} className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                <div key={i} className="p-6 bg-transparent rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">{stat.label}</div>
                   <div>
                     <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">{stat.value}</div>
