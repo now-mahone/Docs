@@ -1,7 +1,7 @@
 # Kerne Protocol — Project State
 
 ## Latest Update
-[2026-02-11 16:50] - Frontend: Fixed spacing misalignment in Asset Composition card by removing `justify-between` and reducing legend top margin. This ensures the legend box aligns vertically with the metric cards in the adjacent Protocol Health section. Pushed to m-vercel. - Status: SUCCESS
+[2026-02-11 16:54] - Frontend: Standardized vertical alignment between Protocol Health and Asset Composition cards. Reverted Asset Composition changes and applied `justify-between` to the Protocol Health container to ensure consistent bottom spacing across the dashboard row. Pushed to m-vercel. - Status: SUCCESS
 
 [2026-02-11 16:42] - Frontend: Swapped positions of "Benchmark Comparison" and "Protocol Health" cards on the terminal page for improved layout flow. Pushed to m-vercel. - Status: SUCCESS
 

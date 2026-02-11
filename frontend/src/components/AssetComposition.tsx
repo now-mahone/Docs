@@ -36,7 +36,7 @@ export const AssetComposition = () => {
         <PieChartIcon size={16} className="text-[#aab9be] mt-1" />
       </div>
 
-      <div className="flex-1 w-full min-h-0 relative flex flex-col">
+      <div className="flex-1 w-full min-h-0 relative flex flex-col justify-between">
         <div className="h-[250px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -60,7 +60,7 @@ export const AssetComposition = () => {
         </div>
 
         {/* Legend */}
-        <div className="mt-4 p-6 bg-transparent border border-[#444a4f] rounded-sm w-full space-y-4">
+        <div className="mt-8 p-6 bg-transparent border border-[#444a4f] rounded-sm w-full space-y-4">
           {data.map((item, idx) => (
             <div key={idx} className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
