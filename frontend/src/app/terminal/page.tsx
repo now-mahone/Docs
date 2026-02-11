@@ -275,43 +275,6 @@ export default function TerminalPage() {
             );
           })}
 
-          {/* Bottom Row: Protocol Health (4 Cols) and Vault Interaction (2 Cols) */}
-          <div className="lg:col-span-4 p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#444a4f] rounded-sm flex flex-col gap-8 relative">
-            <div className="flex justify-between items-start">
-              <div>
-                <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide block mb-1">LIVE PROTOCOL STATUS</span>
-                <p className="text-xl font-heading font-medium text-[#ffffff]">Protocol Health</p>
-              </div>
-              <HeartPulse size={16} className="text-[#aab9be] mt-1" />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { label: 'Hedge coverage', value: '100%', sub: 'Fully delta neutral' },
-                { label: 'Engine uptime', value: '99.8%', sub: 'Since Feb 7, 2026' },
-                { label: 'Contracts deployed', value: '35+', sub: 'Base + Arbitrum' },
-                { label: 'Tests passing', value: '154', sub: 'Unit, fuzz, invariant' },
-                { label: 'Chains active', value: '3', sub: 'Base, Arbitrum, Optimism' },
-                { label: 'OFT bridges live', value: '4', sub: 'LayerZero V2' },
-                { label: 'LST staking yield', value: 'Active', sub: 'cbETH + rETH' },
-                { label: 'Funding rate capture', value: 'Active', sub: 'Basis arbitrage' },
-                { label: 'Basis trade (Hyperliquid)', value: 'Active', sub: 'Delta neutral' },
-              ].map((stat, i) => (
-                <div key={i} className="p-6 bg-transparent rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
-                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">{stat.label}</div>
-                  <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">{stat.value}</div>
-                    <div className="text-s text-[#37d097] font-medium">{stat.sub}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="lg:col-span-2 border border-[#444a4f] rounded-sm p-0 overflow-hidden bg-[#000000]">
-            <VaultInteraction />
-          </div>
-
           {/* Historical ETH vs Kerne Comparison */}
           <div className="lg:col-span-4 p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#444a4f] rounded-sm flex flex-col lg:flex-row gap-8 relative h-auto lg:h-[600px]">
             {/* Left Column: Header + Chart */}
@@ -424,6 +387,43 @@ export default function TerminalPage() {
                 </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-2 border border-[#444a4f] rounded-sm p-0 overflow-hidden bg-[#000000]">
+            <VaultInteraction />
+          </div>
+
+          {/* Bottom Row: Protocol Health (4 Cols) and Vault Interaction (2 Cols) */}
+          <div className="lg:col-span-4 p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#444a4f] rounded-sm flex flex-col gap-8 relative">
+            <div className="flex justify-between items-start">
+              <div>
+                <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide block mb-1">LIVE PROTOCOL STATUS</span>
+                <p className="text-xl font-heading font-medium text-[#ffffff]">Protocol Health</p>
+              </div>
+              <HeartPulse size={16} className="text-[#aab9be] mt-1" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { label: 'Hedge coverage', value: '100%', sub: 'Fully delta neutral' },
+                { label: 'Engine uptime', value: '99.8%', sub: 'Since Feb 7, 2026' },
+                { label: 'Contracts deployed', value: '35+', sub: 'Base + Arbitrum' },
+                { label: 'Tests passing', value: '154', sub: 'Unit, fuzz, invariant' },
+                { label: 'Chains active', value: '3', sub: 'Base, Arbitrum, Optimism' },
+                { label: 'OFT bridges live', value: '4', sub: 'LayerZero V2' },
+                { label: 'LST staking yield', value: 'Active', sub: 'cbETH + rETH' },
+                { label: 'Funding rate capture', value: 'Active', sub: 'Basis arbitrage' },
+                { label: 'Basis trade (Hyperliquid)', value: 'Active', sub: 'Delta neutral' },
+              ].map((stat, i) => (
+                <div key={i} className="p-6 bg-transparent rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">{stat.label}</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">{stat.value}</div>
+                    <div className="text-s text-[#37d097] font-medium">{stat.sub}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
