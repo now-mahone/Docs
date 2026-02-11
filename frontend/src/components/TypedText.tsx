@@ -8,9 +8,11 @@ interface TypedTextProps {
   children: string;
   className?: string;
   delay?: number;
+  staggerSpeed?: number;
+  charDuration?: number;
 }
 
-export default function TypedText({ children, className = "", delay = 0 }: TypedTextProps) {
+export default function TypedText({ children, className = "", delay = 0, staggerSpeed = 0.02, charDuration = 0.03 }: TypedTextProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.5 });
 
@@ -21,7 +23,7 @@ export default function TypedText({ children, className = "", delay = 0 }: Typed
     visible: {
       opacity: 1,
       transition: { 
-        staggerChildren: 0.02, 
+        staggerChildren: staggerSpeed, 
         delayChildren: delay
       },
     },
@@ -34,7 +36,7 @@ export default function TypedText({ children, className = "", delay = 0 }: Typed
     visible: {
       opacity: 1,
       transition: {
-        duration: 0.03,
+        duration: charDuration,
       },
     },
   };

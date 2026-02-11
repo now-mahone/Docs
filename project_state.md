@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-10 20:30] - Frontend: Replaced hero APY count-up animation with character-by-character typed animation. Created `TypedText.tsx` component that preserves the CSS mesh gradient while displaying the APY value with typewriter effect. No more "starting from 0" logic - APY displays directly at its live value with typing animation. Deployed to m-vercel. - Status: SUCCESS
+
 [2026-02-10 14:59] - Frontend: Increased `TypedHeading` animation speed (stagger 0.02s, duration 0.03s) for a snappier feel. Deployed to m-vercel. - Status: SUCCESS
 
 [2026-02-10 14:48] - Frontend: Fixed layout shift in `TypedHeading` typewriter animation by removing `display: none`. Characters now maintain their space with `opacity: 0` before animating, preventing content jumping on mobile. Deployed to m-vercel. - Status: SUCCESS
