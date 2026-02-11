@@ -100,11 +100,15 @@ contract KerneArbTest is Test {
 
         weth.mint(address(lender), 1000 * 1e18);
 
-        // Approve lender and whitelist DEX targets (pentest security fixes)
+        // Approve lender and whitelist DEX targets + selectors (pentest security fixes)
         vm.startPrank(admin);
         executor.setApprovedLender(address(lender), true);
         executor.setAllowedTarget(address(dexA), true);
         executor.setAllowedTarget(address(dexB), true);
+        // Whitelist the swap(uint256) selector on both DEXes
+        bytes4 swapSelector = bytes4(keccak256("swap(uint256)"));
+        executor.setAllowedSelector(address(dexA), swapSelector, true);
+        executor.setAllowedSelector(address(dexB), swapSelector, true);
         vm.stopPrank();
     }
 

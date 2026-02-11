@@ -131,6 +131,10 @@ contract KerneZINTest is Test {
 
         // Approve vault as flash loan lender for ZIN executor (pentest security fix)
         zinExecutor.setApprovedLender(address(vault), true);
+
+        // Whitelist the MockAggregator swap selector on 1inch router (pentest security fix)
+        bytes4 swapSelector = MockAggregator.swap.selector;
+        zinExecutor.setAllowedSelector(zinExecutor.ONE_INCH_ROUTER(), swapSelector, true);
         
         // Give user some tokens
         weth.mint(user, USER_BALANCE);
@@ -633,9 +637,11 @@ contract KerneZINTest is Test {
         address fusionSettler = address(0x123);
         vm.etch(fusionSettler, address(new MockAggregator()).code);
 
-        // Whitelist fusionSettler as allowed target (pentest security fix)
-        vm.prank(admin);
+        // Whitelist fusionSettler as allowed target + selector (pentest security fix)
+        vm.startPrank(admin);
         zinExecutor.setAllowedTarget(fusionSettler, true);
+        zinExecutor.setAllowedSelector(fusionSettler, MockAggregator.swap.selector, true);
+        vm.stopPrank();
         
         bytes memory aggregatorData = abi.encodeWithSelector(
             MockAggregator.swap.selector,

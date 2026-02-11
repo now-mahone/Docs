@@ -31,6 +31,7 @@ contract KerneSecuritySuite is Test {
     address user = address(0x4);
 
     function setUp() public {
+        vm.warp(1000); // Advance past offChainUpdateCooldown (10 min = 600s)
         asset = new MockAsset();
 
         vault = new KerneVault(asset, "Kerne Vault", "kVault", admin, strategist, address(0x5));

@@ -24,6 +24,7 @@ contract KerneYieldOracleTest is Test {
     address public user = address(0x3);
 
     function setUp() public {
+        vm.warp(1000); // Advance past offChainUpdateCooldown (10 min = 600s)
         asset = new MockAsset();
         oracle = new KerneYieldOracle(admin);
         
@@ -40,6 +41,7 @@ contract KerneYieldOracleTest is Test {
         oracle.grantRole(oracle.UPDATER_ROLE(), strategist);
         oracle.setRequiredConfirmations(1); // Simplify for unit tests
         vault.setYieldOracle(address(oracle));
+        vault.setOffChainUpdateParams(0, 5 minutes); // Disable rate limit for unit tests (0 = no limit)
         vm.stopPrank();
     }
 

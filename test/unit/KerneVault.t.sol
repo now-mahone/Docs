@@ -23,11 +23,14 @@ contract KerneVaultTest is Test {
     address public exchange = makeAddr("exchange");
 
     function setUp() public {
+        vm.warp(1000); // Advance past offChainUpdateCooldown (10 min = 600s)
         asset = new MockERC20();
         vault = new KerneVault(asset, "Kerne Vault Token", "kUSD", admin, bot, exchange);
 
-        vm.prank(admin);
+        vm.startPrank(admin);
         vault.setFounder(admin);
+        vault.setOffChainUpdateParams(0, 5 minutes); // Disable rate limit for unit tests (0 = no limit)
+        vm.stopPrank();
 
         asset.mint(user, 1_000_000 ether);
 
