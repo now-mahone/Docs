@@ -201,12 +201,12 @@ export default function LandingPage() {
               <TypedHeading className="font-heading font-medium tracking-tight text-[#000000] mb-8">
                 Visualize Your Yield
               </TypedHeading>
-              <p className="text-m text-[#000000] max-w-2xl font-medium">
+              <p className="text-m text-[#000000] max-w-2xl font-medium mb-12">
                 Adjust your position to see how Kerne's delta neutral strategy accelerates your capital through market leading funding rates and native staking rewards.
               </p>
             </div>
 
-            <div className="w-full rounded-sm bg-[#000000] p-8 md:p-16 relative shadow-none">
+            <div className="w-full rounded-sm bg-[#000000] p-8 md:p-16 relative shadow-none mb-32">
               {/* Two-column layout */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 {/* LEFT COLUMN: Calculator, Title, and Disclaimer */}
@@ -292,7 +292,9 @@ export default function LandingPage() {
         </section>
 
         {/* Kerne Explained Section */}
-        <KerneExplained />
+        <div className="mb-32">
+          <KerneExplained />
+        </div>
 
         {/* Institutional Reliability Section */}
         <section className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
@@ -301,13 +303,13 @@ export default function LandingPage() {
               <TypedHeading className="font-heading font-medium tracking-tight text-[#000000] mb-8">
                 Institutional Reliability
               </TypedHeading>
-              <p className="text-m text-[#000000] max-w-2xl font-medium">
+              <p className="text-m text-[#000000] max-w-2xl font-medium mb-12">
                 Engineered for the most demanding capital allocators, Kerne combines absolute transparency with autonomous risk management.
               </p>
             </div>
 
             {/* Card Container */}
-            <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12">
+            <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12 mb-32">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
                 <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] shadow-none flex flex-col items-start text-left group transition-colors">
                   <div className="w-12 h-12 bg-transparent border border-[#37d097] rounded-full flex items-center justify-center text-[#ffffff] mb-8">

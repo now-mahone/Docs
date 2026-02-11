@@ -208,7 +208,7 @@ export default function BacktestedPerformance() {
 
   if (loading) {
     return (
-      <div className="w-full min-h-[600px] md:min-h-[750px] rounded-sm bg-[#000000] p-8 md:p-12 flex items-center justify-center">
+      <div className="w-full h-[600px] md:h-[750px] rounded-sm bg-[#000000] p-8 md:p-12 flex items-center justify-center">
         <p className="text-[#ffffff] font-medium text-center">Loading historical data...</p>
       </div>
     );
@@ -216,7 +216,7 @@ export default function BacktestedPerformance() {
 
 
   return (
-    <div className="w-full min-h-[600px] md:min-h-[750px] rounded-sm bg-[#000000] p-8 md:p-12 flex flex-col justify-between">
+    <div className="w-full h-[600px] md:h-[750px] rounded-sm bg-[#000000] p-8 md:p-12 flex flex-col">
       <div className="mb-8">
         <h3 className="font-heading font-medium tracking-tight text-[#ffffff] leading-tight mb-2 text-left">
           Historical performance comparison
@@ -309,7 +309,7 @@ export default function BacktestedPerformance() {
           </div>
 
       {/* Disclaimer */}
-      <div className="mt-8 text-left">
+      <div className="mt-auto pt-8 text-left">
         <p className="text-xs text-[#444a4f] font-medium leading-relaxed">
           Historical simulation based on Ethereum price data{historicalEth.length > 0 && historicalEth[0].date !== FALLBACK_ETH_PRICES[0].date ? ' from CoinGecko' : ''}. Past performance is not indicative of future results. This chart represents a backtested model based on historical funding rates and does not guarantee actual returns. Cryptocurrency investments involve substantial risk of loss.
         </p>
