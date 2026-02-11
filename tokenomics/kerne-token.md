@@ -1,6 +1,6 @@
 # KERNE Token
 
-The **KERNE** token is the core governance and value-capture asset of the protocol.
+The **KERNE** token is the core governance and value capture asset of the protocol.
 
 ## Utility
 
@@ -11,7 +11,7 @@ The **KERNE** token is the core governance and value-capture asset of the protoc
 
 ## The Buyback Flywheel
 
-Kerne implements a self-reinforcing economic loop:
+Kerne implements a self reinforcing economic loop:
 1. Protocol generates revenue (in ETH/USDC).
 2. `KerneTreasury` uses revenue to buy back KERNE on Aerodrome.
 3. Purchased KERNE is distributed to stakers or burned.
@@ -20,6 +20,4 @@ Kerne implements a self-reinforcing economic loop:
 
 ## Supply & Distribution
 
-KERNE follows a "Low Float, High FDV" strategy initially, with the majority of the supply locked in the **Prisoner's Dilemma Airdrop** and long-term vesting schedules to ensure price stability during the growth phase.
-
----
+KERNE follows a "Low Float, High FDV" strategy initially, with the majority of the supply locked in the **Prisoner's Dilemma Airdrop** and long term vesting schedules to ensure price stability during the growth phase.

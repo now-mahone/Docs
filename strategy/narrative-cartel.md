@@ -1,4 +1,3 @@
-
 # The Narrative Cartel
 
 The **Narrative Cartel** is Kerne's strategic approach to dominating mindshare in the DeFi ecosystem through coordinated narrative engineering, community weaponization, and content saturation.
@@ -17,13 +16,13 @@ In crypto, **narrative is liquidity**. The protocols that control the conversati
 
 | Tier | Format | Frequency | Audience |
 |------|--------|-----------|----------|
-| Alpha | Research reports, mechanism deep-dives | Bi-weekly | Institutional, CT influencers |
+| Alpha | Research reports, mechanism deep dives | Biweekly | Institutional, CT influencers |
 | Beta | Thread series, infographics, comparisons | 3x/week | DeFi power users, farmers |
 | Gamma | Memes, community highlights, alpha leaks | Daily | Retail, community members |
 
 ### 2. Ambassador Program
 Kerne operates a tiered ambassador network:
-- **Sentinels** (Tier 1): Long-form content creators with 10K+ followers. Receive KERNE allocation and revenue share.
+- **Sentinels** (Tier 1): Long form content creators with 10K+ followers. Receive KERNE allocation and revenue share.
 - **Advocates** (Tier 2): Active community members who drive forum activity and referrals. Earn point multipliers.
 - **Scouts** (Tier 3): Early users who identify and onboard new participants. Earn referral bonuses.
 
@@ -35,17 +34,17 @@ Kerne maintains active presence on:
 
 ### 4. Strategic Alliances
 Form visible partnerships with complementary protocols to create network effects:
-- **LST Providers** (Lido, Rocket Pool, Coinbase) — Co-marketing around yield optimization
+- **LST Providers** (Lido, Rocket Pool, Coinbase) — Co marketing around yield optimization
 - **DEX Platforms** (Aerodrome, Uniswap) — Joint liquidity programs
-- **Oracle Networks** (Chainlink, Pyth) — Security co-branding
+- **Oracle Networks** (Chainlink, Pyth) — Security co branding
 
 ## Competitive Positioning
 
 Kerne positions itself against competitors on three axes:
 
-1. **vs. Ethena**: "Kerne offers the same delta-neutral yield, but with real-time Proof of Solvency and non-custodial architecture."
+1. **vs. Ethena**: "Kerne offers the same delta neutral yield, but with realtime Proof of Solvency and noncustodial architecture."
 2. **vs. MakerDAO/Sky**: "Kerne delivers higher yields through active funding rate capture, not just RWA interest."
-3. **vs. Aave/Compound**: "Kerne eliminates liquidation risk entirely through delta-neutral hedging."
+3. **vs. Aave/Compound**: "Kerne eliminates liquidation risk entirely through delta neutral hedging."
 
 ## Metrics & KPIs
 
@@ -56,5 +55,3 @@ Kerne positions itself against competitors on three axes:
 | Unique Depositors | 10K+ by Month 6 |
 | Media Mentions | 20+/month in crypto publications |
 | DefiLlama Ranking | Top 20 by TVL on Base |
-
----

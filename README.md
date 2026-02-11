@@ -4,7 +4,7 @@ Welcome to Kerne Protocol: The future of onchain yield.
 
 ## What is Kerne?
 
-Kerne is institutional grade, delta neutral infrastructure designed to generate maximum capital efficiency and yield in the DeFi ecosystem. Built on the shoulders of giants and optimized for the "Restaking" meta, Kerne acts as a financial layer that absorbs capital by offering higher yields than underlying base layers through mathematical precision and game theoretic incentives.
+Kerne is an institutional grade, delta neutral infrastructure designed to generate maximum capital efficiency and yield in the DeFi ecosystem. Built on the shoulders of giants and optimized for the "Restaking" meta, Kerne acts as a financial layer that absorbs capital by offering higher yields than underlying base layers through mathematical precision and game theoretic incentives.
 
 ## The Mission
 
