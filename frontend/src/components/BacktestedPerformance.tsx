@@ -208,44 +208,23 @@ export default function BacktestedPerformance() {
 
   if (loading) {
     return (
-      <section className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-          <div className="flex flex-col items-center text-center mb-16">
-            <TypedHeading className="font-heading font-medium tracking-tight text-[#000000] mb-8">
-              Backtested Performance
-            </TypedHeading>
-            <p className="text-[#000000] max-w-2xl font-medium">
-              Loading historical data...
-            </p>
-          </div>
-        </div>
-      </section>
+      <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12">
+        <p className="text-[#ffffff] font-medium text-center">Loading historical data...</p>
+      </div>
     );
   }
 
 
   return (
-    <section className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className="flex flex-col items-center text-center mb-16">
-          <TypedHeading className="font-heading font-medium tracking-tight text-[#000000] mb-8">
-            Backtested Performance
-          </TypedHeading>
-          <p className="text-[#000000] max-w-2xl font-medium">
-            Historical simulation showing Kerne's delta neutral strategy vs ETH buy-and-hold volatility. Using real Ethereum price data.
-          </p>
-        </div>
-
-        {/* Chart Container */}
-        <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12">
-          <div className="mb-8">
-            <h3 className="font-heading font-medium tracking-tight text-[#ffffff] leading-tight mb-2">
-              Historical performance comparison
-            </h3>
-            <p className="text-m text-[#d4dce1] font-medium mb-6">
-              Kerne's delta neutral strategy delivers consistent yield regardless of market direction.
-            </p>
-          </div>
+    <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12">
+      <div className="mb-8">
+        <h3 className="font-heading font-medium tracking-tight text-[#ffffff] leading-tight mb-2 text-left">
+          Historical performance comparison
+        </h3>
+        <p className="text-m text-[#d4dce1] font-medium mb-6 text-left">
+          Kerne's delta neutral strategy delivers consistent yield regardless of market direction.
+        </p>
+      </div>
 
           {/* Recharts Line Chart */}
           <div className="w-full h-[300px] md:h-[400px]">
@@ -329,14 +308,12 @@ export default function BacktestedPerformance() {
             </div>
           </div>
 
-          {/* Disclaimer */}
-          <div className="mt-8">
-            <p className="text-xs text-[#444a4f] font-medium leading-relaxed">
-              Historical simulation based on Ethereum price data{historicalEth.length > 0 && historicalEth[0].date !== FALLBACK_ETH_PRICES[0].date ? ' from CoinGecko' : ''}. Past performance is not indicative of future results. This chart represents a backtested model based on historical funding rates and does not guarantee actual returns. Cryptocurrency investments involve substantial risk of loss.
-            </p>
-          </div>
-        </div>
+      {/* Disclaimer */}
+      <div className="mt-8 text-left">
+        <p className="text-xs text-[#444a4f] font-medium leading-relaxed">
+          Historical simulation based on Ethereum price data{historicalEth.length > 0 && historicalEth[0].date !== FALLBACK_ETH_PRICES[0].date ? ' from CoinGecko' : ''}. Past performance is not indicative of future results. This chart represents a backtested model based on historical funding rates and does not guarantee actual returns. Cryptocurrency investments involve substantial risk of loss.
+        </p>
       </div>
-    </section>
+    </div>
   );
 }

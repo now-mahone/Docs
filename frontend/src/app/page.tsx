@@ -181,16 +181,18 @@ export default function LandingPage() {
               Building the most capital efficient delta neutral infrastructure in DeFi. Kerne's vaults hedge every position automatically. You deposit ETH. Your capital compounds. That's it.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-24">
               <a href="/terminal" target="_blank" rel="noopener noreferrer" className="relative px-10 font-bold rounded-sm transition-all flex items-center justify-center text-s border-none outline-none shadow-none h-12 gap-2 bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] text-[#ffffff] animate-mesh w-full sm:w-auto">
                 Start Earning
               </a>
             </div>
+
+            {/* Backtested Performance integrated into Hero */}
+            <div className="w-full">
+              <BacktestedPerformance />
+            </div>
           </div>
         </section>
-
-        {/* Backtested Performance Section - Appears first now */}
-        <BacktestedPerformance />
 
         {/* Yield Calculator Section */}
         <section className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
@@ -200,7 +202,7 @@ export default function LandingPage() {
                 Visualize Your Yield
               </TypedHeading>
               <p className="text-m text-[#000000] max-w-2xl font-medium">
-                Adjust your position to see how Kerne's delta neutral strategy accelerates your capital through market-leading funding rates and native staking rewards.
+                Adjust your position to see how Kerne's delta neutral strategy accelerates your capital through market leading funding rates and native staking rewards.
               </p>
             </div>
 

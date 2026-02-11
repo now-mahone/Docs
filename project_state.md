@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-11 10:04] - Frontend: Integrated Historical Performance Comparison graph directly into the Hero section. Removed redundant H2/sub-header from the graph component. Updated calculator copy to "market leading" (removed hyphen). Deployed to m-vercel. - Status: SUCCESS
+
 [2026-02-11 09:58] - Frontend: Added "Visualize Your Yield" header and subtext to the homepage onchain calculator. Integrated with TypedHeading for consistent brand animation. Deployed to m-vercel. - Status: SUCCESS
 
 [2026-02-11 09:51] - Frontend: Swapped Onchain Calculator card with Historical Performance Comparison card on the homepage. The performance graph now appears before the calculator. Deployed to m-vercel. - Status: SUCCESS
