@@ -153,9 +153,14 @@ export default function LandingPage() {
               Live at an APY of<br />
               {!loading && frozenApy !== null ? (
                 isMobile ? (
-                  <span className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh">
+                  <motion.span 
+                    className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                  >
                     {`${frozenApy.toFixed(1)}%`}
-                  </span>
+                  </motion.span>
                 ) : (
                   <TypedText 
                     className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
