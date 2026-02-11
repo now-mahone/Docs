@@ -1,79 +1,59 @@
+// Created: 2026-02-11
+Protocol Documentation V1.0 | February 11, 2026
 
-# Litepaper
+1. Abstract  
+Kerne Protocol is a decentralized synthetic dollar and prime liquidity engine built on the Base network. By industrializing delta neutral hedging strategies, Kerne connects high quality institutional finance with the open opportunities of decentralized finance (DeFi).  
 
-**Protocol Documentation V1.0 | January 14, 2026**
+Our main goal is to provide the most efficient, risk averse infrastructure for the on chain economy, focused on kUSD a robust, yield bearing synthetic asset.  
 
----
+2. The Delta Neutral Mechanism  
+Kerne removes market directional risk by carefully balancing spot assets with equal perpetual short positions. This lets the protocol capture two separate yield streams at the same time: base staking rewards from LSTs and funding rates from short positions on Tier-1 exchanges.  
 
-## 1. Abstract
+Yield Composition Model  
+Source	APY Range	Classification  
+LST Rewards	3–4%	Base Yield  
+Funding Rates	8–15%	Premium Yield  
+Historical simulations show an average combined APY of ~18% during moderate market conditions.  
 
-Kerne Protocol is a decentralized synthetic dollar and prime liquidity engine built on the Base network. By industrializing delta-neutral hedging strategies, Kerne bridges the gap between high-fidelity institutional finance and the permissionless possibilities of decentralized finance (DeFi).
+3. Real Time Proof of Solvency  
+Traditional finance depends on periodic manual audits. Kerne introduces a block by block 'Proof of Solvency' framework. Our hedging engine reconciles on chain reserves with matched CEX balances every 4 hours.  
 
-Our core objective is to provide the most capital-efficient, low-risk infrastructure for the on-chain economy, centered around kUSD—a resilient, yield-bearing synthetic asset.
+All data is accessible through public RPC endpoints, which allows institutional partners to check the protocol's collateralization ratio with sub second accuracy.  
 
-## 2. The Delta-Neutral Mechanism
+4. kUSD: The Synthetic Dollar  
+kUSD is created against the value of user collateral in the KerneVault. It provides a stable unit of account while allowing the underlying principal to keep generating delta neutral yield.  
 
-Kerne eliminates market directional risk by meticulously balancing spot assets with equivalent perpetual short positions. This allows the protocol to capture two distinct yield streams simultaneously: base staking rewards from LSTs and funding rates from short positions on Tier-1 exchanges.
+The protocol maintains a strict overcollateralization ratio (usually 150%) and uses a multi-layered custody model with Tier 1 partners to guarantee complete principal protection.  
 
-### Yield Composition Model
+5. Recursive Leverage Engine  
+For experienced investors, Kerne offers a native "Folding" mechanism. This lets users recursively deposit collateral and mint kUSD to buy more collateral, greatly increasing the net delta neutral yield.  
 
-| Source | APY Range | Classification |
-|--------|-----------|----------------|
-| LST Rewards | 3–4% | Base Yield |
-| Funding Rates | 8–15% | Premium Yield |
+The engine requires a minimum health factor of 1.1x, offering an automated deleveraging buffer to protect the protocol during significant market swings.  
 
-> Historical simulations show an average combined APY of 12.4% during moderate market conditions.
+6. Network Integration  
+Operating directly on Base/Coinbase's Layer 2 network, Kerne ensures very low latency execution and minimal gas costs. This cost savings goes directly to users, leading to higher net APYs compared to Ethereum mainnet options.  
 
-## 3. Real-time Proof of Solvency
+Deep integration with Aerodrome liquidity pools makes sure that kUSD maintains deep, efficient liquidity with small price impact for institutional sized trades.  
 
-Traditional finance relies on periodic manual audits. Kerne introduces a block-by-block Proof of Solvency framework. Our hedging engine reconciles on-chain reserves with mirrored CEX balances every 4 hours.
+7. Institutional Compliance  
+Kerne is designed with a "Whitelisting First" approach for institutional vaults. This lets organizations meet strict KYC/AML requirements while participating in open yield generation.  
 
-All data is accessible via public RPC endpoints, allowing institutional partners to monitor the protocol's collateralization ratio with sub-second precision.
+The protocol works with Tier 1 institutional custodians, such as Safe (formerly Gnosis Safe) and Fireblocks, guaranteeing multisig security for high value treasuries.  
 
-## 4. kUSD: The Synthetic Dollar
+8. Risk Mitigation Pillars  
+Safety is the foundation of Kerne. Our multi-layered architecture ensures proof of solvency through three main pillars:  
 
-kUSD is minted against the value of user collateral in the KerneVault. It provides a stable unit of account while allowing the underlying principal to continue generating delta-neutral yield.
+Oracle Guard Monitoring — Real-time price feed validation and depeg detection  
+Automated Insurance Fund — Pre-funded reserves to cover adverse funding rate periods  
+Hybrid Custody Model — Noncustodial on chain vaults combined with institutional grade CEX custody  
+These components work together to eliminate directional market risk while ensuring the synthetic dollar stays fully collateralized under all circumstances.  
 
-The protocol maintains a strict over-collateralization ratio (typically 150%) and utilizes a multi-layered custody model with Tier-1 partners to ensure absolute principal protection.
+9. Results-Oriented Fees  
+The protocol uses a performance based fee model. A standard fee applies only to the net yield generated by the strategy. There are no fixed management fees, subscription costs, or entry/exit penalties for primary users.  
 
-## 5. Recursive Leverage Engine
+This guarantees complete alignment between the protocol's engineering goals and the allocator's capital results.  
 
-For sophisticated allocators, Kerne offers a native "Folding" mechanism. This enables users to recursively deposit collateral and mint kUSD to buy more collateral, significantly magnifying the net delta-neutral yield.
+10. Strategic Conclusion  
+The Kerne Protocol changes how capital is managed on chain. By removing the risks of crypto-volatility while maintaining the yields of the decentralized economy, we are creating the liquid standard for the next generation of finance.  
 
-The engine enforces a minimum health factor of 1.1x, providing an automated deleveraging buffer to protect the protocol during extreme volatility.
-
-## 6. Network Integration
-
-Operating natively on Base—Coinbase's Layer 2 network—Kerne achieves ultra-low latency execution and minimal gas overhead. This cost efficiency is passed directly to users, resulting in higher net APYs compared to Ethereum mainnet alternatives.
-
-Deep integration with Aerodrome liquidity pools ensures that kUSD maintains deep, efficient liquidity with minimal price impact for institutional-sized entries and exits.
-
-## 7. Institutional Compliance
-
-Kerne is designed with a "Whitelisting-First" architecture for institutional vaults. This allows organizations to maintain strict KYC/AML compliance while participating in permissionless yield generation.
-
-The protocol is compatible with Tier-1 institutional custodians, including Safe (formerly Gnosis Safe) and Fireblocks, ensuring multi-sig security for high-value treasuries.
-
-## 8. Risk Mitigation Pillars
-
-Safety is the foundation of Kerne. Our multi-layered architecture ensures mathematical proof of solvency through three core pillars:
-
-1. **Oracle Guard Monitoring** — Real-time price feed validation and depeg detection
-2. **Automated Insurance Fund** — Pre-funded reserves to absorb adverse funding rate periods
-3. **Hybrid Custody Model** — Non-custodial on-chain vaults paired with institutional-grade CEX custody
-
-These components work in tandem to eliminate directional market risk while ensuring the synthetic dollar remains fully collateralized under all conditions.
-
-## 9. Results-Oriented Fees
-
-The protocol implements a performance-based fee model. A standard fee is applied only to the net yield generated by the strategy. There are no fixed management fees, subscription costs, or entry/exit penalties for primary users.
-
-This ensures absolute alignment between the protocol's engineering objectives and the allocator's capital results.
-
-## 10. Strategic Conclusion
-
-The Kerne Protocol represents a paradigm shift in how capital is managed on-chain. By removing the directional risks of crypto-volatility while maintaining the yields of the decentralized economy, we are building the liquid standard for the next generation of finance.
-
-**The universal prime liquidity layer is now live on Base.**
-
----
+The universal prime liquidity layer is now live on Base.
