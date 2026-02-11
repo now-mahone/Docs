@@ -49,7 +49,7 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
           margin={{
             top: 10,
             right: 10,
-            left: -5,
+            left: 0,
             bottom: 20,
           }}
         >
