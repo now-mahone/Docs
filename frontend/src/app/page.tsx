@@ -188,7 +188,7 @@ export default function LandingPage() {
             </div>
 
             {/* Backtested Performance integrated into Hero */}
-            <div className="w-full">
+            <div className="w-full mb-32">
               <BacktestedPerformance />
             </div>
           </div>

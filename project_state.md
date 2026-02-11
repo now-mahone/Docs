@@ -1,6 +1,8 @@
 # Kerne Project State
 
 ## Latest Update
+[2026-02-11 10:11] - Frontend: Fixed layout shift in performance graph by enforcing minimum height during loading. Stabilized Hero section spacing and removed hyphen from "market leading" in calculator copy. Deployed to m-vercel. - Status: SUCCESS
+
 [2026-02-11 10:04] - Frontend: Integrated Historical Performance Comparison graph directly into the Hero section. Removed redundant H2/sub-header from the graph component. Updated calculator copy to "market leading" (removed hyphen). Deployed to m-vercel. - Status: SUCCESS
 
 [2026-02-11 09:58] - Frontend: Added "Visualize Your Yield" header and subtext to the homepage onchain calculator. Integrated with TypedHeading for consistent brand animation. Deployed to m-vercel. - Status: SUCCESS

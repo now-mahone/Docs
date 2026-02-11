@@ -208,7 +208,7 @@ export default function BacktestedPerformance() {
 
   if (loading) {
     return (
-      <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12">
+      <div className="w-full min-h-[600px] md:min-h-[750px] rounded-sm bg-[#000000] p-8 md:p-12 flex items-center justify-center">
         <p className="text-[#ffffff] font-medium text-center">Loading historical data...</p>
       </div>
     );
@@ -216,7 +216,7 @@ export default function BacktestedPerformance() {
 
 
   return (
-    <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12">
+    <div className="w-full min-h-[600px] md:min-h-[750px] rounded-sm bg-[#000000] p-8 md:p-12 flex flex-col justify-between">
       <div className="mb-8">
         <h3 className="font-heading font-medium tracking-tight text-[#ffffff] leading-tight mb-2 text-left">
           Historical performance comparison
