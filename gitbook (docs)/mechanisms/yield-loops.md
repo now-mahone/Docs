@@ -1,6 +1,6 @@
 # Leveraged Yield Loops
 
-Kerne implements a **One-Click Recursive Leverage Strategy** directly into the protocol's interface, allowing users to maximize their capital efficiency without complex manual operations.
+Kerne implements a **One Click Recursive Leverage Strategy** directly into the protocol's interface, allowing users to maximize their capital efficiency without complex manual operations.
 
 ## How it Works
 
@@ -18,12 +18,10 @@ The result is a **5x leveraged position** (50 ETH position backed by 10 ETH prin
 ## Benefits
 
 - **Boosted Yields**: Users earn 5x the staking rewards and 5x the points.
-- **Minimal Liquidation Risk**: Because the collateral (LST) and the debt (ETH) are highly correlated assets, the risk of liquidation is significantly lower than traditional cross-asset leverage.
+- **Minimal Liquidation Risk**: Because the collateral (LST) and the debt (ETH) are highly correlated assets, the risk of liquidation is significantly lower than traditional cross asset leverage.
 - **TVL Bloating**: This mechanism artificially inflates the protocol's Total Value Locked (TVL) metrics, which is a primary driver for valuation and institutional interest.
 
 ## Risks
 
-- **Depeg Risk**: If the LST loses its peg significantly against ETH, the position could face liquidation. Kerne's **Sentinel V2** monitors these ratios in real-time to trigger emergency deleveraging if necessary.
+- **Depeg Risk**: If the LST loses its peg significantly against ETH, the position could face liquidation. Kerne's **Sentinel V2** monitors these ratios in realtime to trigger emergency deleveraging if necessary.
 - **Cost of Leverage**: The cost of borrowing ETH must be lower than the staking yield + points value for the loop to remain profitable.
-
----
