@@ -1,6 +1,8 @@
 # Kerne Protocol — Project State
 
 ## Latest Update
+[2026-02-11 17:19] - Frontend: Increased negative left margin to -50px and implemented overlap prevention logic for X-axis labels to ensure the current date always has breathing room and the chart remains flush with the container edge. Pushed to m-vercel. - Status: SUCCESS
+
 [2026-02-11 17:13] - Frontend: Applied aggressive negative left margin (-45px) to the Benchmark Comparison chart to eliminate the persistent gap on the left side, ensuring the chart is flush with the container edge. Pushed to m-vercel. - Status: SUCCESS
 
 [2026-02-11 17:08] - Frontend: Reverted X-axis labels to display outside the Benchmark Comparison chart and reset left/right margins to 0 for improved readability while maintaining minimal padding. Pushed to m-vercel. - Status: SUCCESS
