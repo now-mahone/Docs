@@ -4,6 +4,8 @@
 ## LATEST UPDATE
 ================================================================================
 
+[2026-02-12 16:02] - Terminal: Adjusted Sharpe ratio calculation to reflect realistic delta-neutral performance (~19.1) by lowering assumed annual volatility to 0.8%. Pushed to february and m-vercel. - Status: SUCCESS
+
 [2026-02-12 15:12] - Transparency: Removed Protocol Assets and APY Breakdown cards from the transparency page as per feedback. Pushed to february and m-vercel. - Status: SUCCESS
 
 [2026-02-12 15:10] - Transparency: Implemented custom SVG PieChart component for Protocol Assets and APY Breakdown cards. Fixed TVL display to show accurate metrics in $k format. Removed unused framer-motion import. Pushed to february and m-vercel. - Status: SUCCESS
