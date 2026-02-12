@@ -225,51 +225,31 @@ kerne.systems@protonmail.com
 Go to: **https://twitter.com/dcfgod** → Click "Message"
 
 ```
-Hey — big fan of your on-chain positioning. I'm building Kerne Protocol — a yield-bearing stablecoin (kUSD) that routes collateral yield across 200+ DeFi strategies instead of depending on a single source like Ethena's basis trade.
-
-We're live on Base/Arbitrum/Optimism with 20+ verified contracts, 154 passing tests, and a delta-neutral engine running on Hyperliquid. Shipped everything in 6 weeks with a 2-person team. 20.3% APY backtested on 18 months of real data.
-
-Raising a small angel round before our seed. Your DeFi expertise would be incredibly valuable beyond just capital. Happy to share the deck if you're interested — kerne.ai has the full product live.
+Hey, I'm building Kerne Protocol. Delta neutral yield on Base using Hyperliquid funding rates and LST staking. Solves the single strategy risk problem with Ethena. Live on mainnet, 35+ contracts, raising a small angel round. Your DeFi yield expertise would be valuable beyond just capital. kerne.ai
 ```
 
 ### DM 2B: Tetranode (@Tetranode)
 
 ```
-Hey — been following your DeFi investments for a while. I'm building Kerne Protocol — an omnichain yield-bearing stablecoin that diversifies yield across hundreds of strategies instead of depending on a single basis trade like Ethena.
-
-Live on 3 chains with 20+ contracts, 154 tests, and a hedging engine running 24/7 on Hyperliquid. Two-person team, 6 weeks from zero to mainnet.
-
-Raising a small angel round. Would love to get your take on the architecture if you have a few minutes — kerne.ai
+Hey, I'm building Kerne, a yield bearing stablecoin that diversifies across hundreds of yield sources instead of depending on one basis trade. Live on 3 chains, hedging engine running 24/7. Two people, six weeks, zero to mainnet. Raising a small angel round and would love your take. kerne.ai
 ```
 
 ### DM 2C: Jordi Alexander (@0xJordi)
 
 ```
-Hey Jordi — your work on basis trading and delta-neutral strategies at Selini is exactly what we're building infrastructure for. I'm the founder of Kerne Protocol — we've built an autonomous delta-neutral yield engine that captures funding rates on Hyperliquid while holding LST collateral in ERC-4626 vaults on Base.
-
-20.3% APY backtested on 18 months of real Binance funding data. Sharpe ratio of 33.46. Live on mainnet right now.
-
-Given your deep expertise in this exact space, I'd genuinely value your perspective. We're raising a small angel round — happy to walk through the architecture. kerne.ai
+Hey Jordi, your work on basis trading at Selini is exactly what we're building infrastructure for. Kerne runs an autonomous delta neutral engine on Hyperliquid, 20.3% APY backtested on 18 months of real funding data. Live on mainnet now. Would genuinely value your perspective. Raising a small angel round. kerne.ai
 ```
 
 ### DM 2D: Sam Kazemian (@samkazemian)
 
 ```
-Hey Sam — massive respect for what you've built with Frax. I'm building Kerne Protocol — a yield-bearing stablecoin (kUSD) that takes a different approach: instead of a single yield source, we route collateral across 200+ strategies via an autonomous Yield Routing Engine.
-
-Overcollateralized at 150%, not algorithmic. Live on Base/Arbitrum/Optimism with 20+ contracts and a delta-neutral hedging engine on Hyperliquid. Shipped in 6 weeks.
-
-Your stablecoin expertise would be incredibly valuable. Raising a small angel round — would love to share the architecture. kerne.ai
+Hey Sam, I'm building Kerne, a yield bearing stablecoin that takes a different approach from Frax. Overcollateralized at 150%, delta neutral hedging on Hyperliquid, yield routed across multiple sources not just one. Live on Base with 35+ verified contracts. Raising a small angel round and your stablecoin expertise would be huge. kerne.ai
 ```
 
 ### DM 2E: Robert Leshner (@rleshner)
 
 ```
-Hey Robert — what you built with Compound fundamentally shaped DeFi lending. I'm building Kerne Protocol — a yield-bearing stablecoin that earns 12-20% APY through diversified DeFi yield routing, not single-strategy dependence.
-
-We're live on 3 chains with 20+ verified contracts, ERC-4626 vaults, and a delta-neutral hedging engine. 154 passing Foundry tests. Two-person team, 6 weeks to mainnet.
-
-Raising a small angel round and would genuinely value your perspective on the architecture. Happy to share the deck — kerne.ai
+Hey Robert, I'm building Kerne, a yield bearing stablecoin earning 12 to 20% APY through delta neutral hedging and diversified yield routing. Live on 3 chains, 154 passing tests, shipped in 6 weeks with 2 people. Raising a small angel round and would value your perspective on the architecture. kerne.ai
 ```
 
 ---
