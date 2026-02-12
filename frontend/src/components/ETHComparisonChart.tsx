@@ -49,7 +49,7 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
           margin={{
             top: 0,
             right: 0,
-            left: -45,
+            left: -50,
             bottom: 0,
           }}
         >
@@ -72,6 +72,11 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
               if (entry && entry.isBiWeekly) {
                 const isFirst = payload.index === 0;
                 const isLast = payload.index === data.length - 1;
+                
+                // Prevent overlap on the right edge by hiding the second-to-last tick if it's too close to the last one
+                const isNearEnd = !isLast && (data.length - 1 - payload.index) < 7;
+                if (isNearEnd) return null;
+
                 return (
                   <g transform={`translate(${x},${y})`}>
                     <text 
