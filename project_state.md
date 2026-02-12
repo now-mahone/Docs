@@ -1,6 +1,8 @@
 # Kerne Protocol — Project State
 
 ## Latest Update
+[2026-02-11 17:35] - Frontend: Removed bottom margin from the Benchmark Comparison chart to maximize vertical space utilization. Combined with dynamic X-axis spacing and flush left alignment for a compact, professional financial interface. Pushed to m-vercel. - Status: SUCCESS
+
 [2026-02-11 17:34] - Frontend: Implemented dynamic even spacing for X-axis labels on the Benchmark Comparison chart. Labels are now automatically distributed (targeting ~5 ticks) based on the data length, ensuring consistent visual rhythm across all timeframes (1M/3M/6M) while always prioritizing the first and last dates. Pushed to m-vercel. - Status: SUCCESS
 
 [2026-02-11 17:30] - Frontend: Optimized X-axis spacing and padding based on Morpho's chart implementation. Applied `padding={{ left: 50 }}` to XAxis to offset the negative left margin, ensuring labels align correctly with the plot area while maintaining a flush container edge. Pushed to m-vercel. - Status: SUCCESS
