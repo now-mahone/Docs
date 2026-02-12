@@ -278,7 +278,7 @@ export default function TerminalPage() {
           {/* Historical ETH vs Kerne Comparison */}
           <div className="lg:col-span-4 p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#444a4f] rounded-sm flex flex-col lg:flex-row gap-8 relative h-auto lg:h-[600px]">
             {/* Left Column: Header + Chart */}
-            <div className="w-full lg:flex-[3] flex flex-col min-w-0 h-[380px] lg:h-full">
+            <div className="w-full lg:flex-[3] flex flex-col min-w-0 h-[420px] lg:h-full mb-8 lg:mb-0">
               <div className="mb-6 flex justify-between items-start">
                 <div>
                   <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide block mb-1">
@@ -289,7 +289,6 @@ export default function TerminalPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <ChartArea size={16} className="text-[#aab9be]" />
                   <div className="flex items-center gap-1 bg-[#16191c] border border-[#444a4f] rounded-sm p-1">
                     <button
                       onClick={() => setTimeframe(30)}
@@ -396,7 +395,7 @@ export default function TerminalPage() {
 
           {/* Bottom Row: Protocol Health (4 Cols) and Vault Interaction (2 Cols) */}
           <div className="lg:col-span-4 p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#444a4f] rounded-sm flex flex-col justify-between relative">
-            <div className="flex justify-between items-start">
+            <div className="flex justify-between items-start mb-6 lg:mb-0">
               <div>
                 <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide block mb-1">LIVE PROTOCOL STATUS</span>
                 <p className="text-xl font-heading font-medium text-[#ffffff]">Protocol Health</p>
