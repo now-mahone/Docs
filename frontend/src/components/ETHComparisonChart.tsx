@@ -48,9 +48,9 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
           data={data}
           margin={{
             top: 0,
-            right: -1,
-            left: -25,
-            bottom: -1,
+            right: 0,
+            left: 0,
+            bottom: 0,
           }}
         >
           <defs>
@@ -77,7 +77,7 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
                     <text 
                       x={0} 
                       y={0} 
-                      dy={-10} 
+                      dy={16} 
                       textAnchor={isFirst ? "start" : isLast ? "end" : "middle"} 
                       fill="#aab9be" 
                       fontSize="11px" 
