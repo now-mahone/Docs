@@ -344,7 +344,7 @@ export default function TerminalPage() {
 
                   <div className="flex justify-between items-center gap-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#4c7be7] shrink-0" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#37d097] shrink-0" />
                       <span className="text-xs font-medium text-[#aab9be]">Kerne Simulated</span>
                     </div>
                     <span className="text-xs font-bold text-[#ffffff] whitespace-nowrap">Backtested</span>

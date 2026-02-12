@@ -55,8 +55,8 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
         >
           <defs>
             <linearGradient id="kerneGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#4c7be7" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#4c7be7" stopOpacity={0}/>
+              <stop offset="5%" stopColor="#37d097" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="#37d097" stopOpacity={0}/>
             </linearGradient>
           </defs>
           <CartesianGrid stroke="#22252a" vertical={false} horizontal={true} strokeDasharray="none" />
@@ -138,7 +138,7 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
             name="Kerne Simulated"
             type="linear"
             dataKey="simulated"
-            stroke="#4c7be7"
+            stroke="#37d097"
             strokeWidth={2}
             fill="url(#kerneGradient)"
             dot={false}
