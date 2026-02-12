@@ -1,6 +1,8 @@
 # Kerne Protocol — Project State
 
 ## Latest Update
+[2026-02-11 17:02] - Frontend: Eliminated unnecessary padding and margins from the Benchmark Comparison chart. Set margins to 0/negative values and repositioned X/Y axis labels inside the plot area to ensure the chart is flush with container edges. Pushed to m-vercel. - Status: SUCCESS
+
 [2026-02-11 16:54] - Frontend: Standardized vertical alignment between Protocol Health and Asset Composition cards. Reverted Asset Composition changes and applied `justify-between` to the Protocol Health container to ensure consistent bottom spacing across the dashboard row. Pushed to m-vercel. - Status: SUCCESS
 
 [2026-02-11 16:42] - Frontend: Swapped positions of "Benchmark Comparison" and "Protocol Health" cards on the terminal page for improved layout flow. Pushed to m-vercel. - Status: SUCCESS
