@@ -2,7 +2,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance } from 'wagmi';
+import { parseEther, formatEther } from 'viem';
+import { VAULT_ADDRESS } from '@/config';
+import KerneVaultABI from '@/abis/KerneVault.json';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   DropdownMenu, 
@@ -13,10 +16,26 @@ import {
 import { Vault, ChevronDown } from 'lucide-react';
 
 export function VaultInteraction() {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const [amount, setAmount] = useState('');
   const [selectedChain, setSelectedChain] = useState('Base');
   const [ethPrice, setEthPrice] = useState(3150);
+
+  const { data: balanceData } = useBalance({
+    address: address,
+  });
+
+  const { 
+    writeContract, 
+    data: hash, 
+    isPending,
+    error: writeError 
+  } = useWriteContract();
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = 
+    useWaitForTransactionReceipt({ 
+      hash, 
+    });
 
   useEffect(() => {
     const fetchPrice = async () => {
@@ -32,6 +51,17 @@ export function VaultInteraction() {
   }, []);
 
   const usdValue = amount ? (parseFloat(amount) * ethPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00';
+
+  const handleDeposit = () => {
+    if (!amount || isNaN(parseFloat(amount))) return;
+    
+    writeContract({
+      address: VAULT_ADDRESS,
+      abi: KerneVaultABI.abi,
+      functionName: 'deposit',
+      args: [parseEther(amount), address],
+    });
+  };
 
   const chainLogos: { [key: string]: string } = {
     'Base': '/Base-Square-Blue.svg',
@@ -98,7 +128,9 @@ export function VaultInteraction() {
           <div className="space-y-3">
             <div className="flex justify-between items-end">
               <label className="text-s font-medium text-[#aab9be] tracking-tight block">Amount (WETH)</label>
-              <span className="text-s font-medium text-[#aab9be] tracking-tight">Balance: 0.00</span>
+              <span className="text-s font-medium text-[#aab9be] tracking-tight">
+                Balance: {balanceData ? parseFloat(formatEther(balanceData.value)).toFixed(4) : '0.00'}
+              </span>
             </div>
             <div className="relative">
               <input 
@@ -120,15 +152,31 @@ export function VaultInteraction() {
           <div className="flex-1" />
 
           <button 
-            disabled={!isConnected}
+            onClick={handleDeposit}
+            disabled={!isConnected || isPending || isConfirming || !amount}
             className={`w-full h-12 font-bold text-s rounded-sm flex items-center justify-center transition-all ${
-              isConnected 
-                ? 'bg-[#ffffff] text-[#000000]' 
-                : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-default'
+              isConnected && !isPending && !isConfirming && amount
+                ? 'bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff]' 
+                : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
             }`}
           >
-            {isConnected ? 'Confirm Deposit' : 'Connect wallet to interact'}
+            {isPending || isConfirming ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                {isPending ? 'Confirming in Wallet...' : 'Processing Transaction...'}
+              </div>
+            ) : isConnected ? 'Confirm Deposit' : 'Connect wallet to interact'}
           </button>
+          {isConfirmed && (
+            <p className="text-xs text-[#37d097] font-bold text-center mt-2 uppercase tracking-widest">
+              Deposit Successful
+            </p>
+          )}
+          {writeError && (
+            <p className="text-xs text-red-500 font-medium text-center mt-2">
+              {writeError.message.includes('User rejected') ? 'Transaction rejected' : 'Deposit failed'}
+            </p>
+          )}
         </TabsContent>
 
         <TabsContent value="withdraw" className="flex-1 flex flex-col space-y-6 mt-0">
