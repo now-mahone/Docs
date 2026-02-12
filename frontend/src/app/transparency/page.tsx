@@ -150,21 +150,39 @@ export default function TransparencyPage() {
                         <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#37d097]" />
                         <div className="flex items-baseline justify-between flex-1">
                           <span className="text-xs font-medium text-[#d4dce1]">Base Vault</span>
-                          <span className="text-xs text-[#d4dce1]">{((parseFloat(data.assets.on_chain_eth)/parseFloat(data.assets.total_eth))*100).toFixed(0)}%</span>
+                          <span className="text-xs text-[#d4dce1]">
+                            {(() => {
+                              const total = parseFloat(data.assets.total_eth);
+                              const onChain = parseFloat(data.assets.on_chain_eth);
+                              return total > 0 ? ((onChain / total) * 100).toFixed(0) : "0";
+                            })()}%
+                          </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#f82b6c]" />
                         <div className="flex items-baseline justify-between flex-1">
                           <span className="text-xs font-medium text-[#d4dce1]">Mirrored Hedge</span>
-                          <span className="text-xs text-[#d4dce1]">{((parseFloat(data.assets.off_chain_eth)/parseFloat(data.assets.total_eth))*100).toFixed(0)}%</span>
+                          <span className="text-xs text-[#d4dce1]">
+                            {(() => {
+                              const total = parseFloat(data.assets.total_eth);
+                              const offChain = parseFloat(data.assets.off_chain_eth);
+                              return total > 0 ? ((offChain / total) * 100).toFixed(0) : "0";
+                            })()}%
+                          </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#4c7be7]" />
                         <div className="flex items-baseline justify-between flex-1">
                           <span className="text-xs font-medium text-[#d4dce1]">Insurance Reserve</span>
-                          <span className="text-xs text-[#d4dce1]">{((parseFloat(data.assets.breakdown.find(b => b.name === "Insurance_Fund")?.value || "0")/parseFloat(data.assets.total_eth))*100).toFixed(0)}%</span>
+                          <span className="text-xs text-[#d4dce1]">
+                            {(() => {
+                              const total = parseFloat(data.assets.total_eth);
+                              const insurance = parseFloat(data.assets.breakdown.find(b => b.name === "Insurance_Fund")?.value || "0");
+                              return total > 0 ? ((insurance / total) * 100).toFixed(0) : "0";
+                            })()}%
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -198,14 +216,26 @@ export default function TransparencyPage() {
                         <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#37d097]" />
                         <div className="flex items-baseline justify-between flex-1">
                           <span className="text-xs font-medium text-[#d4dce1]">Non-Custodial (Base)</span>
-                          <span className="text-xs text-[#d4dce1]">{(( (parseFloat(data.assets.total_eth)-parseFloat(data.assets.off_chain_eth))/parseFloat(data.assets.total_eth))*100).toFixed(0)}%</span>
+                          <span className="text-xs text-[#d4dce1]">
+                            {(() => {
+                              const total = parseFloat(data.assets.total_eth);
+                              const offChain = parseFloat(data.assets.off_chain_eth);
+                              return total > 0 ? (((total - offChain) / total) * 100).toFixed(0) : "0";
+                            })()}%
+                          </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#4c7be7]" />
                         <div className="flex items-baseline justify-between flex-1">
                           <span className="text-xs font-medium text-[#d4dce1]">Vault Custody (MPC)</span>
-                          <span className="text-xs text-[#d4dce1]">{((parseFloat(data.assets.off_chain_eth)/parseFloat(data.assets.total_eth))*100).toFixed(0)}%</span>
+                          <span className="text-xs text-[#d4dce1]">
+                            {(() => {
+                              const total = parseFloat(data.assets.total_eth);
+                              const offChain = parseFloat(data.assets.off_chain_eth);
+                              return total > 0 ? ((offChain / total) * 100).toFixed(0) : "0";
+                            })()}%
+                          </span>
                         </div>
                       </div>
                     </div>
