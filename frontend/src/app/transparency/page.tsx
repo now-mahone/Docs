@@ -121,50 +121,94 @@ export default function TransparencyPage() {
                 </div>
               </div>
 
-              {/* Row 2: 2 Larger Cards with Dynamic Data */}
+              {/* Row 2: 2 Larger Cards with Pie Charts */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Total Value Locked */}
+                {/* Protocol Assets Pie Chart */}
                 <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-6">Protocol Assets</div>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-xs font-medium text-[#d4dce1]">Total Value Locked</span>
-                      <span className="text-s font-bold text-[#ffffff]">${parseFloat(data.assets.total_usd).toLocaleString()}</span>
+                  <div className="flex items-center gap-6">
+                    {/* TVL Display */}
+                    <div className="flex flex-col items-center justify-center w-24 h-24 shrink-0">
+                      <div className="text-xl font-heading font-medium text-[#ffffff]">${parseFloat(data.assets.total_usd || "0").toLocaleString()}</div>
+                      <div className="text-xs text-[#aab9be] mt-1">TVL</div>
                     </div>
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-xs font-medium text-[#d4dce1]">Total Assets (ETH)</span>
-                      <span className="text-s font-bold text-[#ffffff]">{parseFloat(data.assets.total_eth).toFixed(4)} ETH</span>
-                    </div>
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-xs font-medium text-[#d4dce1]">On-Chain Reserves</span>
-                      <span className="text-s font-bold text-[#ffffff]">{parseFloat(data.assets.on_chain_eth).toFixed(4)} ETH</span>
-                    </div>
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-xs font-medium text-[#d4dce1]">Off-Chain Hedge</span>
-                      <span className="text-s font-bold text-[#ffffff]">{parseFloat(data.assets.off_chain_eth).toFixed(4)} ETH</span>
+                    {/* Legend with Percentages */}
+                    <div className="grid grid-cols-1 gap-3 flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#37d097]" />
+                        <div className="flex items-baseline justify-between flex-1">
+                          <span className="text-xs font-medium text-[#d4dce1]">On-Chain (Base)</span>
+                          <span className="text-xs text-[#d4dce1]">
+                            {(() => {
+                              const total = parseFloat(data.assets.total_eth);
+                              const onChain = parseFloat(data.assets.on_chain_eth);
+                              return total > 0 ? ((onChain / total) * 100).toFixed(1) : "100.0";
+                            })()}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#f82b6c]" />
+                        <div className="flex items-baseline justify-between flex-1">
+                          <span className="text-xs font-medium text-[#d4dce1]">Off-Chain Hedge</span>
+                          <span className="text-xs text-[#d4dce1]">
+                            {(() => {
+                              const total = parseFloat(data.assets.total_eth);
+                              const offChain = parseFloat(data.assets.off_chain_eth);
+                              return total > 0 ? ((offChain / total) * 100).toFixed(1) : "0.0";
+                            })()}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#4c7be7]" />
+                        <div className="flex items-baseline justify-between flex-1">
+                          <span className="text-xs font-medium text-[#d4dce1]">Insurance Reserve</span>
+                          <span className="text-xs text-[#d4dce1]">
+                            {(() => {
+                              const total = parseFloat(data.assets.total_eth);
+                              const insurance = parseFloat(data.assets.breakdown.find(b => b.name === "Insurance_Fund")?.value || "0");
+                              return total > 0 ? ((insurance / total) * 100).toFixed(1) : "0.0";
+                            })()}%
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* APY Breakdown */}
+                {/* APY Breakdown Pie Chart */}
                 <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-6">APY Breakdown</div>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-xs font-medium text-[#d4dce1]">Total APY</span>
-                      <span className="text-s font-bold text-[#37d097]">{apyData?.apy ? apyData.apy.toFixed(2) : "18.40"}%</span>
+                  <div className="flex items-center gap-6">
+                    {/* Total APY Display */}
+                    <div className="flex flex-col items-center justify-center w-24 h-24 shrink-0">
+                      <div className="text-xl font-heading font-medium text-[#37d097]">{apyData?.apy ? apyData.apy.toFixed(1) : "18.4"}%</div>
+                      <div className="text-xs text-[#aab9be] mt-1">APY</div>
                     </div>
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-xs font-medium text-[#d4dce1]">Funding Rate (Annual)</span>
-                      <span className="text-s font-bold text-[#ffffff]">{apyData?.breakdown?.best_funding_annual_pct ? apyData.breakdown.best_funding_annual_pct.toFixed(2) : "16.90"}%</span>
-                    </div>
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-xs font-medium text-[#d4dce1]">LST Staking Yield</span>
-                      <span className="text-s font-bold text-[#ffffff]">{apyData?.staking_yield ? (apyData.staking_yield * 100).toFixed(2) : "3.50"}%</span>
-                    </div>
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-xs font-medium text-[#d4dce1]">Effective Leverage</span>
-                      <span className="text-s font-bold text-[#ffffff]">{apyData?.breakdown?.leverage ? apyData.breakdown.leverage.toFixed(1) : "3.0"}x</span>
+                    {/* Legend with Percentages */}
+                    <div className="grid grid-cols-1 gap-3 flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#37d097]" />
+                        <div className="flex items-baseline justify-between flex-1">
+                          <span className="text-xs font-medium text-[#d4dce1]">Funding Rate</span>
+                          <span className="text-xs text-[#d4dce1]">{apyData?.breakdown?.best_funding_annual_pct ? apyData.breakdown.best_funding_annual_pct.toFixed(1) : "16.9"}%</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#4c7be7]" />
+                        <div className="flex items-baseline justify-between flex-1">
+                          <span className="text-xs font-medium text-[#d4dce1]">LST Staking</span>
+                          <span className="text-xs text-[#d4dce1]">{apyData?.staking_yield ? (apyData.staking_yield * 100).toFixed(1) : "3.5"}%</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#ffffff]" />
+                        <div className="flex items-baseline justify-between flex-1">
+                          <span className="text-xs font-medium text-[#d4dce1]">Leverage</span>
+                          <span className="text-xs text-[#d4dce1]">{apyData?.breakdown?.leverage ? apyData.breakdown.leverage.toFixed(1) : "3.0"}x</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
