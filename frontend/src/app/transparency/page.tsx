@@ -7,8 +7,8 @@ import Image from 'next/image';
 import { Shield, BarChart3, Globe, CheckCircle2, ShieldCheck, TrendingDown, ZapOff, ExternalLink, PieChart, Coins, BadgeCheck, Layers } from 'lucide-react';
 import { useSolvency } from '@/hooks/useSolvency';
 import { SolvencyChart } from '@/components/SolvencyChart';
+import { PieChart as CustomPieChart } from '@/components/PieChart';
 import { VAULT_ADDRESS } from '@/config';
-import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import Footer from '@/components/Footer';
 import Navbar from '@/components/Navbar';
@@ -127,10 +127,33 @@ export default function TransparencyPage() {
                 <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-6">Protocol Assets</div>
                   <div className="flex items-center gap-6">
-                    {/* TVL Display */}
-                    <div className="flex flex-col items-center justify-center w-24 h-24 shrink-0">
-                      <div className="text-xl font-heading font-medium text-[#ffffff]">${parseFloat(data.assets.total_usd || "0").toLocaleString()}</div>
-                      <div className="text-xs text-[#aab9be] mt-1">TVL</div>
+                    {/* TVL Display with Pie Chart */}
+                    <div className="relative flex items-center justify-center w-24 h-24 shrink-0">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
+                        <div className="text-sm font-heading font-medium text-[#ffffff]">${(parseFloat(data.assets.total_usd || "0") / 1000).toFixed(1)}k</div>
+                        <div className="text-[10px] text-[#aab9be] uppercase tracking-tighter">TVL</div>
+                      </div>
+                      <CustomPieChart 
+                        size={96}
+                        strokeWidth={8}
+                        data={[
+                          { 
+                            name: 'On-Chain', 
+                            value: parseFloat(data.assets.on_chain_eth), 
+                            color: '#37d097' 
+                          },
+                          { 
+                            name: 'Off-Chain', 
+                            value: parseFloat(data.assets.off_chain_eth), 
+                            color: '#f82b6c' 
+                          },
+                          { 
+                            name: 'Insurance', 
+                            value: parseFloat(data.assets.breakdown.find(b => b.name === "Insurance_Fund")?.value || "0"), 
+                            color: '#4c7be7' 
+                          }
+                        ]}
+                      />
                     </div>
                     {/* Legend with Percentages */}
                     <div className="grid grid-cols-1 gap-3 flex-1">
@@ -181,10 +204,28 @@ export default function TransparencyPage() {
                 <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-6">APY Breakdown</div>
                   <div className="flex items-center gap-6">
-                    {/* Total APY Display */}
-                    <div className="flex flex-col items-center justify-center w-24 h-24 shrink-0">
-                      <div className="text-xl font-heading font-medium text-[#37d097]">{apyData?.apy ? apyData.apy.toFixed(1) : "18.4"}%</div>
-                      <div className="text-xs text-[#aab9be] mt-1">APY</div>
+                    {/* Total APY Display with Pie Chart */}
+                    <div className="relative flex items-center justify-center w-24 h-24 shrink-0">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
+                        <div className="text-sm font-heading font-medium text-[#37d097]">{apyData?.apy ? apyData.apy.toFixed(1) : "18.4"}%</div>
+                        <div className="text-[10px] text-[#aab9be] uppercase tracking-tighter">APY</div>
+                      </div>
+                      <CustomPieChart 
+                        size={96}
+                        strokeWidth={8}
+                        data={[
+                          { 
+                            name: 'Funding', 
+                            value: apyData?.breakdown?.best_funding_annual_pct || 16.9, 
+                            color: '#37d097' 
+                          },
+                          { 
+                            name: 'Staking', 
+                            value: (apyData?.staking_yield || 0.035) * 100, 
+                            color: '#4c7be7' 
+                          }
+                        ]}
+                      />
                     </div>
                     {/* Legend with Percentages */}
                     <div className="grid grid-cols-1 gap-3 flex-1">
