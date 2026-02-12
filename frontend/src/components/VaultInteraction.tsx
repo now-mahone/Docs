@@ -68,12 +68,18 @@ export function VaultInteraction() {
       return;
     }
     
+    // If we are on Base, we use the native ETH deposit flow (if supported by contract)
+    // However, the KerneVault is an ERC4626 which expects the underlying ASSET.
+    // For Base, the asset is WETH. For Arbitrum, it is wstETH.
+    // To simplify for the user, we should ideally wrap ETH or use a helper, 
+    // but for now we must ensure we aren't sending native ETH to a non-payable deposit function.
+    
     writeContract({
       address: targetVault,
       abi: KerneVaultABI.abi,
       functionName: 'deposit',
       args: [parseEther(amount), address],
-      value: parseEther(amount), // Send ETH with the call
+      // value: parseEther(amount), // REMOVED: KerneVault.deposit is NOT payable in the ABI
     });
   };
 
