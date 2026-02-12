@@ -2,9 +2,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance, useChainId } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
-import { VAULT_ADDRESS } from '@/config';
+import { VAULT_ADDRESS, ARB_VAULT_ADDRESS, OP_VAULT_ADDRESS } from '@/config';
 import KerneVaultABI from '@/abis/KerneVault.json';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -17,12 +17,14 @@ import { Vault, ChevronDown } from 'lucide-react';
 
 export function VaultInteraction() {
   const { isConnected, address } = useAccount();
+  const chainId = useChainId();
   const [amount, setAmount] = useState('');
   const [selectedChain, setSelectedChain] = useState('Base');
   const [ethPrice, setEthPrice] = useState(3150);
 
   const { data: balanceData } = useBalance({
     address: address,
+    chainId: selectedChain === 'Base' ? 8453 : selectedChain === 'Arbitrum' ? 42161 : 10,
   });
 
   const { 
@@ -55,11 +57,23 @@ export function VaultInteraction() {
   const handleDeposit = () => {
     if (!amount || isNaN(parseFloat(amount))) return;
     
+    const targetVault = selectedChain === 'Base' 
+      ? VAULT_ADDRESS 
+      : selectedChain === 'Arbitrum' 
+        ? ARB_VAULT_ADDRESS 
+        : OP_VAULT_ADDRESS;
+
+    if (!targetVault || targetVault === '0x0000000000000000000000000000000000000000') {
+      console.error("Vault address not configured for", selectedChain);
+      return;
+    }
+    
     writeContract({
-      address: VAULT_ADDRESS,
+      address: targetVault,
       abi: KerneVaultABI.abi,
       functionName: 'deposit',
       args: [parseEther(amount), address],
+      value: parseEther(amount), // Send ETH with the call
     });
   };
 
