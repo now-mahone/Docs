@@ -16,6 +16,7 @@ export default function TerminalPage() {
   const { isConnected } = useAccount();
   const [apyData, setApyData] = useState<any>(null);
   const [solvencyData, setSolvencyData] = useState<any>(null);
+  const [protocolHealth, setProtocolHealth] = useState<any>(null);
   const [historicalEth, setHistoricalEth] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<30 | 90 | 180>(90);
@@ -24,13 +25,15 @@ export default function TerminalPage() {
     const fetchData = async () => {
       try {
         // Fetch all data with longer timeout for eth-history
-        const [apyRes, solvencyRes] = await Promise.all([
+        const [apyRes, solvencyRes, healthRes] = await Promise.all([
           fetch('/api/apy').then(r => r.json()).catch(() => ({ apy: 18.40 })),
-          fetch('/api/solvency').then(r => r.json()).catch(() => ({ solvency_ratio: 142 }))
+          fetch('/api/solvency').then(r => r.json()).catch(() => ({ solvency_ratio: 142 })),
+          fetch('/api/protocol-health').then(r => r.json()).catch(() => null)
         ]);
         
         setApyData(apyRes);
         setSolvencyData(solvencyRes);
+        setProtocolHealth(healthRes);
         
         // Fetch eth-history separately with longer timeout to ensure it completes
         try {
@@ -443,15 +446,15 @@ export default function TerminalPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
-                { label: 'Hedge coverage', value: '100%', sub: 'Fully delta neutral' },
-                { label: 'Engine uptime', value: '99.8%', sub: 'Since Feb 7, 2026' },
-                { label: 'Contracts deployed', value: '35+', sub: 'Base + Arbitrum' },
-                { label: 'Tests passing', value: '154', sub: 'Unit, fuzz, invariant' },
-                { label: 'Chains active', value: '3', sub: 'Base, Arbitrum, Optimism' },
-                { label: 'OFT bridges live', value: '4', sub: 'LayerZero V2' },
-                { label: 'LST staking yield', value: 'Active', sub: 'cbETH + rETH' },
-                { label: 'Funding rate capture', value: 'Active', sub: 'Basis arbitrage' },
-                { label: 'Basis trade (Hyperliquid)', value: 'Active', sub: 'Delta neutral' },
+                { label: 'Hedge coverage', value: protocolHealth ? `${protocolHealth.hedge_coverage}%` : '100%', sub: protocolHealth?.hedge_coverage_sub || 'Fully delta neutral' },
+                { label: 'Engine uptime', value: protocolHealth ? `${protocolHealth.engine_uptime}%` : '99.8%', sub: protocolHealth?.engine_uptime_sub || 'Since Feb 7, 2026' },
+                { label: 'Contracts deployed', value: protocolHealth?.contracts_deployed ? `${protocolHealth.contracts_deployed}+` : '35+', sub: protocolHealth?.contracts_deployed_sub || 'Base + Arbitrum' },
+                { label: 'Tests passing', value: protocolHealth?.tests_passing?.toString() || '154', sub: protocolHealth?.tests_passing_sub || 'Unit, fuzz, invariant' },
+                { label: 'Chains active', value: protocolHealth?.chains_active?.toString() || '3', sub: protocolHealth?.chains_active_sub || 'Base, Arbitrum, Optimism' },
+                { label: 'OFT bridges live', value: protocolHealth?.oft_bridges_live?.toString() || '4', sub: protocolHealth?.oft_bridges_live_sub || 'LayerZero V2' },
+                { label: 'LST staking yield', value: protocolHealth?.lst_staking_yield || 'Active', sub: protocolHealth?.lst_staking_yield_sub || 'cbETH + rETH' },
+                { label: 'Funding rate capture', value: protocolHealth?.funding_rate_capture || 'Active', sub: protocolHealth?.funding_rate_capture_sub || 'Basis arbitrage' },
+                { label: 'Basis trade (Hyperliquid)', value: protocolHealth?.basis_trade_hyperliquid || 'Active', sub: protocolHealth?.basis_trade_hyperliquid_sub || 'Delta neutral' },
               ].map((stat, i) => (
                 <div key={i} className="p-6 bg-transparent rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">{stat.label}</div>
