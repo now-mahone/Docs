@@ -243,7 +243,7 @@ export default function TerminalPage() {
   const cards = [
     { label: 'APY%', value: (apyData?.apy || 18.40).toFixed(2) + '%', icon: Percent, color: '#37d097' },
     { label: 'Solvency Ratio', value: solvencyData?.solvency_ratio ? (parseFloat(solvencyData.solvency_ratio)/100).toFixed(2) + 'x' : '1.42x', icon: Scale, color: '#37d097' },
-    { label: 'kUSD Price', value: '$1.000' + (Math.floor(Math.random() * 9) + 1), icon: DollarSign, color: '#37d097' },
+    { label: 'kUSD Price', value: '$1.00', icon: DollarSign, color: '#37d097' },
     { label: 'Cooldown Period', value: 'Instant', icon: Hourglass, color: '#ffffff' },
     { label: 'User Earnings', value: '$0.00', icon: HandCoins, color: '#ffffff' },
     { label: 'User Balance', value: '0.00 ETH', icon: Wallet2, color: '#ffffff' },
@@ -402,14 +402,6 @@ export default function TerminalPage() {
                       <span className="text-xs font-medium text-[#aab9be]">Projected Alpha</span>
                     </div>
                     <span className="text-xs font-bold text-[#37d097] whitespace-nowrap">{benchmarkMetrics.alpha}</span>
-                  </div>
-
-                  <div className="flex justify-between items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#aab9be] shrink-0" />
-                      <span className="text-xs font-medium text-[#aab9be]">Benchmark Beta</span>
-                    </div>
-                    <span className="text-xs font-bold text-[#ffffff] whitespace-nowrap">{benchmarkMetrics.beta}</span>
                   </div>
 
                   <div className="flex justify-between items-center gap-4">
