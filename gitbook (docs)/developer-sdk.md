@@ -1,6 +1,6 @@
 # Developer SDK: `@kerne/sdk`
 
-Kerne provides a robust TypeScript SDK for developers and institutional partners to integrate with the protocol's liquidity and intent-solving engine.
+Kerne provides a robust TypeScript SDK for developers and institutional partners to integrate with the protocol's liquidity and intent solving engine.
 
 ## Installation
 
@@ -25,7 +25,7 @@ const solvency = await vault.getSolvencyRatio();
 ```
 
 ### 2. `useSolver` Hook
-For partners building intent-based interfaces, the SDK provides a React hook to interact with the **Zero-Fee Intent Network (ZIN)**.
+For partners building intent based interfaces, the SDK provides a React hook to interact with the **Zero Fee Intent Network (ZIN)**.
 
 ```typescript
 const { fulfillIntent, estimateSpread } = useSolver();
@@ -40,9 +40,7 @@ const result = await fulfillIntent({
 ```
 
 ### 3. Private Bundle Submission
-The SDK supports submitting transactions via private RPCs (like Flashbots) to protect against MEV front-running during large ZIN executions or arbitrage runs.
+The SDK supports submitting transactions via private RPCs (like Flashbots) to protect against MEV front running during large ZIN executions or arbitrage runs.
 
 ### 4. Institutional Compliance
-For "Pro Mode" vaults, the SDK includes built-in helpers for `IComplianceHook` integration, allowing for automated KYC/AML verification before transaction submission.
-
----
+For "Pro Mode" vaults, the SDK includes built in helpers for `IComplianceHook` integration, allowing for automated KYC/AML verification before transaction submission.

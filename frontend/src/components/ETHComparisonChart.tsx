@@ -47,16 +47,16 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
         <ComposedChart
           data={data}
           margin={{
-            top: 10,
-            right: 10,
-            left: -5,
-            bottom: 20,
+            top: 0,
+            right: 0,
+            left: -50,
+            bottom: 0,
           }}
         >
           <defs>
             <linearGradient id="kerneGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#4c7be7" stopOpacity={0.3}/>
-              <stop offset="95%" stopColor="#4c7be7" stopOpacity={0}/>
+              <stop offset="5%" stopColor="#37d097" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="#37d097" stopOpacity={0}/>
             </linearGradient>
           </defs>
           <CartesianGrid stroke="#22252a" vertical={false} horizontal={true} strokeDasharray="none" />
@@ -68,16 +68,31 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
             axisLine={false}
             tick={(props: any) => {
               const { x, y, payload } = props;
-              const entry = data[payload.index];
-              if (entry && entry.isBiWeekly) {
-                const isLast = payload.index === data.length - 1;
+              const isFirst = payload.index === 0;
+              const isLast = payload.index === data.length - 1;
+              
+              // Calculate dynamic interval based on data length to ensure even spacing
+              // For 30 days, show every ~7 days. For 90 days, show every ~14-20 days.
+              const totalPoints = data.length;
+              const targetTicks = 5; // We want roughly 5 evenly spaced ticks
+              const interval = Math.floor(totalPoints / (targetTicks - 1));
+              
+              const isTargetTick = payload.index % interval === 0;
+
+              // Always show first and last, and evenly spaced ticks in between
+              if (isFirst || isLast || isTargetTick) {
+                // Prevent overlap with the last tick
+                if (!isLast && (totalPoints - 1 - payload.index) < (interval * 0.7)) {
+                  return null;
+                }
+
                 return (
                   <g transform={`translate(${x},${y})`}>
                     <text 
                       x={0} 
                       y={0} 
                       dy={16} 
-                      textAnchor={isLast ? "end" : "middle"} 
+                      textAnchor={isFirst ? "start" : isLast ? "end" : "middle"} 
                       fill="#aab9be" 
                       fontSize="11px" 
                       fontWeight={500}
@@ -90,6 +105,7 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
               return null;
             }}
             interval={0}
+            padding={{ left: 50, right: 0 }}
           />
           <YAxis 
             stroke="#aab9be" 
@@ -98,15 +114,31 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
             axisLine={false}
             tickFormatter={(value: number) => `$${value.toLocaleString()}`}
             domain={['auto', 'auto']}
-            tick={{ fill: '#aab9be' }}
-            label={{ value: 'Value (USD)', angle: -90, position: 'insideLeft', style: { fontSize: '11px', fontWeight: 600, fill: '#aab9be', textAnchor: 'middle' }, dx: -10 }}
+            tick={(props: any) => {
+              const { x, y, payload } = props;
+              return (
+                <g transform={`translate(${x},${y})`}>
+                  <text 
+                    x={5}
+                    y={0} 
+                    dy={4} 
+                    textAnchor="start"
+                    fill="#aab9be" 
+                    fontSize="11px" 
+                    fontWeight={500}
+                  >
+                    ${payload.value.toLocaleString()}
+                  </text>
+                </g>
+              );
+            }}
           />
           <Tooltip content={<CustomTooltip />} />
           <Area
             name="Kerne Simulated"
             type="linear"
             dataKey="simulated"
-            stroke="#4c7be7"
+            stroke="#37d097"
             strokeWidth={2}
             fill="url(#kerneGradient)"
             dot={false}

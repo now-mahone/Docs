@@ -1,4 +1,3 @@
-
 # Audits & Invariants
 
 Kerne maintains the highest security standards through formal verification, continuous auditing, and mathematically enforced invariants.
@@ -6,7 +5,7 @@ Kerne maintains the highest security standards through formal verification, cont
 ## Audit Program
 
 ### Smart Contract Audits
-All core contracts undergo rigorous third-party audits before mainnet deployment:
+All core contracts undergo rigorous third party audits before mainnet deployment:
 
 | Contract | Auditor | Status |
 |----------|---------|--------|
@@ -28,7 +27,7 @@ Kerne operates a tiered bug bounty program for responsible disclosure:
 
 ## Core Invariants
 
-The protocol enforces the following mathematical invariants at the smart contract level. These are checked on every state-changing transaction:
+The protocol enforces the following mathematical invariants at the smart contract level. These are checked on every state changing transaction:
 
 ### 1. Solvency Invariant
 ```
@@ -57,8 +56,8 @@ The Insurance Fund must maintain a minimum 5% buffer relative to total hedged no
 ## Testing Infrastructure
 
 ### Foundry Test Suite
-- **Unit Tests**: Every public function has dedicated test coverage with both happy-path and revert cases.
-- **Fuzz Testing**: Critical functions are fuzz-tested with randomized inputs to discover edge cases.
+- **Unit Tests**: Every public function has dedicated test coverage with both happy path and revert cases.
+- **Fuzz Testing**: Critical functions are fuzz tested with randomized inputs to discover edge cases.
 - **Fork Testing**: Integration tests run against live Base mainnet forks to ensure compatibility with real protocol state.
 - **Gas Snapshots**: `forge snapshot` is run on every commit to detect gas regressions.
 
@@ -75,8 +74,6 @@ function invariant_solvency() public {
 
 In the event of a detected vulnerability:
 1. **Sentinel** automatically pauses affected contracts.
-2. The core team is alerted via the on-call notification system.
-3. A post-mortem is published within 72 hours of resolution.
+2. The core team is alerted via the on call notification system.
+3. A postmortem is published within 72 hours of resolution.
 4. Affected users are made whole from the Insurance Fund.
-
----

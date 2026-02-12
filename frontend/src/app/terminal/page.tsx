@@ -4,7 +4,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Zap, Shield, TrendingUp, DollarSign, Wallet2, Info, ChartArea, HandCoins, Percent, Scale, Hourglass, ChartLine, BookOpenText } from 'lucide-react';
+import { Zap, Shield, TrendingUp, DollarSign, Wallet2, Info, ChartArea, HandCoins, Percent, Scale, Hourglass, ChartLine, BookOpenText, HeartPulse } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { PerformanceChart } from '@/components/PerformanceChart';
 import { ETHComparisonChart } from '@/components/ETHComparisonChart';
@@ -18,33 +18,44 @@ export default function TerminalPage() {
   const [solvencyData, setSolvencyData] = useState<any>(null);
   const [historicalEth, setHistoricalEth] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [timeframe, setTimeframe] = useState<30 | 90 | 180>(90);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [apyRes, solvencyRes, ethRes] = await Promise.all([
+        // Fetch all data with longer timeout for eth-history
+        const [apyRes, solvencyRes] = await Promise.all([
           fetch('/api/apy').then(r => r.json()).catch(() => ({ apy: 18.40 })),
-          fetch('/api/solvency').then(r => r.json()).catch(() => ({ solvency_ratio: 142 })),
-          fetch('/api/eth-history').then(r => r.json()).catch(() => ({ success: false, data: [] }))
+          fetch('/api/solvency').then(r => r.json()).catch(() => ({ solvency_ratio: 142 }))
         ]);
         
         setApyData(apyRes);
         setSolvencyData(solvencyRes);
         
-        if (ethRes.success && ethRes.data && ethRes.data.length > 0) {
-          setHistoricalEth(ethRes.data);
-        } else {
-          // Fallback ETH history data (rolling 90 days)
+        // Fetch eth-history separately with longer timeout to ensure it completes
+        try {
+          const ethRes = await fetch('/api/eth-history', {
+            signal: AbortSignal.timeout(30000) // 30 second timeout
+          }).then(r => r.json());
+          
+          if (ethRes.success && ethRes.data && ethRes.data.length > 0) {
+            setHistoricalEth(ethRes.data);
+          } else {
+            throw new Error('No ETH history data returned');
+          }
+        } catch (ethError) {
+          console.warn('ETH history API failed, using fallback data:', ethError);
+          // Fallback ETH history data (rolling 180 days to support 6M view)
           const fallback = [];
           const now = new Date();
           let basePrice = 2400;
-          for (let i = 90; i >= 0; i--) {
+          for (let i = 180; i >= 0; i--) {
             const d = new Date();
             d.setDate(now.getDate() - i);
             const noise = Math.sin(i * 0.1) * 100 + Math.cos(i * 0.2) * 50;
             fallback.push({
               date: d.toISOString().split('T')[0],
-              price: basePrice + noise + (90 - i) * 5
+              price: basePrice + noise + (180 - i) * 3
             });
           }
           setHistoricalEth(fallback);
@@ -98,8 +109,8 @@ export default function TerminalPage() {
   const comparisonData = useMemo(() => {
     if (historicalEth.length === 0) return [];
     
-    // Take the last 90 days from historical data
-    const last90Days = historicalEth.slice(-90);
+    // Use selected timeframe
+    const lastNDays = historicalEth.slice(-timeframe);
     const data = [];
     
     const BASE_FUNDING_DAILY = (apyData?.breakdown?.best_funding_annual_pct / 100 / 365) || (0.169 / 365);
@@ -107,13 +118,13 @@ export default function TerminalPage() {
     const LEVERAGE = apyData?.breakdown?.leverage || 3.0;
 
     let cumulativeYieldSim = 1.0;
-    const normFactor = 100 / last90Days[0].price;
+    const normFactor = 100 / lastNDays[0].price;
 
-    for (let i = 0; i < last90Days.length; i++) {
-      const dateObj = new Date(last90Days[i].date);
+    for (let i = 0; i < lastNDays.length; i++) {
+      const dateObj = new Date(lastNDays[i].date);
       const dateStr = dateObj.toLocaleDateString('default', { month: 'short', day: 'numeric' });
       
-      const ethPriceNormalized = last90Days[i].price * normFactor;
+      const ethPriceNormalized = lastNDays[i].price * normFactor;
       
       // Simulate Kerne Growth with slight volatility
       const fundingVolatility = (Math.sin(i * 0.2) * 0.0004) + (Math.cos(i * 0.45) * 0.0003);
@@ -124,11 +135,11 @@ export default function TerminalPage() {
         time: dateStr,
         eth: parseFloat(ethPriceNormalized.toFixed(2)),
         simulated: parseFloat((100 * cumulativeYieldSim).toFixed(2)),
-        isBiWeekly: i % 14 === 0 || i === last90Days.length - 1
+        isBiWeekly: i % 14 === 0 || i === lastNDays.length - 1
       });
     }
     return data;
-  }, [historicalEth, apyData]);
+  }, [historicalEth, apyData, timeframe]);
 
   const benchmarkMetrics = useMemo(() => {
     if (comparisonData.length < 2) return { alpha: "0.00%", beta: "0.00x", drawdown: "0.00%", sharpe: "0.00" };
@@ -147,22 +158,39 @@ export default function TerminalPage() {
     const ethReturn = (comparisonData[comparisonData.length - 1].eth - comparisonData[0].eth) / comparisonData[0].eth;
     const alpha = (kerneReturn - ethReturn) * 100;
 
-    // 3. Sharpe Ratio (Annualized)
-    const dailyReturns = [];
+    // 3. Beta Calculation (Covariance / Variance)
+    const kerneReturns = [];
+    const ethReturns = [];
     for (let i = 1; i < comparisonData.length; i++) {
-      dailyReturns.push((comparisonData[i].simulated - comparisonData[i-1].simulated) / comparisonData[i-1].simulated);
+      kerneReturns.push((comparisonData[i].simulated - comparisonData[i-1].simulated) / comparisonData[i-1].simulated);
+      ethReturns.push((comparisonData[i].eth - comparisonData[i-1].eth) / comparisonData[i-1].eth);
     }
-    const avgDaily = dailyReturns.reduce((a, b) => a + b, 0) / dailyReturns.length;
-    const stdDev = Math.sqrt(dailyReturns.reduce((a, b) => a + Math.pow(b - avgDaily, 2), 0) / (dailyReturns.length - 1));
-    const annualReturn = avgDaily * 365;
+    
+    const avgKerne = kerneReturns.reduce((a, b) => a + b, 0) / kerneReturns.length;
+    const avgEth = ethReturns.reduce((a, b) => a + b, 0) / ethReturns.length;
+    
+    let covariance = 0;
+    let ethVariance = 0;
+    for (let i = 0; i < kerneReturns.length; i++) {
+      covariance += (kerneReturns[i] - avgKerne) * (ethReturns[i] - avgEth);
+      ethVariance += Math.pow(ethReturns[i] - avgEth, 2);
+    }
+    covariance /= kerneReturns.length;
+    ethVariance /= ethReturns.length;
+    
+    const beta = ethVariance > 0 ? covariance / ethVariance : 0;
+
+    // 4. Sharpe Ratio (Annualized, no cap)
+    const stdDev = Math.sqrt(kerneReturns.reduce((a, b) => a + Math.pow(b - avgKerne, 2), 0) / (kerneReturns.length - 1));
+    const annualReturn = avgKerne * 365;
     const annualVol = stdDev * Math.sqrt(365);
     const sharpe = annualVol > 0 ? (annualReturn - 0.038) / annualVol : 0;
 
     return {
       alpha: (alpha > 0 ? "+" : "") + alpha.toFixed(2) + "%",
-      beta: "0.02x", // Strategy properties ensure near-zero beta
+      beta: beta.toFixed(2) + "x",
       drawdown: maxDD.toFixed(2) + "%",
-      sharpe: Math.min(sharpe, 6.5).toFixed(2)
+      sharpe: sharpe.toFixed(2)
     };
   }, [comparisonData]);
 
@@ -247,87 +275,53 @@ export default function TerminalPage() {
             );
           })}
 
-          {/* Bottom Row: Protocol Health (4 Cols) and Vault Interaction (2 Cols) */}
-          <div className="lg:col-span-4 p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#444a4f] rounded-sm flex flex-col gap-8 relative">
-            <div className="flex justify-between items-start">
-              <div>
-                <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide block mb-1">LIVE PROTOCOL STATUS</span>
-                <p className="text-xl font-heading font-medium text-[#ffffff]">Protocol Health</p>
-              </div>
-              <Shield size={16} className="text-[#37d097] mt-1" />
-            </div>
-
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { label: 'Hedge Coverage', value: '100%', sub: 'Fully delta neutral', color: '#37d097' },
-                { label: 'Engine Uptime', value: '99.8%', sub: 'Since Feb 7, 2026', color: '#37d097' },
-                { label: 'Contracts Deployed', value: '35+', sub: 'Base + Arbitrum', color: '#ffffff' },
-                { label: 'Tests Passing', value: '154', sub: 'Unit, fuzz, invariant', color: '#ffffff' },
-                { label: 'Chains Active', value: '3', sub: 'Base, Arbitrum, Optimism', color: '#ffffff' },
-                { label: 'OFT Bridges Live', value: '4', sub: 'LayerZero V2', color: '#ffffff' },
-              ].map((stat, i) => (
-                <div key={i} className="p-5 bg-[#16191c] border border-[#444a4f] rounded-sm">
-                  <span className="text-xs font-medium text-[#aab9be] block mb-2">{stat.label}</span>
-                  <p className="text-2xl font-heading font-medium" style={{ color: stat.color }}>{stat.value}</p>
-                  <span className="text-xs text-[#666b70] mt-1 block">{stat.sub}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div className="p-5 bg-[#16191c] border border-[#444a4f] rounded-sm">
-                <span className="text-xs font-medium text-[#aab9be] block mb-3">Yield Sources</span>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#aab9be]">LST Staking Yield</span>
-                    <span className="text-xs font-bold text-[#37d097]">Active</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#aab9be]">Funding Rate Capture</span>
-                    <span className="text-xs font-bold text-[#37d097]">Active</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#aab9be]">Basis Trade (Hyperliquid)</span>
-                    <span className="text-xs font-bold text-[#37d097]">Active</span>
-                  </div>
-                </div>
-              </div>
-              <div className="p-5 bg-[#16191c] border border-[#444a4f] rounded-sm">
-                <span className="text-xs font-medium text-[#aab9be] block mb-3">Security Status</span>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#aab9be]">Circuit Breakers</span>
-                    <span className="text-xs font-bold text-[#37d097]">Armed</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#aab9be]">Solvency Monitor</span>
-                    <span className="text-xs font-bold text-[#37d097]">Online</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-[#aab9be]">Insurance Fund</span>
-                    <span className="text-xs font-bold text-[#37d097]">Funded</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-2 border border-[#444a4f] rounded-sm p-0 overflow-hidden bg-[#000000]">
-            <VaultInteraction />
-          </div>
-
           {/* Historical ETH vs Kerne Comparison */}
           <div className="lg:col-span-4 p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#444a4f] rounded-sm flex flex-col lg:flex-row gap-8 relative h-auto lg:h-[600px]">
             {/* Left Column: Header + Chart */}
-            <div className="w-full lg:flex-[3] flex flex-col min-w-0 h-[380px] lg:h-full">
+            <div className="w-full lg:flex-[3] flex flex-col min-w-0 h-[420px] lg:h-full mb-8 lg:mb-0">
               <div className="mb-6 flex justify-between items-start">
                 <div>
-                  <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide block mb-1">PERFORMANCE OVER 90 DAYS</span>
+                  <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide block mb-1">
+                    PERFORMANCE OVER {timeframe === 30 ? '1 MONTH' : timeframe === 90 ? '3 MONTHS' : '6 MONTHS'}
+                  </span>
                   <div className="flex items-baseline gap-2">
                     <p className="text-xl font-heading font-medium text-[#ffffff]">Benchmark Comparison</p>
                   </div>
                 </div>
-                <ChartArea size={16} className="text-[#aab9be] mt-1" />
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 bg-[#16191c] border border-[#444a4f] rounded-sm p-1">
+                    <button
+                      onClick={() => setTimeframe(30)}
+                      className={`px-2 py-1 text-xs font-medium rounded-sm transition-colors ${
+                        timeframe === 30
+                          ? 'bg-[#aab9be] text-[#000000]'
+                          : 'text-[#aab9be] hover:text-[#ffffff]'
+                      }`}
+                    >
+                      1M
+                    </button>
+                    <button
+                      onClick={() => setTimeframe(90)}
+                      className={`px-2 py-1 text-xs font-medium rounded-sm transition-colors ${
+                        timeframe === 90
+                          ? 'bg-[#aab9be] text-[#000000]'
+                          : 'text-[#aab9be] hover:text-[#ffffff]'
+                      }`}
+                    >
+                      3M
+                    </button>
+                    <button
+                      onClick={() => setTimeframe(180)}
+                      className={`px-2 py-1 text-xs font-medium rounded-sm transition-colors ${
+                        timeframe === 180
+                          ? 'bg-[#aab9be] text-[#000000]'
+                          : 'text-[#aab9be] hover:text-[#ffffff]'
+                      }`}
+                    >
+                      6M
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="flex-1 w-full min-h-0 relative">
@@ -337,7 +331,7 @@ export default function TerminalPage() {
 
             {/* Right Column: Legend Sidebar */}
             <div className="w-full lg:flex-1 flex flex-col min-w-0 pb-4 lg:pb-0 lg:h-full">
-              <div className="flex-1 flex flex-col p-6 bg-[#16191c] border border-[#444a4f] rounded-sm relative z-10">
+              <div className="flex-1 flex flex-col p-6 bg-transparent border border-[#444a4f] rounded-sm relative z-10">
                 <div className="space-y-4">
                   <div className="flex justify-between items-center gap-4">
                     <div className="flex items-center gap-2">
@@ -349,7 +343,7 @@ export default function TerminalPage() {
 
                   <div className="flex justify-between items-center gap-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#4c7be7] shrink-0" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#37d097] shrink-0" />
                       <span className="text-xs font-medium text-[#aab9be]">Kerne Simulated</span>
                     </div>
                     <span className="text-xs font-bold text-[#ffffff] whitespace-nowrap">Backtested</span>
@@ -392,6 +386,43 @@ export default function TerminalPage() {
                 </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-2 border border-[#444a4f] rounded-sm p-0 overflow-hidden bg-[#000000]">
+            <VaultInteraction />
+          </div>
+
+          {/* Bottom Row: Protocol Health (4 Cols) and Vault Interaction (2 Cols) */}
+          <div className="lg:col-span-4 p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#444a4f] rounded-sm flex flex-col justify-between relative">
+            <div className="flex justify-between items-start mb-6 lg:mb-0">
+              <div>
+                <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide block mb-1">LIVE PROTOCOL STATUS</span>
+                <p className="text-xl font-heading font-medium text-[#ffffff]">Protocol Health</p>
+              </div>
+              <HeartPulse size={16} className="text-[#aab9be] mt-1" />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { label: 'Hedge coverage', value: '100%', sub: 'Fully delta neutral' },
+                { label: 'Engine uptime', value: '99.8%', sub: 'Since Feb 7, 2026' },
+                { label: 'Contracts deployed', value: '35+', sub: 'Base + Arbitrum' },
+                { label: 'Tests passing', value: '154', sub: 'Unit, fuzz, invariant' },
+                { label: 'Chains active', value: '3', sub: 'Base, Arbitrum, Optimism' },
+                { label: 'OFT bridges live', value: '4', sub: 'LayerZero V2' },
+                { label: 'LST staking yield', value: 'Active', sub: 'cbETH + rETH' },
+                { label: 'Funding rate capture', value: 'Active', sub: 'Basis arbitrage' },
+                { label: 'Basis trade (Hyperliquid)', value: 'Active', sub: 'Delta neutral' },
+              ].map((stat, i) => (
+                <div key={i} className="p-6 bg-transparent rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">{stat.label}</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">{stat.value}</div>
+                    <div className="text-s text-[#37d097] font-medium">{stat.sub}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

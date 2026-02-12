@@ -6,13 +6,55 @@
 
 [2026-02-11 18:08] - 1-MINUTE DEMO PAGE CREATED: Added /1mindemo route to frontend. Video copied to public folder. Page displays demo video with autoplay, controls, and protocol stats. Ready for sharing with investors/grant applications. - Status: COMPLETE
 
+[2026-02-11 17:58] - Frontend: Improved mobile UX on terminal page. Removed ChartArea icon from Benchmark Comparison header, increased chart container height from 380px to 420px with 2rem bottom margin on mobile (mb-8 lg:mb-0), and added 1.5rem spacing between Protocol Health title and metric cards on mobile only (mb-6 lg:mb-0). Creates better breathing room and visual hierarchy on smaller screens. Pushed to february. - Status: SUCCESS
+
 [2026-02-11 17:53] - ALCHEMY GROWTH CREDITS SUBMITTED: Application submitted to alchemy.com/developer-grant-program. Project info, chains (Base, Arbitrum, Optimism), and contact details provided. Awaiting response. - Status: SUBMITTED
 
-[2026-02-11 17:35] - LAYERZERO ECOSYSTEM EMAIL SENT: Partnership inquiry sent to partnerships@layerzero.network. 4 OFT V2 contracts highlighted. Open to ecosystem collaboration. Awaiting response. - Status: SENT
+[2026-02-11 17:41] - Frontend: Updated Kerne Simulated line, legend, and tooltip colors to brand green (#37d097) for consistent visual identity across the terminal dashboard. Pushed to m-vercel. - Status: SUCCESS
 
-[2026-02-11 15:06] - FIRST INVESTOR DM SENT: Jordi Alexander (@0xJordi) contacted via Twitter DM. Basis trading / Selini angle. Awaiting response. - Status: SENT
+[2026-02-11 17:35] - Frontend: Removed bottom margin from the Benchmark Comparison chart to maximize vertical space utilization. Combined with dynamic X-axis spacing and flush left alignment for a compact, professional financial interface. Pushed to m-vercel. - Status: SUCCESS
 
-[2026-02-11 14:34] - Twitter/X Premium upgraded. @KerneProtocol now has verified status with DM access to non-followers. Enables direct outreach to angels/VCs without follow-back requirement. - Status: SUCCESS
+[2026-02-11 17:34] - Frontend: Implemented dynamic even spacing for X-axis labels on the Benchmark Comparison chart. Labels are now automatically distributed (targeting ~5 ticks) based on the data length, ensuring consistent visual rhythm across all timeframes (1M/3M/6M) while always prioritizing the first and last dates. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 17:30] - Frontend: Optimized X-axis spacing and padding based on Morpho's chart implementation. Applied `padding={{ left: 50 }}` to XAxis to offset the negative left margin, ensuring labels align correctly with the plot area while maintaining a flush container edge. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 17:19] - Frontend: Increased negative left margin to -50px and implemented overlap prevention logic for X-axis labels to ensure the current date always has breathing room and the chart remains flush with the container edge. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 17:13] - Frontend: Applied aggressive negative left margin (-45px) to the Benchmark Comparison chart to eliminate the persistent gap on the left side, ensuring the chart is flush with the container edge. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 17:08] - Frontend: Reverted X-axis labels to display outside the Benchmark Comparison chart and reset left/right margins to 0 for improved readability while maintaining minimal padding. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 17:02] - Frontend: Eliminated unnecessary padding and margins from the Benchmark Comparison chart. Set margins to 0/negative values and repositioned X/Y axis labels inside the plot area to ensure the chart is flush with container edges. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 16:54] - Frontend: Standardized vertical alignment between Protocol Health and Asset Composition cards. Reverted Asset Composition changes and applied `justify-between` to the Protocol Health container to ensure consistent bottom spacing across the dashboard row. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 16:42] - Frontend: Swapped positions of "Benchmark Comparison" and "Protocol Health" cards on the terminal page for improved layout flow. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 16:37] - Frontend: Reverted icon positioning to original right-aligned/flex layout. Restored standard padding to the Benchmark Comparison graph container and optimized chart margins for better spacing. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 16:21] - Frontend: Eliminated remaining left edge gap by setting negative left margin (-25px) on chart. Y-axis labels now positioned at 5px from edge. Creates perfectly flush left alignment with no wasted space. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 16:16] - Frontend: Removed chart left margin padding (set to 0) now that y-axis labels are positioned inside the chart area. This maximizes chart space utilization and creates a flush edge alignment. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 16:11] - Frontend: Repositioned y-axis tick labels to display inside the chart area on the left side for improved visual hierarchy and cleaner appearance, similar to modern financial charting interfaces. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 15:48] - API: Implemented 24-hour caching for ETH historical price data with Cache-Control headers (s-maxage=86400, stale-while-revalidate=43200). Vercel edge network now serves cached data for 24 hours, drastically reducing CoinGecko API calls and ensuring consistent data across all visits. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 15:42] - Frontend: Fixed CoinGecko API reliability issues by implementing retry logic with exponential backoff (up to 3 retries), special handling for rate limiting (429 errors), 10-second request timeout, and 30-second client-side timeout. Page now waits for data or gracefully falls back to synthetic data if API fails after all retries. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 15:35] - Frontend: Enhanced benchmark comparison graph with timeframe toggle (1M/3M/6M), calculated actual beta using covariance/variance instead of hardcoded value, removed Sharpe ratio cap to display true calculated values. Graph now dynamically updates based on selected timeframe. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 15:17] - Frontend: Changed benchmark comparison legend box background to transparent for consistent styling with metric cards. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 15:09] - Frontend: Changed Live Protocol Status metric card backgrounds to transparent for cleaner visual appearance. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 14:47] - Frontend: Fixed next.config.ts Vercel build error by removing invalid experimental turbo configuration. Build now passing. - Status: SUCCESS
+
+[2026-02-11 14:42] - Frontend: Updated Terminal page Live Protocol Status card. Changed icon from Shield to HeartPulse with light grey color. Implemented 3x3 grid layout with 9 metrics (Hedge Coverage, Engine Uptime, Contracts Deployed, Tests Passing, Chains Active, OFT Bridges Live, LST Staking Yield, Funding Rate Capture, Basis Trade Hyperliquid). Applied Transparency page styling to all grid cards. Pushed to m-vercel. - Status: SUCCESS
+
+[2026-02-11 14:04] - Documentation: Fixed sidebar navigation (_sidebar.md) to remove remaining hyphens from menu items (Delta Neutral not Delta-Neutral, Zero Fee not Zero-Fee, Meta Governance not Meta-Governance, Institutional Onramp not On-Ramp). - Status: SUCCESS
+
+[2026-02-11 13:52] - Documentation: Updated Introduction (README.md) and Litepaper (litepaper.md) with revised institutional-grade content. Removed all AI-like hyphenation patterns (onchain not on-chain, noncustodial not non-custodial, subsecond not sub-second, etc.). Updated messaging to focus on delta neutral infrastructure, recursive leverage, and proof of solvency. - Status: SUCCESS
 
 [2026-02-11 11:36] - Documentation: Updated Introduction (README.md) and Litepaper (litepaper.md) with new institutional-grade messaging and detailed mechanism descriptions. - Status: SUCCESS
 

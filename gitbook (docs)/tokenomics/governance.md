@@ -1,7 +1,6 @@
+# Meta Governance & Bribes
 
-# Meta-Governance & Bribes
-
-Kerne's **Meta-Governance Layer** transforms the protocol from a passive yield engine into an active political force within the DeFi ecosystem.
+Kerne's **Meta Governance Layer** transforms the protocol from a passive yield engine into an active political force within the DeFi ecosystem.
 
 ## The Concept
 
@@ -15,8 +14,8 @@ Through normal yield operations, Kerne accumulates governance tokens from integr
 - **Curve** (CRV) — from stablecoin pools
 - **Balancer** (BAL) — from weighted pool strategies
 
-### 2. Vote-Locking
-Accumulated tokens are vote-locked (e.g., veAERO, veCRV) to maximize voting power and yield boosts on the protocol's own liquidity positions.
+### 2. Vote Locking
+Accumulated tokens are vote locked (e.g., veAERO, veCRV) to maximize voting power and yield boosts on the protocol's own liquidity positions.
 
 ### 3. Bribe Marketplace
 External protocols (new DEXes, stablecoin issuers, LST providers) that want their pools to receive increased gauge emissions can **bribe** Kerne to direct its votes in their favor.
@@ -45,6 +44,4 @@ KERNE token holders vote on:
 - New vault and strategy approvals
 - Emergency protocol parameters
 
-All governance actions are executed via multi-sig with a 48-hour timelock for transparency.
-
----
+All governance actions are executed via multisig with a 48 hour timelock for transparency.
