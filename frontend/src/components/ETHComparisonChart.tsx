@@ -47,10 +47,10 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
         <ComposedChart
           data={data}
           margin={{
-            top: 10,
-            right: 10,
+            top: 0,
+            right: -1,
             left: -25,
-            bottom: 20,
+            bottom: -1,
           }}
         >
           <defs>
@@ -70,14 +70,15 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
               const { x, y, payload } = props;
               const entry = data[payload.index];
               if (entry && entry.isBiWeekly) {
+                const isFirst = payload.index === 0;
                 const isLast = payload.index === data.length - 1;
                 return (
                   <g transform={`translate(${x},${y})`}>
                     <text 
                       x={0} 
                       y={0} 
-                      dy={16} 
-                      textAnchor={isLast ? "end" : "middle"} 
+                      dy={-10} 
+                      textAnchor={isFirst ? "start" : isLast ? "end" : "middle"} 
                       fill="#aab9be" 
                       fontSize="11px" 
                       fontWeight={500}
