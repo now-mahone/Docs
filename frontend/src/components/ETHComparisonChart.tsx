@@ -50,7 +50,7 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
             top: 0,
             right: 0,
             left: -50,
-            bottom: 20,
+            bottom: 0,
           }}
         >
           <defs>
