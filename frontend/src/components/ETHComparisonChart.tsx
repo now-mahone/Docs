@@ -50,7 +50,7 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
             top: 0,
             right: 0,
             left: -50,
-            bottom: 0,
+            bottom: 20,
           }}
         >
           <defs>
@@ -74,7 +74,7 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
                 const isLast = payload.index === data.length - 1;
                 
                 // Prevent overlap on the right edge by hiding the second-to-last tick if it's too close to the last one
-                const isNearEnd = !isLast && (data.length - 1 - payload.index) < 7;
+                const isNearEnd = !isLast && (data.length - 1 - payload.index) < 10;
                 if (isNearEnd) return null;
 
                 return (
@@ -96,6 +96,7 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
               return null;
             }}
             interval={0}
+            padding={{ left: 50, right: 0 }}
           />
           <YAxis 
             stroke="#aab9be" 
