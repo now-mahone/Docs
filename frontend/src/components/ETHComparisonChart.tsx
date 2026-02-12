@@ -68,14 +68,23 @@ export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) 
             axisLine={false}
             tick={(props: any) => {
               const { x, y, payload } = props;
-              const entry = data[payload.index];
-              if (entry && entry.isBiWeekly) {
-                const isFirst = payload.index === 0;
-                const isLast = payload.index === data.length - 1;
-                
-                // Prevent overlap on the right edge by hiding the second-to-last tick if it's too close to the last one
-                const isNearEnd = !isLast && (data.length - 1 - payload.index) < 10;
-                if (isNearEnd) return null;
+              const isFirst = payload.index === 0;
+              const isLast = payload.index === data.length - 1;
+              
+              // Calculate dynamic interval based on data length to ensure even spacing
+              // For 30 days, show every ~7 days. For 90 days, show every ~14-20 days.
+              const totalPoints = data.length;
+              const targetTicks = 5; // We want roughly 5 evenly spaced ticks
+              const interval = Math.floor(totalPoints / (targetTicks - 1));
+              
+              const isTargetTick = payload.index % interval === 0;
+
+              // Always show first and last, and evenly spaced ticks in between
+              if (isFirst || isLast || isTargetTick) {
+                // Prevent overlap with the last tick
+                if (!isLast && (totalPoints - 1 - payload.index) < (interval * 0.7)) {
+                  return null;
+                }
 
                 return (
                   <g transform={`translate(${x},${y})`}>
