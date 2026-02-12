@@ -1,6 +1,8 @@
 # Kerne Protocol — Project State
 
 ## Latest Update
+[2026-02-11 17:58] - Frontend: Improved mobile UX on terminal page. Removed ChartArea icon from Benchmark Comparison header, increased chart container height from 380px to 420px with 2rem bottom margin on mobile (mb-8 lg:mb-0), and added 1.5rem spacing between Protocol Health title and metric cards on mobile only (mb-6 lg:mb-0). Creates better breathing room and visual hierarchy on smaller screens. Pushed to february. - Status: SUCCESS
+
 [2026-02-11 17:41] - Frontend: Updated Kerne Simulated line, legend, and tooltip colors to brand green (#37d097) for consistent visual identity across the terminal dashboard. Pushed to m-vercel. - Status: SUCCESS
 
 [2026-02-11 17:35] - Frontend: Removed bottom margin from the Benchmark Comparison chart to maximize vertical space utilization. Combined with dynamic X-axis spacing and flush left alignment for a compact, professional financial interface. Pushed to m-vercel. - Status: SUCCESS
