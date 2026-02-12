@@ -4,6 +4,8 @@
 ## LATEST UPDATE
 ================================================================================
 
+[2026-02-12 15:12] - Transparency: Removed Protocol Assets and APY Breakdown cards from the transparency page as per feedback. Pushed to february and m-vercel. - Status: SUCCESS
+
 [2026-02-12 15:10] - Transparency: Implemented custom SVG PieChart component for Protocol Assets and APY Breakdown cards. Fixed TVL display to show accurate metrics in $k format. Removed unused framer-motion import. Pushed to february and m-vercel. - Status: SUCCESS
 
 [2026-02-12 14:50] - Transparency: Replaced 0% pie charts with valuable investor metrics. Created Protocol Assets card (TVL, total ETH, on-chain, off-chain) and APY Breakdown card (total APY, funding rate, LST yield, leverage). Changed insurance fund to percentage display. Fixed strategy status to show Active when solvency >= 100%. Pushed to february and m-vercel. - Status: SUCCESS
