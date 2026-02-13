@@ -4,7 +4,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Shield, BarChart3, Globe, CheckCircle2, ShieldCheck, TrendingDown, ZapOff, ExternalLink, PieChart, Coins, BadgeCheck, Layers } from 'lucide-react';
+import { Shield, BarChart3, Globe, CheckCircle2, ShieldCheck, TrendingDown, ZapOff, ExternalLink, PieChart, Coins, BadgeCheck, Layers, Activity } from 'lucide-react';
 import { useSolvency } from '@/hooks/useSolvency';
 import { SolvencyChart } from '@/components/SolvencyChart';
 import { PieChart as CustomPieChart } from '@/components/PieChart';
@@ -169,7 +169,101 @@ export default function TransparencyPage() {
                 </div>
               </div>
 
-              {/* Row 4: Full-Width Attestation Card */}
+              {/* Row 4: Protocol Assets & APY Breakdown */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Protocol Assets */}
+                <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
+                  <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-xs font-bold text-[#aab9be] uppercase tracking-widest">Protocol Assets</h3>
+                    <PieChart size={16} className="text-[#aab9be]" />
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row items-center gap-8">
+                    <div className="relative w-32 h-32 flex-shrink-0">
+                      <CustomPieChart 
+                        data={[
+                          { name: 'On-Chain (Base)', value: 100, color: '#37d097' },
+                          { name: 'Off-Chain Hedge', value: 0, color: '#ff3b69' },
+                          { name: 'Insurance Reserve', value: 0, color: '#4c6ef5' }
+                        ]}
+                        centerLabel={`$${(parseFloat(data.assets.total_eth) * 3150).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                        centerSublabel="TVL"
+                      />
+                    </div>
+
+                    <div className="flex-1 w-full space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-[#37d097]"></div>
+                          <span className="text-xs font-medium text-[#ffffff]">On-Chain (Base)</span>
+                        </div>
+                        <span className="text-xs font-bold text-[#ffffff]">100.0%</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-[#ff3b69]"></div>
+                          <span className="text-xs font-medium text-[#ffffff]">Off-Chain Hedge</span>
+                        </div>
+                        <span className="text-xs font-bold text-[#ffffff]">0.0%</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-[#4c6ef5]"></div>
+                          <span className="text-xs font-medium text-[#ffffff]">Insurance Reserve</span>
+                        </div>
+                        <span className="text-xs font-bold text-[#ffffff]">0.0%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* APY Breakdown */}
+                <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
+                  <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-xs font-bold text-[#aab9be] uppercase tracking-widest">APY Breakdown</h3>
+                    <Activity size={16} className="text-[#aab9be]" />
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row items-center gap-8">
+                    <div className="relative w-32 h-32 flex-shrink-0">
+                      <CustomPieChart 
+                        data={[
+                          { name: 'Funding Rate', value: apyData?.breakdown?.best_funding_annual_pct || 12.4, color: '#37d097' },
+                          { name: 'LST Staking', value: 3.2, color: '#4c6ef5' }
+                        ]}
+                        centerLabel={`${apyData?.apy?.toFixed(1) || '18.4'}%`}
+                        centerSublabel="APY"
+                      />
+                    </div>
+
+                    <div className="flex-1 w-full space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-[#37d097]"></div>
+                          <span className="text-xs font-medium text-[#ffffff]">Funding Rate</span>
+                        </div>
+                        <span className="text-xs font-bold text-[#ffffff]">{apyData?.breakdown?.best_funding_annual_pct?.toFixed(1) || '12.4'}%</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-[#4c6ef5]"></div>
+                          <span className="text-xs font-medium text-[#ffffff]">LST Staking</span>
+                        </div>
+                        <span className="text-xs font-bold text-[#ffffff]">3.2%</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-[#ffffff]"></div>
+                          <span className="text-xs font-medium text-[#ffffff]">Leverage</span>
+                        </div>
+                        <span className="text-xs font-bold text-[#ffffff]">1.0x</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 5: Full-Width Attestation Card */}
               <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
                 <h3 className="font-heading font-medium tracking-tight text-[#ffffff] mb-6">Multi Layer Attestation</h3>
                 <p className="text-s text-[#d4dce1] leading-relaxed font-medium mb-6">

@@ -2,9 +2,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance, useChainId } from 'wagmi';
-import { parseEther, formatEther } from 'viem';
-import { VAULT_ADDRESS, ARB_VAULT_ADDRESS, OP_VAULT_ADDRESS } from '@/config';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance, useChainId, useReadContract } from 'wagmi';
+import { parseEther, formatEther, erc20Abi } from 'viem';
+import { VAULT_ADDRESS, ARB_VAULT_ADDRESS, OP_VAULT_ADDRESS, WETH_ADDRESS, ARB_WSTETH_ADDRESS } from '@/config';
 import KerneVaultABI from '@/abis/KerneVault.json';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -22,9 +22,32 @@ export function VaultInteraction() {
   const [selectedChain, setSelectedChain] = useState('Base');
   const [ethPrice, setEthPrice] = useState(3150);
 
+  const tokenAddress = selectedChain === 'Base' 
+    ? WETH_ADDRESS 
+    : selectedChain === 'Arbitrum' 
+      ? ARB_WSTETH_ADDRESS 
+      : undefined;
+
   const { data: balanceData } = useBalance({
     address: address,
+    token: tokenAddress,
     chainId: selectedChain === 'Base' ? 8453 : selectedChain === 'Arbitrum' ? 42161 : 10,
+  });
+
+  const targetVault = selectedChain === 'Base' 
+    ? VAULT_ADDRESS 
+    : selectedChain === 'Arbitrum' 
+      ? ARB_VAULT_ADDRESS 
+      : OP_VAULT_ADDRESS;
+
+  const { data: allowance } = useReadContract({
+    address: tokenAddress,
+    abi: erc20Abi,
+    functionName: 'allowance',
+    args: address && targetVault ? [address, targetVault] : undefined,
+    query: {
+      enabled: !!address && !!tokenAddress && !!targetVault,
+    }
   });
 
   const { 
@@ -54,32 +77,32 @@ export function VaultInteraction() {
 
   const usdValue = amount ? (parseFloat(amount) * ethPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00';
 
-  const handleDeposit = () => {
-    if (!amount || isNaN(parseFloat(amount))) return;
+  const handleDeposit = async () => {
+    if (!amount || isNaN(parseFloat(amount)) || !address || !targetVault) return;
     
-    const targetVault = selectedChain === 'Base' 
-      ? VAULT_ADDRESS 
-      : selectedChain === 'Arbitrum' 
-        ? ARB_VAULT_ADDRESS 
-        : OP_VAULT_ADDRESS;
+    const amountWei = parseEther(amount);
 
     if (!targetVault || targetVault === '0x0000000000000000000000000000000000000000') {
       console.error("Vault address not configured for", selectedChain);
       return;
     }
-    
-    // If we are on Base, we use the native ETH deposit flow (if supported by contract)
-    // However, the KerneVault is an ERC4626 which expects the underlying ASSET.
-    // For Base, the asset is WETH. For Arbitrum, it is wstETH.
-    // To simplify for the user, we should ideally wrap ETH or use a helper, 
-    // but for now we must ensure we aren't sending native ETH to a non-payable deposit function.
+
+    // Check allowance
+    if (tokenAddress && (!allowance || allowance < amountWei)) {
+      writeContract({
+        address: tokenAddress,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [targetVault, amountWei],
+      });
+      return;
+    }
     
     writeContract({
       address: targetVault,
       abi: KerneVaultABI.abi,
       functionName: 'deposit',
-      args: [parseEther(amount), address],
-      // value: parseEther(amount), // REMOVED: KerneVault.deposit is NOT payable in the ABI
+      args: [amountWei, address],
     });
   };
 
@@ -147,7 +170,9 @@ export function VaultInteraction() {
         <TabsContent value="deposit" className="flex-1 flex flex-col space-y-6 mt-0">
           <div className="space-y-3">
             <div className="flex justify-between items-end">
-              <label className="text-s font-medium text-[#aab9be] tracking-tight block">Amount (WETH)</label>
+              <label className="text-s font-medium text-[#aab9be] tracking-tight block">
+                Amount ({selectedChain === 'Arbitrum' ? 'wstETH' : 'WETH'})
+              </label>
               <span className="text-s font-medium text-[#aab9be] tracking-tight">
                 Balance: {balanceData ? parseFloat(formatEther(balanceData.value)).toFixed(4) : '0.00'}
               </span>
@@ -185,7 +210,9 @@ export function VaultInteraction() {
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                 {isPending ? 'Confirming in Wallet...' : 'Processing Transaction...'}
               </div>
-            ) : isConnected ? 'Confirm Deposit' : 'Connect wallet to interact'}
+            ) : isConnected ? (
+              tokenAddress && (!allowance || allowance < parseEther(amount || '0')) ? 'Approve Token' : 'Confirm Deposit'
+            ) : 'Connect wallet to interact'}
           </button>
           {isConfirmed && (
             <p className="text-xs text-[#37d097] font-bold text-center mt-2 uppercase tracking-widest">

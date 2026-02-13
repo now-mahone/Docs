@@ -9,9 +9,17 @@ interface PieChartProps {
   }>;
   size?: number;
   strokeWidth?: number;
+  centerLabel?: string;
+  centerSublabel?: string;
 }
 
-export const PieChart: React.FC<PieChartProps> = ({ data, size = 96, strokeWidth = 12 }) => {
+export const PieChart: React.FC<PieChartProps> = ({ 
+  data, 
+  size = 96, 
+  strokeWidth = 12,
+  centerLabel,
+  centerSublabel
+}) => {
   const total = data.reduce((acc, item) => acc + item.value, 0);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -19,8 +27,8 @@ export const PieChart: React.FC<PieChartProps> = ({ data, size = 96, strokeWidth
   let currentOffset = 0;
 
   return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="transform -rotate-90">
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="transform -rotate-90 absolute inset-0">
         {total === 0 ? (
           <circle
             cx={size / 2}
@@ -54,6 +62,20 @@ export const PieChart: React.FC<PieChartProps> = ({ data, size = 96, strokeWidth
           })
         )}
       </svg>
+      {(centerLabel || centerSublabel) && (
+        <div className="flex flex-col items-center justify-center z-10">
+          {centerLabel && (
+            <span className="text-lg font-heading font-bold text-[#ffffff] leading-none">
+              {centerLabel}
+            </span>
+          )}
+          {centerSublabel && (
+            <span className="text-[8px] font-bold text-[#aab9be] uppercase tracking-widest mt-1">
+              {centerSublabel}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 };
