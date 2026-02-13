@@ -40,7 +40,7 @@ export function VaultInteraction() {
       ? ARB_VAULT_ADDRESS 
       : OP_VAULT_ADDRESS;
 
-  const { data: allowance } = useReadContract({
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
     address: tokenAddress,
     abi: erc20Abi,
     functionName: 'allowance',
@@ -66,17 +66,20 @@ export function VaultInteraction() {
   // Reset write state when transaction is confirmed so user can proceed to next step (Deposit)
   useEffect(() => {
     if (isConfirmed) {
+      // Force refetch allowance immediately
+      refetchAllowance();
+      
       // If it was an approval, we want to reset immediately so the button updates to "Confirm Deposit"
       // If it was a deposit, we wait a bit to show the success message
       const isApproval = tokenAddress && (!allowance || allowance < parseEther(amount || '0'));
-      const delay = isApproval ? 500 : 3000;
+      const delay = isApproval ? 200 : 3000;
       
       const timer = setTimeout(() => {
         resetWrite();
       }, delay);
       return () => clearTimeout(timer);
     }
-  }, [isConfirmed, resetWrite, allowance, amount, tokenAddress]);
+  }, [isConfirmed, resetWrite, refetchAllowance, allowance, amount, tokenAddress]);
 
   useEffect(() => {
     const fetchPrice = async () => {
