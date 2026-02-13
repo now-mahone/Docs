@@ -10,6 +10,7 @@ const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '647910767
 
 export const config = createConfig({
   chains: [base, arbitrum, optimism],
+  multiInjectedProviderDiscovery: false,
   connectors: [
     injected(),
     coinbaseWallet({
