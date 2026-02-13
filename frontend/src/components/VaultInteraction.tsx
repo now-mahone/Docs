@@ -31,7 +31,19 @@ export function VaultInteraction() {
       ? 42161 
       : 10; // OP Mainnet
 
-  const isCorrectNetwork = chainId === requiredChainId;
+  // Defensive network check - must be exact match and chainId must be defined
+  const isCorrectNetwork = isConnected && chainId !== undefined && chainId === requiredChainId;
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Network Debug:', {
+      isConnected,
+      chainId,
+      requiredChainId,
+      isCorrectNetwork,
+      selectedChain
+    });
+  }, [isConnected, chainId, requiredChainId, isCorrectNetwork, selectedChain]);
 
   const tokenAddress = selectedChain === 'Base' 
     ? WETH_ADDRESS 
@@ -149,6 +161,12 @@ export function VaultInteraction() {
   };
 
   const handleApprove = async () => {
+    // CRITICAL: Block if on wrong network
+    if (!isCorrectNetwork) {
+      console.error('Wrong network! Current:', chainId, 'Required:', requiredChainId);
+      return;
+    }
+    
     if (!amount || isNaN(parseFloat(amount)) || !address || !tokenAddress || !targetVault) return;
     
     const amountWei = parseEther(amount);
@@ -162,6 +180,12 @@ export function VaultInteraction() {
   };
 
   const handleDeposit = async () => {
+    // CRITICAL: Block if on wrong network
+    if (!isCorrectNetwork) {
+      console.error('Wrong network! Current:', chainId, 'Required:', requiredChainId);
+      return;
+    }
+    
     if (!amount || isNaN(parseFloat(amount)) || !address || !targetVault) return;
     
     const amountWei = parseEther(amount);
@@ -180,6 +204,12 @@ export function VaultInteraction() {
   };
 
   const handleWithdraw = async () => {
+    // CRITICAL: Block if on wrong network
+    if (!isCorrectNetwork) {
+      console.error('Wrong network! Current:', chainId, 'Required:', requiredChainId);
+      return;
+    }
+    
     if (!amount || isNaN(parseFloat(amount)) || !address || !targetVault) return;
     
     const sharesWei = parseEther(amount);
@@ -202,7 +232,14 @@ export function VaultInteraction() {
     <div className="p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm h-full flex flex-col">
       <div className="flex items-start justify-between mb-8">
         <div className="flex flex-col flex-1">
-          <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide">Vault Interaction</span>
+          <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide">
+            Vault Interaction
+            {isConnected && chainId && (
+              <span className="ml-2 text-[10px] text-[#37d097]">
+                (Chain: {chainId === 8453 ? 'Base' : chainId === 42161 ? 'Arbitrum' : chainId === 10 ? 'Optimism' : `Unknown (${chainId})`})
+              </span>
+            )}
+          </span>
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger className="flex items-center gap-4 text-xl font-heading font-medium text-[#ffffff] mt-4 outline-none text-left">
               <img src={chainLogos[selectedChain]} alt={selectedChain} className="w-5 h-5 object-contain" />
