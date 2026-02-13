@@ -232,14 +232,7 @@ export function VaultInteraction() {
     <div className="p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm h-full flex flex-col">
       <div className="flex items-start justify-between mb-8">
         <div className="flex flex-col flex-1">
-          <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide">
-            Vault Interaction
-            {isConnected && chainId && (
-              <span className="ml-2 text-[10px] text-[#37d097]">
-                (Chain: {chainId === 8453 ? 'Base' : chainId === 42161 ? 'Arbitrum' : chainId === 10 ? 'Optimism' : `Unknown (${chainId})`})
-              </span>
-            )}
-          </span>
+          <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide">Vault Interaction</span>
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger className="flex items-center gap-4 text-xl font-heading font-medium text-[#ffffff] mt-4 outline-none text-left">
               <img src={chainLogos[selectedChain]} alt={selectedChain} className="w-5 h-5 object-contain" />
@@ -330,22 +323,12 @@ export function VaultInteraction() {
               Connect wallet to interact
             </button>
           ) : !isCorrectNetwork ? (
-            <div className="space-y-3">
-              <div className="bg-red-500/10 border border-red-500/30 rounded-sm p-4">
-                <p className="text-xs font-bold text-red-400 text-center">
-                  Wrong Network Detected
-                </p>
-                <p className="text-xs text-red-400/80 text-center mt-1">
-                  Please switch to {selectedChain} to continue
-                </p>
-              </div>
-              <button 
-                onClick={handleSwitchNetwork}
-                className="w-full h-12 font-bold text-s rounded-sm flex items-center justify-center bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff] transition-all"
-              >
-                Switch to {selectedChain}
-              </button>
-            </div>
+            <button 
+              onClick={handleSwitchNetwork}
+              className="w-full h-12 font-bold text-s rounded-sm flex items-center justify-center bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff] transition-all"
+            >
+              Switch to {selectedChain}
+            </button>
           ) : needsApproval ? (
             <button 
               onClick={handleApprove}
@@ -431,22 +414,12 @@ export function VaultInteraction() {
               Connect wallet to interact
             </button>
           ) : !isCorrectNetwork ? (
-            <div className="space-y-3">
-              <div className="bg-red-500/10 border border-red-500/30 rounded-sm p-4">
-                <p className="text-xs font-bold text-red-400 text-center">
-                  Wrong Network Detected
-                </p>
-                <p className="text-xs text-red-400/80 text-center mt-1">
-                  Please switch to {selectedChain} to continue
-                </p>
-              </div>
-              <button 
-                onClick={handleSwitchNetwork}
-                className="w-full h-12 font-bold text-s rounded-sm flex items-center justify-center bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff] transition-all"
-              >
-                Switch to {selectedChain}
-              </button>
-            </div>
+            <button 
+              onClick={handleSwitchNetwork}
+              className="w-full h-12 font-bold text-s rounded-sm flex items-center justify-center bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff] transition-all"
+            >
+              Switch to {selectedChain}
+            </button>
           ) : (
             <button 
               onClick={handleWithdraw}
