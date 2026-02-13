@@ -41,28 +41,6 @@ export function VaultInteraction() {
       ? ARB_VAULT_ADDRESS 
       : OP_VAULT_ADDRESS;
 
-  // Read vault share balance
-  const { data: vaultShareBalance } = useReadContract({
-    address: targetVault,
-    abi: KerneVaultABI.abi,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
-    query: {
-      enabled: !!address && !!targetVault,
-    },
-  });
-
-  // Read token allowance
-  const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: tokenAddress,
-    abi: erc20Abi,
-    functionName: 'allowance',
-    args: address && targetVault ? [address, targetVault] : undefined,
-    query: {
-      enabled: !!address && !!tokenAddress && !!targetVault,
-    },
-  });
-
   const { 
     writeContract, 
     data: hash, 
@@ -75,6 +53,29 @@ export function VaultInteraction() {
     useWaitForTransactionReceipt({ 
       hash, 
     });
+
+  // Read vault share balance
+  const { data: vaultShareBalance } = useReadContract({
+    address: targetVault,
+    abi: KerneVaultABI.abi,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address && !!targetVault,
+    },
+  });
+
+  // Read token allowance with refetch interval
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+    address: tokenAddress,
+    abi: erc20Abi,
+    functionName: 'allowance',
+    args: address && targetVault ? [address, targetVault] : undefined,
+    query: {
+      enabled: !!address && !!tokenAddress && !!targetVault,
+      refetchInterval: isConfirming ? 1000 : false, // Poll every second while confirming
+    },
+  });
 
   // Check if approval is needed when amount changes
   useEffect(() => {
@@ -93,17 +94,26 @@ export function VaultInteraction() {
   // Reset write state and refetch allowance when transaction is confirmed
   useEffect(() => {
     if (isConfirmed) {
-      // Refetch allowance immediately to update approval status
-      refetchAllowance();
-      // Reset write state after a short delay to show success message
-      const timer = setTimeout(() => {
-        resetWrite();
-        // Refetch again to ensure we have the latest allowance
+      console.log('Transaction confirmed, refetching allowance...');
+      // Refetch allowance multiple times to ensure we get updated data
+      const refetchInterval = setInterval(() => {
         refetchAllowance();
+      }, 500);
+      
+      // Reset write state after showing success message
+      const timer = setTimeout(() => {
+        clearInterval(refetchInterval);
+        resetWrite();
+        refetchAllowance(); // One final refetch
+        console.log('Write state reset, allowance:', allowance);
       }, 2000);
-      return () => clearTimeout(timer);
+      
+      return () => {
+        clearInterval(refetchInterval);
+        clearTimeout(timer);
+      };
     }
-  }, [isConfirmed, resetWrite, refetchAllowance]);
+  }, [isConfirmed, resetWrite, refetchAllowance, allowance]);
 
   useEffect(() => {
     const fetchPrice = async () => {
