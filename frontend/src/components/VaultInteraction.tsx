@@ -93,10 +93,14 @@ export function VaultInteraction() {
   // Reset write state and refetch allowance when transaction is confirmed
   useEffect(() => {
     if (isConfirmed) {
+      // Refetch allowance immediately to update approval status
       refetchAllowance();
+      // Reset write state after a short delay to show success message
       const timer = setTimeout(() => {
         resetWrite();
-      }, 3000);
+        // Refetch again to ensure we have the latest allowance
+        refetchAllowance();
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [isConfirmed, resetWrite, refetchAllowance]);
