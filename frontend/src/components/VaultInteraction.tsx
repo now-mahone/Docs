@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance, useChainId, useReadContract } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance, useChainId, useReadContract, useSwitchChain } from 'wagmi';
 import { parseEther, formatEther, erc20Abi } from 'viem';
 import { VAULT_ADDRESS, ARB_VAULT_ADDRESS, OP_VAULT_ADDRESS, WETH_ADDRESS, ARB_WSTETH_ADDRESS } from '@/config';
 import KerneVaultABI from '@/abis/KerneVault.json';
@@ -18,10 +18,20 @@ import { Vault, ChevronDown } from 'lucide-react';
 export function VaultInteraction() {
   const { isConnected, address } = useAccount();
   const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
   const [amount, setAmount] = useState('');
   const [selectedChain, setSelectedChain] = useState('Base');
   const [ethPrice, setEthPrice] = useState(3150);
   const [needsApproval, setNeedsApproval] = useState(false);
+
+  // Chain ID mapping
+  const requiredChainId = selectedChain === 'Base' 
+    ? 8453 
+    : selectedChain === 'Arbitrum' 
+      ? 42161 
+      : 10; // OP Mainnet
+
+  const isCorrectNetwork = chainId === requiredChainId;
 
   const tokenAddress = selectedChain === 'Base' 
     ? WETH_ADDRESS 
@@ -129,6 +139,14 @@ export function VaultInteraction() {
   }, []);
 
   const usdValue = amount ? (parseFloat(amount) * ethPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00';
+
+  const handleSwitchNetwork = async () => {
+    try {
+      await switchChain({ chainId: requiredChainId });
+    } catch (error) {
+      console.error('Failed to switch network:', error);
+    }
+  };
 
   const handleApprove = async () => {
     if (!amount || isNaN(parseFloat(amount)) || !address || !tokenAddress || !targetVault) return;
@@ -267,12 +285,36 @@ export function VaultInteraction() {
 
           <div className="flex-1" />
 
-          {needsApproval ? (
+          {!isConnected ? (
+            <button 
+              disabled
+              className="w-full h-12 font-bold text-s rounded-sm flex items-center justify-center bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50"
+            >
+              Connect wallet to interact
+            </button>
+          ) : !isCorrectNetwork ? (
+            <div className="space-y-3">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-sm p-4">
+                <p className="text-xs font-bold text-red-400 text-center">
+                  Wrong Network Detected
+                </p>
+                <p className="text-xs text-red-400/80 text-center mt-1">
+                  Please switch to {selectedChain} to continue
+                </p>
+              </div>
+              <button 
+                onClick={handleSwitchNetwork}
+                className="w-full h-12 font-bold text-s rounded-sm flex items-center justify-center bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff] transition-all"
+              >
+                Switch to {selectedChain}
+              </button>
+            </div>
+          ) : needsApproval ? (
             <button 
               onClick={handleApprove}
-              disabled={!isConnected || isPending || isConfirming || !amount}
+              disabled={isPending || isConfirming || !amount}
               className={`w-full h-12 font-bold text-s rounded-sm flex items-center justify-center transition-all ${
-                isConnected && !isPending && !isConfirming && amount
+                !isPending && !isConfirming && amount
                   ? 'bg-[#37d097] text-[#ffffff] hover:bg-[#37d097]/80' 
                   : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
               }`}
@@ -282,14 +324,14 @@ export function VaultInteraction() {
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                   {isPending ? 'Confirming in Wallet...' : 'Processing Approval...'}
                 </div>
-              ) : isConnected ? 'Approve Token' : 'Connect wallet to interact'}
+              ) : 'Approve Token'}
             </button>
           ) : (
             <button 
               onClick={handleDeposit}
-              disabled={!isConnected || isPending || isConfirming || !amount}
+              disabled={isPending || isConfirming || !amount}
               className={`w-full h-12 font-bold text-s rounded-sm flex items-center justify-center transition-all ${
-                isConnected && !isPending && !isConfirming && amount
+                !isPending && !isConfirming && amount
                   ? 'bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff]' 
                   : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
               }`}
@@ -299,7 +341,7 @@ export function VaultInteraction() {
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                   {isPending ? 'Confirming in Wallet...' : 'Processing Transaction...'}
                 </div>
-              ) : isConnected ? 'Confirm Deposit' : 'Connect wallet to interact'}
+              ) : 'Confirm Deposit'}
             </button>
           )}
           {isConfirmed && (
@@ -344,22 +386,48 @@ export function VaultInteraction() {
 
           <div className="flex-1" />
 
-          <button 
-            onClick={handleWithdraw}
-            disabled={!isConnected || isPending || isConfirming || !amount}
-            className={`w-full h-12 font-bold text-s rounded-sm flex items-center justify-center transition-all ${
-              isConnected && !isPending && !isConfirming && amount
-                ? 'bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff]' 
-                : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
-            }`}
-          >
-            {isPending || isConfirming ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                {isPending ? 'Confirming in Wallet...' : 'Processing Transaction...'}
+          {!isConnected ? (
+            <button 
+              disabled
+              className="w-full h-12 font-bold text-s rounded-sm flex items-center justify-center bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50"
+            >
+              Connect wallet to interact
+            </button>
+          ) : !isCorrectNetwork ? (
+            <div className="space-y-3">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-sm p-4">
+                <p className="text-xs font-bold text-red-400 text-center">
+                  Wrong Network Detected
+                </p>
+                <p className="text-xs text-red-400/80 text-center mt-1">
+                  Please switch to {selectedChain} to continue
+                </p>
               </div>
-            ) : isConnected ? 'Confirm Withdrawal' : 'Connect wallet to interact'}
-          </button>
+              <button 
+                onClick={handleSwitchNetwork}
+                className="w-full h-12 font-bold text-s rounded-sm flex items-center justify-center bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff] transition-all"
+              >
+                Switch to {selectedChain}
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={handleWithdraw}
+              disabled={isPending || isConfirming || !amount}
+              className={`w-full h-12 font-bold text-s rounded-sm flex items-center justify-center transition-all ${
+                !isPending && !isConfirming && amount
+                  ? 'bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff]' 
+                  : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
+              }`}
+            >
+              {isPending || isConfirming ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  {isPending ? 'Confirming in Wallet...' : 'Processing Transaction...'}
+                </div>
+              ) : 'Confirm Withdrawal'}
+            </button>
+          )}
           {isConfirmed && (
             <p className="text-xs text-[#37d097] font-bold text-center mt-2 uppercase tracking-widest">
               Withdrawal Successful
