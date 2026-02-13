@@ -26,60 +26,130 @@ export default function TerminalPage() {
   const [timeframe, setTimeframe] = useState<30 | 90 | 180>(90);
   const [ethPrice, setEthPrice] = useState(3150);
 
-  // Determine which vault to read based on connected chain
+  // Determine which vault to read based on connected chain (for VaultInteraction component)
   const targetVault = chainId === 8453 
     ? VAULT_ADDRESS 
     : chainId === 42161 
       ? ARB_VAULT_ADDRESS 
       : OP_VAULT_ADDRESS;
 
-  // Read user's vault share balance
-  const { data: vaultShareBalance } = useReadContract({
-    address: targetVault,
+  // Read ALL chain balances for User Balance/Earnings cards
+  // Base Chain
+  const { data: baseShareBalance } = useReadContract({
+    address: VAULT_ADDRESS,
     abi: KerneVaultABI.abi,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
+    chainId: 8453,
     query: {
-      enabled: !!address && !!targetVault && isConnected,
+      enabled: !!address && isConnected,
     },
   });
 
-  // Read vault's total assets (for calculating share value)
-  const { data: totalAssets } = useReadContract({
-    address: targetVault,
+  const { data: baseTotalAssets } = useReadContract({
+    address: VAULT_ADDRESS,
     abi: KerneVaultABI.abi,
     functionName: 'totalAssets',
-    query: {
-      enabled: !!targetVault,
-    },
+    chainId: 8453,
   });
 
-  // Read vault's total supply (for calculating share value)
-  const { data: totalSupply } = useReadContract({
-    address: targetVault,
+  const { data: baseTotalSupply } = useReadContract({
+    address: VAULT_ADDRESS,
     abi: KerneVaultABI.abi,
     functionName: 'totalSupply',
+    chainId: 8453,
+  });
+
+  // Arbitrum Chain
+  const { data: arbShareBalance } = useReadContract({
+    address: ARB_VAULT_ADDRESS,
+    abi: KerneVaultABI.abi,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    chainId: 42161,
     query: {
-      enabled: !!targetVault,
+      enabled: !!address && isConnected,
     },
   });
 
-  // Calculate user's actual ETH balance in the vault
-  const userVaultBalance = useMemo(() => {
-    if (!vaultShareBalance || typeof vaultShareBalance !== 'bigint') return '0.00';
-    if (!totalAssets || typeof totalAssets !== 'bigint') return '0.00';
-    if (!totalSupply || typeof totalSupply !== 'bigint' || totalSupply === 0n) return '0.00';
-    
-    // Calculate: (userShares * totalAssets) / totalSupply
-    const userAssets = (vaultShareBalance * totalAssets) / totalSupply;
-    return parseFloat(formatEther(userAssets)).toFixed(4);
-  }, [vaultShareBalance, totalAssets, totalSupply]);
+  const { data: arbTotalAssets } = useReadContract({
+    address: ARB_VAULT_ADDRESS,
+    abi: KerneVaultABI.abi,
+    functionName: 'totalAssets',
+    chainId: 42161,
+  });
 
-  // Calculate user's earnings (simplified - would need historical data for accurate calculation)
+  const { data: arbTotalSupply } = useReadContract({
+    address: ARB_VAULT_ADDRESS,
+    abi: KerneVaultABI.abi,
+    functionName: 'totalSupply',
+    chainId: 42161,
+  });
+
+  // OP Mainnet Chain
+  const { data: opShareBalance } = useReadContract({
+    address: OP_VAULT_ADDRESS,
+    abi: KerneVaultABI.abi,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    chainId: 10,
+    query: {
+      enabled: !!address && isConnected,
+    },
+  });
+
+  const { data: opTotalAssets } = useReadContract({
+    address: OP_VAULT_ADDRESS,
+    abi: KerneVaultABI.abi,
+    functionName: 'totalAssets',
+    chainId: 10,
+  });
+
+  const { data: opTotalSupply } = useReadContract({
+    address: OP_VAULT_ADDRESS,
+    abi: KerneVaultABI.abi,
+    functionName: 'totalSupply',
+    chainId: 10,
+  });
+
+  // Calculate user's combined ETH balance across ALL chains
+  const userVaultBalance = useMemo(() => {
+    let totalBalance = 0;
+
+    // Base balance
+    if (baseShareBalance && typeof baseShareBalance === 'bigint' && 
+        baseTotalAssets && typeof baseTotalAssets === 'bigint' && 
+        baseTotalSupply && typeof baseTotalSupply === 'bigint' && baseTotalSupply > 0n) {
+      const baseAssets = (baseShareBalance * baseTotalAssets) / baseTotalSupply;
+      totalBalance += parseFloat(formatEther(baseAssets));
+    }
+
+    // Arbitrum balance
+    if (arbShareBalance && typeof arbShareBalance === 'bigint' && 
+        arbTotalAssets && typeof arbTotalAssets === 'bigint' && 
+        arbTotalSupply && typeof arbTotalSupply === 'bigint' && arbTotalSupply > 0n) {
+      const arbAssets = (arbShareBalance * arbTotalAssets) / arbTotalSupply;
+      totalBalance += parseFloat(formatEther(arbAssets));
+    }
+
+    // OP Mainnet balance
+    if (opShareBalance && typeof opShareBalance === 'bigint' && 
+        opTotalAssets && typeof opTotalAssets === 'bigint' && 
+        opTotalSupply && typeof opTotalSupply === 'bigint' && opTotalSupply > 0n) {
+      const opAssets = (opShareBalance * opTotalAssets) / opTotalSupply;
+      totalBalance += parseFloat(formatEther(opAssets));
+    }
+
+    return totalBalance.toFixed(4);
+  }, [baseShareBalance, baseTotalAssets, baseTotalSupply, 
+      arbShareBalance, arbTotalAssets, arbTotalSupply,
+      opShareBalance, opTotalAssets, opTotalSupply]);
+
+  // Calculate user's combined earnings across ALL chains
   const userEarnings = useMemo(() => {
-    if (!vaultShareBalance || typeof vaultShareBalance !== 'bigint') return '$0.00';
-    
     const balanceNum = parseFloat(userVaultBalance);
+    if (balanceNum === 0) return '$0.00';
+    
     const apy = apyData?.apy || 18.40;
     
     // Rough estimate: assume average hold time of 30 days for earnings display
@@ -87,7 +157,7 @@ export default function TerminalPage() {
     const estimatedEarnings = balanceNum * ethPrice * (apy / 100) * (30 / 365);
     
     return '$' + estimatedEarnings.toFixed(2);
-  }, [vaultShareBalance, userVaultBalance, ethPrice, apyData]);
+  }, [userVaultBalance, ethPrice, apyData]);
 
   useEffect(() => {
     const fetchData = async () => {
