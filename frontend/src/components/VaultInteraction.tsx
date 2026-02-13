@@ -367,12 +367,12 @@ export function VaultInteraction() {
             )}
             <div className="h-6 flex items-center justify-center">
               {isConfirmed && (
-                <p className="text-xs text-[#37d097] font-bold text-center uppercase tracking-widest">
+                <p className="text-xs text-[#37d097] font-bold text-center leading-6">
                   {needsApproval ? 'Approval Successful' : 'Deposit Successful'}
                 </p>
               )}
               {writeError && (
-                <p className="text-xs text-red-500 font-medium text-center">
+                <p className="text-xs text-red-500 font-bold text-center leading-6">
                   {writeError.message.includes('User rejected') ? 'Transaction rejected' : needsApproval ? 'Approval failed' : 'Deposit failed'}
                 </p>
               )}
@@ -445,12 +445,12 @@ export function VaultInteraction() {
             )}
             <div className="h-6 flex items-center justify-center">
               {isConfirmed && (
-                <p className="text-xs text-[#37d097] font-bold text-center uppercase tracking-widest">
+                <p className="text-xs text-[#37d097] font-bold text-center leading-6">
                   Withdrawal Successful
                 </p>
               )}
               {writeError && (
-                <p className="text-xs text-red-500 font-medium text-center">
+                <p className="text-xs text-red-500 font-bold text-center leading-6">
                   {writeError.message.includes('User rejected') ? 'Transaction rejected' : 'Withdrawal failed'}
                 </p>
               )}
