@@ -229,7 +229,7 @@ export function VaultInteraction() {
   };
 
   return (
-    <div className="p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm h-full flex flex-col">
+    <div className="p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm h-[600px] flex flex-col">
       <div className="flex items-start justify-between mb-8">
         <div className="flex flex-col flex-1">
           <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide">Vault Interaction</span>

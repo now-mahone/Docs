@@ -5,7 +5,10 @@ import React, { useMemo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Zap, Shield, TrendingUp, DollarSign, Wallet2, Info, ChartArea, HandCoins, Percent, Scale, Hourglass, ChartLine, BookOpenText, HeartPulse } from 'lucide-react';
-import { useAccount } from 'wagmi';
+import { useAccount, useReadContract, useChainId } from 'wagmi';
+import { formatEther } from 'viem';
+import { VAULT_ADDRESS, ARB_VAULT_ADDRESS, OP_VAULT_ADDRESS } from '@/config';
+import KerneVaultABI from '@/abis/KerneVault.json';
 import { PerformanceChart } from '@/components/PerformanceChart';
 import { ETHComparisonChart } from '@/components/ETHComparisonChart';
 import { AssetComposition } from '@/components/AssetComposition';
@@ -13,13 +16,78 @@ import { VaultInteraction } from '@/components/VaultInteraction';
 import { WalletConnectButton } from '@/components/WalletConnectButton';
 
 export default function TerminalPage() {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
+  const chainId = useChainId();
   const [apyData, setApyData] = useState<any>(null);
   const [solvencyData, setSolvencyData] = useState<any>(null);
   const [protocolHealth, setProtocolHealth] = useState<any>(null);
   const [historicalEth, setHistoricalEth] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<30 | 90 | 180>(90);
+  const [ethPrice, setEthPrice] = useState(3150);
+
+  // Determine which vault to read based on connected chain
+  const targetVault = chainId === 8453 
+    ? VAULT_ADDRESS 
+    : chainId === 42161 
+      ? ARB_VAULT_ADDRESS 
+      : OP_VAULT_ADDRESS;
+
+  // Read user's vault share balance
+  const { data: vaultShareBalance } = useReadContract({
+    address: targetVault,
+    abi: KerneVaultABI.abi,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address && !!targetVault && isConnected,
+    },
+  });
+
+  // Read vault's total assets (for calculating share value)
+  const { data: totalAssets } = useReadContract({
+    address: targetVault,
+    abi: KerneVaultABI.abi,
+    functionName: 'totalAssets',
+    query: {
+      enabled: !!targetVault,
+    },
+  });
+
+  // Read vault's total supply (for calculating share value)
+  const { data: totalSupply } = useReadContract({
+    address: targetVault,
+    abi: KerneVaultABI.abi,
+    functionName: 'totalSupply',
+    query: {
+      enabled: !!targetVault,
+    },
+  });
+
+  // Calculate user's actual ETH balance in the vault
+  const userVaultBalance = useMemo(() => {
+    if (!vaultShareBalance || typeof vaultShareBalance !== 'bigint') return '0.00';
+    if (!totalAssets || typeof totalAssets !== 'bigint') return '0.00';
+    if (!totalSupply || typeof totalSupply !== 'bigint' || totalSupply === 0n) return '0.00';
+    
+    // Calculate: (userShares * totalAssets) / totalSupply
+    const userAssets = (vaultShareBalance * totalAssets) / totalSupply;
+    return parseFloat(formatEther(userAssets)).toFixed(4);
+  }, [vaultShareBalance, totalAssets, totalSupply]);
+
+  // Calculate user's earnings (simplified - would need historical data for accurate calculation)
+  const userEarnings = useMemo(() => {
+    if (!vaultShareBalance || typeof vaultShareBalance !== 'bigint') return '$0.00';
+    
+    const balanceNum = parseFloat(userVaultBalance);
+    const apy = apyData?.apy || 18.40;
+    
+    // Rough estimate: assume average hold time of 30 days for earnings display
+    // Real implementation would track deposit time and calculate actual accrued interest
+    const estimatedEarnings = balanceNum * ethPrice * (apy / 100) * (30 / 365);
+    
+    return '$' + estimatedEarnings.toFixed(2);
+  }, [vaultShareBalance, userVaultBalance, ethPrice, apyData]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,6 +138,18 @@ export default function TerminalPage() {
       }
     };
     fetchData();
+    
+    // Also fetch ETH price for earnings calculation
+    const fetchEthPrice = async () => {
+      try {
+        const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT');
+        const data = await res.json();
+        if (data.price) setEthPrice(parseFloat(data.price));
+      } catch (e) {
+        console.error("Failed to fetch ETH price", e);
+      }
+    };
+    fetchEthPrice();
   }, []);
 
   const chartData = useMemo(() => {
@@ -252,8 +332,8 @@ export default function TerminalPage() {
     { label: 'Solvency Ratio', value: solvencyData?.solvency_ratio ? (parseFloat(solvencyData.solvency_ratio)/100).toFixed(2) + 'x' : '1.42x', icon: Scale, color: '#37d097' },
     { label: 'kUSD Price', value: '$1.00', icon: DollarSign, color: '#37d097' },
     { label: 'Cooldown Period', value: 'Instant', icon: Hourglass, color: '#ffffff' },
-    { label: 'User Earnings', value: '$0.00', icon: HandCoins, color: '#ffffff' },
-    { label: 'User Balance', value: '0.00 ETH', icon: Wallet2, color: '#ffffff' },
+    { label: 'User Earnings', value: userEarnings, icon: HandCoins, color: '#ffffff' },
+    { label: 'User Balance', value: userVaultBalance + ' ETH', icon: Wallet2, color: '#ffffff' },
   ];
 
   return (
