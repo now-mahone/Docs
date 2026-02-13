@@ -378,11 +378,14 @@ export default function TerminalPage() {
             const isUserCard = idx === 4 || idx === 5; // User Earnings and User Balance
             const shouldBlur = isUserCard && !isConnected;
             const unavailableText = idx === 4 ? 'Earnings unavailable' : 'Balance unavailable';
+            const shouldHighlight = isUserCard && isConnected;
 
             return (
               <div 
                 key={idx} 
-                className="p-6 md:p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#444a4f] rounded-sm flex flex-col justify-between relative overflow-hidden"
+                className={`p-6 md:p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border rounded-sm flex flex-col justify-between relative overflow-hidden transition-all ${
+                  shouldHighlight ? 'border-[#37d097]' : 'border-[#444a4f]'
+                }`}
               >
                 <div className={`${shouldBlur ? 'blur-sm opacity-40' : ''} transition-all duration-300`}>
                   <div className="flex items-center justify-between mb-4">
