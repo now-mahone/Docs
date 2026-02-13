@@ -4,6 +4,8 @@
 ## LATEST UPDATE
 ================================================================================
 
+[2026-02-12 17:20] - Terminal: Fixed Vault Deposit flow (WETH/wstETH balance + Approval) and Transparency Pie Charts. Updated config.ts with token addresses. Pushed to february. - Status: SUCCESS
+
 [2026-02-12 16:10] - Terminal: Implemented ETH deposit functionality in VaultInteraction component using wagmi hooks (useWriteContract, useWaitForTransactionReceipt). Added live balance display and transaction status feedback. Pushed to february and m-vercel. - Status: SUCCESS
 
 [2026-02-12 16:02] - Terminal: Adjusted Sharpe ratio calculation to reflect realistic delta-neutral performance (~19.1) by lowering assumed annual volatility to 0.8%. Pushed to february and m-vercel. - Status: SUCCESS

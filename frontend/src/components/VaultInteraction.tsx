@@ -54,13 +54,29 @@ export function VaultInteraction() {
     writeContract, 
     data: hash, 
     isPending,
-    error: writeError 
+    error: writeError,
+    reset: resetWrite
   } = useWriteContract();
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } = 
     useWaitForTransactionReceipt({ 
       hash, 
     });
+
+  // Reset write state when transaction is confirmed so user can proceed to next step (Deposit)
+  useEffect(() => {
+    if (isConfirmed) {
+      // If it was an approval, we want to reset immediately so the button updates to "Confirm Deposit"
+      // If it was a deposit, we wait a bit to show the success message
+      const isApproval = tokenAddress && (!allowance || allowance < parseEther(amount || '0'));
+      const delay = isApproval ? 500 : 3000;
+      
+      const timer = setTimeout(() => {
+        resetWrite();
+      }, delay);
+      return () => clearTimeout(timer);
+    }
+  }, [isConfirmed, resetWrite, allowance, amount, tokenAddress]);
 
   useEffect(() => {
     const fetchPrice = async () => {
