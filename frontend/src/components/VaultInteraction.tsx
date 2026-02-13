@@ -315,65 +315,69 @@ export function VaultInteraction() {
 
           <div className="flex-1" />
 
-          {!isConnected ? (
-            <button 
-              disabled
-              className="w-full h-12 font-bold text-s rounded-sm flex items-center justify-center bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50"
-            >
-              Connect wallet to interact
-            </button>
-          ) : !isCorrectNetwork ? (
-            <button 
-              onClick={handleSwitchNetwork}
-              className="w-full h-12 font-bold text-s rounded-sm flex items-center justify-center bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff] transition-all"
-            >
-              Switch to {selectedChain}
-            </button>
-          ) : needsApproval ? (
-            <button 
-              onClick={handleApprove}
-              disabled={isPending || isConfirming || !amount}
-              className={`w-full h-12 font-bold text-s rounded-sm flex items-center justify-center transition-all ${
-                !isPending && !isConfirming && amount
-                  ? 'bg-[#37d097] text-[#ffffff] hover:bg-[#37d097]/80' 
-                  : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
-              }`}
-            >
-              {isPending || isConfirming ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                  {isPending ? 'Confirming in Wallet...' : 'Processing Approval...'}
-                </div>
-              ) : 'Approve Token'}
-            </button>
-          ) : (
-            <button 
-              onClick={handleDeposit}
-              disabled={isPending || isConfirming || !amount}
-              className={`w-full h-12 font-bold text-s rounded-sm flex items-center justify-center transition-all ${
-                !isPending && !isConfirming && amount
-                  ? 'bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff]' 
-                  : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
-              }`}
-            >
-              {isPending || isConfirming ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                  {isPending ? 'Confirming in Wallet...' : 'Processing Transaction...'}
-                </div>
-              ) : 'Confirm Deposit'}
-            </button>
-          )}
-          {isConfirmed && (
-            <p className="text-xs text-[#37d097] font-bold text-center mt-2 uppercase tracking-widest">
-              {needsApproval ? 'Approval Successful' : 'Deposit Successful'}
-            </p>
-          )}
-          {writeError && (
-            <p className="text-xs text-red-500 font-medium text-center mt-2">
-              {writeError.message.includes('User rejected') ? 'Transaction rejected' : needsApproval ? 'Approval failed' : 'Deposit failed'}
-            </p>
-          )}
+          <div className="space-y-2">
+            {!isConnected ? (
+              <button 
+                disabled
+                className="w-full h-12 font-bold text-s rounded-sm flex items-center justify-center bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50"
+              >
+                Connect wallet to interact
+              </button>
+            ) : !isCorrectNetwork ? (
+              <button 
+                onClick={handleSwitchNetwork}
+                className="w-full h-12 font-bold text-s rounded-sm flex items-center justify-center bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff] transition-all"
+              >
+                Switch to {selectedChain}
+              </button>
+            ) : needsApproval ? (
+              <button 
+                onClick={handleApprove}
+                disabled={isPending || isConfirming || !amount}
+                className={`w-full h-12 font-bold text-s rounded-sm flex items-center justify-center transition-all ${
+                  !isPending && !isConfirming && amount
+                    ? 'bg-[#37d097] text-[#ffffff] hover:bg-[#37d097]/80' 
+                    : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
+                }`}
+              >
+                {isPending || isConfirming ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    {isPending ? 'Confirming in Wallet...' : 'Processing Approval...'}
+                  </div>
+                ) : 'Approve Token'}
+              </button>
+            ) : (
+              <button 
+                onClick={handleDeposit}
+                disabled={isPending || isConfirming || !amount}
+                className={`w-full h-12 font-bold text-s rounded-sm flex items-center justify-center transition-all ${
+                  !isPending && !isConfirming && amount
+                    ? 'bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff]' 
+                    : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
+                }`}
+              >
+                {isPending || isConfirming ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    {isPending ? 'Confirming in Wallet...' : 'Processing Transaction...'}
+                  </div>
+                ) : 'Confirm Deposit'}
+              </button>
+            )}
+            <div className="h-6 flex items-center justify-center">
+              {isConfirmed && (
+                <p className="text-xs text-[#37d097] font-bold text-center uppercase tracking-widest">
+                  {needsApproval ? 'Approval Successful' : 'Deposit Successful'}
+                </p>
+              )}
+              {writeError && (
+                <p className="text-xs text-red-500 font-medium text-center">
+                  {writeError.message.includes('User rejected') ? 'Transaction rejected' : needsApproval ? 'Approval failed' : 'Deposit failed'}
+                </p>
+              )}
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="withdraw" className="flex-1 flex flex-col space-y-6 mt-0">
@@ -406,55 +410,59 @@ export function VaultInteraction() {
 
           <div className="flex-1" />
 
-          {!isConnected ? (
-            <button 
-              disabled
-              className="w-full h-12 font-bold text-s rounded-sm flex items-center justify-center bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50"
-            >
-              Connect wallet to interact
-            </button>
-          ) : !isCorrectNetwork ? (
-            <button 
-              onClick={handleSwitchNetwork}
-              className="w-full h-12 font-bold text-s rounded-sm flex items-center justify-center bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff] transition-all"
-            >
-              Switch to {selectedChain}
-            </button>
-          ) : (
-            <button 
-              onClick={handleWithdraw}
-              disabled={isPending || isConfirming || !amount}
-              className={`w-full h-12 font-bold text-s rounded-sm flex items-center justify-center transition-all ${
-                !isPending && !isConfirming && amount
-                  ? 'bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff]' 
-                  : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
-              }`}
-            >
-              {isPending || isConfirming ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                  {isPending ? 'Confirming in Wallet...' : 'Processing Transaction...'}
-                </div>
-              ) : 'Confirm Withdrawal'}
-            </button>
-          )}
-          {isConfirmed && (
-            <p className="text-xs text-[#37d097] font-bold text-center mt-2 uppercase tracking-widest">
-              Withdrawal Successful
-            </p>
-          )}
-          {writeError && (
-            <p className="text-xs text-red-500 font-medium text-center mt-2">
-              {writeError.message.includes('User rejected') ? 'Transaction rejected' : 'Withdrawal failed'}
-            </p>
-          )}
+          <div className="space-y-2">
+            {!isConnected ? (
+              <button 
+                disabled
+                className="w-full h-12 font-bold text-s rounded-sm flex items-center justify-center bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50"
+              >
+                Connect wallet to interact
+              </button>
+            ) : !isCorrectNetwork ? (
+              <button 
+                onClick={handleSwitchNetwork}
+                className="w-full h-12 font-bold text-s rounded-sm flex items-center justify-center bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff] transition-all"
+              >
+                Switch to {selectedChain}
+              </button>
+            ) : (
+              <button 
+                onClick={handleWithdraw}
+                disabled={isPending || isConfirming || !amount}
+                className={`w-full h-12 font-bold text-s rounded-sm flex items-center justify-center transition-all ${
+                  !isPending && !isConfirming && amount
+                    ? 'bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff]' 
+                    : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
+                }`}
+              >
+                {isPending || isConfirming ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    {isPending ? 'Confirming in Wallet...' : 'Processing Transaction...'}
+                  </div>
+                ) : 'Confirm Withdrawal'}
+              </button>
+            )}
+            <div className="h-6 flex items-center justify-center">
+              {isConfirmed && (
+                <p className="text-xs text-[#37d097] font-bold text-center uppercase tracking-widest">
+                  Withdrawal Successful
+                </p>
+              )}
+              {writeError && (
+                <p className="text-xs text-red-500 font-medium text-center">
+                  {writeError.message.includes('User rejected') ? 'Transaction rejected' : 'Withdrawal failed'}
+                </p>
+              )}
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
 
       {/* Risk Disclosure */}
       <div className="mt-8 pt-6 border-t border-[#444a4f]/30">
         <p className="text-xs text-[#444a4f] font-medium leading-relaxed">
-          Risk Disclosure: Interacting with delta neutral vaults involves smart contract, execution, and counterparty risk. High frequency hedging may result in principal drawdown during extreme market volatility. Deposit only what you can afford to lose.
+          Risk Disclosure: Interacting with delta neutral vaults involves smart contract, execution, and counterparty risk. High frequency hedging may result in principal drawdown during extreme market volatility.
         </p>
       </div>
     </div>
