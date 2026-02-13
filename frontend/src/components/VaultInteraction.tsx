@@ -40,16 +40,6 @@ export function VaultInteraction() {
       ? ARB_VAULT_ADDRESS 
       : OP_VAULT_ADDRESS;
 
-  const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: tokenAddress,
-    abi: erc20Abi,
-    functionName: 'allowance',
-    args: address && targetVault ? [address, targetVault] : undefined,
-    query: {
-      enabled: !!address && !!tokenAddress && !!targetVault,
-    }
-  });
-
   const { 
     writeContract, 
     data: hash, 
@@ -63,23 +53,15 @@ export function VaultInteraction() {
       hash, 
     });
 
-  // Reset write state when transaction is confirmed so user can proceed to next step (Deposit)
+  // Reset write state when transaction is confirmed
   useEffect(() => {
     if (isConfirmed) {
-      // Force refetch allowance immediately
-      refetchAllowance();
-      
-      // If it was an approval, we want to reset immediately so the button updates to "Confirm Deposit"
-      // If it was a deposit, we wait a bit to show the success message
-      const isApproval = tokenAddress && (!allowance || allowance < parseEther(amount || '0'));
-      const delay = isApproval ? 200 : 3000;
-      
       const timer = setTimeout(() => {
         resetWrite();
-      }, delay);
+      }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [isConfirmed, resetWrite, refetchAllowance, allowance, amount, tokenAddress]);
+  }, [isConfirmed, resetWrite]);
 
   useEffect(() => {
     const fetchPrice = async () => {
@@ -103,17 +85,6 @@ export function VaultInteraction() {
 
     if (!targetVault || targetVault === '0x0000000000000000000000000000000000000000') {
       console.error("Vault address not configured for", selectedChain);
-      return;
-    }
-
-    // Check allowance
-    if (tokenAddress && (!allowance || allowance < amountWei)) {
-      writeContract({
-        address: tokenAddress,
-        abi: erc20Abi,
-        functionName: 'approve',
-        args: [targetVault, amountWei],
-      });
       return;
     }
     
@@ -229,9 +200,7 @@ export function VaultInteraction() {
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                 {isPending ? 'Confirming in Wallet...' : 'Processing Transaction...'}
               </div>
-            ) : isConnected ? (
-              tokenAddress && (!allowance || allowance < parseEther(amount || '0')) ? 'Approve Token' : 'Confirm Deposit'
-            ) : 'Connect wallet to interact'}
+            ) : isConnected ? 'Confirm Deposit' : 'Connect wallet to interact'}
           </button>
           {isConfirmed && (
             <p className="text-xs text-[#37d097] font-bold text-center mt-2 uppercase tracking-widest">
