@@ -624,10 +624,6 @@ export default function TerminalPage() {
             </div>
           </div>
 
-          {/* Asset Allocation */}
-          <div className="lg:col-span-2 border border-[#444a4f] rounded-sm overflow-hidden bg-[#000000] h-[600px]">
-            <AssetComposition />
-          </div>
         </div>
       </main>
 
