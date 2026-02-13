@@ -305,7 +305,7 @@ export function VaultInteraction() {
             <div className="flex justify-between items-end">
               <label className="text-s font-medium text-[#aab9be] tracking-tight block">Amount (Kerne-V1)</label>
               <span className="text-s font-medium text-[#aab9be] tracking-tight">
-                Balance: {vaultShareBalance ? parseFloat(formatEther(vaultShareBalance)).toFixed(4) : '0.00'}
+                Balance: {vaultShareBalance && typeof vaultShareBalance === 'bigint' ? parseFloat(formatEther(vaultShareBalance)).toFixed(4) : '0.00'}
               </span>
             </div>
             <div className="relative">
@@ -317,7 +317,7 @@ export function VaultInteraction() {
                 className="w-full bg-[#22252a] border border-[#444a4f] rounded-sm px-5 py-4 text-[#ffffff] font-medium focus:border-[#37d097] outline-none transition-colors shadow-none placeholder:font-medium placeholder:text-s placeholder:text-[#aab9be] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <button 
-                onClick={() => vaultShareBalance && setAmount(formatEther(vaultShareBalance))}
+                onClick={() => vaultShareBalance && typeof vaultShareBalance === 'bigint' && setAmount(formatEther(vaultShareBalance))}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#37d097] hover:text-[#37d097]/80 transition-colors"
               >
                 MAX
