@@ -21,6 +21,7 @@ export function VaultInteraction() {
   const [amount, setAmount] = useState('');
   const [selectedChain, setSelectedChain] = useState('Base');
   const [ethPrice, setEthPrice] = useState(3150);
+  const [needsApproval, setNeedsApproval] = useState(false);
 
   const tokenAddress = selectedChain === 'Base' 
     ? WETH_ADDRESS 
@@ -40,6 +41,28 @@ export function VaultInteraction() {
       ? ARB_VAULT_ADDRESS 
       : OP_VAULT_ADDRESS;
 
+  // Read vault share balance
+  const { data: vaultShareBalance } = useReadContract({
+    address: targetVault,
+    abi: KerneVaultABI.abi,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address && !!targetVault,
+    },
+  });
+
+  // Read token allowance
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+    address: tokenAddress,
+    abi: erc20Abi,
+    functionName: 'allowance',
+    args: address && targetVault ? [address, targetVault] : undefined,
+    query: {
+      enabled: !!address && !!tokenAddress && !!targetVault,
+    },
+  });
+
   const { 
     writeContract, 
     data: hash, 
@@ -53,15 +76,30 @@ export function VaultInteraction() {
       hash, 
     });
 
-  // Reset write state when transaction is confirmed
+  // Check if approval is needed when amount changes
+  useEffect(() => {
+    if (amount && allowance !== undefined && tokenAddress && targetVault) {
+      try {
+        const amountWei = parseEther(amount);
+        setNeedsApproval(allowance < amountWei);
+      } catch (e) {
+        setNeedsApproval(false);
+      }
+    } else {
+      setNeedsApproval(false);
+    }
+  }, [amount, allowance, tokenAddress, targetVault]);
+
+  // Reset write state and refetch allowance when transaction is confirmed
   useEffect(() => {
     if (isConfirmed) {
+      refetchAllowance();
       const timer = setTimeout(() => {
         resetWrite();
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [isConfirmed, resetWrite]);
+  }, [isConfirmed, resetWrite, refetchAllowance]);
 
   useEffect(() => {
     const fetchPrice = async () => {
@@ -78,6 +116,19 @@ export function VaultInteraction() {
 
   const usdValue = amount ? (parseFloat(amount) * ethPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00';
 
+  const handleApprove = async () => {
+    if (!amount || isNaN(parseFloat(amount)) || !address || !tokenAddress || !targetVault) return;
+    
+    const amountWei = parseEther(amount);
+    
+    writeContract({
+      address: tokenAddress,
+      abi: erc20Abi,
+      functionName: 'approve',
+      args: [targetVault, amountWei],
+    });
+  };
+
   const handleDeposit = async () => {
     if (!amount || isNaN(parseFloat(amount)) || !address || !targetVault) return;
     
@@ -93,6 +144,19 @@ export function VaultInteraction() {
       abi: KerneVaultABI.abi,
       functionName: 'deposit',
       args: [amountWei, address],
+    });
+  };
+
+  const handleWithdraw = async () => {
+    if (!amount || isNaN(parseFloat(amount)) || !address || !targetVault) return;
+    
+    const sharesWei = parseEther(amount);
+    
+    writeContract({
+      address: targetVault,
+      abi: KerneVaultABI.abi,
+      functionName: 'redeem',
+      args: [sharesWei, address, address],
     });
   };
 
@@ -175,7 +239,87 @@ export function VaultInteraction() {
                 placeholder="0.00"
                 className="w-full bg-[#22252a] border border-[#444a4f] rounded-sm px-5 py-4 text-[#ffffff] font-medium focus:border-[#37d097] outline-none transition-colors shadow-none placeholder:font-medium placeholder:text-s placeholder:text-[#aab9be] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
-              <button className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#37d097] hover:text-[#37d097]/80 transition-colors">
+              <button 
+                onClick={() => balanceData && setAmount(formatEther(balanceData.value))}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#37d097] hover:text-[#37d097]/80 transition-colors"
+              >
+                MAX
+              </button>
+            </div>
+            <div className="flex justify-start mt-2">
+              <span className="text-s font-medium text-[#aab9be] tracking-tight">≈ ${usdValue}</span>
+            </div>
+          </div>
+
+          <div className="flex-1" />
+
+          {needsApproval ? (
+            <button 
+              onClick={handleApprove}
+              disabled={!isConnected || isPending || isConfirming || !amount}
+              className={`w-full h-12 font-bold text-s rounded-sm flex items-center justify-center transition-all ${
+                isConnected && !isPending && !isConfirming && amount
+                  ? 'bg-[#37d097] text-[#ffffff] hover:bg-[#37d097]/80' 
+                  : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
+              }`}
+            >
+              {isPending || isConfirming ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  {isPending ? 'Confirming in Wallet...' : 'Processing Approval...'}
+                </div>
+              ) : isConnected ? 'Approve Token' : 'Connect wallet to interact'}
+            </button>
+          ) : (
+            <button 
+              onClick={handleDeposit}
+              disabled={!isConnected || isPending || isConfirming || !amount}
+              className={`w-full h-12 font-bold text-s rounded-sm flex items-center justify-center transition-all ${
+                isConnected && !isPending && !isConfirming && amount
+                  ? 'bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff]' 
+                  : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
+              }`}
+            >
+              {isPending || isConfirming ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  {isPending ? 'Confirming in Wallet...' : 'Processing Transaction...'}
+                </div>
+              ) : isConnected ? 'Confirm Deposit' : 'Connect wallet to interact'}
+            </button>
+          )}
+          {isConfirmed && (
+            <p className="text-xs text-[#37d097] font-bold text-center mt-2 uppercase tracking-widest">
+              {needsApproval ? 'Approval Successful' : 'Deposit Successful'}
+            </p>
+          )}
+          {writeError && (
+            <p className="text-xs text-red-500 font-medium text-center mt-2">
+              {writeError.message.includes('User rejected') ? 'Transaction rejected' : needsApproval ? 'Approval failed' : 'Deposit failed'}
+            </p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="withdraw" className="flex-1 flex flex-col space-y-6 mt-0">
+          <div className="space-y-3">
+            <div className="flex justify-between items-end">
+              <label className="text-s font-medium text-[#aab9be] tracking-tight block">Amount (Kerne-V1)</label>
+              <span className="text-s font-medium text-[#aab9be] tracking-tight">
+                Balance: {vaultShareBalance ? parseFloat(formatEther(vaultShareBalance)).toFixed(4) : '0.00'}
+              </span>
+            </div>
+            <div className="relative">
+              <input 
+                type="number"
+                value={amount}
+                onChange={(e: any) => setAmount(e.target.value)}
+                placeholder="0.00"
+                className="w-full bg-[#22252a] border border-[#444a4f] rounded-sm px-5 py-4 text-[#ffffff] font-medium focus:border-[#37d097] outline-none transition-colors shadow-none placeholder:font-medium placeholder:text-s placeholder:text-[#aab9be] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <button 
+                onClick={() => vaultShareBalance && setAmount(formatEther(vaultShareBalance))}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#37d097] hover:text-[#37d097]/80 transition-colors"
+              >
                 MAX
               </button>
             </div>
@@ -187,7 +331,7 @@ export function VaultInteraction() {
           <div className="flex-1" />
 
           <button 
-            onClick={handleDeposit}
+            onClick={handleWithdraw}
             disabled={!isConnected || isPending || isConfirming || !amount}
             className={`w-full h-12 font-bold text-s rounded-sm flex items-center justify-center transition-all ${
               isConnected && !isPending && !isConfirming && amount
@@ -200,55 +344,18 @@ export function VaultInteraction() {
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                 {isPending ? 'Confirming in Wallet...' : 'Processing Transaction...'}
               </div>
-            ) : isConnected ? 'Confirm Deposit' : 'Connect wallet to interact'}
+            ) : isConnected ? 'Confirm Withdrawal' : 'Connect wallet to interact'}
           </button>
           {isConfirmed && (
             <p className="text-xs text-[#37d097] font-bold text-center mt-2 uppercase tracking-widest">
-              Deposit Successful
+              Withdrawal Successful
             </p>
           )}
           {writeError && (
             <p className="text-xs text-red-500 font-medium text-center mt-2">
-              {writeError.message.includes('User rejected') ? 'Transaction rejected' : 'Deposit failed'}
+              {writeError.message.includes('User rejected') ? 'Transaction rejected' : 'Withdrawal failed'}
             </p>
           )}
-        </TabsContent>
-
-        <TabsContent value="withdraw" className="flex-1 flex flex-col space-y-6 mt-0">
-          <div className="space-y-3">
-            <div className="flex justify-between items-end">
-              <label className="text-s font-medium text-[#aab9be] tracking-tight block">Amount (Kerne-V1)</label>
-              <span className="text-s font-medium text-[#aab9be] tracking-tight">Balance: 0.00</span>
-            </div>
-            <div className="relative">
-              <input 
-                type="number"
-                value={amount}
-                onChange={(e: any) => setAmount(e.target.value)}
-                placeholder="0.00"
-                className="w-full bg-[#22252a] border border-[#444a4f] rounded-sm px-5 py-4 text-[#ffffff] font-medium focus:border-[#37d097] outline-none transition-colors shadow-none placeholder:font-medium placeholder:text-s placeholder:text-[#aab9be] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
-              <button className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#37d097] hover:text-[#37d097]/80 transition-colors">
-                MAX
-              </button>
-            </div>
-            <div className="flex justify-start mt-2">
-              <span className="text-s font-medium text-[#aab9be] tracking-tight">≈ ${usdValue}</span>
-            </div>
-          </div>
-
-          <div className="flex-1" />
-
-          <button 
-            disabled={!isConnected}
-            className={`w-full h-12 font-bold text-s rounded-sm flex items-center justify-center transition-all ${
-              isConnected 
-                ? 'bg-transparent border border-[#ffffff] text-[#ffffff]' 
-                : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-default'
-            }`}
-          >
-            {isConnected ? 'Confirm Withdrawal' : 'Connect wallet to interact'}
-          </button>
         </TabsContent>
       </Tabs>
 
