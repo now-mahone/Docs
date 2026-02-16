@@ -1,5 +1,70 @@
 # Kerne Protocol - Project State Log
 
+## 2026-02-16 11:37 - Replaced Ecosystem Infrastructure Logos with Consistent Sizing
+**Status**: ✅ Complete
+**Action**: Replaced four ecosystem partner logos with new versions that have consistent sizing across all displays
+**Changes Made**:
+1. **Logo Replacements**:
+   - Base: `/Base-LogoL.svg` → `/base-eco.svg`
+   - Hyperliquid: `/Hyperliquid-LogoL.svg` → `/hyperliquid-eco.svg`
+   - Aerodrome: `/Aerodrome-LogoL.svg` → `/aerodrome-eco.svg`
+   - CoW DAO: `/CoW-Protocol-LogoL.svg` → `/cow-eco.svg`
+2. **Consistent Sizing**: All logos now use `h-6` (24px height) instead of mixed heights (`h-[20px]`, `h-6`, `h-[30px]`)
+3. **Maintained Color Logic**: Preserved the existing `brightness(0) invert(1)` filter for white logos on dark backgrounds
+4. **Result**: All four ecosystem partner logos now display with identical height across all screen sizes and devices
+
+**Files Modified**: `frontend/src/app/page.tsx`
+**Deployed to**: m-vercel remote (commit 928eb215)
+
+## 2026-02-13 12:56 - Improved VaultInteraction UX (Complete Component Rebuild)
+**Status**: ✅ Complete
+**Action**: Complete rebuild of VaultInteraction component from scratch to eliminate tab-switching layout shifts
+**Changes Made**:
+1. **Softened Risk Disclosure**: Removed "Deposit only what you can afford to lose." from risk warning
+2. **Complete Component Rebuild**:
+   - **Removed Radix Tabs component** - replaced with simple button-based tab switching
+   - **Single unified content area** - no separate TabsContent components per tab
+   - **Fixed-height architecture**:
+     - Content area: Fixed 340px total
+     - Input section: Fixed 130px 
+     - Button section: Fixed 80px (48px button + 8px margin + 24px status)
+   - **Conditional rendering within single tree** - all logic happens in one render path
+   - **Zero external dependencies for tabs** - pure React state management
+3. **Result**: ZERO layout shift - content area is always 340px regardless of active tab or button state
+
+**Technical Architecture**:
+```tsx
+<div className="h-[340px]">  // FIXED HEIGHT - never changes
+  <div className="h-[130px]">  // Input section
+    {/* Label, input, USD value - conditionally render based on activeTab */}
+  </div>
+  <div className="flex-1" />  // Flexible spacer
+  <div className="h-[80px]">  // Button section
+    <div className="h-12">  // All buttons render here
+      {!isConnected ? <ConnectButton /> 
+       : !isCorrectNetwork ? <SwitchButton />
+       : activeTab === 'deposit' && needsApproval ? <ApproveButton />
+       : activeTab === 'deposit' ? <DepositButton />
+       : <WithdrawButton />}
+    </div>
+    <div className="h-6">  // All status messages render here
+      {isConfirmed && <SuccessMessage />}
+      {writeError && <ErrorMessage />}
+    </div>
+  </div>
+</div>
+```
+
+**Why This Works**:
+- The entire content area is a single fixed 340px container
+- Tab switching only changes what renders inside, not the container structure
+- No Radix Tabs component with hidden/shown TabsContent elements
+- All conditional logic resolves to the same sized elements
+- Button section is always 80px (48px + 8px + 24px) regardless of button type
+- Risk disclosure: "Risk Disclosure: Interacting with delta neutral vaults involves smart contract, execution, and counterparty risk. High frequency hedging may result in principal drawdown during extreme market volatility."
+
+**Files Modified**: `frontend/src/components/VaultInteraction.tsx` (complete rewrite)
+
 ## 2026-02-12 22:07 - Simplified Network UI (Removed Redundant Indicators)
 **Status**: ✅ Complete
 **Action**: Cleaned up network detection UI to be more streamlined
