@@ -15,13 +15,20 @@ export default function RandomNumberReveal({
   value, 
   decimals = 1, 
   className = "", 
-  duration = 1000, 
-  revealSpeed = 50 
+  duration = 1500 
 }: RandomNumberRevealProps) {
-  const [displayValue, setDisplayValue] = useState("");
-  const targetString = value.toFixed(decimals) + "%";
+  const targetString = value.toFixed(decimals); // e.g. "18.4"
+  const [chars, setChars] = useState<string[]>([]);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    // Initialize with random digits but correct structure
+    const initial = targetString.split('').map(char => 
+      (char === '.' || char === '%') ? char : Math.floor(Math.random() * 10).toString()
+    );
+    setChars(initial);
+    setIsReady(true);
+
     let startTime = Date.now();
     let frame: number;
 
@@ -29,32 +36,29 @@ export default function RandomNumberReveal({
       const now = Date.now();
       const progress = Math.min((now - startTime) / duration, 1);
       
-      // Calculate how many characters should be "revealed" (correct) vs "random"
-      const revealCount = Math.floor(progress * targetString.length);
+      // Reveal from left to right
+      const revealIndex = Math.floor(progress * (targetString.length + 1));
       
-      let currentStr = "";
-      for (let i = 0; i < targetString.length; i++) {
-        if (i < revealCount) {
-          currentStr += targetString[i];
-        } else {
-          // Generate random digit or character
-          const chars = "0123456789%.";
-          currentStr += chars[Math.floor(Math.random() * chars.length)];
-        }
-      }
+      const nextChars = targetString.split('').map((targetChar, i) => {
+        if (i < revealIndex) return targetChar;
+        if (targetChar === '.' || targetChar === '%') return targetChar;
+        return Math.floor(Math.random() * 10).toString();
+      });
 
-      setDisplayValue(currentStr);
+      setChars(nextChars);
 
       if (progress < 1) {
         frame = requestAnimationFrame(update);
-      } else {
-        setDisplayValue(targetString);
       }
     };
 
     frame = requestAnimationFrame(update);
     return () => cancelAnimationFrame(frame);
-  }, [value, decimals, duration, targetString]);
+  }, [value, duration, targetString]);
 
-  return <span className={className}>{displayValue}</span>;
+  return (
+    <span className={`${className} inline-block min-w-[4ch] transition-opacity duration-300 ${isReady ? 'opacity-100' : 'opacity-0'}`}>
+      {chars.join('')}%
+    </span>
+  );
 }

@@ -1,20 +1,21 @@
 # Kerne Protocol - Project State Log
 
-## 2026-02-16 14:10 - Implemented Random Number Reveal for Hero APY
+## 2026-02-16 14:16 - Refined Random Number Reveal for Hero APY
 **Status**: ✅ Complete
-**Action**: Implemented a "Random Number Reveal" animation for the Hero APY% and finalized ecosystem logo fixes.
+**Action**: Refined the "Random Number Reveal" animation for the Hero APY% to be smoother and more professional, and finalized ecosystem logo fixes.
 **Changes Made**:
-1. **Hero APY Animation**:
-   - Created `RandomNumberReveal` component that cycles through random digits before settling on the final APY value.
-   - Set animation duration to `1200ms` for a high-tech, "decoding" feel.
-   - Preserved the `animate-mesh` CSS gradient effect on the animated text.
+1. **Hero APY Animation Refinement**:
+   - **Fixed Structure**: The decimal point and percentage sign are now static, preventing layout shifts.
+   - **Left-to-Right Reveal**: Numbers now reveal one by one from left to right while others cycle through random digits.
+   - **Zero Layout Shift**: Added `min-w-[4ch]` and `opacity-0` initial state to ensure the container is sized correctly before the animation starts.
+   - **Professional Timing**: Increased duration to `1500ms` for a more deliberate "decoding" effect.
 2. **Metric Animations**:
    - Maintained `CountUp` animations for the ETH funding rate and staking yield in the calculator section.
 3. **Ecosystem Logo Fixes**:
    - Migrated to Next.js `<Image />` component for optimized asset delivery.
    - Standardized Tailwind filters (`brightness-0 invert`) for consistent monochrome styling.
    - Implemented responsive sizing (`h-6 md:h-8`) to improve desktop presence.
-4. **Result**: The hero section now features a dynamic, high-tech reveal animation; ecosystem infrastructure logos are perfectly rendered and responsive.
+4. **Result**: The hero section now features a refined, high-tech reveal animation that is visually stable; ecosystem infrastructure logos are perfectly rendered and responsive.
 
 **Files Modified**: `frontend/src/app/page.tsx`, `frontend/src/components/RandomNumberReveal.tsx`
 **Deployed to**: m-vercel remote
