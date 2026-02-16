@@ -151,7 +151,7 @@ export default function LandingPage() {
               Live at an APY of<br />
               <RandomNumberReveal 
                 value={frozenApy}
-                decimals={1}
+                decimals={2}
                 className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
                 duration={2500}
               />
