@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 
 interface RandomNumberRevealProps {
-  value: number;
+  value: number | null;
   decimals?: number;
   className?: string;
   duration?: number;
@@ -17,11 +17,13 @@ export default function RandomNumberReveal({
   className = "", 
   duration = 1500 
 }: RandomNumberRevealProps) {
-  const targetString = value.toFixed(decimals); // e.g. "18.4"
+  const targetString = value !== null ? value.toFixed(decimals) : "00.0";
   const [chars, setChars] = useState<string[]>([]);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    if (value === null) return;
+
     // Initialize with random digits but correct structure
     const initial = targetString.split('').map(char => 
       (char === '.' || char === '%') ? char : Math.floor(Math.random() * 10).toString()
@@ -57,7 +59,7 @@ export default function RandomNumberReveal({
   }, [value, duration, targetString]);
 
   return (
-    <span className={`${className} inline-block min-w-[4ch] transition-opacity duration-300 ${isReady ? 'opacity-100' : 'opacity-0'}`}>
+    <span className={`${className} inline-block min-w-[4ch] transition-opacity duration-300 ${isReady && value !== null ? 'opacity-100' : 'opacity-0'}`}>
       {chars.join('')}%
     </span>
   );
