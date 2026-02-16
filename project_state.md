@@ -1,21 +1,22 @@
 # Kerne Protocol - Project State Log
 
-## 2026-02-16 14:01 - Finalized Hero APY Display & Fixed Ecosystem Logos
+## 2026-02-16 14:10 - Implemented Random Number Reveal for Hero APY
 **Status**: ✅ Complete
-**Action**: Finalized the APY% display in the hero header by implementing instant pre-loading and completed ecosystem logo fixes.
+**Action**: Implemented a "Random Number Reveal" animation for the Hero APY% and finalized ecosystem logo fixes.
 **Changes Made**:
-1. **Hero APY Optimization**:
-   - **Removed all typing/fade animations** from the APY% text to ensure it is visible instantly upon page load.
-   - **Implemented default state values** (18.4% APY, 3.2% staking, 0.034% funding) so the section is never empty and appears fully populated at the same time as the page.
-   - Converted the APY% display to a static `<span>` while preserving the `animate-mesh` CSS gradient effect.
-   - The UI now hydrates seamlessly from the default values to live data without any layout shifts or flickering.
-2. **Ecosystem Logo Fixes**:
+1. **Hero APY Animation**:
+   - Created `RandomNumberReveal` component that cycles through random digits before settling on the final APY value.
+   - Set animation duration to `1200ms` for a high-tech, "decoding" feel.
+   - Preserved the `animate-mesh` CSS gradient effect on the animated text.
+2. **Metric Animations**:
+   - Maintained `CountUp` animations for the ETH funding rate and staking yield in the calculator section.
+3. **Ecosystem Logo Fixes**:
    - Migrated to Next.js `<Image />` component for optimized asset delivery.
    - Standardized Tailwind filters (`brightness-0 invert`) for consistent monochrome styling.
    - Implemented responsive sizing (`h-6 md:h-8`) to improve desktop presence.
-3. **Result**: The hero section now feels instantaneous and robust; ecosystem infrastructure logos are perfectly rendered and responsive.
+4. **Result**: The hero section now features a dynamic, high-tech reveal animation; ecosystem infrastructure logos are perfectly rendered and responsive.
 
-**Files Modified**: `frontend/src/app/page.tsx`
+**Files Modified**: `frontend/src/app/page.tsx`, `frontend/src/components/RandomNumberReveal.tsx`
 **Deployed to**: m-vercel remote
 
 ## 2026-02-13 12:56 - Improved VaultInteraction UX (Complete Component Rebuild)

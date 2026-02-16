@@ -11,6 +11,7 @@ import Footer from '@/components/Footer';
 import Navbar from '@/components/Navbar';
 import TypedHeading from '@/components/TypedHeading';
 import TypedText from '@/components/TypedText';
+import RandomNumberReveal from '@/components/RandomNumberReveal';
 import BacktestedPerformance from '@/components/BacktestedPerformance';
 import KerneExplained from '@/components/KerneExplained';
 
@@ -147,9 +148,12 @@ export default function LandingPage() {
             <h1 className="font-heading font-medium tracking-tight leading-[0.95] text-[#000000] mb-8">
               The future of onchain yield.<br />
               Live at an APY of<br />
-              <span className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh">
-                {`${frozenApy.toFixed(1)}%`}
-              </span>
+              <RandomNumberReveal 
+                value={frozenApy}
+                decimals={1}
+                className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
+                duration={1200}
+              />
             </h1>
 
             <p className="text-l md:text-l text-[#000000] max-w-2xl mx-auto mb-10 font-medium leading-relaxed">
