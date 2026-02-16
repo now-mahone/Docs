@@ -35,7 +35,7 @@ export default function RandomNumberReveal({
     let frame: number;
 
     let lastFlickerTime = 0;
-    const flickerInterval = 200; // Slow down flicker to 200ms
+    const flickerInterval = 50; // Flicker speed at 50ms
 
     const update = () => {
       const now = Date.now();
