@@ -76,7 +76,7 @@ export default function AboutPage() {
                       Kerne represents a fundamental shift in how institutional capital accesses sustainable yield in DeFi. We believe the future of finance requires infrastructure that can generate returns without relying on token emissions, unsustainable APYs, or speculative mechanisms.
                     </p>
                     <a 
-                      href="https://docs.kerne.ai"
+                      href="https://documentation.kerne.ai"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 text-m text-[#ffffff] font-bold hover:underline transition-all"
