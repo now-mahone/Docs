@@ -56,6 +56,7 @@ To deploy a new partner vault:
 -   **Team:**
     -   **Scofield (INTP):** Lead Architect / Founder
     -   **Mahone (ISFP):** Core Contributor
+    -   **Bagwell:** Core Contributor
 -   **Multisig Address:** [See docs/smart_contract_arch.md]
 -   **Bot Wallet:** [See bot/.env]
 -   **Alerts Channel:** Discord Webhook [See bot/.env]

@@ -1,0 +1,130 @@
+{
+  "// Created": "2026-02-12",
+  "// Purpose": "Kerne Inference Profit Engine Configuration",
+  
+  "general": {
+    "profit_target_daily": 100,
+    "min_profit_margin": 0.30,
+    "auto_scale_enabled": true,
+    "dynamic_pricing_enabled": true,
+    "max_total_gpu_instances": 20,
+    "scaling_cooldown_seconds": 300
+  },
+  
+  "providers": {
+    "runpod": {
+      "api_key": "${RUNPOD_API_KEY}",
+      "enabled": true,
+      "priority": 1,
+      "gpu_types": ["RTX4090", "RTX3090", "A100-80GB", "H100-80GB"]
+    },
+    "vast": {
+      "api_key": "${VAST_API_KEY}",
+      "enabled": true,
+      "priority": 2,
+      "gpu_types": ["RTX4090", "RTX3090", "A100-80GB"]
+    },
+    "lambda": {
+      "api_key": "${LAMBDA_API_KEY}",
+      "enabled": false,
+      "priority": 3,
+      "gpu_types": ["A100-80GB", "H100-80GB", "GH200"]
+    }
+  },
+  
+  "models": {
+    "tier1_small": {
+      "enabled": true,
+      "auto_deploy": true,
+      "models": ["llama-3.1-8b", "qwen-2.5-7b", "mistral-7b", "phi-4"],
+      "min_instances": 1,
+      "max_instances": 5
+    },
+    "tier2_medium": {
+      "enabled": true,
+      "auto_deploy": false,
+      "models": ["qwen-2.5-72b", "llama-3.1-70b"],
+      "demand_threshold": 50,
+      "min_instances": 0,
+      "max_instances": 2
+    },
+    "tier3_enterprise": {
+      "enabled": true,
+      "auto_deploy": false,
+      "models": ["glm-5", "llama-3.1-405b"],
+      "demand_threshold": 100,
+      "min_instances": 0,
+      "max_instances": 1,
+      "use_spot_instances": true
+    }
+  },
+  
+  "pricing": {
+    "strategy": "dynamic",
+    "update_interval_seconds": 60,
+    "low_utilization_threshold": 0.30,
+    "high_utilization_threshold": 0.70,
+    "price_adjustment_factor": 0.15,
+    "min_margin_over_cost": 0.50
+  },
+  
+  "scaling": {
+    "target_utilization": 0.60,
+    "scale_up_threshold": 0.80,
+    "scale_down_threshold": 0.30,
+    "min_instances_per_model": {
+      "llama-3.1-8b": 1,
+      "qwen-2.5-7b": 1,
+      "glm-5": 0
+    },
+    "max_instances_per_model": {
+      "llama-3.1-8b": 10,
+      "qwen-2.5-7b": 10,
+      "glm-5": 1
+    }
+  },
+  
+  "monitoring": {
+    "report_interval_seconds": 300,
+    "log_level": "INFO",
+    "save_stats": true,
+    "stats_file": "inference_stats.json",
+    "alert_on_low_profit": true,
+    "alert_profit_threshold": 10
+  },
+  
+  "openrouter": {
+    "api_key": "${OPENROUTER_API_KEY}",
+    "provider_id": "${OPENROUTER_PROVIDER_ID}",
+    "endpoint_base_url": "http://your-server:8000",
+    "health_check_interval": 30,
+    "models_config": {
+      "llama-3.1-8b": {
+        "model_id": "meta-llama/llama-3.1-8b-instruct",
+        "pricing": {
+          "prompt": 0.12,
+          "completion": 0.25
+        }
+      },
+      "qwen-2.5-7b": {
+        "model_id": "qwen/qwen-2.5-7b-instruct",
+        "pricing": {
+          "prompt": 0.10,
+          "completion": 0.20
+        }
+      },
+      "glm-5": {
+        "model_id": "zai-org/glm-5",
+        "pricing": {
+          "prompt": 1.00,
+          "completion": 2.00
+        }
+      }
+    }
+  },
+  
+  "huggingface": {
+    "token": "${HF_TOKEN}",
+    "models_cache_dir": "/models"
+  }
+}

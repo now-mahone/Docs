@@ -11,9 +11,10 @@
 
 ## 2. IDENTITY DETECTION & PRIVACY
 - **Scofield:** Detected if `git config user.name` is `enerzy17` or hostname is `LAPTOP-1C5TJ4CH`.
-- **Mahone:** Detected if `git config user.name` is `Mahone` or hostname is `kamil-pia`.
+- **Mahone:** Detected if `git config user.name` is `now-mahone` or hostname is `kamil-pia`.
+- **Bagwell** Detected if `git config user.name` is `tb12344444444` or hostname is `littletimmy`
 - **Action:** DO NOT address the user by their name (Scofield or Mahone) in any response. These names are reserved for internal messaging between the owners.
-- **CRITICAL:** "Scofield" and "Mahone" are internal operational codenames (Prison Break gimmicks). They MUST NEVER be used in external outreach, emails, public documentation, or any user-facing content. All outreach must use professional titles (e.g., "Kerne Protocol Team") or real names if provided.
+- **CRITICAL:** "Scofield", "Mahone" and "Bagwell" are internal operational codenames (Prison Break gimmicks). They MUST NEVER be used in external outreach, emails, public documentation, or any user-facing content. All outreach must use professional titles (e.g., "Kerne Protocol Team") or real names if provided.
 
 ## 2.5 COMPANY IDENTITY IN COMMUNICATIONS
 - **CRITICAL:** Always use "we" / "we're" / "our" in all external communications, emails, outreach, and public-facing content. NEVER use "I" / "I'm" / "my".
