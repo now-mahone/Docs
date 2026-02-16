@@ -1,18 +1,19 @@
 # Kerne Protocol - Project State Log
 
-## 2026-02-16 12:24 - Fixed Ecosystem Infrastructure Logos Display & Responsive Sizing
+## 2026-02-16 13:48 - Optimized Hero APY Loading & Fixed Ecosystem Logos
 **Status**: ✅ Complete
-**Action**: Fixed issue where ecosystem partner logos were not displaying correctly and implemented responsive sizing for desktop.
+**Action**: Optimized the loading speed of the APY% in the hero header and finalized ecosystem logo fixes.
 **Changes Made**:
-1. **Component Migration**: Replaced standard `<img>` tags with Next.js `<Image />` for better optimization and handling.
-2. **Filter Standardization**: Replaced inline `style={{ filter: 'brightness(0) invert(1)' }}` with Tailwind utility classes `brightness-0 invert` for consistent rendering across browsers.
-3. **Responsive Sizing**: Implemented `h-6 md:h-8` to increase logo visibility on desktop while maintaining compact mobile layout.
-4. **Logo Replacements (Previous Session)**:
-   - Base: `/Base-LogoL.svg` → `/base-eco.svg`
-   - Hyperliquid: `/Hyperliquid-LogoL.svg` → `/hyperliquid-eco.svg`
-   - Aerodrome: `/Aerodrome-LogoL.svg` → `/aerodrome-eco.svg`
-   - CoW DAO: `/CoW-Protocol-LogoL.svg` → `/cow-eco.svg`
-5. **Result**: All four ecosystem partner logos now display correctly with white monochrome styling and improved desktop presence.
+1. **Hero APY Optimization**:
+   - Removed `!loading` dependency for initial APY display to show fallback immediately.
+   - Reduced `TypedText` stagger speed from `0.05` to `0.03` and duration from `0.05` to `0.03`.
+   - Added a smooth fade-in for the fallback APY (18.4%) to eliminate the "empty" state during initial load.
+   - Reduced mobile animation vertical offset and duration for snappier feel.
+2. **Ecosystem Logo Fixes**:
+   - Migrated to Next.js `<Image />` component.
+   - Standardized Tailwind filters (`brightness-0 invert`).
+   - Implemented responsive sizing (`h-6 md:h-8`).
+3. **Result**: Hero section feels significantly faster and more responsive; ecosystem logos are perfectly rendered across all devices.
 
 **Files Modified**: `frontend/src/app/page.tsx`
 **Deployed to**: m-vercel remote

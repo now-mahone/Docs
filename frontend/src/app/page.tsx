@@ -151,29 +151,34 @@ export default function LandingPage() {
             <h1 className="font-heading font-medium tracking-tight leading-[0.95] text-[#000000] mb-8">
               The future of onchain yield.<br />
               Live at an APY of<br />
-              {!loading && frozenApy !== null ? (
+              {frozenApy !== null ? (
                 isMobile ? (
                   <motion.span 
                     className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
                   >
                     {`${frozenApy.toFixed(1)}%`}
                   </motion.span>
                 ) : (
                   <TypedText 
                     className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
-                    staggerSpeed={0.05}
-                    charDuration={0.05}
+                    staggerSpeed={0.03}
+                    charDuration={0.03}
                   >
                     {`${frozenApy.toFixed(1)}%`}
                   </TypedText>
                 )
               ) : (
-                <span className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh opacity-0">
+                <motion.span 
+                  className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
                   18.4%
-                </span>
+                </motion.span>
               )}
             </h1>
 
