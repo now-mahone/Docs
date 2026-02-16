@@ -362,43 +362,39 @@ export default function LandingPage() {
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-fr">
                 <div className="bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex items-center justify-center p-6 md:p-8 min-h-[80px] md:min-h-[100px]">
-                  <img 
+                  <Image 
                     src="/base-eco.svg"
                     alt="Base" 
-                    width="1280" 
-                    height="323"
-                    className="h-6 w-auto max-w-full object-contain" 
-                    style={{ filter: 'brightness(0) invert(1)' }} 
+                    width={1280} 
+                    height={323}
+                    className="h-6 w-auto max-w-full object-contain brightness-0 invert" 
                   />
                 </div>
                 <div className="bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex items-center justify-center p-6 md:p-8 min-h-[80px] md:min-h-[100px]">
-                  <img 
+                  <Image 
                     src="/hyperliquid-eco.svg"
                     alt="Hyperliquid" 
-                    width="370" 
-                    height="57"
-                    className="h-6 w-auto max-w-full object-contain" 
-                    style={{ filter: 'brightness(0) invert(1)' }} 
+                    width={370} 
+                    height={57}
+                    className="h-6 w-auto max-w-full object-contain brightness-0 invert" 
                   />
                 </div>
                 <div className="bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex items-center justify-center p-6 md:p-8 min-h-[80px] md:min-h-[100px]">
-                  <img 
+                  <Image 
                     src="/aerodrome-eco.svg"
                     alt="Aerodrome" 
-                    width="401" 
-                    height="56"
-                    className="h-6 w-auto max-w-full object-contain" 
-                    style={{ filter: 'brightness(0) invert(1)' }} 
+                    width={401} 
+                    height={56}
+                    className="h-6 w-auto max-w-full object-contain brightness-0 invert" 
                   />
                 </div>
                 <div className="bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex items-center justify-center p-6 md:p-8 min-h-[80px] md:min-h-[100px]">
-                  <img 
+                  <Image 
                     src="/cow-eco.svg"
                     alt="CoW DAO" 
-                    width="1630" 
-                    height="400"
-                    className="h-6 w-auto max-w-full object-contain" 
-                    style={{ filter: 'brightness(0) invert(1)' }} 
+                    width={1630} 
+                    height={400}
+                    className="h-6 w-auto max-w-full object-contain brightness-0 invert" 
                   />
                 </div>
               </div>

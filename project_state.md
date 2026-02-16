@@ -1,20 +1,21 @@
 # Kerne Protocol - Project State Log
 
-## 2026-02-16 11:37 - Replaced Ecosystem Infrastructure Logos with Consistent Sizing
+## 2026-02-16 12:00 - Fixed Ecosystem Infrastructure Logos Display
 **Status**: ✅ Complete
-**Action**: Replaced four ecosystem partner logos with new versions that have consistent sizing across all displays
+**Action**: Fixed issue where ecosystem partner logos were not displaying correctly by migrating to Next.js `Image` component and standardizing Tailwind filters.
 **Changes Made**:
-1. **Logo Replacements**:
+1. **Component Migration**: Replaced standard `<img>` tags with Next.js `<Image />` for better optimization and handling.
+2. **Filter Standardization**: Replaced inline `style={{ filter: 'brightness(0) invert(1)' }}` with Tailwind utility classes `brightness-0 invert` for consistent rendering across browsers.
+3. **Logo Replacements (Previous Session)**:
    - Base: `/Base-LogoL.svg` → `/base-eco.svg`
    - Hyperliquid: `/Hyperliquid-LogoL.svg` → `/hyperliquid-eco.svg`
    - Aerodrome: `/Aerodrome-LogoL.svg` → `/aerodrome-eco.svg`
    - CoW DAO: `/CoW-Protocol-LogoL.svg` → `/cow-eco.svg`
-2. **Consistent Sizing**: All logos now use `h-6` (24px height) instead of mixed heights (`h-[20px]`, `h-6`, `h-[30px]`)
-3. **Maintained Color Logic**: Preserved the existing `brightness(0) invert(1)` filter for white logos on dark backgrounds
-4. **Result**: All four ecosystem partner logos now display with identical height across all screen sizes and devices
+4. **Consistent Sizing**: All logos use `h-6` (24px height) with `w-auto` and `object-contain` to ensure they fit perfectly within their containers without distortion.
+5. **Result**: All four ecosystem partner logos now display correctly with identical height and white monochrome styling.
 
 **Files Modified**: `frontend/src/app/page.tsx`
-**Deployed to**: m-vercel remote (commit 928eb215)
+**Deployed to**: m-vercel remote
 
 ## 2026-02-13 12:56 - Improved VaultInteraction UX (Complete Component Rebuild)
 **Status**: ✅ Complete
