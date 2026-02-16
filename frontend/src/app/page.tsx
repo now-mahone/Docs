@@ -367,7 +367,7 @@ export default function LandingPage() {
                     alt="Base" 
                     width={1280} 
                     height={323}
-                    className="h-6 w-auto max-w-full object-contain brightness-0 invert" 
+                    className="h-6 md:h-8 w-auto max-w-full object-contain brightness-0 invert" 
                   />
                 </div>
                 <div className="bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex items-center justify-center p-6 md:p-8 min-h-[80px] md:min-h-[100px]">
@@ -376,7 +376,7 @@ export default function LandingPage() {
                     alt="Hyperliquid" 
                     width={370} 
                     height={57}
-                    className="h-6 w-auto max-w-full object-contain brightness-0 invert" 
+                    className="h-6 md:h-8 w-auto max-w-full object-contain brightness-0 invert" 
                   />
                 </div>
                 <div className="bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex items-center justify-center p-6 md:p-8 min-h-[80px] md:min-h-[100px]">
@@ -385,7 +385,7 @@ export default function LandingPage() {
                     alt="Aerodrome" 
                     width={401} 
                     height={56}
-                    className="h-6 w-auto max-w-full object-contain brightness-0 invert" 
+                    className="h-6 md:h-8 w-auto max-w-full object-contain brightness-0 invert" 
                   />
                 </div>
                 <div className="bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex items-center justify-center p-6 md:p-8 min-h-[80px] md:min-h-[100px]">
@@ -394,7 +394,7 @@ export default function LandingPage() {
                     alt="CoW DAO" 
                     width={1630} 
                     height={400}
-                    className="h-6 w-auto max-w-full object-contain brightness-0 invert" 
+                    className="h-6 md:h-8 w-auto max-w-full object-contain brightness-0 invert" 
                   />
                 </div>
               </div>

@@ -1,18 +1,18 @@
 # Kerne Protocol - Project State Log
 
-## 2026-02-16 12:00 - Fixed Ecosystem Infrastructure Logos Display
+## 2026-02-16 12:24 - Fixed Ecosystem Infrastructure Logos Display & Responsive Sizing
 **Status**: ✅ Complete
-**Action**: Fixed issue where ecosystem partner logos were not displaying correctly by migrating to Next.js `Image` component and standardizing Tailwind filters.
+**Action**: Fixed issue where ecosystem partner logos were not displaying correctly and implemented responsive sizing for desktop.
 **Changes Made**:
 1. **Component Migration**: Replaced standard `<img>` tags with Next.js `<Image />` for better optimization and handling.
 2. **Filter Standardization**: Replaced inline `style={{ filter: 'brightness(0) invert(1)' }}` with Tailwind utility classes `brightness-0 invert` for consistent rendering across browsers.
-3. **Logo Replacements (Previous Session)**:
+3. **Responsive Sizing**: Implemented `h-6 md:h-8` to increase logo visibility on desktop while maintaining compact mobile layout.
+4. **Logo Replacements (Previous Session)**:
    - Base: `/Base-LogoL.svg` → `/base-eco.svg`
    - Hyperliquid: `/Hyperliquid-LogoL.svg` → `/hyperliquid-eco.svg`
    - Aerodrome: `/Aerodrome-LogoL.svg` → `/aerodrome-eco.svg`
    - CoW DAO: `/CoW-Protocol-LogoL.svg` → `/cow-eco.svg`
-4. **Consistent Sizing**: All logos use `h-6` (24px height) with `w-auto` and `object-contain` to ensure they fit perfectly within their containers without distortion.
-5. **Result**: All four ecosystem partner logos now display correctly with identical height and white monochrome styling.
+5. **Result**: All four ecosystem partner logos now display correctly with white monochrome styling and improved desktop presence.
 
 **Files Modified**: `frontend/src/app/page.tsx`
 **Deployed to**: m-vercel remote
