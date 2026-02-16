@@ -1,13 +1,14 @@
 # Kerne Protocol - Project State Log
 
-## 2026-02-16 13:52 - Finalized Hero APY Display & Fixed Ecosystem Logos
+## 2026-02-16 13:56 - Finalized Hero APY Display & Fixed Ecosystem Logos
 **Status**: ✅ Complete
-**Action**: Finalized the APY% display in the hero header by removing animations for instant loading and completed ecosystem logo fixes.
+**Action**: Finalized the APY% display in the hero header by removing animations and placeholders for instant loading, and completed ecosystem logo fixes.
 **Changes Made**:
 1. **Hero APY Optimization**:
    - **Removed all typing/fade animations** from the APY% text to ensure it is visible instantly upon page load.
+   - **Removed fallback/placeholder numbers** (18.4%) to prevent layout shifts or flickering during data hydration.
    - Converted the APY% display to a static `<span>` while preserving the `animate-mesh` CSS gradient effect.
-   - Implemented instant conditional rendering: shows `frozenApy` if available, otherwise defaults to `18.4%` immediately.
+   - Implemented instant conditional rendering: shows `frozenApy` if available, otherwise remains empty until data is ready, ensuring the number "loads in with the page."
 2. **Ecosystem Logo Fixes**:
    - Migrated to Next.js `<Image />` component for optimized asset delivery.
    - Standardized Tailwind filters (`brightness-0 invert`) for consistent monochrome styling.

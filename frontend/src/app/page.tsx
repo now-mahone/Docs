@@ -152,7 +152,7 @@ export default function LandingPage() {
               The future of onchain yield.<br />
               Live at an APY of<br />
               <span className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh">
-                {frozenApy !== null ? `${frozenApy.toFixed(1)}%` : "18.4%"}
+                {frozenApy !== null ? `${frozenApy.toFixed(1)}%` : ""}
               </span>
             </h1>
 
