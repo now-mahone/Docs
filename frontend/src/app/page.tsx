@@ -56,9 +56,9 @@ function PillButton({ href, children, icon: Icon, className = "", variant = "pri
 
 export default function LandingPage() {
   const [ethPrice, setEthPrice] = useState(0);
-  const [liveApy, setLiveApy] = useState<number | null>(null);
-  const [stakingYield, setStakingYield] = useState(0);
-  const [fundingRate, setFundingRate] = useState(0);
+  const [liveApy, setLiveApy] = useState<number>(18.4);
+  const [stakingYield, setStakingYield] = useState(3.2);
+  const [fundingRate, setFundingRate] = useState(0.034);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -95,10 +95,6 @@ export default function LandingPage() {
         }
       } catch (e) {
         console.error("Failed to fetch live APY", e);
-        // Sensible fallbacks if API fails
-        setLiveApy(18.4);
-        setStakingYield(3.2);
-        setFundingRate(0.034);
       } finally {
         setLoading(false);
       }
@@ -112,14 +108,14 @@ export default function LandingPage() {
 
   const [calculatorAmount, setCalculatorAmount] = useState(10);
   // Freeze the APY once it's loaded to prevent mid-animation resets
-  const [frozenApy, setFrozenApy] = useState<number | null>(null);
+  const [frozenApy, setFrozenApy] = useState<number>(18.4);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    if (!loading && liveApy !== null && frozenApy === null) {
+    if (!loading && liveApy !== null) {
       setFrozenApy(liveApy);
     }
-  }, [loading, liveApy, frozenApy]);
+  }, [loading, liveApy]);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -152,7 +148,7 @@ export default function LandingPage() {
               The future of onchain yield.<br />
               Live at an APY of<br />
               <span className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh">
-                {frozenApy !== null ? `${frozenApy.toFixed(1)}%` : ""}
+                {`${frozenApy.toFixed(1)}%`}
               </span>
             </h1>
 
