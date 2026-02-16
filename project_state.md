@@ -1,13 +1,13 @@
 # Kerne Protocol - Project State Log
 
-## 2026-02-16 14:33 - Finalized Hero APY Reveal & Ecosystem Logos
+## 2026-02-16 14:37 - Finalized Hero APY Reveal & Ecosystem Logos
 **Status**: ✅ Complete
 **Action**: Finalized the "Random Number Reveal" animation for the Hero APY% with zero layout shift and completed ecosystem logo fixes.
 **Changes Made**:
 1. **Hero APY Animation Finalization**:
    - **Zero Layout Shift**: The APY section now maintains its space with `opacity-0` until live data is ready to animate, preventing the page content from shifting down when the animation starts.
    - **Refined Reveal**: Numbers reveal sequentially from left to right while others cycle through random digits.
-   - **Slowed Flicker**: Reduced the flicker speed of random digits to `100ms` for a more readable and professional "decoding" effect.
+   - **Slowed Flicker**: Reduced the flicker speed of random digits to `200ms` for a more deliberate and professional "decoding" effect.
    - **Fixed Structure**: The decimal point and percentage sign are static during animation.
    - **Professional Timing**: Set duration to `2500ms` for optimal impact.
 2. **Metric Animations**:
