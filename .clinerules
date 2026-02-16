@@ -11,9 +11,9 @@
 
 ## 2. IDENTITY DETECTION & PRIVACY
 - **Scofield:** Detected if `git config user.name` is `enerzy17` or hostname is `LAPTOP-1C5TJ4CH`.
-- **Mahone:** Detected if `git config user.name` is `now-mahone` or hostname is `kamil-pia`.
+- **Mahone:** Detected if `git config user.name` is `now-mahone` or `kamil-pia`or their hostname is `DESKTOP-L028632`.
 - **Bagwell** Detected if `git config user.name` is `tb12344444444` or hostname is `littletimmy`
-- **Action:** DO NOT address the user by their name (Scofield or Mahone) in any response. These names are reserved for internal messaging between the owners.
+- **Action:** DO NOT address the user by their name (Scofield, Bagwell or Mahone) in any response. These names are reserved for internal messaging between the owners.
 - **CRITICAL:** "Scofield", "Mahone" and "Bagwell" are internal operational codenames (Prison Break gimmicks). They MUST NEVER be used in external outreach, emails, public documentation, or any user-facing content. All outreach must use professional titles (e.g., "Kerne Protocol Team") or real names if provided.
 
 ## 2.5 COMPANY IDENTITY IN COMMUNICATIONS
