@@ -57,7 +57,7 @@ function PillButton({ href, children, icon: Icon, className = "", variant = "pri
 
 export default function LandingPage() {
   const [ethPrice, setEthPrice] = useState(0);
-  const [liveApy, setLiveApy] = useState<number>(18.4);
+  const [liveApy, setLiveApy] = useState<number | null>(null);
   const [stakingYield, setStakingYield] = useState(3.2);
   const [fundingRate, setFundingRate] = useState(0.034);
   const [loading, setLoading] = useState(true);
@@ -96,6 +96,7 @@ export default function LandingPage() {
         }
       } catch (e) {
         console.error("Failed to fetch live APY", e);
+        setLiveApy(18.4); // Fallback if API fails
       } finally {
         setLoading(false);
       }
@@ -109,7 +110,7 @@ export default function LandingPage() {
 
   const [calculatorAmount, setCalculatorAmount] = useState(10);
   // Freeze the APY once it's loaded to prevent mid-animation resets
-  const [frozenApy, setFrozenApy] = useState<number>(18.4);
+  const [frozenApy, setFrozenApy] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -148,12 +149,14 @@ export default function LandingPage() {
             <h1 className="font-heading font-medium tracking-tight leading-[0.95] text-[#000000] mb-8">
               The future of onchain yield.<br />
               Live at an APY of<br />
-              <RandomNumberReveal 
-                value={frozenApy}
-                decimals={1}
-                className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
-                duration={1200}
-              />
+              {frozenApy !== null && (
+                <RandomNumberReveal 
+                  value={frozenApy}
+                  decimals={1}
+                  className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
+                  duration={1200}
+                />
+              )}
             </h1>
 
             <p className="text-l md:text-l text-[#000000] max-w-2xl mx-auto mb-10 font-medium leading-relaxed">
