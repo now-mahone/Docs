@@ -1,6 +1,6 @@
 # Kerne Protocol - Project State Log
 
-## 2026-02-16 14:25 - Finalized Hero APY Reveal & Ecosystem Logos
+## 2026-02-16 14:29 - Finalized Hero APY Reveal & Ecosystem Logos
 **Status**: ✅ Complete
 **Action**: Finalized the "Random Number Reveal" animation for the Hero APY% with zero layout shift and completed ecosystem logo fixes.
 **Changes Made**:
@@ -8,7 +8,7 @@
    - **Zero Layout Shift**: The APY section now maintains its space with `opacity-0` until live data is ready, preventing the page content from shifting down when the animation starts.
    - **Refined Reveal**: Numbers reveal sequentially from left to right while others cycle through random digits.
    - **Fixed Structure**: The decimal point and percentage sign are static during animation.
-   - **Professional Timing**: Increased duration to `2000ms` for a more deliberate "decoding" effect.
+   - **Professional Timing**: Increased duration to `3000ms` for a more deliberate and high-tech "decoding" effect.
 2. **Metric Animations**:
    - Maintained `CountUp` animations for the ETH funding rate and staking yield in the calculator section.
 3. **Ecosystem Logo Fixes**:
