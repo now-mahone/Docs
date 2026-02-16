@@ -1,19 +1,18 @@
 # Kerne Protocol - Project State Log
 
-## 2026-02-16 13:48 - Optimized Hero APY Loading & Fixed Ecosystem Logos
+## 2026-02-16 13:52 - Finalized Hero APY Display & Fixed Ecosystem Logos
 **Status**: ✅ Complete
-**Action**: Optimized the loading speed of the APY% in the hero header and finalized ecosystem logo fixes.
+**Action**: Finalized the APY% display in the hero header by removing animations for instant loading and completed ecosystem logo fixes.
 **Changes Made**:
 1. **Hero APY Optimization**:
-   - Removed `!loading` dependency for initial APY display to show fallback immediately.
-   - Reduced `TypedText` stagger speed from `0.05` to `0.03` and duration from `0.05` to `0.03`.
-   - Added a smooth fade-in for the fallback APY (18.4%) to eliminate the "empty" state during initial load.
-   - Reduced mobile animation vertical offset and duration for snappier feel.
+   - **Removed all typing/fade animations** from the APY% text to ensure it is visible instantly upon page load.
+   - Converted the APY% display to a static `<span>` while preserving the `animate-mesh` CSS gradient effect.
+   - Implemented instant conditional rendering: shows `frozenApy` if available, otherwise defaults to `18.4%` immediately.
 2. **Ecosystem Logo Fixes**:
-   - Migrated to Next.js `<Image />` component.
-   - Standardized Tailwind filters (`brightness-0 invert`).
-   - Implemented responsive sizing (`h-6 md:h-8`).
-3. **Result**: Hero section feels significantly faster and more responsive; ecosystem logos are perfectly rendered across all devices.
+   - Migrated to Next.js `<Image />` component for optimized asset delivery.
+   - Standardized Tailwind filters (`brightness-0 invert`) for consistent monochrome styling.
+   - Implemented responsive sizing (`h-6 md:h-8`) to improve desktop presence.
+3. **Result**: The hero section now feels instantaneous and robust; ecosystem infrastructure logos are perfectly rendered and responsive.
 
 **Files Modified**: `frontend/src/app/page.tsx`
 **Deployed to**: m-vercel remote
