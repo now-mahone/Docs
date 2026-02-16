@@ -153,7 +153,7 @@ export default function LandingPage() {
                 value={frozenApy}
                 decimals={1}
                 className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
-                duration={3000}
+                duration={2500}
               />
             </h1>
 

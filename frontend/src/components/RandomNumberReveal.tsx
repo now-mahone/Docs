@@ -34,6 +34,9 @@ export default function RandomNumberReveal({
     let startTime = Date.now();
     let frame: number;
 
+    let lastFlickerTime = 0;
+    const flickerInterval = 100; // Slow down flicker to 100ms
+
     const update = () => {
       const now = Date.now();
       const progress = Math.min((now - startTime) / duration, 1);
@@ -41,13 +44,16 @@ export default function RandomNumberReveal({
       // Reveal from left to right
       const revealIndex = Math.floor(progress * (targetString.length + 1));
       
-      const nextChars = targetString.split('').map((targetChar, i) => {
-        if (i < revealIndex) return targetChar;
-        if (targetChar === '.' || targetChar === '%') return targetChar;
-        return Math.floor(Math.random() * 10).toString();
-      });
-
-      setChars(nextChars);
+      // Only update random digits if enough time has passed
+      if (now - lastFlickerTime > flickerInterval || progress === 1) {
+        const nextChars = targetString.split('').map((targetChar, i) => {
+          if (i < revealIndex) return targetChar;
+          if (targetChar === '.' || targetChar === '%') return targetChar;
+          return Math.floor(Math.random() * 10).toString();
+        });
+        setChars(nextChars);
+        lastFlickerTime = now;
+      }
 
       if (progress < 1) {
         frame = requestAnimationFrame(update);
