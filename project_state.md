@@ -1,5 +1,16 @@
 # Kerne Protocol - Project State Log
 
+## 2026-02-17 13:23 - Added Loading State to Hero APY
+**Status**: ✅ Complete
+**Action**: Implemented a loading spinner for the Hero APY% to improve UX on slower devices.
+**Changes Made**:
+1. **Loading Spinner**: Added a synchronized loading wheel (matching the transparency page style) that displays while the APY data is being fetched.
+2. **Layout Stability**: Ensured the loading spinner occupies the same vertical space as the final number to prevent layout shifts.
+3. **Result**: Users now receive immediate visual feedback while live protocol data hydrates.
+
+**Files Modified**: `frontend/src/app/page.tsx`
+**Deployed to**: m-vercel remote
+
 ## 2026-02-17 13:18 - Updated Website Favicon
 **Status**: ✅ Complete
 **Action**: Updated the website favicon from `favicon.svg` to `kerne-favicon-updated.png`.
