@@ -6,7 +6,7 @@ This protocol defines the high-touch, professional onboarding process for instit
 ## 2. Onboarding Stages
 
 ### Stage 1: Initial Consultation & KYC
-- **Introduction:** Scofield (CEO) leads the initial consultation to understand the client's yield objectives and risk tolerance.
+- **Introduction:** The Kerne Protocol Team leads the initial consultation to understand the client's yield objectives and risk tolerance.
 - **KYC/AML:** Client completes the KYC/AML process via our integrated identity provider (e.g., Quadrata).
 - **Compliance Hook:** Client's wallet address is whitelisted in the `KerneComplianceHook.sol`.
 
@@ -26,9 +26,9 @@ This protocol defines the high-touch, professional onboarding process for instit
 - **Concierge Support:** Dedicated support channel for real-time communication with the Kerne team.
 
 ## 3. Roles & Responsibilities
-- **Scofield (CEO):** Relationship management, strategic alignment, and final approval.
+- **Kerne Protocol Team:** Relationship management, strategic alignment, and final approval.
 - **Cline (Technical Engine):** Technical setup, contract configuration, and risk monitoring.
-- **Mahone (Frontend/UX):** Custom UI/UX for White-Label partners and dashboard access.
+- **Frontend/UX Team:** Custom UI/UX for White-Label partners and dashboard access.
 
 ## 4. Success Metrics
 - **Time to First Deposit:** Target < 48 hours from KYC completion.

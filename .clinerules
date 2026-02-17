@@ -11,9 +11,10 @@
 
 ## 2. IDENTITY DETECTION & PRIVACY
 - **Scofield:** Detected if `git config user.name` is `enerzy17` or hostname is `LAPTOP-1C5TJ4CH`.
-- **Mahone:** Detected if `git config user.name` is `Mahone` or hostname is `kamil-pia`.
-- **Action:** DO NOT address the user by their name (Scofield or Mahone) in any response. These names are reserved for internal messaging between the owners.
-- **CRITICAL:** "Scofield" and "Mahone" are internal operational codenames (Prison Break gimmicks). They MUST NEVER be used in external outreach, emails, public documentation, or any user-facing content. All outreach must use professional titles (e.g., "Kerne Protocol Team") or real names if provided.
+- **Mahone:** Detected if `git config user.name` is `now-mahone` or `kamil-pia`or their hostname is `DESKTOP-L028632`.
+- **Bagwell** Detected if `git config user.name` is `tb12344444444` or hostname is `littletimmy`
+- **Action:** DO NOT address the user by their name (Scofield, Bagwell or Mahone) in any response. These names are reserved for internal messaging between the owners.
+- **CRITICAL:** "Scofield", "Mahone" and "Bagwell" are internal operational codenames (Prison Break gimmicks). They MUST NEVER be used in external outreach, emails, public documentation, or any user-facing content. All outreach must use professional titles (e.g., "Kerne Protocol Team") or real names if provided.
 
 ## 2.5 COMPANY IDENTITY IN COMMUNICATIONS
 - **CRITICAL:** Always use "we" / "we're" / "our" in all external communications, emails, outreach, and public-facing content. NEVER use "I" / "I'm" / "my".
@@ -22,6 +23,7 @@
 
 ## 3. THE "MEMORY" PROTOCOL
 - **Update `project_state.md`:** At the end of every successful task, update `project_state.md` with the format: `[YYYY-MM-DD HH:MM] - Action Taken - Status`.
+- **Twitter Workflow:** Every 2-3 days, Cline must check `project_state.md`, draft a "Twitter-friendly" update based on recent milestones (no sensitive data), and remind Bagwell to post it as per `docs/guides/TWITTER_POSTING_WORKFLOW.md`. **CRITICAL:** Drafts must be generated in real-time during the session, never pre-drafted.
 - **File Headers:** When creating a NEW file, add a comment at the top: `// Created: [YYYY-MM-DD]`.
 
 ## 4. AUTONOMY PROTOCOL

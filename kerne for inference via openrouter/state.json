@@ -1,0 +1,22 @@
+{
+  "started_at": "2026-02-12T19:00:44.503724",
+  "total_revenue": 0.010270127999999998,
+  "total_cost": 0.08509795919444445,
+  "total_profit": -0.07482783119444444,
+  "tokens_processed": 64592,
+  "requests_handled": 205,
+  "active_pods": {
+    "xvyz8l5h8ca0iz": {
+      "model": "llama-3.1-8b",
+      "cost_per_hour": 0.34,
+      "deployed_at": "2026-02-13T13:28:35.831180"
+    }
+  },
+  "deployed_models": [
+    "llama-3.1-8b"
+  ],
+  "last_scale_action": "SCALE_DOWN",
+  "current_hourly_cost": 0.34,
+  "current_hourly_revenue": 0.0,
+  "updated_at": "2026-02-13T13:43:36.099819"
+}
