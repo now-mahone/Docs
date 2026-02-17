@@ -573,15 +573,6 @@ export default function TerminalPage() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-[#22252a]">
-                  <div className="flex justify-between items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#ffffff] shrink-0" />
-                      <span className="text-xs font-medium text-[#aab9be]">Sharpe Ratio</span>
-                    </div>
-                    <span className="text-xs font-bold text-[#ffffff] whitespace-nowrap">{benchmarkMetrics.sharpe}</span>
-                  </div>
-                </div>
                 </div>
               </div>
             </div>

@@ -1,6 +1,17 @@
 # Kerne Protocol - Project State Log
 
 <<<<<<< HEAD
+## 2026-02-17 15:08 - Removed Redundant Sharpe Ratio from Terminal
+**Status**: ✅ Complete
+**Action**: Removed the Sharpe Ratio metric from the benchmark comparison card on the terminal page to eliminate redundancy.
+**Changes Made**:
+1. **UI Cleanup**: Removed the Sharpe Ratio display from the benchmark comparison legend.
+2. **Redundancy Reduction**: Since a dedicated Sharpe Ratio metric card was recently added to the top row, the second display in the chart legend was redundant.
+3. **Result**: Cleaner terminal interface with focused data presentation.
+
+**Files Modified**: `frontend/src/app/terminal/page.tsx`
+**Deployed to**: m-vercel remote
+
 ## 2026-02-17 14:26 - Updated Terminal Page Sharpe Ratio
 **Status**: ✅ Complete
 **Action**: Replaced the "kUSD Price" metric card with a live "Sharpe Ratio (30D)" card on the terminal page.
