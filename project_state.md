@@ -1,5 +1,16 @@
 # Kerne Protocol - Project State Log
 
+## 2026-02-17 13:18 - Updated Website Favicon
+**Status**: ✅ Complete
+**Action**: Updated the website favicon from `favicon.svg` to `kerne-favicon-updated.png`.
+**Changes Made**:
+1. **Metadata Update**: Updated `frontend/src/app/layout.tsx` to reference the new favicon file.
+2. **Asset Verification**: Confirmed `kerne-favicon-updated.png` exists in the `frontend/public` directory.
+3. **Result**: The website now displays the updated branding in browser tabs and bookmarks.
+
+**Files Modified**: `frontend/src/app/layout.tsx`
+**Deployed to**: m-vercel remote
+
 ## 2026-02-16 18:44 - Enhanced Hero APY Reveal with Slide-Up Animation
 **Status**: ✅ Complete
 **Action**: Enhanced the "Random Number Reveal" animation for the Hero APY% by adding a slide-up transition for individual digits while maintaining precision and stability.

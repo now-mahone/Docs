@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   },
   description: "Building the most capital efficient delta neutral infrastructure in DeFi.",
   icons: {
-    icon: "/favicon.svg",
+    icon: "/kerne-favicon-updated.png",
   },
   metadataBase: new URL("https://kerne.ai"),
   openGraph: {
