@@ -66,13 +66,13 @@ export default function RandomNumberReveal({
   return (
     <span className={`${className} inline-flex items-baseline min-w-[5ch] transition-opacity duration-300 ${isReady && value !== null ? 'opacity-100' : 'opacity-0'}`}>
       {chars.map((char, index) => (
-        <span key={index} className="relative inline-block overflow-hidden h-[1em] leading-none">
-          <AnimatePresence mode="popLayout">
+        <span key={index} className="relative inline-block overflow-hidden h-[1.1em] leading-none">
+          <AnimatePresence mode="popLayout" initial={false}>
             <motion.span
               key={`${index}-${char}`}
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "-100%" }}
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "-100%", opacity: 0 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
               className="inline-block"
             >
