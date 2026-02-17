@@ -1,5 +1,17 @@
 # Kerne Protocol - Project State Log
 
+## 2026-02-17 14:26 - Updated Terminal Page Sharpe Ratio
+**Status**: ✅ Complete
+**Action**: Replaced the "kUSD Price" metric card with a live "Sharpe Ratio (30D)" card on the terminal page.
+**Changes Made**:
+1. **Metric Swap**: Replaced the static kUSD Price card with a dynamic Sharpe Ratio card.
+2. **Live Data**: Linked the card value to the `benchmarkMetrics.sharpe` calculation, which uses live APY and volatility data.
+3. **Icon Update**: Changed the card icon to `Tangent` from Lucide React.
+4. **Result**: Improved institutional-grade data transparency on the terminal dashboard.
+
+**Files Modified**: `frontend/src/app/terminal/page.tsx`
+**Deployed to**: m-vercel remote
+
 ## 2026-02-17 13:59 - Refined Performance Card Animation & Fixed Mobile APY
 **Status**: ✅ Complete
 **Action**: Refined the performance card animation to trigger on page load and fixed a visibility issue for the Hero APY on mobile devices.

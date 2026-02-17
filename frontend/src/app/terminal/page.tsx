@@ -4,7 +4,7 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Zap, Shield, TrendingUp, DollarSign, Wallet2, Info, ChartArea, HandCoins, Percent, Scale, Hourglass, ChartLine, BookOpenText, HeartPulse } from 'lucide-react';
+import { Zap, Shield, TrendingUp, DollarSign, Wallet2, Info, ChartArea, HandCoins, Percent, Scale, Hourglass, ChartLine, BookOpenText, HeartPulse, Tangent } from 'lucide-react';
 import { useAccount, useReadContract, useChainId } from 'wagmi';
 import { formatEther } from 'viem';
 import { VAULT_ADDRESS, ARB_VAULT_ADDRESS, OP_VAULT_ADDRESS } from '@/config';
@@ -400,7 +400,7 @@ export default function TerminalPage() {
   const cards = [
     { label: 'APY%', value: (apyData?.apy || 18.40).toFixed(2) + '%', icon: Percent, color: '#37d097' },
     { label: 'Solvency Ratio', value: solvencyData?.solvency_ratio ? (parseFloat(solvencyData.solvency_ratio)/100).toFixed(2) + 'x' : '1.42x', icon: Scale, color: '#37d097' },
-    { label: 'kUSD Price', value: '$1.00', icon: DollarSign, color: '#37d097' },
+    { label: 'Sharpe Ratio (30D)', value: benchmarkMetrics.sharpe, icon: Tangent, color: '#37d097' },
     { label: 'Cooldown Period', value: 'Instant', icon: Hourglass, color: '#ffffff' },
     { label: 'User Earnings', value: userEarnings, icon: HandCoins, color: '#ffffff' },
     { label: 'User Balance', value: userVaultBalance + ' ETH', icon: Wallet2, color: '#ffffff' },
