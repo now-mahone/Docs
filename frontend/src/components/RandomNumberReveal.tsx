@@ -9,15 +9,13 @@ interface RandomNumberRevealProps {
   className?: string;
   duration?: number;
   revealSpeed?: number;
-  suffix?: string;
 }
 
 export default function RandomNumberReveal({ 
   value, 
   decimals = 1, 
   className = "", 
-  duration = 2500,
-  suffix = "%"
+  duration = 2500 
 }: RandomNumberRevealProps) {
   const targetString = value !== null ? value.toFixed(decimals) : "00.00";
   const [chars, setChars] = useState<string[]>([]);
@@ -67,7 +65,7 @@ export default function RandomNumberReveal({
 
   return (
     <span className={`${className} inline-block min-w-[5ch] transition-opacity duration-300 ${isReady && value !== null ? 'opacity-100' : 'opacity-0'}`}>
-      {chars.join('')}{suffix}
+      {chars.join('')}%
     </span>
   );
 }

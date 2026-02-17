@@ -1,14 +1,14 @@
 # Kerne Protocol - Project State Log
 
 <<<<<<< HEAD
-## 2026-02-17 15:38 - Added Count-Up Animations to Terminal Metrics
+## 2026-02-17 15:47 - Added Count-Up Animations to Terminal Metrics
 **Status**: ✅ Complete
-**Action**: Implemented the "Random Number Reveal" count-up animation for key metrics on the terminal page.
+**Action**: Implemented the `CountUp` animation for key metrics on the terminal page, matching the homepage calculator style.
 **Changes Made**:
-1. **Animation Integration**: Added `RandomNumberReveal` to "APY%", "Solvency Ratio", and "Sharpe Ratio (30D)" cards.
-2. **Component Enhancement**: Updated `RandomNumberReveal.tsx` to support custom suffixes (e.g., "x" for ratios) and default to "%".
-3. **UI Consistency**: Aligned the terminal dashboard's visual language with the high-tech feel of the homepage.
-4. **Result**: Improved user experience with dynamic, institutional-grade data visualizations.
+1. **Animation Integration**: Added a local `CountUp` component to the terminal page for "APY%", "Solvency Ratio", and "Sharpe Ratio (30D)" cards.
+2. **UI Consistency**: Aligned the terminal dashboard's visual language with the smooth count-up animations used in the homepage's onchain calculator.
+3. **Cleanup**: Reverted experimental changes to `RandomNumberReveal.tsx` to maintain its original purpose.
+4. **Result**: Improved user experience with fluid, institutional-grade data visualizations.
 
 **Files Modified**: `frontend/src/app/terminal/page.tsx`, `frontend/src/components/RandomNumberReveal.tsx`
 **Deployed to**: m-vercel remote

@@ -3,7 +3,7 @@
 
 import React, { useMemo, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, useInView, animate } from 'framer-motion';
 import { Zap, Shield, TrendingUp, DollarSign, Wallet2, Info, ChartArea, HandCoins, Percent, Scale, Hourglass, ChartLine, BookOpenText, HeartPulse, Tangent } from 'lucide-react';
 import { useAccount, useReadContract, useChainId } from 'wagmi';
 import { formatEther } from 'viem';
@@ -14,7 +14,28 @@ import { ETHComparisonChart } from '@/components/ETHComparisonChart';
 import { AssetComposition } from '@/components/AssetComposition';
 import { VaultInteraction } from '@/components/VaultInteraction';
 import { WalletConnectButton } from '@/components/WalletConnectButton';
-import RandomNumberReveal from '@/components/RandomNumberReveal';
+
+function CountUp({ value, decimals = 0, prefix = "", suffix = "" }: { value: number; decimals?: number; prefix?: string; suffix?: string }) {
+  const nodeRef = React.useRef<HTMLSpanElement>(null);
+  const isInView = useInView(nodeRef, { once: true });
+
+  useEffect(() => {
+    if (isInView && nodeRef.current) {
+      const controls = animate(0, value, {
+        duration: 2,
+        ease: [0.25, 0.1, 0.25, 1],
+        onUpdate(latest: number) {
+          if (nodeRef.current) {
+            nodeRef.current.textContent = prefix + latest.toFixed(decimals) + suffix;
+          }
+        },
+      });
+      return () => controls.stop();
+    }
+  }, [value, decimals, prefix, suffix, isInView]);
+
+  return <span ref={nodeRef}>{prefix}{value.toFixed(decimals)}{suffix}</span>;
+}
 
 export default function TerminalPage() {
   const { isConnected, address } = useAccount();
@@ -407,21 +428,21 @@ export default function TerminalPage() {
     { 
       label: 'APY%', 
       value: apyData?.apy || 18.40, 
-      display: (val: number) => <RandomNumberReveal value={val} decimals={2} />,
+      display: (val: number) => <CountUp value={val} decimals={2} suffix="%" />,
       icon: Percent, 
       color: '#37d097' 
     },
     { 
       label: 'Solvency Ratio', 
       value: solvencyData?.solvency_ratio ? parseFloat(solvencyData.solvency_ratio)/100 : 1.42, 
-      display: (val: number) => <><RandomNumberReveal value={val} decimals={2} suffix="" />x</>,
+      display: (val: number) => <CountUp value={val} decimals={2} suffix="x" />,
       icon: Scale, 
       color: '#37d097' 
     },
     { 
       label: 'Sharpe Ratio (30D)', 
       value: parseFloat(benchmarkMetrics.sharpe), 
-      display: (val: number) => <RandomNumberReveal value={val} decimals={1} suffix="" />,
+      display: (val: number) => <CountUp value={val} decimals={1} />,
       icon: Tangent, 
       color: '#37d097' 
     },
