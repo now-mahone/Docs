@@ -32,7 +32,7 @@
 * [The Genesis Roadmap](roadmap.md)
 * [Institutional On-Ramp](strategy/institutional-on-ramp.md)
 * [Regulatory Arbitrage](strategy/regulatory-arbitrage.md)
-* [The Narrative Cartel](strategy/narrative-cartel.md)
+* [The Narrative Collective](strategy/narrative-collective.md)
 
 ## Developer Portal
 
