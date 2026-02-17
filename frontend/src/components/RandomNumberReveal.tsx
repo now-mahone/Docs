@@ -2,22 +2,22 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface RandomNumberRevealProps {
   value: number | null;
   decimals?: number;
   className?: string;
   duration?: number;
-  revealSpeed?: number;
 }
 
 export default function RandomNumberReveal({ 
   value, 
   decimals = 1, 
   className = "", 
-  duration = 1500 
+  duration = 2500 
 }: RandomNumberRevealProps) {
-  const targetString = value !== null ? value.toFixed(decimals) : "00.0";
+  const targetString = value !== null ? value.toFixed(decimals) : "00.00";
   const [chars, setChars] = useState<string[]>([]);
   const [isReady, setIsReady] = useState(false);
 
@@ -35,7 +35,7 @@ export default function RandomNumberReveal({
     let frame: number;
 
     let lastFlickerTime = 0;
-    const flickerInterval = 50; // Flicker speed at 50ms
+    const flickerInterval = 50; 
 
     const update = () => {
       const now = Date.now();
@@ -44,7 +44,6 @@ export default function RandomNumberReveal({
       // Reveal from left to right
       const revealIndex = Math.floor(progress * (targetString.length + 1));
       
-      // Only update random digits if enough time has passed
       if (now - lastFlickerTime > flickerInterval || progress === 1) {
         const nextChars = targetString.split('').map((targetChar, i) => {
           if (i < revealIndex) return targetChar;
@@ -65,8 +64,24 @@ export default function RandomNumberReveal({
   }, [value, duration, targetString]);
 
   return (
-    <span className={`${className} inline-block min-w-[4ch] transition-opacity duration-300 ${isReady && value !== null ? 'opacity-100' : 'opacity-0'}`}>
-      {chars.join('')}%
+    <span className={`${className} inline-flex items-baseline min-w-[5ch] transition-opacity duration-300 ${isReady && value !== null ? 'opacity-100' : 'opacity-0'}`}>
+      {chars.map((char, index) => (
+        <span key={index} className="relative inline-block overflow-hidden h-[1em] leading-none">
+          <AnimatePresence mode="popLayout">
+            <motion.span
+              key={`${index}-${char}`}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "-100%" }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="inline-block"
+            >
+              {char}
+            </motion.span>
+          </AnimatePresence>
+        </span>
+      ))}
+      <span className="ml-[0.1em]">%</span>
     </span>
   );
 }

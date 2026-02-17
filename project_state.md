@@ -1,16 +1,15 @@
 # Kerne Protocol - Project State Log
 
-## 2026-02-16 14:47 - Finalized Hero APY Reveal & Ecosystem Logos
+## 2026-02-16 18:44 - Enhanced Hero APY Reveal with Slide-Up Animation
 **Status**: ✅ Complete
-**Action**: Finalized the "Random Number Reveal" animation for the Hero APY% with zero layout shift, increased precision, and completed ecosystem logo fixes.
+**Action**: Enhanced the "Random Number Reveal" animation for the Hero APY% by adding a slide-up transition for individual digits while maintaining precision and stability.
 **Changes Made**:
-1. **Hero APY Animation Finalization**:
-   - **Increased Precision**: Added a 2nd decimal place to the Hero APY% for institutional-grade precision.
-   - **Zero Layout Shift**: The APY section maintains its space with `opacity-0` until live data is ready to animate, preventing page content shifts.
-   - **Refined Reveal**: Numbers reveal sequentially from left to right while others cycle through random digits.
-   - **High-Tech Flicker**: Set the flicker speed of random digits to `50ms` for a dynamic "decoding" effect.
-   - **Fixed Structure**: The decimal point and percentage sign are static during animation.
-   - **Professional Timing**: Set duration to `2500ms` for optimal impact.
+1. **Hero APY Animation Enhancement**:
+   - **Slide-Up Transition**: Implemented Framer Motion `AnimatePresence` to make individual digits slide up into place as they change, creating a more fluid and premium feel.
+   - **Increased Precision**: Maintained the 2nd decimal place for institutional-grade precision.
+   - **Zero Layout Shift**: Preserved the `opacity-0` initial state and `inline-flex` structure to ensure no content movement during load.
+   - **Refined Reveal**: Maintained the left-to-right sequential reveal logic combined with the new slide-up effect.
+   - **High-Tech Flicker**: Kept the `50ms` flicker speed for the "decoding" phase.
 2. **Metric Animations**:
    - Maintained `CountUp` animations for the ETH funding rate and staking yield in the calculator section.
 3. **Ecosystem Logo Fixes**:
