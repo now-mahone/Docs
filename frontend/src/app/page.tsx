@@ -150,8 +150,8 @@ export default function LandingPage() {
               The future of onchain yield.<br />
               Live at an APY of<br />
               {loading ? (
-                <div className="inline-flex items-center justify-center h-[1em] w-[3ch]">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#37d097]"></div>
+                <div className="inline-flex items-center justify-center h-[0.95em] w-[5ch]">
+                  <div className="animate-spin rounded-full h-[0.6em] w-[0.6em] border-b-2 border-[#37d097]"></div>
                 </div>
               ) : (
                 <RandomNumberReveal 
