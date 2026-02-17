@@ -628,8 +628,8 @@ export default function TerminalPage() {
           </div>
 
           {/* Bottom Row: Protocol Health (4 Cols) and Vault Interaction (2 Cols) */}
-          <div className="lg:col-span-4 p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#444a4f] rounded-sm flex flex-col justify-between relative">
-            <div className="flex justify-between items-start mb-6 lg:mb-0">
+          <div className="lg:col-span-4 p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#444a4f] rounded-sm flex flex-col relative">
+            <div className="flex justify-between items-start mb-8">
               <div>
                 <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide block mb-1">LIVE PROTOCOL STATUS</span>
                 <p className="text-xl font-heading font-medium text-[#ffffff]">Protocol Health</p>

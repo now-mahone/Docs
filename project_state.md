@@ -1,6 +1,17 @@
 # Kerne Protocol - Project State Log
 
 <<<<<<< HEAD
+## 2026-02-17 16:16 - Fixed Protocol Health Card Spacing
+**Status**: ✅ Complete
+**Action**: Adjusted the spacing and padding of the Protocol Health card on the terminal page to match other dashboard cards.
+**Changes Made**:
+1. **Spacing Fix**: Increased the margin below the header from `mb-6` to `mb-8` to provide better visual separation.
+2. **Layout Alignment**: Removed `justify-between` from the main container to ensure consistent top-down flow, matching the other cards in the grid.
+3. **Result**: Improved visual consistency across the terminal dashboard.
+
+**Files Modified**: `frontend/src/app/terminal/page.tsx`
+**Deployed to**: m-vercel remote
+
 ## 2026-02-17 15:47 - Added Count-Up Animations to Terminal Metrics
 **Status**: ✅ Complete
 **Action**: Implemented the `CountUp` animation for key metrics on the terminal page, matching the homepage calculator style.
