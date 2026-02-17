@@ -1,12 +1,12 @@
 # Kerne Protocol - Project State Log
 
-## 2026-02-17 13:27 - Refined Hero APY Loading State
+## 2026-02-17 13:31 - Fixed Hero APY Layout Shift
 **Status**: ✅ Complete
-**Action**: Refined the loading spinner for the Hero APY% to ensure perfect layout stability and visual integration.
+**Action**: Fixed a persistent layout shift issue in the Hero APY section by implementing a unified container with fixed dimensions.
 **Changes Made**:
-1. **Loading Spinner Refinement**: Adjusted the spinner height to `0.95em` and width to `5ch` to perfectly match the typography of the final APY number.
-2. **Layout Stability**: The spinner now occupies the exact same vertical and horizontal space as the hydrated text, eliminating any layout shifts when the animation begins.
-3. **Result**: Seamless transition from loading state to the high-tech reveal animation.
+1. **Unified Container**: Wrapped both the loading spinner and the `RandomNumberReveal` component in a single `inline-flex` span with `min-h-[0.95em]` and `min-w-[5ch]`.
+2. **Layout Stability**: By defining the container's minimum dimensions to match the final text, the surrounding page content remains perfectly static regardless of whether the data is loading or animating.
+3. **Result**: Zero layout shift during the entire hydration and animation lifecycle.
 
 **Files Modified**: `frontend/src/app/page.tsx`
 **Deployed to**: m-vercel remote

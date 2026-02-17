@@ -149,18 +149,18 @@ export default function LandingPage() {
             <h1 className="font-heading font-medium tracking-tight leading-[0.95] text-[#000000] mb-8">
               The future of onchain yield.<br />
               Live at an APY of<br />
-              {loading ? (
-                <div className="inline-flex items-center justify-center h-[0.95em] w-[5ch]">
-                  <div className="animate-spin rounded-full h-[0.6em] w-[0.6em] border-b-2 border-[#37d097]"></div>
-                </div>
-              ) : (
-                <RandomNumberReveal 
-                  value={frozenApy}
-                  decimals={2}
-                  className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
-                  duration={2500}
-                />
-              )}
+              <span className="inline-flex items-center justify-center min-h-[0.95em] min-w-[5ch]">
+                {loading ? (
+                  <span className="animate-spin rounded-full h-[0.6em] w-[0.6em] border-b-2 border-[#37d097]"></span>
+                ) : (
+                  <RandomNumberReveal 
+                    value={frozenApy}
+                    decimals={2}
+                    className="bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh"
+                    duration={2500}
+                  />
+                )}
+              </span>
             </h1>
 
             <p className="text-l md:text-l text-[#000000] max-w-2xl mx-auto mb-10 font-medium leading-relaxed">
