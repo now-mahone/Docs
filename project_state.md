@@ -1,6 +1,17 @@
 # Kerne Protocol - Project State Log
 
 <<<<<<< HEAD
+## 2026-02-17 16:26 - Rebranded "The Narrative Cartel" to "The Narrative Collective"
+**Status**: ✅ Complete
+**Action**: Rebranded all mentions of "The Narrative Cartel" to "The Narrative Collective" in the documentation for a more professional tone.
+**Changes Made**:
+1. **File Renaming**: Renamed `gitbook (docs)/strategy/narrative-cartel.md` to `narrative-collective.md`.
+2. **Content Update**: Replaced "The Narrative Cartel" with "The Narrative Collective" in `_sidebar.md`, `SUMMARY.md`, `strategy/README.md`, and the renamed `narrative-collective.md`.
+3. **Result**: Maintained the strategic meaning while adopting a more institutional-friendly terminology.
+
+**Files Modified**: `gitbook (docs)/_sidebar.md`, `gitbook (docs)/SUMMARY.md`, `gitbook (docs)/strategy/README.md`, `gitbook (docs)/strategy/narrative-collective.md`
+**Deployed to**: m-vercel remote
+
 ## 2026-02-17 16:16 - Fixed Protocol Health Card Spacing
 **Status**: ✅ Complete
 **Action**: Adjusted the spacing and padding of the Protocol Health card on the terminal page to match other dashboard cards.
