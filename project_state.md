@@ -12,13 +12,14 @@
 **Files Modified**: `frontend/src/components/BacktestedPerformance.tsx`
 **Deployed to**: m-vercel remote
 
-## 2026-02-17 13:39 - Finalized Hero APY Layout Stability
+## 2026-02-17 13:53 - Finalized Hero APY Layout Stability
 **Status**: ✅ Complete
-**Action**: Finalized the Hero APY section to ensure absolute layout stability during loading and hydration.
+**Action**: Finalized the Hero APY section to ensure absolute layout stability during loading and hydration using absolute positioning.
 **Changes Made**:
-1. **Loading State Refinement**: Implemented a dedicated `div` for the loading state with `min-h-[0.9em]` and `w-[5ch]` to perfectly match the line height and character width of the hero heading.
-2. **Layout Stability**: The loading spinner now occupies the exact vertical space required by the heading's line height, preventing any vertical jitter when the data hydrates.
-3. **Result**: Perfectly stable hero section with a synchronized loading experience.
+1. **Absolute Positioning**: Implemented a relative container for the APY section where the loading spinner is absolutely positioned in the center.
+2. **Layout Stability**: The `RandomNumberReveal` component is always present but hidden (`opacity-0`) during loading, ensuring the container always has the correct dimensions.
+3. **Seamless Transition**: Added a smooth `opacity` transition between the loading spinner and the hydrated numbers.
+4. **Result**: Zero layout shift during the entire hydration lifecycle, as the container size is determined by the hidden text from the start.
 
 **Files Modified**: `frontend/src/app/page.tsx`
 **Deployed to**: m-vercel remote
