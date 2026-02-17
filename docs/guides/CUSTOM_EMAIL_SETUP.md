@@ -138,6 +138,7 @@
    - `liamlakevold@kerne.ai` → `liamlakevold@gmail.com`
    - `devonhewitt@kerne.ai` → `devhew@icloud.com`
    - `matthewlakevold@kerne.ai` → `matthewlkv@gmail.com`
+   - `romanday@kerne.ai` → `romanday12@gmail.com`
    - `team@kerne.ai` → `liamlakevold@gmail.com` (catch-all)
 
 ---
