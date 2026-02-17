@@ -14,6 +14,7 @@ import { ETHComparisonChart } from '@/components/ETHComparisonChart';
 import { AssetComposition } from '@/components/AssetComposition';
 import { VaultInteraction } from '@/components/VaultInteraction';
 import { WalletConnectButton } from '@/components/WalletConnectButton';
+import RandomNumberReveal from '@/components/RandomNumberReveal';
 
 export default function TerminalPage() {
   const { isConnected, address } = useAccount();
@@ -403,9 +404,27 @@ export default function TerminalPage() {
   }, [comparisonData]);
 
   const cards = [
-    { label: 'APY%', value: (apyData?.apy || 18.40).toFixed(2) + '%', icon: Percent, color: '#37d097' },
-    { label: 'Solvency Ratio', value: solvencyData?.solvency_ratio ? (parseFloat(solvencyData.solvency_ratio)/100).toFixed(2) + 'x' : '1.42x', icon: Scale, color: '#37d097' },
-    { label: 'Sharpe Ratio (30D)', value: benchmarkMetrics.sharpe, icon: Tangent, color: '#37d097' },
+    { 
+      label: 'APY%', 
+      value: apyData?.apy || 18.40, 
+      display: (val: number) => <RandomNumberReveal value={val} decimals={2} />,
+      icon: Percent, 
+      color: '#37d097' 
+    },
+    { 
+      label: 'Solvency Ratio', 
+      value: solvencyData?.solvency_ratio ? parseFloat(solvencyData.solvency_ratio)/100 : 1.42, 
+      display: (val: number) => <><RandomNumberReveal value={val} decimals={2} suffix="" />x</>,
+      icon: Scale, 
+      color: '#37d097' 
+    },
+    { 
+      label: 'Sharpe Ratio (30D)', 
+      value: parseFloat(benchmarkMetrics.sharpe), 
+      display: (val: number) => <RandomNumberReveal value={val} decimals={1} suffix="" />,
+      icon: Tangent, 
+      color: '#37d097' 
+    },
     { label: 'Cooldown Period', value: 'Instant', icon: Hourglass, color: '#ffffff' },
     { label: 'User Earnings', value: userEarnings, icon: HandCoins, color: '#ffffff' },
     { label: 'User Balance', value: userVaultBalance + ' ETH', icon: Wallet2, color: '#ffffff' },
@@ -468,9 +487,9 @@ export default function TerminalPage() {
                     <card.icon size={14} className="text-[#aab9be]" />
                   </div>
                   <div>
-                    <p className="text-xl font-heading font-medium text-[#ffffff]">
-                      {card.value}
-                    </p>
+                    <div className="text-xl font-heading font-medium text-[#ffffff]">
+                      {card.display ? card.display(card.value as number) : card.value}
+                    </div>
                   </div>
                 </div>
                 
