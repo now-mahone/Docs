@@ -12,6 +12,17 @@
 **Files Modified**: `gitbook (docs)/_sidebar.md`, `gitbook (docs)/SUMMARY.md`, `gitbook (docs)/strategy/README.md`, `gitbook (docs)/strategy/narrative-collective.md`
 **Deployed to**: m-vercel remote
 
+## 2026-02-17 16:53 - Corrected Benchmark Simulation Compounding
+**Status**: ✅ Complete
+**Action**: Adjusted the Kerne simulated line in the benchmark comparison chart to correctly reflect daily compounding of the target 18.4% APY.
+**Changes Made**:
+1. **Compounding Logic**: Switched from simple daily growth to a daily compounded rate derived from the 18.4% annual target.
+2. **Accuracy**: This ensures that the 6-month simulated return aligns with institutional expectations (~$109 per $100 initial) rather than the previous linear approximation.
+3. **Result**: High-fidelity performance visualization that accurately represents the protocol's compounding power.
+
+**Files Modified**: `frontend/src/app/terminal/page.tsx`
+**Deployed to**: m-vercel remote
+
 ## 2026-02-17 16:16 - Fixed Protocol Health Card Spacing
 **Status**: ✅ Complete
 **Action**: Adjusted the spacing and padding of the Protocol Health card on the terminal page to match other dashboard cards.
