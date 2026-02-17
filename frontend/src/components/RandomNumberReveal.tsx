@@ -18,18 +18,13 @@ export default function RandomNumberReveal({
   duration = 2500 
 }: RandomNumberRevealProps) {
   const targetString = value !== null ? value.toFixed(decimals) : "00.00";
-  const [chars, setChars] = useState<string[]>([]);
-  const [isReady, setIsReady] = useState(false);
+  const [chars, setChars] = useState<string[]>(() => {
+    // Start with 00.00 structure immediately
+    return targetString.split('').map(char => (char === '.' ? '.' : '0'));
+  });
 
   useEffect(() => {
     if (value === null) return;
-
-    // Initialize with random digits but correct structure
-    const initial = targetString.split('').map(char => 
-      (char === '.' || char === '%') ? char : Math.floor(Math.random() * 10).toString()
-    );
-    setChars(initial);
-    setIsReady(true);
 
     let startTime = Date.now();
     let frame: number;
@@ -47,7 +42,7 @@ export default function RandomNumberReveal({
       if (now - lastFlickerTime > flickerInterval || progress === 1) {
         const nextChars = targetString.split('').map((targetChar, i) => {
           if (i < revealIndex) return targetChar;
-          if (targetChar === '.' || targetChar === '%') return targetChar;
+          if (targetChar === '.') return '.';
           return Math.floor(Math.random() * 10).toString();
         });
         setChars(nextChars);
@@ -64,15 +59,15 @@ export default function RandomNumberReveal({
   }, [value, duration, targetString]);
 
   return (
-    <span className={`${className} inline-flex items-baseline min-w-[5ch] transition-opacity duration-300 ${isReady && value !== null ? 'opacity-100' : 'opacity-0'}`}>
+    <span className={`${className} inline-flex items-baseline min-w-[5ch]`}>
       {chars.map((char, index) => (
         <span key={index} className="relative inline-block overflow-hidden h-[1.1em] leading-none">
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.span
               key={`${index}-${char}`}
-              initial={{ y: "100%", opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: "-100%", opacity: 0 }}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "-100%" }}
               transition={{ duration: 0.15, ease: "easeOut" }}
               className="inline-block"
             >
