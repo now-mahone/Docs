@@ -1,10 +1,10 @@
 # Kerne Protocol - Project State Log
 
-## 2026-02-17 13:35 - Finalized Hero APY Layout Stability
+## 2026-02-17 13:39 - Finalized Hero APY Layout Stability
 **Status**: ✅ Complete
 **Action**: Finalized the Hero APY section to ensure absolute layout stability during loading and hydration.
 **Changes Made**:
-1. **Loading State Refinement**: Replaced the unified container with a dedicated `div` for the loading state, using `min-h-[1em]` and `w-[5ch]` to perfectly match the line height and character width of the hero heading.
+1. **Loading State Refinement**: Implemented a dedicated `div` for the loading state with `min-h-[0.9em]` and `w-[5ch]` to perfectly match the line height and character width of the hero heading.
 2. **Layout Stability**: The loading spinner now occupies the exact vertical space required by the heading's line height, preventing any vertical jitter when the data hydrates.
 3. **Result**: Perfectly stable hero section with a synchronized loading experience.
 
