@@ -1,5 +1,17 @@
 # Kerne Protocol - Project State Log
 
+## 2026-02-17 13:47 - Added Slide-Up Animation to Performance Card
+**Status**: ✅ Complete
+**Action**: Implemented a smooth slide-up animation for the Historical Performance Comparison card on the homepage.
+**Changes Made**:
+1. **Animation Implementation**: Wrapped the `BacktestedPerformance` component in a `motion.div` with a slide-up and fade-in transition.
+2. **Viewport Trigger**: Configured the animation to trigger when the card enters the viewport, with a `-100px` margin for optimal timing.
+3. **Premium Feel**: Used a custom cubic-bezier easing function (`[0.21, 0.47, 0.32, 0.98]`) to match the protocol's high-end aesthetic.
+4. **Result**: The performance chart now enters the screen with a sophisticated, fluid motion.
+
+**Files Modified**: `frontend/src/components/BacktestedPerformance.tsx`
+**Deployed to**: m-vercel remote
+
 ## 2026-02-17 13:39 - Finalized Hero APY Layout Stability
 **Status**: ✅ Complete
 **Action**: Finalized the Hero APY section to ensure absolute layout stability during loading and hydration.

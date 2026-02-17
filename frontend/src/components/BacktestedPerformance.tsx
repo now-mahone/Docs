@@ -4,6 +4,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { motion } from 'framer-motion';
 import TypedHeading from './TypedHeading';
 
 interface HistoricalPrice {
@@ -171,7 +172,6 @@ export default function BacktestedPerformance() {
   const [historicalEth, setHistoricalEth] = useState<HistoricalPrice[]>([]);
   const [historicalData, setHistoricalData] = useState<ChartDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchHistoricalData = async () => {
@@ -207,7 +207,13 @@ export default function BacktestedPerformance() {
   const metrics = calculateMetrics(historicalData, historicalEth);
 
   return (
-    <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12">
+    <motion.div 
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
+      className="w-full rounded-sm bg-[#000000] p-8 md:p-12"
+    >
       <div className="mb-8">
         <h3 className="font-heading font-medium tracking-tight text-[#ffffff] leading-tight mb-2 text-left">
           Historical performance comparison
@@ -313,6 +319,6 @@ export default function BacktestedPerformance() {
           </div>
         </>
       )}
-    </div>
+    </motion.div>
   );
 }
