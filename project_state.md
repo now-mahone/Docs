@@ -1,15 +1,15 @@
 # Kerne Protocol - Project State Log
 
-## 2026-02-17 13:47 - Added Slide-Up Animation to Performance Card
+## 2026-02-17 13:59 - Refined Performance Card Animation & Fixed Mobile APY
 **Status**: ✅ Complete
-**Action**: Implemented a smooth slide-up animation for the Historical Performance Comparison card on the homepage.
+**Action**: Refined the performance card animation to trigger on page load and fixed a visibility issue for the Hero APY on mobile devices.
 **Changes Made**:
-1. **Animation Implementation**: Wrapped the `BacktestedPerformance` component in a `motion.div` with a slide-up and fade-in transition.
-2. **Viewport Trigger**: Configured the animation to trigger when the card enters the viewport, with a `-100px` margin for optimal timing.
-3. **Premium Feel**: Used a custom cubic-bezier easing function (`[0.21, 0.47, 0.32, 0.98]`) to match the protocol's high-end aesthetic.
-4. **Result**: The performance chart now enters the screen with a sophisticated, fluid motion.
+1. **Performance Card Animation**: Changed the trigger from `whileInView` to `animate` so the card slides up immediately on page load with a slight delay (`0.2s`).
+2. **Mobile APY Visibility**: Updated the Hero APY container to use `inline-flex` and ensured the `RandomNumberReveal` component is correctly rendered within the absolute positioning logic, restoring visibility on mobile devices.
+3. **Layout Stability**: Maintained zero layout shift by using a fixed character width (`5ch`) for the APY container.
+4. **Result**: Improved initial page load experience and restored critical mobile functionality.
 
-**Files Modified**: `frontend/src/components/BacktestedPerformance.tsx`
+**Files Modified**: `frontend/src/app/page.tsx`, `frontend/src/components/BacktestedPerformance.tsx`
 **Deployed to**: m-vercel remote
 
 ## 2026-02-17 13:53 - Finalized Hero APY Layout Stability

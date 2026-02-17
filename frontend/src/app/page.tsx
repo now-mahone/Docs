@@ -149,7 +149,7 @@ export default function LandingPage() {
             <h1 className="font-heading font-medium tracking-tight leading-[0.95] text-[#000000] mb-8">
               The future of onchain yield.<br />
               Live at an APY of<br />
-              <span className="relative inline-block">
+              <span className="relative inline-flex items-center justify-center min-w-[5ch]">
                 <span className={`bg-[linear-gradient(110deg,#19b097,#37d097,#19b097)] bg-clip-text text-transparent animate-mesh transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'}`}>
                   <RandomNumberReveal 
                     value={frozenApy}

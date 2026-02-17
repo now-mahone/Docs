@@ -209,9 +209,8 @@ export default function BacktestedPerformance() {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-100px" }}
-      transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98], delay: 0.2 }}
       className="w-full rounded-sm bg-[#000000] p-8 md:p-12"
     >
       <div className="mb-8">
