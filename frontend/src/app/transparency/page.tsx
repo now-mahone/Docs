@@ -203,7 +203,7 @@ export default function TransparencyPage() {
         </section>
 
         {/* Monte Carlo Risk Simulation */}
-        <section id="monte-carlo" className="pt-32 pb-32 bg-[#ffffff]">
+        <section id="monte-carlo" className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
           <div className="max-w-7xl mx-auto px-6 md:px-12">
             {/* Header and Subtext */}
             <div className="flex flex-col items-center text-center mb-16">
@@ -325,7 +325,7 @@ export default function TransparencyPage() {
         </section>
 
         {/* Risk Management Framework */}
-        <section id="risk" className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
+        <section id="risk" className="pt-32 pb-32 bg-[#ffffff]">
           <div className="max-w-7xl mx-auto px-6 md:px-12">
             {/* Header and Subtext */}
             <div className="flex flex-col items-center text-center mb-16">
