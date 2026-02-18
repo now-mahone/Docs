@@ -1,8 +1,10 @@
-## 2026-02-18 12:46 - Added Monte Carlo Simulation Section to Transparency Page
+## 2026-02-18 13:00 - Refactored Transparency Page Section Logic
 **Status**: ✅ Complete
-**Action**: Added comprehensive Monte Carlo risk simulation visualization to the transparency page displaying 10K scenario stress test results.
+**Action**: Refactored the transparency page to use standard modular section logic, separating the Monte Carlo simulation and Risk Management Framework into distinct blocks.
 **Changes Made**:
-1. **New Section**: Created "Monte Carlo Risk Simulation" section positioned above "Risk Management Framework" with alternating gradient background (`from-[#d4dce1] to-[#ffffff]`).
+1. **Section Separation**: Isolated the "Monte Carlo Risk Simulation" and "Risk Management Framework" into independent sections with standard padding (`pt-32 pb-32`).
+2. **Visual Distinction**: Applied a subtle background color (`bg-[#f8fafc]`) and top border to the Risk Management section to clearly differentiate it from the white Monte Carlo section.
+3. **Design Consistency**: Aligned the page structure with the homepage and about page, removing the cascading gradients that previously merged sections together.
 2. **Key Metrics Cards**: Four metric cards displaying:
    - Survival Rate: 98.4% (9,835/10,000 scenarios)
    - Mean Yield APY: 18.0% (annualized)
