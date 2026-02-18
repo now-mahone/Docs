@@ -202,6 +202,128 @@ export default function TransparencyPage() {
           </div>
         </section>
 
+        {/* Monte Carlo Risk Simulation */}
+        <section id="monte-carlo" className="pt-32 pb-32 bg-gradient-to-b from-[#d4dce1] to-[#ffffff]">
+          <div className="max-w-7xl mx-auto px-6 md:px-12">
+            {/* Header and Subtext */}
+            <div className="flex flex-col items-center text-center mb-16">
+              <TypedHeading className="font-heading font-medium tracking-tight text-[#000000] mb-8">
+                Monte Carlo Risk Simulation
+              </TypedHeading>
+              <p className="text-m text-[#000000] max-w-2xl font-medium">
+                Ten thousand simulated scenarios stress tested across one year timeframe to quantify protocol resilience under extreme market conditions.
+              </p>
+            </div>
+
+            {/* Card Container */}
+            <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12 space-y-6">
+              {/* Key Metrics Row */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Survival Rate */}
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Survival Rate</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">98.4%</div>
+                    <div className="text-s text-[#37d097] font-medium">9,835 / 10,000</div>
+                  </div>
+                </div>
+
+                {/* Mean Yield */}
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Mean Yield APY</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">18.0%</div>
+                    <div className="text-s text-[#37d097] font-medium">Annualized</div>
+                  </div>
+                </div>
+
+                {/* Mean Final TVL */}
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Mean Final TVL</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">$119.4M</div>
+                    <div className="text-s text-[#37d097] font-medium">12 Month Avg</div>
+                  </div>
+                </div>
+
+                {/* VaR 95 */}
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">VaR 95</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">$90.7M</div>
+                    <div className="text-s text-[#37d097] font-medium">95th Percentile</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scenario Breakdown */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Oracle Manipulation */}
+                <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col items-start text-left">
+                  <div className="w-12 h-12 bg-transparent border border-[#ff6b6b] rounded-full flex items-center justify-center text-[#ffffff] mb-8">
+                    <Activity size={24} />
+                  </div>
+                  <h3 className="font-heading font-medium mb-4 tracking-tight text-[#ffffff]">Oracle Manipulation</h3>
+                  <p className="text-s text-[#d4dce1] leading-relaxed font-medium mb-4">
+                    Most frequent failure vector at 123 occurrences representing 74.5% of all simulated failures across the entire test suite.
+                  </p>
+                  <div className="text-xs font-bold text-[#ff6b6b] uppercase tracking-wide">1.23% Failure Rate</div>
+                </div>
+
+                {/* Liquidation Cascade */}
+                <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col items-start text-left">
+                  <div className="w-12 h-12 bg-transparent border border-[#ffa726] rounded-full flex items-center justify-center text-[#ffffff] mb-8">
+                    <TrendingDown size={24} />
+                  </div>
+                  <h3 className="font-heading font-medium mb-4 tracking-tight text-[#ffffff]">Liquidation Cascade</h3>
+                  <p className="text-s text-[#d4dce1] leading-relaxed font-medium mb-4">
+                    Secondary risk factor with 15 simulated failures mitigated through automated circuit breakers and multi layer position monitoring.
+                  </p>
+                  <div className="text-xs font-bold text-[#ffa726] uppercase tracking-wide">0.15% Failure Rate</div>
+                </div>
+
+                {/* LST Depeg */}
+                <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col items-start text-left">
+                  <div className="w-12 h-12 bg-transparent border border-[#37d097] rounded-full flex items-center justify-center text-[#ffffff] mb-8">
+                    <ShieldCheck size={24} />
+                  </div>
+                  <h3 className="font-heading font-medium mb-4 tracking-tight text-[#ffffff]">LST Depeg Events</h3>
+                  <p className="text-s text-[#d4dce1] leading-relaxed font-medium mb-4">
+                    Minimal impact with only 6 failures demonstrating robust collateral health monitoring and automated depeg protection systems.
+                  </p>
+                  <div className="text-xs font-bold text-[#37d097] uppercase tracking-wide">0.06% Failure Rate</div>
+                </div>
+              </div>
+
+              {/* Simulation Methodology */}
+              <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
+                <h3 className="font-heading font-medium tracking-tight text-[#ffffff] mb-6">Simulation Methodology</h3>
+                <p className="text-s text-[#d4dce1] leading-relaxed font-medium mb-6">
+                  The Monte Carlo simulation executes 10,000 independent scenarios across a 365 day horizon beginning with $100M initial TVL. Each simulation path incorporates stochastic volatility for ETH price action, dynamic funding rate fluctuations, LST depeg events with 2% probability, oracle manipulation attempts, gas price spikes, and regulatory shock scenarios. The hedging engine rebalances positions every 8 hours with slippage costs factored into final yield calculations. Circuit breakers trigger at collateral ratio thresholds below 115% with liquidation cascades modeled through correlated drawdown events.
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                  <div>
+                    <div className="text-[#aab9be] font-bold uppercase tracking-wide mb-2">Time Horizon</div>
+                    <div className="text-[#ffffff] font-medium">365 Days</div>
+                  </div>
+                  <div>
+                    <div className="text-[#aab9be] font-bold uppercase tracking-wide mb-2">Initial TVL</div>
+                    <div className="text-[#ffffff] font-medium">$100M</div>
+                  </div>
+                  <div>
+                    <div className="text-[#aab9be] font-bold uppercase tracking-wide mb-2">Simulations</div>
+                    <div className="text-[#ffffff] font-medium">10,000</div>
+                  </div>
+                  <div>
+                    <div className="text-[#aab9be] font-bold uppercase tracking-wide mb-2">Rebalance Freq</div>
+                    <div className="text-[#ffffff] font-medium">8 Hours</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Risk Management Framework */}
         <section id="risk" className="pt-32 pb-32 bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
           <div className="max-w-7xl mx-auto px-6 md:px-12">
