@@ -325,7 +325,7 @@ export default function TransparencyPage() {
         </section>
 
         {/* Risk Management Framework */}
-        <section id="risk" className="pt-32 pb-32 bg-[#ffffff]">
+        <section id="risk" className="pt-32 pb-32 bg-[#f8fafc] border-t border-[#e2e8f0]">
           <div className="max-w-7xl mx-auto px-6 md:px-12">
             {/* Header and Subtext */}
             <div className="flex flex-col items-center text-center mb-16">
