@@ -73,3 +73,20 @@ Building the yield layer for the onchain economy. 🔵
 As L2 activity continues to scale, we're ensuring institutional capital has a secure, delta-neutral home on @base
 
 ---
+
+### [2026-02-18] - Monte Carlo & Terminal Transparency Update
+
+**Tweet 1:**
+Shipping velocity update from the Kerne lab: 🚀
+
+1️⃣ 10k Monte Carlo scenarios confirmed 98.8% survival. 
+
+2️⃣ Live Sharpe Ratio tracking added to Terminal. 
+
+3️⃣Frontend optimized for zero layout shift.
+
+Institutional yield, engineered for @base. 🔵
+
+#DeFi #Base #RiskManagement
+
+---

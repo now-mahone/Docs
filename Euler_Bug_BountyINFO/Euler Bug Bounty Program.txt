@@ -1,0 +1,35 @@
+"Bug Bounty Program
+$7.5 Million Bug Bounty Available
+Euler maintains one of the largest bug bounty programs in DeFi, with up to $7.5 million available for critical vulnerability discoveries. This substantial bounty demonstrates our commitment to security and incentivizes the world's best security researchers to help safeguard the protocol.
+
+Introduction
+Euler's bug bounty program is hosted on Cantina and plays a crucial role in our security strategy by rewarding researchers who identify and responsibly disclose potential vulnerabilities across our modular lending platform.
+
+Program Overview
+Our bug bounty program focuses on key components of the Euler ecosystem, including the Euler Vault Kit (EVK), Ethereum Vault Connector (EVC), Euler Price Oracle (EPO), and other essential modules. With rewards up to $7.5 million for critical findings.
+
+How to Participate
+To participate in our bug bounty program, please visit our official Cantina bug bounty page. This page contains all the essential information you need, including:
+
+Current reward amounts and structure
+Scope of the program
+Severity classifications
+Eligibility requirements
+Submission guidelines
+Testing procedures
+Best Practices
+When participating in our bug bounty program, we recommend following these general best practices:
+
+Test in a controlled environment to avoid any unintended impact
+Document your findings thoroughly
+Follow responsible disclosure guidelines
+Avoid exploiting vulnerabilities
+Maintain professional communication throughout the process
+Additional Information
+For the most up-to-date information about our bug bounty program, including current rules, rewards, and procedures, please refer to our Cantina bug bounty page. This ensures you have access to the latest program details and requirements.
+
+Last updated on Aug 21, 2025"
+
+
+
+located at "https://docs.euler.finance/security/bug-bounty/"

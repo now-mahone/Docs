@@ -14,6 +14,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC3156FlashLender } from "@openzeppelin/contracts/interfaces/IERC3156FlashLender.sol";
 import { IERC3156FlashBorrower } from "@openzeppelin/contracts/interfaces/IERC3156FlashBorrower.sol";
 import { IComplianceHook } from "./interfaces/IComplianceHook.sol";
+import { IKernePriceOracle } from "./interfaces/IKernePriceOracle.sol";
 
 /**
  * @title KerneVault
@@ -126,6 +127,25 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     /// @notice SECURITY: Maximum flash loan amount as percentage of vault balance (in bps)
     uint256 public maxFlashLoanBps = 9000; // 90% of vault balance
 
+    // ============================================================
+    //                PRICE ORACLE INTEGRATION
+    // ============================================================
+    
+    /// @notice Price oracle for manipulation detection
+    IKernePriceOracle public priceOracle;
+    
+    /// @notice Maximum price change per hour in basis points (1000 = 10%)
+    uint256 public maxPriceChangePerHour = 1000;
+    
+    /// @notice Last verified price from oracle
+    uint256 public lastVerifiedPrice;
+    
+    /// @notice Timestamp of last price check
+    uint256 public lastPriceCheckTime;
+    
+    /// @notice Whether price circuit breaker is triggered
+    bool public priceCircuitBreakerTriggered;
+
     struct WithdrawalRequest {
         uint256 assets;
         uint256 shares;
@@ -155,6 +175,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     event TrustAnchorUpdated(address indexed oldAnchor, address indexed newAnchor);
     event FlashLoanExecuted(address indexed receiver, address token, uint256 amount, uint256 fee);
     event OffChainUpdateParamsChanged(uint256 maxChangeRateBps, uint256 cooldown);
+    event PriceOracleUpdated(address indexed oldOracle, address indexed newOracle);
+    event PriceCircuitBreakerTriggered(uint256 recordedPrice, uint256 attemptedPrice);
+    event PriceCircuitBreakerReset();
 
     /**
      * @param asset_ The underlying asset (e.g., WETH or USDC)
@@ -1012,5 +1035,63 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         SafeERC20.safeTransfer(IERC20(asset()), msg.sender, netAssets);
         
         emit WithdrawalClaimed(msg.sender, type(uint256).max, netAssets);
+    }
+
+    // ============================================================
+    //                PRICE ORACLE FUNCTIONS
+    // ============================================================
+    
+    /// @notice Modifier to check price stability before allowing operations
+    modifier priceStable() {
+        if (address(priceOracle) != address(0) && !priceCircuitBreakerTriggered) {
+            require(priceOracle.isPriceValid(), "Price sources disagree");
+            
+            uint256 currentPrice = priceOracle.getPrice();
+            if (lastVerifiedPrice > 0 && lastPriceCheckTime + 1 hours >= block.timestamp) {
+                uint256 change = currentPrice > lastVerifiedPrice 
+                    ? currentPrice - lastVerifiedPrice 
+                    : lastVerifiedPrice - currentPrice;
+                
+                if (change > (lastVerifiedPrice * maxPriceChangePerHour) / 10000) {
+                    priceCircuitBreakerTriggered = true;
+                    emit PriceCircuitBreakerTriggered(lastVerifiedPrice, currentPrice);
+                    revert("Price volatility circuit breaker");
+                }
+            }
+            
+            lastVerifiedPrice = currentPrice;
+            lastPriceCheckTime = block.timestamp;
+        }
+        _;
+    }
+    
+    /// @notice Sets the price oracle address
+    /// @param _oracle The address of the price oracle contract
+    function setPriceOracle(address _oracle) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        address oldOracle = address(priceOracle);
+        priceOracle = IKernePriceOracle(_oracle);
+        emit PriceOracleUpdated(oldOracle, _oracle);
+    }
+    
+    /// @notice Sets the maximum price change per hour
+    /// @param _bps Maximum change in basis points (e.g., 1000 = 10%)
+    function setMaxPriceChangePerHour(uint256 _bps) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_bps <= 5000, "Max change too high"); // Cap at 50%
+        maxPriceChangePerHour = _bps;
+    }
+    
+    /// @notice Resets the price circuit breaker
+    /// @dev Only callable by admin after investigating the trigger cause
+    function resetPriceCircuitBreaker() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        priceCircuitBreakerTriggered = false;
+        lastVerifiedPrice = 0;
+        lastPriceCheckTime = 0;
+        emit PriceCircuitBreakerReset();
+    }
+    
+    /// @notice Check if price oracle is configured and operational
+    /// @return True if price oracle is set and circuit breaker not triggered
+    function isPriceOracleOperational() external view returns (bool) {
+        return address(priceOracle) != address(0) && !priceCircuitBreakerTriggered;
     }
 }
