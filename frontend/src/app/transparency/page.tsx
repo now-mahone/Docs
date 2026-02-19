@@ -216,7 +216,15 @@ export default function TransparencyPage() {
             </div>
 
             {/* Card Container */}
-            <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12 space-y-6">
+            <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12 space-y-4">
+              {/* Simulation Methodology */}
+              <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
+                <h3 className="font-heading font-medium tracking-tight text-[#ffffff] mb-6">Simulation Methodology</h3>
+                <p className="text-s text-[#d4dce1] leading-relaxed font-medium">
+                  The Monte Carlo simulation executes 10,000 independent scenarios across a 365 day horizon. Each simulation path incorporates stochastic volatility for ETH price action, dynamic funding rate fluctuations, LST depeg events with 2% probability, oracle manipulation attempts, gas price spikes, and regulatory shock scenarios. The hedging engine rebalances positions every 8 hours with slippage costs factored into final yield calculations. Circuit breakers trigger at collateral ratio thresholds below 115% with liquidation cascades modeled through correlated drawdown events.
+                </p>
+              </div>
+
               {/* Key Metrics Row */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {/* Survival Rate */}
@@ -257,7 +265,7 @@ export default function TransparencyPage() {
               </div>
 
               {/* Scenario Breakdown */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Oracle Manipulation */}
                 <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col items-start text-left">
                   <div className="w-12 h-12 bg-transparent border border-[#ff6b6b] rounded-full flex items-center justify-center text-[#ffffff] mb-8">
@@ -292,32 +300,6 @@ export default function TransparencyPage() {
                     Minimal impact with only 6 failures demonstrating robust collateral health monitoring and automated depeg protection systems.
                   </p>
                   <div className="text-xs font-bold text-[#37d097] uppercase tracking-wide">0.06% Failure Rate</div>
-                </div>
-              </div>
-
-              {/* Simulation Methodology */}
-              <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
-                <h3 className="font-heading font-medium tracking-tight text-[#ffffff] mb-6">Simulation Methodology</h3>
-                <p className="text-s text-[#d4dce1] leading-relaxed font-medium mb-6">
-                  The Monte Carlo simulation executes 10,000 independent scenarios across a 365 day horizon beginning with $100M initial TVL. Each simulation path incorporates stochastic volatility for ETH price action, dynamic funding rate fluctuations, LST depeg events with 2% probability, oracle manipulation attempts, gas price spikes, and regulatory shock scenarios. The hedging engine rebalances positions every 8 hours with slippage costs factored into final yield calculations. Circuit breakers trigger at collateral ratio thresholds below 115% with liquidation cascades modeled through correlated drawdown events.
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                  <div>
-                    <div className="text-[#aab9be] font-bold uppercase tracking-wide mb-2">Time Horizon</div>
-                    <div className="text-[#ffffff] font-medium">365 Days</div>
-                  </div>
-                  <div>
-                    <div className="text-[#aab9be] font-bold uppercase tracking-wide mb-2">Initial TVL</div>
-                    <div className="text-[#ffffff] font-medium">$100M</div>
-                  </div>
-                  <div>
-                    <div className="text-[#aab9be] font-bold uppercase tracking-wide mb-2">Simulations</div>
-                    <div className="text-[#ffffff] font-medium">10,000</div>
-                  </div>
-                  <div>
-                    <div className="text-[#aab9be] font-bold uppercase tracking-wide mb-2">Rebalance Freq</div>
-                    <div className="text-[#ffffff] font-medium">8 Hours</div>
-                  </div>
                 </div>
               </div>
             </div>
