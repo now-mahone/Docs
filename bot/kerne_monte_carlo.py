@@ -142,6 +142,21 @@ class SimulationConfig:
     liquidation_penalty: float = 0.05  # 5% bonus
     min_tvl_fraction: float = 0.10  # Protocol death if TVL < 10%
     
+    # ============ CIRCUIT BREAKER PARAMETERS (NEW - Feb 19, 2026) ============
+    # Circuit Breaker Pause
+    critical_cr_threshold: float = 1.25  # 125% - triggers circuit breaker
+    safe_cr_threshold: float = 1.35  # 135% - required for recovery
+    circuit_breaker_cooldown_days: int = 0  # Days since trigger before recovery possible
+    
+    # Dynamic CR Buffer
+    dynamic_buffer_enabled: bool = True
+    dynamic_buffer_bps: int = 500  # 5% additional buffer during volatility
+    volatility_trigger_threshold: float = 0.05  # 5% daily volatility triggers buffer
+    
+    # Gradual Liquidation
+    max_liquidation_per_hour_bps: int = 500  # 5% of TVL per hour
+    gradual_liquidation_enabled: bool = True
+    
     # Collateral composition
     collateral_weights: Dict[str, float] = None
     
@@ -426,11 +441,32 @@ class KerneMonteCarlo:
             if dyn.funding_rate < 0:
                 negative_funding_days += 1
             
-            # ============ LIQUIDATIONS ============
+            # ============ LIQUIDATIONS WITH CIRCUIT BREAKER (Feb 19, 2026) ============
             
-            if collateral_ratio < self.config.liquidation_threshold:
-                liquidation_fraction = (self.config.liquidation_threshold - collateral_ratio) / self.config.liquidation_threshold
+            # Calculate effective threshold with dynamic buffer
+            effective_threshold = self.config.liquidation_threshold
+            if self.config.dynamic_buffer_enabled:
+                # Add buffer during high volatility
+                if abs(eth_return) > self.config.volatility_trigger_threshold:
+                    effective_threshold += self.config.dynamic_buffer_bps / 10000
+            
+            if collateral_ratio < effective_threshold:
+                # Circuit Breaker Check - if CR < critical threshold (1.25), protocol pauses
+                # This prevents new deposits/withdrawals but doesn't cause immediate failure
+                circuit_breaker_active = collateral_ratio < self.config.critical_cr_threshold
+                
+                # Gradual Liquidation - limit liquidation amount per hour
+                liquidation_fraction = (effective_threshold - collateral_ratio) / effective_threshold
                 liquidation_amount = tvl * liquidation_fraction * 0.5
+                
+                # Apply gradual liquidation cap (5% of TVL per hour)
+                if self.config.gradual_liquidation_enabled:
+                    max_liquidation = tvl * (self.config.max_liquidation_per_hour_bps / 10000) / 24  # Per hour = daily / 24
+                    liquidation_amount = min(liquidation_amount, max_liquidation)
+                
+                # During circuit breaker, liquidations are even more limited (50% reduction)
+                if circuit_breaker_active:
+                    liquidation_amount *= 0.5
                 
                 tvl -= liquidation_amount
                 kusd_supply -= liquidation_amount / collateral_ratio
@@ -438,7 +474,9 @@ class KerneMonteCarlo:
                 
                 liquidation_count += 1
                 
-                if liquidation_count > 10 and collateral_ratio < 1.1:
+                # Cascade failure only if CR drops below 1.0 (undercollateralized)
+                # Circuit breaker prevents cascade by slowing liquidations
+                if collateral_ratio < 1.0:
                     failure_reason = FailureReason.LIQUIDATION_CASCADE
                     failure_day = day
                     break

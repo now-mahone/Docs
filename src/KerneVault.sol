@@ -146,6 +146,34 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     /// @notice Whether price circuit breaker is triggered
     bool public priceCircuitBreakerTriggered;
 
+    // ============================================================
+    //                LIQUIDATION CASCADE PREVENTION
+    // ============================================================
+    
+    /// @notice Whether the collateral ratio circuit breaker is active
+    bool public crCircuitBreakerActive;
+    
+    /// @notice Critical collateral ratio threshold (1.25x = 125%)
+    uint256 public constant CRITICAL_CR_THRESHOLD = 12500; // 1.25x in basis points
+    
+    /// @notice Safe collateral ratio for recovery (1.35x = 135%)
+    uint256 public constant SAFE_CR_THRESHOLD = 13500; // 1.35x in basis points
+    
+    /// @notice Timestamp when circuit breaker was triggered
+    uint256 public crCircuitBreakerTriggeredAt;
+    
+    /// @notice Minimum time before circuit breaker can recover (4 hours)
+    uint256 public crCircuitBreakerCooldown = 4 hours;
+    
+    /// @notice Dynamic collateral buffer during stress (in basis points)
+    uint256 public dynamicCRBuffer;
+    
+    /// @notice Maximum liquidation per hour as percentage of TVL (500 = 5%)
+    uint256 public maxLiquidationPerHourBps = 500;
+    
+    /// @notice Track liquidations per hour
+    mapping(uint256 => uint256) public hourlyLiquidationAmounts;
+
     struct WithdrawalRequest {
         uint256 assets;
         uint256 shares;
@@ -178,6 +206,12 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     event PriceOracleUpdated(address indexed oldOracle, address indexed newOracle);
     event PriceCircuitBreakerTriggered(uint256 recordedPrice, uint256 attemptedPrice);
     event PriceCircuitBreakerReset();
+    
+    // --- Liquidation Cascade Prevention Events ---
+    event CRCircuitBreakerTriggered(uint256 cr, uint256 timestamp);
+    event CRCircuitBreakerRecovered(uint256 cr, uint256 timestamp);
+    event DynamicBufferUpdated(uint256 oldBuffer, uint256 newBuffer);
+    event LiquidationRateLimited(uint256 attempted, uint256 allowed, uint256 hour);
 
     /**
      * @param asset_ The underlying asset (e.g., WETH or USDC)
@@ -1093,5 +1127,114 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     /// @return True if price oracle is set and circuit breaker not triggered
     function isPriceOracleOperational() external view returns (bool) {
         return address(priceOracle) != address(0) && !priceCircuitBreakerTriggered;
+    }
+
+    // ============================================================
+    //                LIQUIDATION CASCADE PREVENTION FUNCTIONS
+    // ============================================================
+    
+    /// @notice Modifier to block operations during CR circuit breaker
+    modifier notInCRCircuitBreaker() {
+        require(!crCircuitBreakerActive, "CR circuit breaker active");
+        _;
+    }
+    
+    /// @notice Check and update CR circuit breaker state
+    /// @dev Called internally before critical operations
+    function _checkCRCircuitBreaker() internal {
+        uint256 cr = getSolvencyRatio();
+        
+        if (!crCircuitBreakerActive) {
+            // Check if we should trigger
+            if (cr < CRITICAL_CR_THRESHOLD) {
+                crCircuitBreakerActive = true;
+                crCircuitBreakerTriggeredAt = block.timestamp;
+                _pause();
+                emit CRCircuitBreakerTriggered(cr, block.timestamp);
+            }
+        } else {
+            // Check if we can recover
+            // Must be above safe threshold AND cooldown period must have passed
+            if (cr >= SAFE_CR_THRESHOLD && 
+                block.timestamp >= crCircuitBreakerTriggeredAt + crCircuitBreakerCooldown) {
+                crCircuitBreakerActive = false;
+                crCircuitBreakerTriggeredAt = 0;
+                _unpause();
+                emit CRCircuitBreakerRecovered(cr, block.timestamp);
+            }
+        }
+    }
+    
+    /// @notice Get the effective collateral ratio including dynamic buffer
+    /// @return The effective CR threshold in basis points
+    function getEffectiveCRThreshold() public view returns (uint256) {
+        return CRITICAL_CR_THRESHOLD + dynamicCRBuffer;
+    }
+    
+    /// @notice Update dynamic CR buffer based on market volatility
+    /// @param volatilityBps Market volatility in basis points (e.g., 500 = 5%)
+    function updateDynamicBuffer(uint256 volatilityBps) external onlyRole(STRATEGIST_ROLE) {
+        uint256 oldBuffer = dynamicCRBuffer;
+        
+        // If volatility > 5%, add buffer
+        if (volatilityBps > 500) {
+            // Scale buffer: 5-10% vol = 500 bps buffer, 10%+ = 1000 bps buffer
+            dynamicCRBuffer = volatilityBps > 1000 ? 1000 : 500;
+        } else {
+            dynamicCRBuffer = 0;
+        }
+        
+        if (oldBuffer != dynamicCRBuffer) {
+            emit DynamicBufferUpdated(oldBuffer, dynamicCRBuffer);
+        }
+    }
+    
+    /// @notice Check if liquidation is allowed within rate limits
+    /// @param amount The amount to liquidate
+    /// @return allowed Whether the liquidation is allowed
+    /// @return maxAllowed The maximum allowed liquidation amount
+    function canLiquidate(uint256 amount) public view returns (bool allowed, uint256 maxAllowed) {
+        uint256 hour = block.timestamp / 3600;
+        uint256 alreadyLiquidated = hourlyLiquidationAmounts[hour];
+        uint256 tvl = totalAssets();
+        
+        maxAllowed = (tvl * maxLiquidationPerHourBps) / 10000;
+        allowed = (alreadyLiquidated + amount) <= maxAllowed;
+    }
+    
+    /// @notice Record a liquidation for rate limiting
+    /// @param amount The amount liquidated
+    function _recordLiquidation(uint256 amount) internal {
+        uint256 hour = block.timestamp / 3600;
+        hourlyLiquidationAmounts[hour] += amount;
+    }
+    
+    /// @notice Set CR circuit breaker parameters
+    /// @param _cooldown Minimum time before recovery (in seconds)
+    function setCRCircuitBreakerParams(uint256 _cooldown) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_cooldown >= 1 hours && _cooldown <= 24 hours, "Invalid cooldown");
+        crCircuitBreakerCooldown = _cooldown;
+    }
+    
+    /// @notice Set max liquidation per hour rate
+    /// @param _bps Maximum liquidation per hour in basis points
+    function setMaxLiquidationPerHour(uint256 _bps) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_bps >= 100 && _bps <= 2000, "Invalid rate"); // 1% to 20%
+        maxLiquidationPerHourBps = _bps;
+    }
+    
+    /// @notice Force recover CR circuit breaker (admin only, for emergencies)
+    function forceRecoverCRCircuitBreaker() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(crCircuitBreakerActive, "Not active");
+        crCircuitBreakerActive = false;
+        crCircuitBreakerTriggeredAt = 0;
+        if (paused()) _unpause();
+        emit CRCircuitBreakerRecovered(getSolvencyRatio(), block.timestamp);
+    }
+    
+    /// @notice Check if CR circuit breaker is active
+    /// @return Whether the circuit breaker is currently triggered
+    function isCRCircuitBreakerActive() external view returns (bool) {
+        return crCircuitBreakerActive;
     }
 }
