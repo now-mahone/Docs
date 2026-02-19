@@ -1,5 +1,13 @@
 # Kerne Protocol - Project State Log
 
+[2026-02-19 05:47] - Idle Capital Yield Capture - ROLLED BACK
+- Created then rolled back bot/aave_integration.py
+- Rolled back bot/capital_router.py to original state
+- Reason: Economically net-negative for current use case
+- Gas costs (~$0.45-1.80) exceed yield earned in 30-second bridge wait (~$0.0003)
+- Documented at docs/research/IDLE_CAPITAL_YIELD_CAPTURE.md for future reference
+- Revisit when: idle times >5 min, or gas <$0.10/TX, or capital >$50K per move
+
 <<<<<<< HEAD
 ## 2026-02-17 14:26 - Updated Terminal Page Sharpe Ratio
 **Status**: âœ… Complete
