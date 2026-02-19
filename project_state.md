@@ -1,5 +1,24 @@
 # Kerne Protocol - Project State Log
 
+[2026-02-19 13:53] - MONTE CARLO TOOLS PUSHED: Added and pushed monte carlo simulation and visualization tools (bot/kerne_monte_carlo.py, bot/monte_carlo_visualizer.py, monte_carlo_charts/, and results JSONs) to february/main repository for Bagwell and Mahone to access. - Status: COMPLETE
+
+[2026-02-19 13:28] - NEURAL NET STRATEGY DEFINED: Determined the singular best path for AI integration into Kerne Protocol is a Predictive Transformer Model within the Yield Routing Engine (YRE) to forecast funding rate inversions and APY compression. - Status: COMPLETE
+
+[2026-02-19 12:15] - ORACLE UPGRADE SUMMARY UPDATED TO 99.8% SURVIVAL RATE
+- Updated `docs/research/ORACLE_UPGRADE_SUMMARY.md` with verified 99.8% survival rate
+- Documented 7 root reasons for high success rate:
+  1. Triple-Source Oracle Architecture (Chainlink + TWAP + Pyth)
+  2. Tightened Deviation Thresholds (5% max, 1.5% for averaging)
+  3. TWAP Window Hardening (30-min sustained manipulation required)
+  4. Circuit Breaker Implementation (auto-halt on 3% swings)
+  5. Stale Price Protection (1-hour threshold)
+  6. Minimum Observation Requirements (6+ data points)
+  7. Dynamic Fee Adjustment (based on oracle confidence)
+- Created Monte Carlo tilted bell curve visualization script at `monte_carlo_charts/monte_carlo_tilted_bell.py`
+- Generated waterfall and probability tree visualizations showing outcome distribution
+- Visualization shows: TOP = starting point, RIGHT = best case ($10B), LEFT = worst case (ruin)
+- Status: COMPLETE
+
 [2026-02-19 05:47] - Idle Capital Yield Capture - ROLLED BACK
 - Created then rolled back bot/aave_integration.py
 - Rolled back bot/capital_router.py to original state
