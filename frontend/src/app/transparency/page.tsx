@@ -345,15 +345,15 @@ export default function TransparencyPage() {
 
                 {/* Visualization - Spans 2x2 */}
                 <div className="md:col-span-2 md:row-span-2 p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col relative">
-                  <div className="flex justify-between items-start mb-6">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-start gap-4 md:gap-0 mb-6">
                     <div className="text-left">
                       <h3 className="font-heading font-medium tracking-tight text-[#ffffff] mb-1">Risk Distribution</h3>
                     </div>
                     {/* Legend */}
-                    <div className="flex flex-col items-end gap-1 shrink-0">
+                    <div className="flex flex-col items-start md:items-end gap-1 shrink-0">
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] text-[#aab9be] uppercase font-medium tracking-widest">Density</span>
-                        <div className="flex gap-0 h-2 w-24 md:w-32 rounded-[1px] overflow-hidden">
+                        <div className="flex gap-0 h-2 w-32 rounded-[1px] overflow-hidden">
                           {Array.from({ length: 50 }).map((_, i) => (
                             <div 
                               key={i} 
@@ -363,7 +363,7 @@ export default function TransparencyPage() {
                           ))}
                         </div>
                       </div>
-                      <div className="flex justify-between w-24 md:w-32 text-[10px] text-[#aab9be] font-medium px-0.5">
+                      <div className="flex justify-between w-32 text-[10px] text-[#aab9be] font-medium px-0.5">
                         <span>Low</span>
                         <span>High</span>
                       </div>
