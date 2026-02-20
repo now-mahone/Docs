@@ -1,25 +1,25 @@
-# Introduction
+# Kerne Protocol: Institutional Yield Infrastructure
 
-Welcome to Kerne Protocol: The future of onchain yield.
+Kerne is the definitive financial layer for the Base ecosystem, engineered for maximum capital efficiency through mathematical precision.
 
 ## What is Kerne?
 
-Kerne is an institutional grade, delta neutral infrastructure designed to generate maximum capital efficiency and yield in the DeFi ecosystem. Built on the shoulders of giants and optimized for the "Restaking" meta, Kerne acts as a financial layer that absorbs capital by offering higher yields than underlying base layers through mathematical precision and game theoretic incentives.
+Kerne is an institutional-grade, delta-neutral infrastructure designed to generate superior yield. Optimized for the "Restaking" meta, Kerne acts as a financial layer that optimizes capital by offering higher yields than underlying base layers through rigorous risk management and strategic game-theoretic incentives.
 
-## The Mission
+## Objective
 
-Our mission is simple: Achieve $1B+ TVL and protocol dominance by Q4 2026.
+**$1B+ TVL. Protocol Dominance. Maximum Capital Efficiency.**
 
-Kerne achieves this by:
+Kerne achieves this through:
 
-**Delta Neutral Yield Generation:** Combining LST staking yields with CEX based funding rate capture.
+**Delta-Neutral Yield Generation:** Systematic capture of LST staking yields and CEX-based funding rates.
 
-**Leveraged Yield Loops:** Allowing users to recursively loop their liquidity to maximize capital efficiency.
+**Leveraged Yield Loops:** Automated recursive liquidity looping to maximize capital velocity and efficiency.
 
-**Intent Based Execution (ZIN):** Capturing market spreads through our Zero Fee Intent Network.
+**Intent-Based Execution (ZIN):** Capturing market spreads through our Zero-Fee Intent Network.
 
-**Institutional Security:** Implementing the "Glass House Standard" for transparency and autonomous safety guardrails (Sentinel).
+**Institutional Enforcement:** The "Glass House Standard" for transparency and autonomous risk management (Sentinel).
 
 ## Core Philosophy
 
-Kerne is not just a product; it is a financial machine. Every architectural decision is driven by the goal of maximizing protocol growth and owner wealth. We don't innovate for the sake of it. We integrate tested primitives and weaponize them with superior economic policy.
+Kerne is more than a product; it is a financial engine. Every architectural decision is driven by a singular goal: maximizing protocol growth and capital results. We prioritize the integration of tested primitives, enhanced by superior economic policy.

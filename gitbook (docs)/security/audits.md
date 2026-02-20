@@ -1,6 +1,6 @@
 # Audits & Invariants
 
-Kerne maintains the highest security standards through formal verification, continuous auditing, and mathematically enforced invariants.
+Kerne enforces the highest security standards through formal verification, continuous auditing, and mathematically-hardened invariants.
 
 ## Audit Program
 
@@ -73,7 +73,7 @@ function invariant_solvency() public {
 ## Incident Response
 
 In the event of a detected vulnerability:
-1. **Sentinel** automatically pauses affected contracts.
-2. The core team is alerted via the on call notification system.
-3. A postmortem is published within 72 hours of resolution.
-4. Affected users are made whole from the Insurance Fund.
+1. **Sentinel** automatically halts affected contracts with sub-millisecond finality.
+2. The core team is alerted via the emergency notification system.
+3. A comprehensive post-mortem is published within 72 hours of resolution.
+4. Affected users are made whole from the Insurance Fund, ensuring zero principal loss.

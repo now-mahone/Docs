@@ -1,10 +1,10 @@
-# Delta Neutral Hedging Engine
+# Delta-Neutral Hedging Engine
 
-The heart of Kerne's yield generation is its **Delta Neutral Hedging Engine**. This offchain system ensures that the protocol remains market neutral while capturing premium yields.
+The core of Kerne's yield generation is the **Delta-Neutral Hedging Engine**. This off-chain system ensures the protocol remains market-neutral while systematically capturing premium yields.
 
-## Strategy: The Funding Arb
+## Strategy: Funding Rate Optimization
 
-The engine exploits the spread between onchain staking yields and offchain perpetual funding rates.
+The engine exploits the spread between onchain staking yields and off-chain perpetual funding rates.
 
 1. **Long Position**: Kerne holds physical ETH or LSTs (like stETH) onchain, earning ~3-4% APR from Ethereum consensus.
 2. **Short Position**: The engine opens a 1x short position on a Perpetual Exchange (e.g., Hyperliquid) for an equivalent amount of ETH.
@@ -24,4 +24,4 @@ The risk management core. It performs submillisecond VaR (Value at Risk) analysi
 
 ## Dynamic Leverage: The Scofield Point
 
-Kerne doesn't just hedge 1:1. The engine uses a proprietary model called the **Scofield Point** to optimize leverage. In periods of high funding rates, the engine may increase leverage to maximize return on equity, while maintaining a strict safety buffer in the Insurance Fund.
+Kerne does not settle for 1:1 hedging. The engine utilizes a proprietary model called the **Scofield Point** to optimize leverage. During periods of elevated funding rates, the engine increases leverage to maximize return on equity, while maintaining a strict safety buffer within the Insurance Fund to ensure protocol survival.
