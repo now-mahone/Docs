@@ -353,19 +353,21 @@ export default function TransparencyPage() {
                     <div className="flex flex-col items-start md:items-end gap-1 shrink-0">
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] text-[#aab9be] uppercase font-medium tracking-widest">Density</span>
-                        <div className="flex gap-0 h-2 w-32 rounded-[1px] overflow-hidden">
-                          {Array.from({ length: 50 }).map((_, i) => (
-                            <div 
-                              key={i} 
-                              className="flex-grow h-full" 
-                              style={{ backgroundColor: getHeatmapColor(i / 49) }} 
-                            />
-                          ))}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex gap-0 h-2 w-32 rounded-[1px] overflow-hidden">
+                            {Array.from({ length: 50 }).map((_, i) => (
+                              <div 
+                                key={i} 
+                                className="flex-grow h-full" 
+                                style={{ backgroundColor: getHeatmapColor(i / 49) }} 
+                              />
+                            ))}
+                          </div>
+                          <div className="flex justify-between w-32 text-[10px] text-[#aab9be] font-medium px-0.5">
+                            <span>Low</span>
+                            <span>High</span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex justify-between w-32 text-[10px] text-[#aab9be] font-medium px-0.5">
-                        <span>Low</span>
-                        <span>High</span>
                       </div>
                     </div>
                   </div>
