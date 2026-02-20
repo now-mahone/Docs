@@ -307,12 +307,12 @@ export default function TransparencyPage() {
                   </div>
                 </div>
 
-                {/* Max Drawdown */}
+                {/* Expected Shortfall */}
                 <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
-                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Max Drawdown</div>
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Expected Shortfall</div>
                   <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">2.62%</div>
-                    <div className="text-s text-[#37d097] font-medium">Historical Peak to Trough</div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">3.14%</div>
+                    <div className="text-s text-[#37d097] font-medium">Tail Risk (CVaR 95)</div>
                   </div>
                 </div>
 
