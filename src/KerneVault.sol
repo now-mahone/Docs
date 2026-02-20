@@ -153,8 +153,14 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     /// @notice Whether the collateral ratio circuit breaker is active
     bool public crCircuitBreakerActive;
     
-    /// @notice Critical collateral ratio threshold (1.25x = 125%)
-    uint256 public constant CRITICAL_CR_THRESHOLD = 12500; // 1.25x in basis points
+    /// @notice Whether the yellow alert is currently active
+    bool public yellowAlertActive;
+    
+    /// @notice Red alert collateral ratio threshold (1.25x = 125%)
+    uint256 public constant RED_CR_THRESHOLD = 12500; // 1.25x in basis points
+    
+    /// @notice Yellow alert collateral ratio threshold (1.35x = 135%)
+    uint256 public constant YELLOW_CR_THRESHOLD = 13500; // 1.35x in basis points
     
     /// @notice Safe collateral ratio for recovery (1.35x = 135%)
     uint256 public constant SAFE_CR_THRESHOLD = 13500; // 1.35x in basis points
@@ -208,6 +214,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     event PriceCircuitBreakerReset();
     
     // --- Liquidation Cascade Prevention Events ---
+    event YellowAlertTriggered(uint256 cr, uint256 timestamp);
+    event YellowAlertRecovered(uint256 cr, uint256 timestamp);
+    event RedAlertTriggered(uint256 cr, uint256 timestamp);
     event CRCircuitBreakerTriggered(uint256 cr, uint256 timestamp);
     event CRCircuitBreakerRecovered(uint256 cr, uint256 timestamp);
     event DynamicBufferUpdated(uint256 oldBuffer, uint256 newBuffer);
@@ -447,6 +456,12 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
             if (strict) revert("Vault: Insolvent");
         } else {
             insolventSince = 0;
+        }
+
+        // Check Tiered Circuit Breaker
+        _checkCRCircuitBreaker();
+        if (strict && crCircuitBreakerActive) {
+            revert("CR circuit breaker active");
         }
     }
 
@@ -767,6 +782,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
      * @param assets The amount of assets to withdraw.
      */
     function requestWithdrawal(uint256 assets) external nonReentrant whenNotPaused returns (uint256) {
+        _checkCRCircuitBreaker();
+        require(!crCircuitBreakerActive, "CR circuit breaker active");
+
         uint256 shares = previewWithdraw(assets);
         require(shares > 0, "Zero shares");
         
@@ -1144,12 +1162,24 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     function _checkCRCircuitBreaker() internal {
         uint256 cr = getSolvencyRatio();
         
+        // Handle Yellow Alert (Soft Alert)
+        if (cr < YELLOW_CR_THRESHOLD && !yellowAlertActive) {
+            yellowAlertActive = true;
+            emit YellowAlertTriggered(cr, block.timestamp);
+        } else if (cr >= YELLOW_CR_THRESHOLD && yellowAlertActive) {
+            yellowAlertActive = false;
+            emit YellowAlertRecovered(cr, block.timestamp);
+        }
+
         if (!crCircuitBreakerActive) {
-            // Check if we should trigger
-            if (cr < CRITICAL_CR_THRESHOLD) {
+            // Check if we should trigger Red Alert
+            if (cr < RED_CR_THRESHOLD) {
                 crCircuitBreakerActive = true;
                 crCircuitBreakerTriggeredAt = block.timestamp;
-                _pause();
+                if (!paused()) {
+                    _pause();
+                }
+                emit RedAlertTriggered(cr, block.timestamp);
                 emit CRCircuitBreakerTriggered(cr, block.timestamp);
             }
         } else {
@@ -1159,7 +1189,9 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
                 block.timestamp >= crCircuitBreakerTriggeredAt + crCircuitBreakerCooldown) {
                 crCircuitBreakerActive = false;
                 crCircuitBreakerTriggeredAt = 0;
-                _unpause();
+                if (paused()) {
+                    _unpause();
+                }
                 emit CRCircuitBreakerRecovered(cr, block.timestamp);
             }
         }
@@ -1168,7 +1200,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     /// @notice Get the effective collateral ratio including dynamic buffer
     /// @return The effective CR threshold in basis points
     function getEffectiveCRThreshold() public view returns (uint256) {
-        return CRITICAL_CR_THRESHOLD + dynamicCRBuffer;
+        return RED_CR_THRESHOLD + dynamicCRBuffer;
     }
     
     /// @notice Update dynamic CR buffer based on market volatility
@@ -1236,5 +1268,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     /// @return Whether the circuit breaker is currently triggered
     function isCRCircuitBreakerActive() external view returns (bool) {
         return crCircuitBreakerActive;
+    }
+
+    /// @notice Public function to check and trigger the circuit breaker if needed
+    function updateCircuitBreaker() external {
+        _checkCRCircuitBreaker();
     }
 }

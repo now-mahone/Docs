@@ -52,14 +52,83 @@ contract KerneVaultCircuitBreakerTest is Test {
         
         // Verify initial state
         assertFalse(vault.crCircuitBreakerActive());
-        assertEq(vault.CRITICAL_CR_THRESHOLD(), 12500);
+        assertFalse(vault.yellowAlertActive());
+        assertEq(vault.RED_CR_THRESHOLD(), 12500);
         
         // Simulate CR drop by having strategist report lower off-chain assets
         // (In real scenario, this would happen from price drops)
         // For this test, we verify the constants are set correctly
-        assertEq(vault.CRITICAL_CR_THRESHOLD(), 12500); // 1.25x
+        assertEq(vault.RED_CR_THRESHOLD(), 12500); // 1.25x
+        assertEq(vault.YELLOW_CR_THRESHOLD(), 13500); // 1.35x
         assertEq(vault.SAFE_CR_THRESHOLD(), 13500); // 1.35x
         assertEq(vault.crCircuitBreakerCooldown(), 4 hours);
+    }
+
+    function test_TieredCircuitBreaker_YellowAndRedAlerts() public {
+        // Setup: Admin allows large off-chain updates for testing
+        vm.startPrank(admin);
+        vault.setOffChainUpdateParams(5000, 0); // 50% max change, 0 cooldown
+        vm.stopPrank();
+
+        // User deposits 1000 assets -> 1000 shares
+        vm.startPrank(user);
+        asset.approve(address(vault), 1000 * 10**18);
+        vault.deposit(1000 * 10**18, user);
+        vm.stopPrank();
+
+        // Strategist reports 500 off-chain assets
+        // Total assets = 1000 (on-chain) + 500 (off-chain) = 1500
+        // CR = 1500 / 1000 = 1.5x (15000 bps)
+        vm.startPrank(strategist);
+        vault.updateOffChainAssets(500 * 10**18);
+        vm.stopPrank();
+
+        assertEq(vault.getSolvencyRatio(), 15000);
+        assertFalse(vault.yellowAlertActive());
+        assertFalse(vault.crCircuitBreakerActive());
+
+        // Drop CR to 1.30x (13000 bps) -> Triggers Yellow Alert
+        // Total assets needed = 1300. On-chain = 1000. Off-chain = 300.
+        vm.startPrank(strategist);
+        vault.updateOffChainAssets(300 * 10**18);
+        vm.stopPrank();
+
+        // Call updateCircuitBreaker to trigger checks
+        vault.updateCircuitBreaker();
+
+        assertEq(vault.getSolvencyRatio(), 13000);
+        assertTrue(vault.yellowAlertActive());
+        assertFalse(vault.crCircuitBreakerActive());
+        assertFalse(vault.paused()); // Yellow alert does NOT pause
+
+        // Drop CR to 1.20x (12000 bps) -> Triggers Red Alert
+        // Total assets needed = 1200. On-chain = 1000. Off-chain = 200.
+        vm.startPrank(strategist);
+        vault.updateOffChainAssets(200 * 10**18);
+        vm.stopPrank();
+
+        vault.updateCircuitBreaker();
+
+        assertEq(vault.getSolvencyRatio(), 12000);
+        assertTrue(vault.yellowAlertActive());
+        assertTrue(vault.crCircuitBreakerActive());
+        assertTrue(vault.paused()); // Red alert PAUSES the vault
+
+        // Recover CR to 1.40x (14000 bps) -> Recovers Yellow and Red Alerts
+        // Total assets needed = 1400. On-chain = 1000. Off-chain = 400.
+        vm.startPrank(strategist);
+        vault.updateOffChainAssets(400 * 10**18);
+        vm.stopPrank();
+
+        // Fast forward past cooldown
+        vm.warp(block.timestamp + 5 hours);
+
+        vault.updateCircuitBreaker();
+
+        assertEq(vault.getSolvencyRatio(), 14000);
+        assertFalse(vault.yellowAlertActive());
+        assertFalse(vault.crCircuitBreakerActive());
+        assertFalse(vault.paused()); // Unpaused after recovery
     }
     
     function test_CircuitBreaker_AdminCanForceRecover() public {

@@ -1,12 +1,13 @@
 // Created: 2026-01-04
-// Updated: 2026-01-12 - Institutional Deep Hardening: Automated yield diversion, multi-sig claim logic, and loss socialization
+// Updated: 2026-02-19 - Added automated injection mechanism for 1.30x critical threshold
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity 0.8.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IKerneVault } from "./interfaces/IKerneVault.sol";
 
 /**
  * @title KerneInsuranceFund
@@ -87,6 +88,40 @@ contract KerneInsuranceFund is AccessControl, ReentrancyGuard {
             IERC20(asset).safeTransfer(vault, coverAmount);
             totalCovered += coverAmount;
             emit LossSocialized(vault, coverAmount);
+        }
+    }
+
+    /**
+     * @notice Automatically injects capital into the vault if its collateral ratio drops below the critical threshold (1.30x).
+     * @param vault The address of the KerneVault.
+     */
+    function checkAndInject(address vault) external nonReentrant {
+        require(hasRole(AUTHORIZED_ROLE, vault), "Vault not authorized");
+        
+        IKerneVault kerneVault = IKerneVault(vault);
+        uint256 cr = kerneVault.getSolvencyRatio();
+        
+        // Critical threshold is 1.30x (13000 bps)
+        uint256 criticalThreshold = 13000;
+        
+        if (cr < criticalThreshold) {
+            uint256 liabilities = kerneVault.totalSupply();
+            uint256 currentAssets = kerneVault.totalAssets();
+            
+            // Calculate target assets to reach 1.30x
+            uint256 targetAssets = (liabilities * criticalThreshold) / 10000;
+            
+            if (targetAssets > currentAssets) {
+                uint256 deficit = targetAssets - currentAssets;
+                uint256 balance = IERC20(asset).balanceOf(address(this));
+                uint256 injectAmount = deficit > balance ? balance : deficit;
+                
+                if (injectAmount > 0) {
+                    IERC20(asset).safeTransfer(vault, injectAmount);
+                    totalCovered += injectAmount;
+                    emit LossSocialized(vault, injectAmount);
+                }
+            }
         }
     }
 
