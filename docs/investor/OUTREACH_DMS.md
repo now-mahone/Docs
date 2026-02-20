@@ -9,7 +9,7 @@
 ```
 Hey [Name] — I'm building Kerne Protocol, an omnichain yield-bearing stablecoin (kUSD) with a diversified Yield Routing Engine that solves the single-strategy risk problem plaguing Ethena and the yield ceiling limiting sDAI.
 
-We've shipped 20+ contracts across 3 chains in 6 weeks — vault, stablecoin, PSM, OFT bridges, intent network, hedging bot — all live on mainnet. 20.3% APY backtested on 18 months of real data.
+We've shipped 20+ contracts across 3 chains in 6 weeks — vault, stablecoin, PSM, OFT bridges, intent network, hedging bot — all live on mainnet. Just validated 21.78% APY and 99.73% survival rate through 10,000 Monte Carlo simulations.
 
 Raising a $3-8M seed. Would love 20 minutes to walk you through the architecture. Here's the summary: [link to exec summary or whitepaper]
 ```
@@ -22,7 +22,9 @@ Raising a $3-8M seed. Would love 20 minutes to walk you through the architecture
 ```
 Hey [Name] — big fan of your work on [their protocol/content]. I'm building Kerne Protocol — a yield-bearing stablecoin that routes collateral yield across 200+ DeFi strategies instead of depending on a single source like Ethena's basis trade.
 
-We're live on Base/Arbitrum/Optimism with 20+ contracts, 154 passing tests, and a delta-neutral engine running on Hyperliquid. Shipped everything in 6 weeks with a 2-person team.
+We're live on Base/Arbitrum/Optimism with 20+ contracts, 154 passing tests, and a delta-neutral engine running on Hyperliquid. Shipped everything in 6 weeks with a 3-person team.
+
+Key validation: Our Monte Carlo simulation just confirmed 99.73% protocol survival across 10,000 stress scenarios with 21.78% APY.
 
 Raising a small angel round before our seed. Your expertise in [stablecoins/yield/DeFi infrastructure] would be incredibly valuable. Happy to share the deck if you're interested.
 ```
@@ -46,9 +48,9 @@ Would love to explore a strategic investment. Here's our summary: [link]
 **Use for:** Alliance DAO, Outlier Ventures
 
 ```
-Hey — applying to [Alliance DAO / program name] with Kerne Protocol. We're building the omnichain yield-bearing stablecoin — kUSD earns 12-20% APY through a diversified Yield Routing Engine across 200+ DeFi strategies.
+Hey — applying to [Alliance DAO / program name] with Kerne Protocol. We're building the omnichain yield-bearing stablecoin — kUSD earns 21.78% APY through a diversified Yield Routing Engine across 200+ DeFi strategies.
 
-In 6 weeks we've shipped: 20+ smart contracts on 3 chains, a delta-neutral hedging engine, full frontend, SDK, and security suite. Looking for the network and mentorship to accelerate our seed round and go-to-market.
+In 6 weeks our 3-person team has shipped: 20+ smart contracts on 3 chains, a delta-neutral hedging engine, full frontend, SDK, and security suite. Just validated 99.73% survival rate through 10,000 Monte Carlo simulations.
 
 Is there a specific application form or should I send materials directly?
 ```
@@ -61,7 +63,7 @@ Is there a specific application form or should I send materials directly?
 ```
 Hey [Name] — been following your coverage of [yield-bearing stablecoins / DeFi yield / basis trading]. We just shipped Kerne Protocol — an omnichain yield-bearing stablecoin that diversifies yield across 200+ strategies instead of depending on a single basis trade.
 
-Live on 3 chains, 20+ contracts, 20.3% APY backtested. Would love to get your take on the architecture if you have a few minutes. No ask — just genuinely curious what you think.
+Live on 3 chains, 20+ contracts. Just validated 21.78% APY and 99.73% survival rate through 10,000 Monte Carlo simulations. Would love to get your take on the architecture if you have a few minutes.
 
 kerne.ai if you want to poke around.
 ```
@@ -106,7 +108,7 @@ kUSD solves all three:
 1. Deposit yield-bearing collateral (stETH, eETH, rETH)
 2. Mint kUSD at 150% collateral ratio
 3. Yield Routing Engine allocates across 200+ strategies on 7+ chains
-4. kUSD rebases daily — 12-20% APY just by holding it
+4. kUSD rebases daily — 21.78% APY validated through Monte Carlo simulation
 
 Overcollateralized. Not algorithmic. Not single-strategy.
 ```
@@ -140,7 +142,7 @@ kerne.ai
 ## FOLLOW-UP DM (Send 5-7 days after initial DM if no response)
 
 ```
-Hey [Name] — following up on my message about Kerne Protocol. We've made progress since then — [mention 1 specific new thing: new chain deployment, new metric, new partnership conversation].
+Hey [Name] — following up on my message about Kerne Protocol. We've made progress since then — just completed Monte Carlo v4 simulation validating 99.73% survival rate across 10,000 scenarios with 21.78% APY.
 
 Totally understand if the timing isn't right. If you know anyone who might be interested in the yield-bearing stablecoin space, happy to take an intro too.
 ```

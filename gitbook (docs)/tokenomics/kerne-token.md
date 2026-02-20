@@ -1,22 +1,22 @@
 # KERNE Token
 
-The **KERNE** token is the core governance and value capture asset of the protocol.
+The **KERNE** token is the definitive governance and value-capture asset of the protocol.
 
 ## Utility
 
-1. **Governance**: Token holders vote on protocol parameters, including fee structures, supported LSTs, and AVS (Actively Validated Service) selection in the restaking layer.
-2. **Fee Capture**: A portion of all protocol revenue (yield splits, withdrawal fees, spread capture from ZIN) is used to buy back KERNE from the market.
-3. **Staking Rewards**: Staked KERNE holders receive a share of the buybacks and "bribe" revenue from AVS projects seeking to access Kerne's liquidity.
-4. **Safety Backstop**: In extreme cases, KERNE may be used as a final backstop for protocol solvency.
+1. **Governance**: Token holders dictate protocol parameters, including fee structures, collateral whitelisting, and AVS (Actively Validated Service) selection.
+2. **Revenue Capture**: A significant portion of all protocol revenue (yield splits, ZIN spread capture) is utilized to buy back KERNE from the open market.
+3. **Staking Rewards**: Staked KERNE holders receive a direct share of buybacks and "bribe" revenue from AVS projects competing for Kerne's liquidity.
+4. **Safety Backstop**: In extreme scenarios, KERNE serves as the final backstop for protocol solvency, ensuring the integrity of the synthetic dollar.
 
 ## The Buyback Flywheel
 
-Kerne implements a self reinforcing economic loop:
-1. Protocol generates revenue (in ETH/USDC).
-2. `KerneTreasury` uses revenue to buy back KERNE on Aerodrome.
-3. Purchased KERNE is distributed to stakers or burned.
-4. Token price rises, increasing the APY for liquidity providers (who earn KERNE).
-5. Higher APY attracts more TVL, generating more revenue and completing the loop.
+Kerne implements a self-reinforcing economic loop designed for exponential growth:
+1. Protocol extracts revenue (ETH/USDC).
+2. `KerneTreasury` utilizes revenue to buy back KERNE on Aerodrome.
+3. Purchased KERNE is distributed to stakers or burned, reducing circulating supply.
+4. Token price appreciation increases the APY for liquidity providers.
+5. Higher APY absorbs more TVL, generating more revenue and accelerating the flywheel.
 
 ## Supply & Distribution
 

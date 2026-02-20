@@ -1,16 +1,16 @@
-# Zero Fee Intent Network (ZIN)
+# Zero-Fee Intent Network (ZIN)
 
-The **Zero Fee Intent Network (ZIN)** transforms Kerne from a passive yield vault into a primary execution engine for high volume trading on networks like Base and Arbitrum.
+The **Zero-Fee Intent Network (ZIN)** transforms Kerne from a passive yield vault into a primary execution engine for high-volume trading on Base and Arbitrum.
 
 ## The Concept
 
-ZIN allows authorized "Solvers" to access Kerne's internal liquidity (ETH, USDC, LSTs) via **Zero Fee Flash Loans** to fulfill user intents (swaps, limit orders) on platforms like CowSwap and UniswapX.
+ZIN empowers authorized "Solvers" to utilize Kerne's internal liquidity (ETH, USDC, LSTs) via **Zero-Fee Flash Loans** to fulfill user intents (swaps, limit orders) across the DeFi ecosystem.
 
 ## Why ZIN?
 
-1. **Spread Capture**: Instead of letting external liquidity providers (like Aave or Uniswap LPs) capture the spread on intents, Kerne uses its own liquidity to fulfill the trade and captures the spread for the protocol.
-2. **Capital Efficiency**: Idle liquidity in the vaults, which would otherwise be sitting dormant while hedged, is put to work in the intent market.
-3. **Organic Awareness**: Every trade filled by the network is tagged as "Filled by Kerne," creating a massive social footprint and organic user acquisition.
+1. **Spread Capture**: Instead of allowing external liquidity providers to extract value, Kerne utilizes its own liquidity to fulfill trades, capturing the spread for the protocol.
+2. **Capital Velocity**: Idle liquidity in the vaults is utilized in the intent market, maximizing capital efficiency while maintaining a hedged position.
+3. **Market Presence**: Every trade filled by the network is tagged as "Filled by Kerne," establishing a significant social footprint and driving organic protocol awareness.
 
 ## Architecture
 
