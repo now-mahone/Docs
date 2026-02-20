@@ -26,7 +26,15 @@
 - **Twitter Workflow:** Every 2-3 days, Cline must check `project_state.md`, draft a "Twitter-friendly" update based on recent milestones (no sensitive data), and remind Bagwell to post it as per `docs/guides/TWITTER_POSTING_WORKFLOW.md`. **CRITICAL:** Drafts must be generated in real-time during the session, never pre-drafted.
 - **File Headers:** When creating a NEW file, add a comment at the top: `// Created: [YYYY-MM-DD]`.
 
-## 4. AUTONOMY PROTOCOL
+## 4. TEAM ROLES
+**Predominant Roles:** Each team member has a primary area of focus, but all members collaborate across disciplines to advance the company.
+- **Scofield:** Head of Kerne (Overall leadership, strategy, and technical architecture)
+- **Mahone:** Head of Operations (Day-to-day execution, compliance, and project management)
+- **Bagwell:** Head of Business Development / Growth (Marketing, partnerships, and revenue acquisition)
+- **Abruzzi:** Head of Community / Partnerships / Client Relations (Community management, external relations, and partnerships)
+- **Note:** Despite these predominant roles, the team works collectively to develop and further the company going forward. Role boundaries are flexible and all members contribute across domains as needed.
+
+## 5. AUTONOMY PROTOCOL
 - **Action:** Maximize autonomy by identifying, designing, and executing entire autonomous systems and processes that eliminate the need for manual user intervention.
 - **Scope:** This includes, but is not limited to:
     - **Autonomous Outreach:** Identifying target institutions, selecting key personnel (3-6 per entity), and executing tailored contact strategies (e.g., forum submissions, social engineering, direct outreach) designed to maximize conversion without triggering internal collision alerts.

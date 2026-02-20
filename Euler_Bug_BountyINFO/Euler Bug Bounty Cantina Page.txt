@@ -1,0 +1,279 @@
+Euler V2 is a modular lending platform with two main components at launch: 1) the Euler Vault Kit (EVK), which empowers builders to deploy and chain together their own customised lending vaults in a permissionless manner; and 2) the Ethereum Vault Connector (EVC), a powerful, immutable, primitive which give vaults superpowers by allowing their use as collateral for other vaults. Together, the EVK and EVC provide the flexibility to build or recreate any type of pre-existing or future-state lending product inside the Euler ecosystem.
+
+Euler Vault Kit:
+The Euler Vault Kit is a system for constructing credit vaults. Credit vaults are ERC-4626 vaults with added borrowing functionality. Unlike typical ERC-4626 vaults which earn yield by actively investing deposited funds, credit vaults are passive lending pools.
+
+Ethereum Vault Connector
+The Ethereum Vault Connector (EVC) is a foundational layer designed to facilitate the core functionality required for a lending market. It serves as a base building block for various protocols, providing a robust and flexible framework for developers to build upon. The EVC primarily mediates between vaults, contracts that implement the ERC-4626 interface and contain additional logic for interfacing with other vaults. The EVC not only provides a common base ecosystem but also reduces complexity in the core lending/borrowing contracts, allowing them to focus on their differentiating factors.
+
+Euler Price Oracle:
+Euler Price Oracle is a library of modular oracle adapters and components that implement IPriceOracle, an opinionated quote-based interface. It supports Chainlink, Chronicle, RedStone Core and Pyth through minimal, immutable adapter contracts. The EulerRouter component is a dispatcher contract that maintains a configuration of resolver oracles with an optional fallback. The router can price ERC4626 shares to assets through convertToAsset, making it a convenient entry point contract for EVK pricing.
+
+Reward Streams:
+Reward Streams is a powerful and flexible implementation of the billion-dollar algorithm, a popular method for proportional reward distribution in the Ethereum developer community. This project extends the algorithm's functionality to support both staking and staking-free (based on balance changes tracking) reward distribution, multiple reward tokens, and permissionless registration of reward distribution schemes (reward streams). This makes Reward Streams a versatile tool for incentivizing token staking and holding in a variety of use cases.
+
+Fee Flow:
+Fee Flow is an efficient, decentralized, and MEV-resistant mechanism designed to convert fee assets to a single token. It operates using a continuous auto-adjusting Dutch auction mechanism, providing a secure and optimized way to handle fee conversions in blockchain applications. This component helps streamline token economics by efficiently managing the flow of transaction fees across various assets.
+
+Euler Earn:
+Euler Earn is an open source protocol for permissionless risk curation on top of ERC4626 vaults (strategies). It functions as an ERC4626 vault itself, allowing risk curators to deploy vaults through its factory. Each vault supports one loan asset and can allocate deposits across multiple strategies. The protocol offers noncustodial, immutable instances that provide users with a streamlined way to supply liquidity and earn passive yield. While initially designed to integrate with the EVK vaults, Euler Earn can work with any ERC4626-compliant vault.
+
+EulerSwap:
+EulerSwap is an automated market maker (AMM) built on top of the Euler Vault Kit (EVK) and Ethereum Vault Connector (EVC). It allows liquidity providers to earn swap fees, lending yield, and borrow against their positions within a single account. Each instance is controlled by a single operator, enabling full flexibility over liquidity strategy and AMM configuration. EulerSwap introduces just-in-time (JIT) liquidity, a mechanism that lets vaults borrow output tokens at the time of swap using the input token and vault collateral. This design enables deep liquidity with minimal capital and supports single-sided, asymmetric, and concentrated liquidity strategies. EulerSwap is compatible with Uniswap v4 hooks and offers a composable foundation for capital-efficient trading.
+
+Eligibility
+To qualify for a reward under this program, you must:
+
+Identify a previously unknown, non-public vulnerability that hasn't been reported before and is within the program's scope.
+Be the first to report the distinct vulnerability, adhering to the disclosure guidelines.
+Provide detailed information that allows our engineers to replicate and resolve the vulnerability.
+Avoid exploiting the vulnerability in any manner, including making it public or profiting from it (except for the program's reward).
+Report the vulnerability privately to us without public disclosure.
+Make every effort to prevent privacy breaches, data destruction, or interruption of the in-scope assets.
+Ensure the vulnerability isn't caused by an underlying issue that has already received a reward under this program.
+Refrain from any illegal activities when disclosing the bug, such as using threats or coercion.
+Be at least 18 years old or, if under 18, submit your finding with parental or guardian consent.
+Not be subject to OFAC sanctions or reside in a country under OFAC embargo.
+Not be a current or former employee, or a vendor or contractor involved in the code's development of the reported bug.
+Adhere to all the program's eligibility requirements.
+Scope
+This bug bounty focuses on the vaults, and contracts they directly rely on, which are smart contract addresses returned by the verifiedArray() function of the following default perspectives:
+
+Escrowed Collateral Perspective
+Euler Ungoverned 0x Perspective
+Governed Perspective
+Euler Ungoverned nzx Perspective
+Euler Earn Governed Perspective
+Network Addresses
+For the most up-to-date deployment addresses across various networks, please refer to the Euler Docs Contract Addresses. This website serves as the central source of truth for all network-specific addresses.
+
+Steps for Security Researchers
+Access the Documentation: Visit the Euler Docs Contract Addresses to view all available network tabs.
+Identify Relevant Networks: Explore the tabs to identify the addresses that fall within the scope of the bug bounty.
+Stay Updated: Regularly check the website for new network additions, as they are automatically included in the bounty scope.
+This approach allows us to ensure that security researchers have access to the most current network addresses that are in scope and can adapt to new deployments as they occur.
+
+Example: Ethereum Mainnet
+For Ethereum Mainnet, the addresses are detailed in the Ethereum Mainnet Tab Euler Docs Contract Addresses. Key addresses include:
+
+Escrowed Collateral Perspective: 0x4e58BBEa423c4B9A2Fc7b8E58F5499f9927fADdE
+Euler Ungoverned 0x Perspective: 0xb50a07C2B0F128Faa065bD18Ea2091F5da5e7FbF
+Euler Ungoverned nzx Perspective: 0x600bBe1D0759F380Fea72B2e9B2B6DCb4A21B507
+Governed Perspective: 0xC0121817FF224a018840e4D15a864747d36e6Eb2
+Euler Earn Governed Perspective: 0x492e9FE1289d43F8bB6275237BF16c9248C74D44
+Fee Flow: 0xFcd3Db06EA814eB21C84304fC7F90798C00D1e32
+Balance Tracker (Reward Streams): 0x0D52d06ceB8Dcdeeb40Cfd9f17489B350dD7F8a3
+EulerSwap: 0xb013be1D0D380C13B58e889f412895970A2Cf228
+Repositories in Scope
+Only the contracts in the master/main branch of the following repositories that the above DEPLOYED vaults directly rely on are in scope:
+
+Ethereum Vault Connector
+Euler Vault Kit
+Euler Price Oracle
+Reward Streams
+Fee Flow
+Euler Earn
+EulerSwap
+Note: - For Ethereum Mainnet and Base please refer to this commit deployment Euler Vault Kit Mainnet/Base and for any other network Euler Vault Kit
+Websites in Scope
+Only the following site is in scope https://app.euler.finance
+Severity Definitions
+Smart Contracts Severity Levels
+Severity level	Impact: High	Impact: Medium	Impact: Low
+Likelihood:high	High	High	Medium
+Likelihood:medium	High	Medium	-
+Likelihood:low	Medium	-	-
+High: These can drastically affect many users and result in major reputational, legal, or financial damage. Examples include the ability to permanently lock contracts or withdraw funds from all users. These could also mean broken core functionality.
+
+Medium: These may result in loss of funds for users but under certain conditions and are not easy to perform. Also the reward to cost ratio is not large enough but still need to be fixed. Breaking of functionality or resulting in a DOS of funds for users
+
+Website Severity Levels
+High
+
+Remote code execution
+Unauthorized access to sensitive user data
+Ability to perform actions as a privileged user
+SQL injection
+Cross-Site Scripting (XSS) with significant impact
+Authentication bypass
+Medium
+
+Cross-Site Request Forgery (CSRF)
+Server-side request forgery
+Sensitive information disclosure
+Rewards
+Core Components Rewards
+These rewards apply to vulnerabilities found in the core components of Euler V2 (EVC, EVK, EPO). The bug bounty focuses specifically on the vaults, and contracts they directly rely on, which are smart contract addresses returned by the verifiedArray() function of the perspective contracts (Escrowed Collateral, Ungoverned 0x, Ungoverned nzx, and Governed).
+
+Severity Level	Reward
+High	$5,000,000.00
+Medium	$200,000.00
+Core Components Reward Levels
+High: Up to $5,000,000.00 USD, minimum payout $200,000.00 USD
+First $2,500,000.00 paid in USDC
+Next $2,500,000.00 paid in rEUL
+Medium: Up to $200,000.00 USD, minimum payout $50,000.00 USD
+Notes:
+
+Rewards are calculated as 10% of their economic impact.
+The team may adjust the program after a high-severity payout to ensure sustainability.
+rEUL token is valued using a retrospective 30-day volume-weighted average price (TWAP) of EUL on CoinMarketCap from the date of the disclosure.
+Examples:
+
+A $1,250,000.00 reward would be paid entirely in USDC.
+A $3,500,000.00 reward would be paid as $2,500,000.00 in USDC and $1,000,000.00 in rEUL
+Boosted Rewards for Usual Stability Loan Vaults
+If a vulnerability qualifies for the Euler Core Components Rewards and also affects the Usual Stability Loan (USL) vaults, Usual have generously offered to increase the reward by an additional $2.5 million in USUAL tokens. This brings the total potential reward to $7.5 million.
+
+Vaults included
+The USL vaults on Ethereum Mainnet:
+
+USD0++: 0xF037eeEBA7729c39114B9711c75FbccCa4A343C8
+USD0: 0xd001f0a15D272542687b2677BA627f48A4333b5d
+Severity Level	Reward
+High	$7,500,000.00
+Medium	$200,000.00
+Core Components Reward Levels
+High: Up to $7,500,000.00 USD, minimum payout $200,000.00 USD
+First $2,500,000.00 paid in USDC
+Next $2,500,000.00 paid in rEUL
+Next $2,500,000.00 paid in USUAL
+Medium: Up to $200,000.00 USD, minimum payout $50,000.00 USD
+Notes:
+
+Rewards are calculated as 10% of their economic impact.
+The team may adjust the program after a high-severity payout to ensure sustainability.
+Any rEUL or USUAL tokens will be priced using their respective retrospective 30-day volume-weighted TWAPs on CoinMarketCap from the date of the disclosure.
+Examples:
+
+A $1,250,000.00 reward would be paid entirely in USDC.
+A $3,500,000.00 reward would be paid as $2,500,000.00 in USDC and $1,000,000.00 in rEUL
+A $5,500,000.00 reward would be paid as $2,500,000.00 in USDC and $2,500,000.00 in rEUL and $500,000.00 in USUAL
+Supporting Components Rewards
+These rewards apply to vulnerabilities found in Fee Flow and Reward Streams officially deployed by Euler.
+
+Severity Level	Reward
+High	$100,000.00
+Medium	$25,000.00
+Supporting Components Reward Levels
+High: Up to $100,000.00 USD, minimum payout $25,000.00 USD
+Medium: Up to $25,000.00 USD, minimum payout $5,000.00 USD
+Notes:
+
+Rewards are calculated as 10% of their economic impact.
+The team may adjust the program after a high-severity payout to ensure sustainability.
+Euler Earn Rewards
+These rewards apply specifically to vulnerabilities found in the Euler Earn protocol. The bug bounty focuses specifically on the vaults, and contracts they directly rely on, which are smart contract addresses returned by the verifiedArray() function of the Euler Earn Governed Perspective.
+
+Severity Level	Reward
+High	$500,000.00
+Medium	$100,000.00
+Euler Earn Reward Levels
+High: Up to $500,000.00 USD, minimum payout $100,000.00 USD
+Medium: Up to $100,000.00 USD, minimum payout $25,000.00 USD
+Notes:
+
+Rewards are calculated as 10% of their economic impact.
+The team may adjust the program after a high-severity payout to ensure sustainability.
+Euler Swap Rewards
+These rewards apply specifically to vulnerabilities found in the Euler Swap protocol. The bug bounty focuses specifically on the vaults, and contracts they directly rely on, which are smart contract addresses returned by the pools() function of the Euler Swap Factory.
+
+Severity Level	Reward
+High	$250,000.00
+Medium	$50,000.00
+Euler Swap Reward Levels
+High: Up to $250,000.00 USD, minimum payout $50,000.00 USD
+Medium: Up to $50,000.00 USD, minimum payout $10,000.00 USD
+Notes:
+
+Rewards are calculated as 10% of their economic impact.
+The team may adjust the program after a high-severity payout to ensure sustainability.
+Rewards for Web Interface Bugs
+Severity Level	Reward
+Critical	$25,000.00
+High	$5,000.00
+Medium	$1,000.00
+Please note that the final reward amount is at the discretion of our security team and depends on the potential impact and exploitability of the reported vulnerability.
+
+Out of Scope
+Contracts
+Any previous issue marked as acknowledged/will not fix is not in scope to be reported again. If there has been a fix implemented, the fixed code can be treated as in scope.
+Issues described in our documentation: in-code comments, in the README and in the whitepapers.
+Issues found in previous security reviews
+Issues found in development branches
+Issues related to deploy scripts or tests
+Third party integrations not functioning as advertised
+Issues related to potentially malicious actions taken by Euler DAO controlled entities are considered out of scope as they are assumed to be trusted
+Issues related to mistakes made by governors/deployers when configuring vaults or price oracles:
+The issue will be considered out of scope if it involves a user or vault actively opting to use something created or controlled by the untrusted actor
+Issues related to chain re-orgs and network liveness
+Incompatibilities with ERC-4626 and ERC-20 unless they pose a direct security risk
+Issues related to non-standard tokens and their behaviors (i.e. weird-tokens)
+Incorrect hardcoded addresses would be considered low, unless there is a direct loss of funds on deployment from using them.
+Euler Price Oracle-Specific
+We are aware that some Price Oracles are not compatible with all networks. For example, RedstoneCoreOracle and LidoOracle only work on Ethereum.
+Issues related to misconfiguration in the constructors, including but not limited to zero addresses, wrong base/quote tokens and invalid decimals.
+Issues related to a malicious/compromised governor in EulerRouter.
+Issues related to misconfiguration in EulerRouter, including but not limited to resolving ERC4626 vaults with insecure convertToAssets method.
+Issues related to overflows and other math errors must have a demonstrable impact with a concrete scenario.
+Issues related to censorship / frontrunning users that interact with Pyth and RedStone. We expect users to interact with the EVC or another multicall-like contract to update the price and retrieve it in a single call.
+Issues related to using non-crypto price feeds in oracle adapters, including but not limited to Stocks feeds, ETF feeds, Forex feeds and any other feeds that have working hours.
+Issues stemming from sequencer downtime on L2s, including but not limited to inexistent sequencer liveness checks.
+Issues stemming from liveness and catastrophic bugs or malicious behaviour in the integrated oracles, including but not limited to Chainlink upgrades, Chronicle caller whitelist, RedStone signers rotating, Pyth downtime due to Wormhole. By using an oracle users choose to accept those trust assumptions.
+Accurate and manipulation-resistant asset pricing is the responsibility of the vault governor. Such issues are not eligible for an Euler bug bounty unless they involve critical flaws in Euler-specific code. Therefore, issues related to pricing on a specific vault—such as exchange-rate manipulation through donation attacks or spot price manipulation—are considered out of scope.
+Euler Swap-Specific
+Impermanent loss arises from the divergence in asset prices within a vault, particularly when the AMM curve fails to offset volatility. LPs must acknowledge and manage this intrinsic risk.
+Arbitrage losses occur due to mispriced or outdated curves, where external parties capitalize on price discrepancies. Arbitrage is an intended characteristic of AMMs and not regarded as a flaw.
+Strategies leading to anticipated economic losses due to improper AMM parameter settings, such as overly tight curves, asymmetric depth, or single-sided exposure without adequate hedging.
+Losses from using EulerSwap along with improperly governed or misconfigured vaults, including those using insecure oracles, weak collateral setups, or tokens with non-standard behavior.
+Instances where just-in-time (JIT) liquidity causes unfavorable borrowing costs or interest accrual. JIT is a flexible tool that, when misused, may create inefficient positions but does not imply a protocol defect.
+Misuse or misconfiguration of operator contracts (e.g., incorrect parameter updates, flawed hedging logic) that lead to suboptimal liquidity performance or exposure.
+Gas inefficiencies or failed transactions due to extreme AMM curve settings or overly deep virtual reserves. LPs are responsible for ensuring the operational feasibility of their deployed curves.
+Inaccurate or unintended swap outcomes caused by rounding, slippage, or interaction with custom hooks, unless they result in a demonstrable critical exploit of protocol logic.
+General price impact from large trades, even when they significantly deviate from oracle rates. EulerSwap does not ensure oracle-aligned pricing and does not apply TWAP oracles by default.
+Issues originating from Uniswap v4 hooks or external routing infrastructure not developed or maintained by Euler Labs.
+Losses occurring from non-reentrancy-protected integrations with third-party smart contracts or user-developed hooks.
+Utilizing vault assets as collateral in complex external strategies that result in liquidation due to market volatility or mismanagement.
+Website-Specific
+Non-security-related bugs such as performance issues or UI glitches.
+Clickjacking on pages with no sensitive actions.
+CSRF vulnerabilities on forms with no sensitive actions.
+Reports from automated tools without a working proof of concept.
+Denial of Service (DoS) attacks.
+Content spoofing and text injection without an attack vector.
+Rate limiting or brute force attacks on non-sensitive endpoints.
+Vulnerabilities in third-party services or dependencies.
+Software version disclosure
+Flaws affecting out-of-date browsers and plugins
+Self XSS
+SSL/TLS issues, such as weak ciphers or BEAST attacks, without a demonstrable impact.
+Cloudflare resources such as /cdn-cgi/ are out of scope w/o demonstrable impact
+The following activities and vulnerability types are considered out of scope for this bug bounty program and strictly forbidden:
+
+Physical attacks against our employees, offices, or data centers Social engineering attacks against our employees or users Vulnerabilities in applications or systems not owned by us Vulnerabilities requiring physical access to a user's device Recently disclosed 0-day vulnerabilities (within 2 weeks of public disclosure)
+
+System Roles and Privileges
+Euler DAO: This entity manages the upgrade admin role in GenericFactory (if not revoked) and the admin role in ProtocolConfig.
+Euler Labs: This entity manages oracle adapter registry, the external vaults registry and the IRM registry and well as other day-to-day operations of the protocol.
+Vault creators/governors: Anyone can create a vault and optionally retain governance control over it. Governors are responsible for securely configuring their own vaults, and for selecting suitable vaults to use as collateral.
+EulerRouter governors: These users are responsible for maintaining the pricing sources used by the vaults.
+Synth owners/minters: These users should be considered trusted in the context of managing the synthetic asset and its distribution.
+Regular users: Any other user is considered untrusted.
+Prohibited Actions
+Live testing on public chains, including public mainnet deployments and public testnet deployments.
+We recommend testing on local forks, for example using foundry.
+Public disclosure of bugs without the consent of the protocol team.
+Conflict of Interest: any employee or contractor working with or who has ever worked with the Project Entity cannot participate in the Bug Bounty.
+With the exception that former external contractors, specifically Security Auditors/Researchers, are eligible for findings on Core Components(EVK, EVC, and EPO). Current employees, former employees, and contractors with active engagements remain excluded. Euler reserves the right to determine if there is a conflict of interest on a case-by-case basis.
+Testing Guidelines
+To ensure safe and responsible testing:
+
+Use only your own accounts or test accounts for testing.
+Do not attempt to access, modify, or destroy data that does not belong to you.
+Be mindful of testing that might impact system availability or integrity.
+Important: Please be extremely cautious when performing any automated scans or tests that involve multiple requests. Excessive traffic may be flagged as malicious activity.
+If you're unsure whether a specific test is allowed, please contact us before proceeding.
+
+
+
+found at "https://cantina.xyz/bounties/4d285eee-602e-440a-845e-25e155cec26a"

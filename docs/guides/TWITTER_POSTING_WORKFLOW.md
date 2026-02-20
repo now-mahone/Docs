@@ -12,6 +12,7 @@ This document defines the autonomous reminder and drafting system for Kerne Prot
 2.  Identify the key milestones achieved in the last 48-72 hours.
 3.  **Draft a "Twitter-friendly" post ONLY at this moment** to ensure the information is perfectly relevant to the most recent progress.
 4.  Present the draft to Bagwell and remind him to post it.
+5.  **MANDATORY:** Once Bagwell confirms the post, Cline MUST log the final tweet content into `docs/marketing/TWEET_HISTORY.md` immediately.
 
 **CRITICAL RULE:** Do not pre-draft tweets. Drafts must be generated in real-time during the reminder session.
 
@@ -54,3 +55,4 @@ This document defines the autonomous reminder and drafting system for Kerne Prot
 | Date | Post Summary | Link (Optional) |
 |-----|--------------|-----------------|
 | 2026-02-16 | Initial Setup | - |
+| 2026-02-18 | Shipping velocity: 10k Monte Carlo (98.8% survival), Live Sharpe Ratio, Frontend optimization. | - |

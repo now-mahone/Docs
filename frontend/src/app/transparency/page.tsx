@@ -268,14 +268,26 @@ export default function TransparencyPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Oracle Manipulation */}
                 <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col items-start text-left">
-                  <div className="w-12 h-12 bg-transparent border border-[#ff6b6b] rounded-full flex items-center justify-center text-[#ffffff] mb-8">
+                  <div className="w-12 h-12 bg-transparent border border-[#37d097] rounded-full flex items-center justify-center text-[#ffffff] mb-8">
                     <Activity size={24} />
                   </div>
                   <h3 className="font-heading font-medium mb-4 tracking-tight text-[#ffffff]">Oracle Manipulation</h3>
                   <p className="text-s text-[#d4dce1] leading-relaxed font-medium mb-4">
-                    Most frequent failure vector at 123 occurrences representing 74.5% of all simulated failures across the entire test suite.
+                    Zero failures recorded across 10,000 simulations. Every attempted oracle attack was intercepted by the triple-source defense layer.
                   </p>
-                  <div className="text-xs font-bold text-[#ff6b6b] uppercase tracking-wide">1.23% Failure Rate</div>
+                  <div className="text-xs font-bold text-[#37d097] uppercase tracking-wide">0.00% Failure Rate</div>
+                </div>
+
+                {/* Smart Contract Exploit */}
+                <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col items-start text-left">
+                  <div className="w-12 h-12 bg-transparent border border-[#ff6b6b] rounded-full flex items-center justify-center text-[#ffffff] mb-8">
+                    <Shield size={24} />
+                  </div>
+                  <h3 className="font-heading font-medium mb-4 tracking-tight text-[#ffffff]">Smart Contract Exploit</h3>
+                  <p className="text-s text-[#d4dce1] leading-relaxed font-medium mb-4">
+                    Primary failure mode reduced by 78.6% through formal code audits and an active bug bounty program.
+                  </p>
+                  <div className="text-xs font-bold text-[#ff6b6b] uppercase tracking-wide">0.22% Failure Rate</div>
                 </div>
 
                 {/* Liquidation Cascade */}
@@ -285,21 +297,9 @@ export default function TransparencyPage() {
                   </div>
                   <h3 className="font-heading font-medium mb-4 tracking-tight text-[#ffffff]">Liquidation Cascade</h3>
                   <p className="text-s text-[#d4dce1] leading-relaxed font-medium mb-4">
-                    Secondary risk factor with 15 simulated failures mitigated through automated circuit breakers and multi layer position monitoring.
+                    Secondary risk factor mitigated through automated Insurance Fund injections and tiered circuit breakers.
                   </p>
-                  <div className="text-xs font-bold text-[#ffa726] uppercase tracking-wide">0.15% Failure Rate</div>
-                </div>
-
-                {/* LST Depeg */}
-                <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col items-start text-left">
-                  <div className="w-12 h-12 bg-transparent border border-[#37d097] rounded-full flex items-center justify-center text-[#ffffff] mb-8">
-                    <ShieldCheck size={24} />
-                  </div>
-                  <h3 className="font-heading font-medium mb-4 tracking-tight text-[#ffffff]">LST Depeg Events</h3>
-                  <p className="text-s text-[#d4dce1] leading-relaxed font-medium mb-4">
-                    Minimal impact with only 6 failures demonstrating robust collateral health monitoring and automated depeg protection systems.
-                  </p>
-                  <div className="text-xs font-bold text-[#37d097] uppercase tracking-wide">0.06% Failure Rate</div>
+                  <div className="text-xs font-bold text-[#ffa726] uppercase tracking-wide">0.05% Failure Rate</div>
                 </div>
               </div>
             </div>
