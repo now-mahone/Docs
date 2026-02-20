@@ -221,7 +221,7 @@ export default function TransparencyPage() {
               <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
                 <h3 className="font-heading font-medium tracking-tight text-[#ffffff] mb-6">Simulation Methodology</h3>
                 <p className="text-s text-[#d4dce1] leading-relaxed font-medium">
-                  The Monte Carlo simulation executes 10,000 independent scenarios across a 365 day horizon. Each simulation path incorporates stochastic volatility for ETH price action, dynamic funding rate fluctuations, LST depeg events with 2% probability, oracle manipulation attempts, gas price spikes, and regulatory shock scenarios. The hedging engine rebalances positions every 8 hours with slippage costs factored into final yield calculations. Circuit breakers trigger at collateral ratio thresholds below 115% with liquidation cascades modeled through correlated drawdown events.
+                  The Monte Carlo v4 simulation executes 10,000 independent scenarios across a 365 day horizon. Each simulation path incorporates stochastic volatility for ETH price action, dynamic funding rate fluctuations, and extreme black swan events including LST depegs and regulatory shocks. This latest iteration factors in our multi-source oracle architecture, tiered circuit breakers, and the automated Insurance Fund reserve. The hedging engine rebalances positions every 8 hours with slippage and execution costs factored into the final 21.78% mean APY.
                 </p>
               </div>
 
@@ -250,7 +250,7 @@ export default function TransparencyPage() {
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Max Drawdown</div>
                   <div>
                     <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">2.62%</div>
-                    <div className="text-s text-[#37d097] font-medium">Historical Peak-to-Trough</div>
+                    <div className="text-s text-[#37d097] font-medium">Historical Peak to Trough</div>
                   </div>
                 </div>
 
@@ -280,7 +280,7 @@ export default function TransparencyPage() {
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Smart Contract Exploit</div>
                   <div>
                     <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.22%</div>
-                    <div className="text-s text-[#ff6b6b] font-medium">Post-Audit Probability</div>
+                    <div className="text-s text-[#37d097] font-medium">Post Audit Probability</div>
                   </div>
                 </div>
 
@@ -289,7 +289,7 @@ export default function TransparencyPage() {
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Liquidation Cascade</div>
                   <div>
                     <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.05%</div>
-                    <div className="text-s text-[#ffa726] font-medium">Insurance Fund Protected</div>
+                    <div className="text-s text-[#37d097] font-medium">Insurance Fund Protected</div>
                   </div>
                 </div>
 
