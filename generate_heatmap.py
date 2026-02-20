@@ -36,12 +36,16 @@ for i in range(grid_size): # x (drawdown)
         # CSS col = i
         grid[(grid_size - 1) - j, i] = H[i, j]
 
-# Normalize to 0-1 for opacity/color intensity
-max_val = np.max(grid)
+# Apply logarithmic scaling to boost visibility of lower-density areas
+# and create more color variance across the heatmap.
+grid_log = np.log1p(grid)
+
+# Normalize to 0-1 for color mapping
+max_val = np.max(grid_log)
 if max_val > 0:
-    grid_norm = grid / max_val
+    grid_norm = grid_log / max_val
 else:
-    grid_norm = grid
+    grid_norm = grid_log
 
 # Flatten for easy copy-pasting into React
 flat_grid = grid_norm.flatten().tolist()
