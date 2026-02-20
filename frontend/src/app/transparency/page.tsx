@@ -345,16 +345,33 @@ export default function TransparencyPage() {
 
                 {/* Visualization - Spans 2x2 */}
                 <div className="md:col-span-2 md:row-span-2 p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col relative">
-                  <div className="text-left mb-6">
-                    <h3 className="font-heading font-medium tracking-tight text-[#ffffff] mb-1">Risk Distribution</h3>
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="text-left">
+                      <h3 className="font-heading font-medium tracking-tight text-[#ffffff] mb-1">Risk Distribution</h3>
+                    </div>
+                    {/* Legend */}
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[8px] text-[#aab9be] uppercase font-bold">Density</span>
+                        <div className="w-24 h-1.5 rounded-full bg-gradient-to-r from-[rgb(0,0,255)] via-[rgb(0,255,0)] to-[rgb(255,0,0)]" />
+                      </div>
+                      <div className="flex justify-between w-24 text-[8px] text-[#aab9be] font-medium px-0.5">
+                        <span>Low</span>
+                        <span>High</span>
+                      </div>
+                    </div>
                   </div>
                   
-                  <div className="flex-grow flex flex-col relative w-full min-h-[200px]">
+                  <div className="flex-grow flex flex-col relative w-full min-h-[240px]">
                     <div className="flex flex-grow">
                       {/* Y-axis */}
-                      <div className="flex flex-col justify-between text-[10px] text-[#aab9be] font-medium pr-3 pb-6 w-8 items-end relative">
+                      <div className="flex flex-col justify-between text-[10px] text-[#aab9be] font-medium pr-3 pb-6 w-10 items-end relative">
                         <span>35%</span>
-                        <span className="absolute top-1/2 -left-4 -translate-y-1/2 -rotate-90 tracking-widest uppercase">APY</span>
+                        <span>30%</span>
+                        <span>25%</span>
+                        <span>20%</span>
+                        <span>15%</span>
+                        <span className="absolute top-1/2 -left-5 -translate-y-1/2 -rotate-90 tracking-widest uppercase">APY</span>
                         <span>10%</span>
                       </div>
                       
@@ -379,10 +396,17 @@ export default function TransparencyPage() {
                     </div>
                     
                     {/* X-axis */}
-                    <div className="flex justify-between text-[10px] text-[#aab9be] font-medium pt-3 pl-8">
+                    <div className="flex justify-between text-[10px] text-[#aab9be] font-medium pt-3 pl-10">
                       <span>0%</span>
-                      <span className="tracking-widest uppercase">Max Drawdown</span>
+                      <span>2.5%</span>
+                      <span>5%</span>
+                      <span>7.5%</span>
+                      <span>10%</span>
+                      <span>12.5%</span>
                       <span>15%</span>
+                    </div>
+                    <div className="text-center text-[10px] text-[#aab9be] font-medium mt-1 pl-10 tracking-widest uppercase">
+                      Max Drawdown
                     </div>
                   </div>
                 </div>

@@ -1,11 +1,17 @@
+## 2026-02-19 20:08 - Finalized Risk Heatmap with Legend and Axis Labels
+**Status**: ✅ Complete
+**Action**: Finalized the Risk Heatmap visualization by adding a density legend and comprehensive axis labels for institutional-grade clarity.
+**Changes Made**:
+1. **Density Legend**: Added a color-coded legend in the top right of the card, mapping the temperature gradient to "Low" vs "High" scenario density.
+2. **Expanded Axis Labels**: 
+    - **Y-Axis (APY)**: Added intermediate labels (15%, 20%, 25%, 30%) to provide a clearer scale for yield distribution.
+    - **X-Axis (Max Drawdown)**: Added intermediate labels (2.5%, 5%, 7.5%, 10%, 12.5%) to improve risk quantification at a glance.
+3. **Layout Optimization**: Adjusted the grid container and padding to accommodate the new labels while maintaining the 32x32 high-resolution visualization.
+4. **Logarithmic Scaling**: Maintained the `log1p` transform for optimal color variance across the distribution.
+
 ## 2026-02-19 20:04 - Optimized 32x32 Risk Heatmap with Logarithmic Scaling
 **Status**: ✅ Complete
 **Action**: Optimized the Risk Heatmap visualization to improve color variance and data readability using logarithmic scaling and a refined temperature gradient.
-**Changes Made**:
-1. **Logarithmic Scaling**: Applied a log transform (`log1p`) to the scenario densities in `generate_heatmap.py`. This boosts the visibility of lower-density outcomes, creating a much richer color variance across the 32x32 grid.
-2. **Refined Temperature Scale**: Implemented a smooth 6-color interpolation logic (Blue -> Cyan -> Green -> Yellow -> Orange -> Red) to represent the risk distribution more intuitively.
-3. **High-Resolution Grid**: Maintained the 32x32 resolution (1,024 data points) for maximum granularity of the Monte Carlo v4 results.
-4. **Data Fidelity**: Re-processed the 10,000 simulation scenarios to ensure the heatmap accurately reflects the relationship between Max Drawdown (0-15%) and APY (10-35%) with the new scaling logic.
 
 ## 2026-02-19 19:53 - High-Fidelity 32x32 Risk Heatmap
 **Status**: ✅ Complete
