@@ -274,7 +274,7 @@ export default function TransparencyPage() {
                 Monte Carlo Risk Simulation
               </TypedHeading>
               <p className="text-m text-[#000000] max-w-2xl font-medium">
-                Ten thousand simulated scenarios stress tested across one year timeframe to quantify protocol resilience under extreme market conditions.
+                Ten thousand simulated scenarios stress tested across a one year timeframe to quantify protocol resilience under extreme market conditions.
               </p>
             </div>
 
@@ -352,7 +352,7 @@ export default function TransparencyPage() {
                     {/* Legend */}
                     <div className="flex flex-col items-end gap-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-[#aab9be] uppercase font-bold">Density</span>
+                        <span className="text-[10px] text-[#aab9be] uppercase font-medium tracking-widest">Density</span>
                         <div className="flex gap-0 h-2 w-32 rounded-[1px] overflow-hidden">
                           {Array.from({ length: 50 }).map((_, i) => (
                             <div 
@@ -363,7 +363,7 @@ export default function TransparencyPage() {
                           ))}
                         </div>
                       </div>
-                      <div className="flex justify-between w-32 text-xs text-[#aab9be] font-medium px-0.5">
+                      <div className="flex justify-between w-32 text-[10px] text-[#aab9be] font-medium px-0.5">
                         <span>Low</span>
                         <span>High</span>
                       </div>
