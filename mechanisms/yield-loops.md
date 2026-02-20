@@ -15,11 +15,11 @@ In a standard DeFi interaction, a user deposits 10 ETH and earns yield on 10 ETH
 
 The result is a **5x leveraged position** (50 ETH position backed by 10 ETH principal).
 
-## Benefits
+## The Unfair Advantage
 
 - **Boosted Yields**: Users earn 5x the staking rewards and 5x the points.
-- **Minimal Liquidation Risk**: Because the collateral (LST) and the debt (ETH) are highly correlated assets, the risk of liquidation is significantly lower than traditional cross asset leverage.
-- **TVL Bloating**: This mechanism artificially inflates the protocol's Total Value Locked (TVL) metrics, which is a primary driver for valuation and institutional interest.
+- **Minimal Liquidation Risk**: Because the collateral (LST) and the debt (ETH) are highly correlated assets, the risk of liquidation is significantly lower than traditional cross-asset leverage.
+- **Aggressive Liquidity Scaling**: This mechanism drives massive protocol TVL, accelerating the "Liquidity Black Hole" effect and maximizing institutional valuation.
 
 ## Risks
 

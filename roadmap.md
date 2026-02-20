@@ -1,12 +1,12 @@
-# Roadmap: The Path to $1B
+# Roadmap: The Path to $1B+
 
-Kerne follows a hyper aggressive 12 month roadmap to achieve protocol dominance and $1B+ TVL.
+Kerne follows a hyper-aggressive 12-month roadmap to achieve protocol dominance and $1B+ TVL.
 
 ## Phase 1: Genesis (Months 1–2)
-- **Launch on Base**: Deploy core Vaults and Hedging Engine.
-- **Cap Guarded Launch**: Implement scarcity via $5M → $25M → $100M TVL caps.
-- **Points System**: Activate the referral engine and point accumulation.
-- **DefiLlama Listing**: Secure public tracking and social proof.
+- **Launch on Base**: Deploy core Vaults and the Delta-Neutral Hedging Engine.
+- **Cap-Guarded Launch**: Manage growth via $5M → $25M → $100M TVL caps.
+- **Capital Acquisition**: Activate the referral engine and strategic points system.
+- **Public Validation**: Secure DefiLlama tracking and institutional social proof.
 
 ## Phase 2: Expansion (Months 3–5)
 - **Omnichain Rollout**: Deploy to Arbitrum and Optimism using LayerZero V2.
@@ -21,7 +21,7 @@ Kerne follows a hyper aggressive 12 month roadmap to achieve protocol dominance 
 - **Tier 1 Exchange Listings**: Secure KERNE listings on Binance/Bybit/OKX.
 
 ## Phase 4: Dominance (Months 9–12)
-- **Synthetic Stablecoin Mastery**: scale kUSD into a primary DeFi stablecoin.
-- **RWA Integration**: Integrate tokenized Treasuries as a yield floor for kUSD.
+- **Synthetic Mastery**: Scale kUSD into the primary DeFi unit of account.
+- **RWA Integration**: Integrate tokenized Treasuries as a risk-free yield floor for kUSD.
 - **The Infinite Garden**: Release the SDK for ecosystem developers.
-- **TGE & Prisoner's Dilemma**: Execute the token generation event and lock in TVL.
+- **TGE & Prisoner's Dilemma**: Execute the token generation event and secure TVL through strategic game theory.

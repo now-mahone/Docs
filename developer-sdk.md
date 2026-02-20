@@ -1,6 +1,6 @@
 # Developer SDK: `@kerne/sdk`
 
-Kerne provides a robust TypeScript SDK for developers and institutional partners to integrate with the protocol's liquidity and intent solving engine.
+Kerne provides a high-performance TypeScript SDK for developers and institutional partners to weaponize the protocol's liquidity and intent-solving engine.
 
 ## Installation
 
@@ -25,7 +25,7 @@ const solvency = await vault.getSolvencyRatio();
 ```
 
 ### 2. `useSolver` Hook
-For partners building intent based interfaces, the SDK provides a React hook to interact with the **Zero Fee Intent Network (ZIN)**.
+For partners building intent-based interfaces, the SDK provides a React hook to weaponize the **Zero-Fee Intent Network (ZIN)**.
 
 ```typescript
 const { fulfillIntent, estimateSpread } = useSolver();

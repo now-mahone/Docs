@@ -1,7 +1,7 @@
 # Summary
 
-* [Introduction](README.md)
-* [Litepaper](litepaper.md)
+* [Institutional Yield Infrastructure](README.md)
+* [Executive Summary](litepaper.md)
 * [Protocol Architecture](architecture.md)
 
 ## Core Mechanisms
@@ -16,15 +16,15 @@
 
 * [Overview](tokenomics/README.md)
 * [KERNE Token](tokenomics/kerne-token.md)
-* [kUSD Synthetic Dollar](tokenomics/kusd.md)
-* [Points & Airdrop Strategy](tokenomics/airdrop.md)
+* [kUSD: The Liquid Standard](tokenomics/kusd.md)
+* [Strategic Game Theory](tokenomics/airdrop.md)
 * [Meta-Governance & Bribes](tokenomics/governance.md)
 
 ## Security & Transparency
 
 * [Overview](security/README.md)
 * [Monte Carlo Risk Report v4](security/monte-carlo-risk-report.md)
-* [Sentinel V2](security/sentinel.md)
+* [Sentinel V2: Autonomous Risk Enforcement](security/sentinel.md)
 * [Glass House Standard (PoR)](security/proof-of-reserve.md)
 * [Audits & Invariants](security/audits.md)
 

@@ -1,17 +1,17 @@
-# kUSD Synthetic Dollar
+# kUSD: The Liquid Standard
 
-**kUSD** is Kerne's native synthetic dollar—a delta neutral, yield bearing stablecoin designed for the Ethereum ecosystem.
+**kUSD** is Kerne's native synthetic dollar—a delta-neutral, yield-bearing asset engineered for the Base ecosystem. It is the liquid standard for onchain capital.
 
 ## Mechanism
 
-kUSD is minted against LST collateral (like stETH) at a 1:1 ratio. The protocol maintains the $1 peg through:
-1. **Delta Neutral Hedging**: Every kUSD minted is backed by an equivalent short position on a CEX, ensuring the underlying collateral value remains stable in dollar terms.
-2. **Peg Stability Module (PSM)**: Allows 1:1 swaps between kUSD and other stablecoins (like USDC), providing a hard arbitrage floor and ceiling.
-3. **Variable Interest Rates**: The protocol can adjust the yield paid to kUSD holders to incentivize minting or burning, maintaining the peg through demand side management.
+kUSD is minted against LST collateral at a 1:1 ratio. The protocol enforces the $1 peg through:
+1. **Industrialized Hedging**: Every kUSD is backed by a matched short position on a Tier 1 exchange, neutralizing volatility and ensuring 100% collateralization in dollar terms.
+2. **Peg Stability Module (PSM)**: Facilitates 1:1 swaps between kUSD and USDC, providing a hard arbitrage floor and ceiling.
+3. **Dynamic Yield Management**: The protocol adjusts yield distribution to kUSD holders to manage demand and maintain peg stability with mathematical precision.
 
-## Yield Bearing
+## Native Yield
 
-Unlike traditional stablecoins, kUSD is natively yield bearing. The yield generated from the hedging engine (funding rates) and LST staking is funneled directly to kUSD holders, making it a superior alternative to non yield bearing assets.
+Unlike legacy stablecoins, kUSD is natively yield-bearing. The yield extracted from the hedging engine (funding rates) and LST staking is funneled directly to kUSD holders, making it the superior unit of account for the decentralized economy.
 
 ## The Synthetic Pivot
 
