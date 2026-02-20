@@ -13,13 +13,27 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Email forwarding routing table
+// Maps kerne.ai addresses to personal email addresses
+// Uses real names (Prison Break codenames are for internal reference only)
 const EMAIL_ROUTES: Record<string, string> = {
-  "devon@kerne.ai": "liamlakevold@gmail.com",
+  // Scofield - liamlakevold@kerne.ai → liamlakevold@gmail.com
+  "liamlakevold@kerne.ai": "liamlakevold@gmail.com",
+  
+  // Mahone - matthewlakevold@kerne.ai → matthewlkv@gmail.com
+  "matthewlakevold@kerne.ai": "matthewlkv@gmail.com",
+  
+  // Bagwell - devonhewitt@kerne.ai → devhew1337@icloud.com
+  "devonhewitt@kerne.ai": "devhew1337@icloud.com",
+  
+  // Shared team addresses - route to Scofield (primary contact)
   "team@kerne.ai": "liamlakevold@gmail.com",
   "contact@kerne.ai": "liamlakevold@gmail.com",
+  "info@kerne.ai": "liamlakevold@gmail.com",
+  "support@kerne.ai": "liamlakevold@gmail.com",
 };
 
-// Default forward destination (catch-all)
+// Default forward destination (catch-all for unmatched @kerne.ai addresses)
+// Routes to Scofield (primary contact)
 const DEFAULT_FORWARD = "liamlakevold@gmail.com";
 
 interface ResendWebhookEvent {
