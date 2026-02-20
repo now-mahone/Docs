@@ -23,6 +23,7 @@
 ## Security & Transparency
 
 * [Overview](security/README.md)
+* [Monte Carlo Risk Report v4](security/monte-carlo-risk-report.md)
 * [Sentinel V2](security/sentinel.md)
 * [Glass House Standard (PoR)](security/proof-of-reserve.md)
 * [Audits & Invariants](security/audits.md)
