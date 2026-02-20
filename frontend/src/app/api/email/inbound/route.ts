@@ -13,28 +13,27 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Email forwarding routing table
-// Maps kerne.ai addresses to personal Gmail addresses
-// Each person's kerne.ai email routes to their matching Gmail
+// Maps kerne.ai addresses to personal email addresses
 const EMAIL_ROUTES: Record<string, string> = {
-  // liamlakevold@kerne.ai → liamlakevold@gmail.com
-  "liamlakevold@kerne.ai": "liamlakevold@gmail.com",
+  // Devon (Scofield) - devon@kerne.ai → devhew1337@icloud.com
+  "devon@kerne.ai": "devhew1337@icloud.com",
   
-  // mahone@kerne.ai → nowmahone@gmail.com
-  "mahone@kerne.ai": "nowmahone@gmail.com",
+  // Mahone - mahone@kerne.ai → matthewlkv@gmail.com
+  "mahone@kerne.ai": "matthewlkv@gmail.com",
   
-  // bagwell@kerne.ai → tb12344444444@gmail.com
+  // Bagwell - bagwell@kerne.ai → tb12344444444@gmail.com
   "bagwell@kerne.ai": "tb12344444444@gmail.com",
   
-  // Shared team addresses - route to Scofield's Gmail (primary contact)
-  "team@kerne.ai": "liamlakevold@gmail.com",
-  "contact@kerne.ai": "liamlakevold@gmail.com",
-  "info@kerne.ai": "liamlakevold@gmail.com",
-  "support@kerne.ai": "liamlakevold@gmail.com",
+  // Shared team addresses - route to Devon (primary contact)
+  "team@kerne.ai": "devhew1337@icloud.com",
+  "contact@kerne.ai": "devhew1337@icloud.com",
+  "info@kerne.ai": "devhew1337@icloud.com",
+  "support@kerne.ai": "devhew1337@icloud.com",
 };
 
 // Default forward destination (catch-all for unmatched @kerne.ai addresses)
-// Routes to primary team contact
-const DEFAULT_FORWARD = "liamlakevold@gmail.com";
+// Routes to Devon (primary contact)
+const DEFAULT_FORWARD = "devhew1337@icloud.com";
 
 interface ResendWebhookEvent {
   type: string;
