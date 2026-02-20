@@ -16,7 +16,7 @@ $170B+ sits in stablecoins earning zero yield. Circle and Tether collect $5B+/ye
 1. **Deposit** yield-bearing collateral (stETH, eETH, rETH, sDAI) into Kerne vaults
 2. **Mint** kUSD at 150% collateral ratio — overcollateralized, not algorithmic
 3. **YRE routes** underlying yield across 200+ strategies (lending, restaking, LPs, RWAs)
-4. **kUSD rebases daily** — holders earn 12-20% APY just by holding kUSD in their wallet
+4. **kUSD rebases daily** — holders earn yield just by holding kUSD in their wallet
 
 ---
 
@@ -31,6 +31,34 @@ $170B+ sits in stablecoins earning zero yield. Circle and Tether collect $5B+/ye
 | **Bear Market** | RWA yield floor (3-5%) | Can go negative | Yield compresses |
 
 **Core moat:** The YRE accumulates data and strategy optimizations daily. A competitor launching 6 months later starts with zero data, zero adapters, and zero track record.
+
+---
+
+## Validated Performance (Monte Carlo v4 Simulation)
+
+Our architecture has been stress-tested through 10,000 independent simulations spanning a full 365-day horizon:
+
+| Metric | Value |
+|---|---|
+| **Survival Rate** | **99.73%** (target >99% achieved) |
+| **Mean APY** | **21.78%** |
+| **Mean Final TVL** | $106.9M (from $100M start) |
+| **VaR 99% Floor** | $86.77M (86.77 cents preserved in worst 1% scenarios) |
+| **Oracle Manipulation Failures** | **0** (triple-source defense eliminated this vector) |
+| **Max Drawdown** | 2.62% |
+
+**9-Layer Protection Architecture:**
+1. Triple-Source Oracle (Chainlink + TWAP + Pyth)
+2. Oracle Deviation Guard (5% max threshold)
+3. TWAP Window Hardening (30-minute window)
+4. Tiered Circuit Breaker (Yellow/Red alerts)
+5. Dynamic Collateral Ratio Buffer
+6. Gradual Liquidation Cap (5% TVL/hour)
+7. Protocol Insurance Fund ($3M reserve)
+8. Post-Audit Exploit Reduction (73% lower probability)
+9. Delta-Neutral Core Architecture
+
+*Full methodology and results: See Monte Carlo v4 Risk Report*
 
 ---
 
@@ -85,6 +113,16 @@ Protocol revenue from 4 streams: performance fee on yield (10-20%), minting/rede
 ## Team
 
 Three-person founding team that shipped 20+ contracts across 3 chains, a full frontend, SDK, hedging bot, and security suite in 6 weeks. Scaling to 8-12 with seed capital (Senior Solidity Engineer, Security Engineer, Growth Lead, BD Lead).
+
+---
+
+## Key Documents
+
+| Document | Description |
+|---|---|
+| **Monte Carlo v4 Risk Report** | 10,000 simulation stress test validating 99.73% survival rate |
+| **Seed Investor Targets** | 29 curated investors across 4 tiers |
+| **Outreach Templates** | Ready-to-send DM templates for investor outreach |
 
 ---
 
