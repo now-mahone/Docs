@@ -14,6 +14,29 @@ import Footer from '@/components/Footer';
 import Navbar from '@/components/Navbar';
 import TypedHeading from '@/components/TypedHeading';
 
+const heatmapData = [
+  0.046, 0.015, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
+  0.112, 0.051, 0.001, 0.000, 0.000, 0.001, 0.001, 0.000, 0.001, 0.001, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
+  0.176, 0.077, 0.001, 0.000, 0.000, 0.000, 0.002, 0.001, 0.000, 0.000, 0.000, 0.000, 0.001, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
+  0.213, 0.107, 0.003, 0.000, 0.000, 0.000, 0.000, 0.002, 0.001, 0.001, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
+  0.156, 0.114, 0.006, 0.002, 0.001, 0.000, 0.001, 0.000, 0.000, 0.001, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
+  0.073, 0.073, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.001, 0.001, 0.000, 0.000, 0.001, 0.000, 0.000, 0.000, 0.000, 0.001, 0.000, 0.000,
+  0.025, 0.040, 0.002, 0.000, 0.000, 0.000, 0.001, 0.000, 0.000, 0.002, 0.002, 0.001, 0.000, 0.001, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
+  0.026, 0.016, 0.002, 0.003, 0.000, 0.001, 0.000, 0.001, 0.003, 0.001, 0.002, 0.002, 0.003, 0.004, 0.002, 0.000, 0.001, 0.000, 0.002, 0.000,
+  0.101, 0.054, 0.003, 0.007, 0.002, 0.003, 0.004, 0.001, 0.001, 0.003, 0.003, 0.005, 0.006, 0.005, 0.006, 0.003, 0.003, 0.001, 0.003, 0.000,
+  0.369, 0.253, 0.015, 0.014, 0.012, 0.007, 0.003, 0.001, 0.001, 0.003, 0.000, 0.007, 0.009, 0.012, 0.019, 0.007, 0.006, 0.005, 0.006, 0.000,
+  0.714, 0.678, 0.028, 0.022, 0.024, 0.017, 0.012, 0.010, 0.006, 0.005, 0.003, 0.002, 0.010, 0.011, 0.010, 0.009, 0.012, 0.039, 0.016, 0.002,
+  0.707, 1.000, 0.051, 0.023, 0.031, 0.027, 0.029, 0.018, 0.013, 0.010, 0.006, 0.005, 0.003, 0.003, 0.006, 0.006, 0.014, 0.046, 0.033, 0.006,
+  0.308, 0.760, 0.054, 0.042, 0.028, 0.025, 0.031, 0.029, 0.017, 0.014, 0.013, 0.007, 0.003, 0.008, 0.000, 0.004, 0.006, 0.024, 0.027, 0.006,
+  0.056, 0.230, 0.034, 0.036, 0.061, 0.066, 0.071, 0.043, 0.024, 0.018, 0.021, 0.012, 0.003, 0.006, 0.002, 0.002, 0.003, 0.009, 0.009, 0.007,
+  0.006, 0.031, 0.005, 0.009, 0.028, 0.062, 0.100, 0.080, 0.068, 0.036, 0.025, 0.013, 0.009, 0.006, 0.002, 0.004, 0.006, 0.004, 0.004, 0.001,
+  0.001, 0.001, 0.002, 0.000, 0.001, 0.010, 0.029, 0.039, 0.052, 0.061, 0.053, 0.027, 0.021, 0.006, 0.001, 0.004, 0.002, 0.002, 0.005, 0.001,
+  0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.002, 0.004, 0.018, 0.018, 0.030, 0.017, 0.006, 0.008, 0.003, 0.002, 0.002, 0.001, 0.000,
+  0.000, 0.001, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.002, 0.001, 0.001, 0.004, 0.004, 0.003, 0.002, 0.000, 0.002, 0.000, 0.000,
+  0.000, 0.001, 0.001, 0.000, 0.000, 0.001, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.001, 0.000, 0.000, 0.000, 0.000, 0.000,
+  0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000,
+];
+
 export default function TransparencyPage() {
   const { data, loading, error } = useSolvency();
   const [apyData, setApyData] = useState<any>(null);
@@ -281,25 +304,47 @@ export default function TransparencyPage() {
                 </div>
 
                 {/* Visualization - Spans 2x2 */}
-                <div className="md:col-span-2 md:row-span-2 p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col items-center justify-center text-center relative overflow-hidden">
-                  <div className="absolute inset-0 opacity-20">
-                    <div className="grid grid-cols-10 grid-rows-10 h-full w-full">
-                      {[...Array(100)].map((_, i) => (
-                        <div 
-                          key={i} 
-                          className="border-[0.5px] border-[#444a4f]"
-                          style={{
-                            backgroundColor: i === 42 || i === 87 || i === 12 ? '#ff6b6b' : 
-                                             i % 7 === 0 ? '#ffa726' : 
-                                             '#37d097'
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="relative z-10">
-                    <h3 className="font-heading font-medium tracking-tight text-[#ffffff] mb-2">Risk Heatmap</h3>
+                <div className="md:col-span-2 md:row-span-2 p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col relative">
+                  <div className="text-left mb-6">
+                    <h3 className="font-heading font-medium tracking-tight text-[#ffffff] mb-1">Risk Distribution</h3>
                     <p className="text-xs text-[#aab9be] uppercase tracking-widest">10,000 Scenarios Modeled</p>
+                  </div>
+                  
+                  <div className="flex-grow flex flex-col relative w-full min-h-[200px]">
+                    <div className="flex flex-grow">
+                      {/* Y-axis */}
+                      <div className="flex flex-col justify-between text-[10px] text-[#aab9be] font-medium pr-3 pb-6 w-8 items-end relative">
+                        <span>35%</span>
+                        <span className="absolute top-1/2 -left-4 -translate-y-1/2 -rotate-90 tracking-widest uppercase">APY</span>
+                        <span>10%</span>
+                      </div>
+                      
+                      {/* Grid */}
+                      <div 
+                        className="flex-grow grid gap-[1px]"
+                        style={{ 
+                          gridTemplateColumns: 'repeat(20, minmax(0, 1fr))',
+                          gridTemplateRows: 'repeat(20, minmax(0, 1fr))'
+                        }}
+                      >
+                        {heatmapData.map((val, i) => (
+                          <div 
+                            key={i} 
+                            className="w-full h-full rounded-[1px]"
+                            style={{
+                              backgroundColor: val > 0 ? `rgba(55, 208, 151, ${Math.max(0.15, val)})` : 'rgba(68, 74, 79, 0.2)'
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* X-axis */}
+                    <div className="flex justify-between text-[10px] text-[#aab9be] font-medium pt-3 pl-8">
+                      <span>0%</span>
+                      <span className="tracking-widest uppercase">Max Drawdown</span>
+                      <span>15%</span>
+                    </div>
                   </div>
                 </div>
 
