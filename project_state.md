@@ -1,3 +1,5 @@
+[2026-02-19 21:35] - DOCUMENTATION SIDEBAR FIX & SYNC: Identified that the Monte Carlo Risk Report was missing from the live Docsify site because it wasn't included in `_sidebar.md`. Updated `gitbook (docs)/_sidebar.md` to include the report under Security & Transparency. Committed change and force-pushed the updated subtree to `now-mahone/Docs` to trigger the live update. - Status: COMPLETE
+
 ## 2026-02-19 20:25 - High-Fidelity Legend & UI Standardization
 **Status**: ✅ Complete
 **Action**: Refined the Risk Heatmap legend for perfect color accuracy and standardized the Risk Management section background.
