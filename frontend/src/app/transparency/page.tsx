@@ -215,91 +215,108 @@ export default function TransparencyPage() {
               </p>
             </div>
 
-            {/* Card Container */}
-            <div className="w-full rounded-sm bg-[#000000] p-8 md:p-12 space-y-4">
-              {/* Simulation Methodology */}
-              <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
+            {/* Bento Box Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Simulation Methodology - Spans 2x2 */}
+              <div className="md:col-span-2 md:row-span-2 p-8 bg-[#000000] rounded-sm border border-[#444a4f] flex flex-col text-left">
                 <h3 className="font-heading font-medium tracking-tight text-[#ffffff] mb-6">Simulation Methodology</h3>
                 <p className="text-s text-[#d4dce1] leading-relaxed font-medium">
                   The Monte Carlo v4 simulation executes 10,000 independent scenarios across a 365 day horizon. Each simulation path incorporates stochastic volatility for ETH price action, dynamic funding rate fluctuations, and extreme black swan events including LST depegs and regulatory shocks. This latest iteration factors in our multi-source oracle architecture, tiered circuit breakers, and the automated Insurance Fund reserve. The hedging engine rebalances positions every 8 hours with slippage and execution costs factored into the final 21.78% mean APY.
                 </p>
               </div>
 
-              {/* Key Metrics Row */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {/* Survival Rate */}
-                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
-                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Survival Rate</div>
-                  <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">99.73%</div>
-                    <div className="text-s text-[#37d097] font-medium">9,973 / 10,000</div>
-                  </div>
-                </div>
-
-                {/* Mean Yield */}
-                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
-                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Mean Yield APY</div>
-                  <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">21.78%</div>
-                    <div className="text-s text-[#37d097] font-medium">Annualized</div>
-                  </div>
-                </div>
-
-                {/* Max Drawdown */}
-                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
-                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Max Drawdown</div>
-                  <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">2.62%</div>
-                    <div className="text-s text-[#37d097] font-medium">Historical Peak to Trough</div>
-                  </div>
-                </div>
-
-                {/* VaR 99 */}
-                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
-                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">VaR 99%</div>
-                  <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">$86.77M</div>
-                    <div className="text-s text-[#37d097] font-medium">86.77c per dollar preserved</div>
-                  </div>
+              {/* Survival Rate */}
+              <div className="p-6 bg-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Survival Rate</div>
+                <div>
+                  <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">99.73%</div>
+                  <div className="text-s text-[#37d097] font-medium">9,973 / 10,000</div>
                 </div>
               </div>
 
-              {/* Scenario Breakdown */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {/* Oracle Manipulation */}
-                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
-                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Oracle Manipulation</div>
-                  <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.00%</div>
-                    <div className="text-s text-[#37d097] font-medium">Zero Failures Recorded</div>
+              {/* Mean Yield */}
+              <div className="p-6 bg-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Mean Yield APY</div>
+                <div>
+                  <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">21.78%</div>
+                  <div className="text-s text-[#37d097] font-medium">Annualized</div>
+                </div>
+              </div>
+
+              {/* Max Drawdown */}
+              <div className="p-6 bg-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Max Drawdown</div>
+                <div>
+                  <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">2.62%</div>
+                  <div className="text-s text-[#37d097] font-medium">Historical Peak to Trough</div>
+                </div>
+              </div>
+
+              {/* VaR 99 */}
+              <div className="p-6 bg-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">VaR 99%</div>
+                <div>
+                  <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">$86.77M</div>
+                  <div className="text-s text-[#37d097] font-medium">86.77c per dollar preserved</div>
+                </div>
+              </div>
+
+              {/* Oracle Manipulation */}
+              <div className="p-6 bg-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Oracle Manipulation</div>
+                <div>
+                  <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.00%</div>
+                  <div className="text-s text-[#37d097] font-medium">Zero Failures Recorded</div>
+                </div>
+              </div>
+
+              {/* Smart Contract Exploit */}
+              <div className="p-6 bg-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Smart Contract Exploit</div>
+                <div>
+                  <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.22%</div>
+                  <div className="text-s text-[#37d097] font-medium">Post Audit Probability</div>
+                </div>
+              </div>
+
+              {/* Visualization - Spans 2x2 */}
+              <div className="md:col-span-2 md:row-span-2 p-8 bg-[#000000] rounded-sm border border-[#444a4f] flex flex-col items-center justify-center text-center relative overflow-hidden">
+                <div className="absolute inset-0 opacity-20">
+                  <div className="grid grid-cols-10 grid-rows-10 h-full w-full">
+                    {[...Array(100)].map((_, i) => (
+                      <div 
+                        key={i} 
+                        className="border-[0.5px] border-[#444a4f]"
+                        style={{
+                          backgroundColor: i === 42 || i === 87 || i === 12 ? '#ff6b6b' : 
+                                           i % 7 === 0 ? '#ffa726' : 
+                                           '#37d097'
+                        }}
+                      />
+                    ))}
                   </div>
                 </div>
-
-                {/* Smart Contract Exploit */}
-                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
-                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Smart Contract Exploit</div>
-                  <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.22%</div>
-                    <div className="text-s text-[#37d097] font-medium">Post Audit Probability</div>
-                  </div>
+                <div className="relative z-10">
+                  <h3 className="font-heading font-medium tracking-tight text-[#ffffff] mb-2">Risk Heatmap</h3>
+                  <p className="text-xs text-[#aab9be] uppercase tracking-widest">10,000 Scenarios Modeled</p>
                 </div>
+              </div>
 
-                {/* Liquidation Cascade */}
-                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
-                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Liquidation Cascade</div>
-                  <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.05%</div>
-                    <div className="text-s text-[#37d097] font-medium">Insurance Fund Protected</div>
-                  </div>
+              {/* Liquidation Cascade */}
+              <div className="p-6 bg-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Liquidation Cascade</div>
+                <div>
+                  <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.05%</div>
+                  <div className="text-s text-[#37d097] font-medium">Insurance Fund Protected</div>
                 </div>
+              </div>
 
-                {/* LST Depeg Events */}
-                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
-                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">LST Depeg Events</div>
-                  <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.00%</div>
-                    <div className="text-s text-[#37d097] font-medium">Gradual Liquidation Cap</div>
-                  </div>
+              {/* LST Depeg Events */}
+              <div className="p-6 bg-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">LST Depeg Events</div>
+                <div>
+                  <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.00%</div>
+                  <div className="text-s text-[#37d097] font-medium">Gradual Liquidation Cap</div>
                 </div>
               </div>
             </div>
