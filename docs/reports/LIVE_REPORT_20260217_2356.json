@@ -1,0 +1,54 @@
+{
+  "report_id": "KPR-20260217_2356",
+  "run_ts": "2026-02-17 23:56:41 UTC",
+  "metrics": {
+    "eth_price_usd": 1992.65,
+    "total_vault_tvl_eth": 0.0,
+    "total_vault_tvl_usd": 0.0,
+    "exchange_equity_usd": 0.009036,
+    "exchange_equity_eth": 4.534664893483552e-06,
+    "short_size_eth": 0.0,
+    "delta_eth": 0.0,
+    "delta_pct": 0.0,
+    "is_delta_neutral": true,
+    "solvency_pct": 1.002003854267116e-22,
+    "total_assets_usd": 0.009036,
+    "liabilities_usd": 9.017929383723874e+21,
+    "expected_apy_pct": 26.404236781006652,
+    "staking_yield_pct": 2.337625,
+    "hl_funding_rate_hourly": 6.4188e-06,
+    "avg_annual_funding_pct": 3.1845246743607754,
+    "best_venue": "bybit",
+    "best_venue_annual_pct": 7.570830000000001,
+    "leverage": 3.0,
+    "hedge_status": "NO_TVL",
+    "system_health": "DORMANT \u2014 TVL below hedging threshold",
+    "vault_paused": false,
+    "deployer_eth_gas": 0.0,
+    "liquidation_price": 0.0
+  },
+  "blockers": [
+    "Vault TVL (0.000000 ETH) is below hedge threshold (0.01 ETH). Existing capital in ZIN Pool (~$71) should be routed to the vault to activate the hedge.",
+    "Hyperliquid margin account has insufficient collateral ($0.0090). Minimum ~$50 USDC required for an ETH short.",
+    "Deployer/bot wallet has 0 ETH \u2014 cannot execute on-chain transactions (rebalancing, PoR attestation, sync). ~0.005 ETH on Base required."
+  ],
+  "positions": {
+    "base_tvl_eth": 0.0,
+    "arb_tvl_eth": 0.0,
+    "short_size_eth": 0.0,
+    "exchange_equity_usd": 0.009036,
+    "deployer_address": "0x57D400cED462a01Ed51a5De038F204Df49690A99"
+  },
+  "market_snapshot": {
+    "eth_price": 1991.98,
+    "avg_annual_funding": 0.03184524674360775,
+    "best_venue": "bybit",
+    "wsteth_yield": 0.02337625
+  },
+  "attestation": {
+    "signer": "0x57D400cED462a01Ed51a5De038F204Df49690A99",
+    "signature": "0xa72e93e6e030bbe12409bf4f35e8ede8cb9cc6105b19ed102e42be56dbe2833e53e11994b77e25376f517bbf7c95e391937b181b12e5522a2c37123c4ca313751b",
+    "method": "eth_sign (EIP-191)",
+    "fingerprint": "6873858053cde7bea8856d2c9187d2e32869e354cf6ec408b7755158ac7ffa80"
+  }
+}
