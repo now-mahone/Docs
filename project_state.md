@@ -1,3 +1,15 @@
+## 2026-02-19 18:15 - Standardized Monte Carlo Scenario Cards
+**Status**: ✅ Complete
+**Action**: Standardized the Monte Carlo scenario breakdown cards to match the site-wide metric card style and added a fourth risk vector.
+**Changes Made**:
+1. **Style Alignment**: Converted the large scenario cards into the standard 4-column grid format used for metrics, ensuring section-wide visual consistency.
+2. **Fourth Risk Vector**: Added "LST Depeg Events" (0.00% failure rate) to the breakdown, completing the 4-card row.
+3. **Data Fidelity**: Updated failure rates to reflect v4 simulation results (Oracle: 0.00%, Exploit: 0.22%, Cascade: 0.05%, Depeg: 0.00%).
+4. **Visual Cleanup**: Removed large icons and long paragraphs in favor of the clean "Label > Value > Status" architecture.
+
+**Files Modified**: `frontend/src/app/transparency/page.tsx`
+**Deployed to**: m-vercel remote
+
 ## 2026-02-19 18:05 - Updated Monte Carlo Simulation Metrics
 **Status**: ✅ Complete
 **Action**: Updated the Monte Carlo Risk Simulation metric cards on the transparency page with higher-fidelity results and improved risk reporting.

@@ -265,41 +265,41 @@ export default function TransparencyPage() {
               </div>
 
               {/* Scenario Breakdown */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {/* Oracle Manipulation */}
-                <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col items-start text-left">
-                  <div className="w-12 h-12 bg-transparent border border-[#37d097] rounded-full flex items-center justify-center text-[#ffffff] mb-8">
-                    <Activity size={24} />
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Oracle Manipulation</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.00%</div>
+                    <div className="text-s text-[#37d097] font-medium">Zero Failures Recorded</div>
                   </div>
-                  <h3 className="font-heading font-medium mb-4 tracking-tight text-[#ffffff]">Oracle Manipulation</h3>
-                  <p className="text-s text-[#d4dce1] leading-relaxed font-medium mb-4">
-                    Zero failures recorded across 10,000 simulations. Every attempted oracle attack was intercepted by the triple-source defense layer.
-                  </p>
-                  <div className="text-xs font-bold text-[#37d097] uppercase tracking-wide">0.00% Failure Rate</div>
                 </div>
 
                 {/* Smart Contract Exploit */}
-                <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col items-start text-left">
-                  <div className="w-12 h-12 bg-transparent border border-[#ff6b6b] rounded-full flex items-center justify-center text-[#ffffff] mb-8">
-                    <Shield size={24} />
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Smart Contract Exploit</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.22%</div>
+                    <div className="text-s text-[#ff6b6b] font-medium">Post-Audit Probability</div>
                   </div>
-                  <h3 className="font-heading font-medium mb-4 tracking-tight text-[#ffffff]">Smart Contract Exploit</h3>
-                  <p className="text-s text-[#d4dce1] leading-relaxed font-medium mb-4">
-                    Primary failure mode reduced by 78.6% through formal code audits and an active bug bounty program.
-                  </p>
-                  <div className="text-xs font-bold text-[#ff6b6b] uppercase tracking-wide">0.22% Failure Rate</div>
                 </div>
 
                 {/* Liquidation Cascade */}
-                <div className="p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col items-start text-left">
-                  <div className="w-12 h-12 bg-transparent border border-[#ffa726] rounded-full flex items-center justify-center text-[#ffffff] mb-8">
-                    <TrendingDown size={24} />
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Liquidation Cascade</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.05%</div>
+                    <div className="text-s text-[#ffa726] font-medium">Insurance Fund Protected</div>
                   </div>
-                  <h3 className="font-heading font-medium mb-4 tracking-tight text-[#ffffff]">Liquidation Cascade</h3>
-                  <p className="text-s text-[#d4dce1] leading-relaxed font-medium mb-4">
-                    Secondary risk factor mitigated through automated Insurance Fund injections and tiered circuit breakers.
-                  </p>
-                  <div className="text-xs font-bold text-[#ffa726] uppercase tracking-wide">0.05% Failure Rate</div>
+                </div>
+
+                {/* LST Depeg Events */}
+                <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">LST Depeg Events</div>
+                  <div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">0.00%</div>
+                    <div className="text-s text-[#37d097] font-medium">Gradual Liquidation Cap</div>
+                  </div>
                 </div>
               </div>
             </div>
