@@ -14,19 +14,18 @@ import { NextRequest, NextResponse } from "next/server";
 
 // Email forwarding routing table
 // Maps kerne.ai addresses to personal Gmail addresses
-// Each team member's kerne.ai email routes to their own Gmail
+// Each person's kerne.ai email routes to their matching Gmail
 const EMAIL_ROUTES: Record<string, string> = {
-  // Scofield (Devon) - liamlakevold@gmail.com
-  "devon@kerne.ai": "liamlakevold@gmail.com",
-  "scofield@kerne.ai": "liamlakevold@gmail.com",
+  // liamlakevold@kerne.ai → liamlakevold@gmail.com
+  "liamlakevold@kerne.ai": "liamlakevold@gmail.com",
   
-  // Mahone - routes to Mahone's Gmail
+  // mahone@kerne.ai → nowmahone@gmail.com
   "mahone@kerne.ai": "nowmahone@gmail.com",
   
-  // Bagwell - routes to Bagwell's Gmail
+  // bagwell@kerne.ai → tb12344444444@gmail.com
   "bagwell@kerne.ai": "tb12344444444@gmail.com",
   
-  // Shared addresses - route to team inbox or primary contact
+  // Shared team addresses - route to Scofield's Gmail (primary contact)
   "team@kerne.ai": "liamlakevold@gmail.com",
   "contact@kerne.ai": "liamlakevold@gmail.com",
   "info@kerne.ai": "liamlakevold@gmail.com",
