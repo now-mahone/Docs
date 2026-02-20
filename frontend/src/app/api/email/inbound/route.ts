@@ -13,13 +13,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Email forwarding routing table
+// Maps kerne.ai addresses to Gmail addresses
 const EMAIL_ROUTES: Record<string, string> = {
   "devon@kerne.ai": "liamlakevold@gmail.com",
   "team@kerne.ai": "liamlakevold@gmail.com",
   "contact@kerne.ai": "liamlakevold@gmail.com",
+  "info@kerne.ai": "liamlakevold@gmail.com",
+  "support@kerne.ai": "liamlakevold@gmail.com",
 };
 
-// Default forward destination (catch-all)
+// Default forward destination (catch-all for any @kerne.ai address)
 const DEFAULT_FORWARD = "liamlakevold@gmail.com";
 
 interface ResendWebhookEvent {
