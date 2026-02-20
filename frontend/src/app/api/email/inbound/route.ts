@@ -22,8 +22,8 @@ const EMAIL_ROUTES: Record<string, string> = {
   // Mahone - matthewlakevold@kerne.ai → matthewlkv@gmail.com
   "matthewlakevold@kerne.ai": "matthewlkv@gmail.com",
   
-  // Bagwell - bagwell@kerne.ai → devhew1337@icloud.com
-  "bagwell@kerne.ai": "devhew1337@icloud.com",
+  // Bagwell - devonhewitt@kerne.ai → devhew1337@icloud.com
+  "devonhewitt@kerne.ai": "devhew1337@icloud.com",
   
   // Shared team addresses - route to Scofield (primary contact)
   "team@kerne.ai": "liamlakevold@gmail.com",
