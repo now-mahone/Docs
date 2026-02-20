@@ -231,8 +231,8 @@ export default function TransparencyPage() {
                 <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Survival Rate</div>
                   <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">98.4%</div>
-                    <div className="text-s text-[#37d097] font-medium">9,835 / 10,000</div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">99.73%</div>
+                    <div className="text-s text-[#37d097] font-medium">9,973 / 10,000</div>
                   </div>
                 </div>
 
@@ -240,26 +240,26 @@ export default function TransparencyPage() {
                 <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
                   <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Mean Yield APY</div>
                   <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">18.0%</div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">21.78%</div>
                     <div className="text-s text-[#37d097] font-medium">Annualized</div>
                   </div>
                 </div>
 
-                {/* Mean Final TVL */}
+                {/* Max Drawdown */}
                 <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
-                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Mean Final TVL</div>
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">Max Drawdown</div>
                   <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">$119.4M</div>
-                    <div className="text-s text-[#37d097] font-medium">12 Month Avg</div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">2.62%</div>
+                    <div className="text-s text-[#37d097] font-medium">Historical Peak-to-Trough</div>
                   </div>
                 </div>
 
-                {/* VaR 95 */}
+                {/* VaR 99 */}
                 <div className="p-6 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col justify-between text-left">
-                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">VaR 95</div>
+                  <div className="text-xs font-bold text-[#aab9be] uppercase tracking-wide mb-4">VaR 99%</div>
                   <div>
-                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">$90.7M</div>
-                    <div className="text-s text-[#37d097] font-medium">95th Percentile</div>
+                    <div className="text-xl font-heading font-medium text-[#ffffff] mb-2">$86.77M</div>
+                    <div className="text-s text-[#37d097] font-medium">86.77c per dollar preserved</div>
                   </div>
                 </div>
               </div>

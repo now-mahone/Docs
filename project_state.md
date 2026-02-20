@@ -1,3 +1,28 @@
+## 2026-02-19 18:05 - Updated Monte Carlo Simulation Metrics
+**Status**: ✅ Complete
+**Action**: Updated the Monte Carlo Risk Simulation metric cards on the transparency page with higher-fidelity results and improved risk reporting.
+**Changes Made**:
+1. **Survival Rate**: Updated to 99.73% (9,973/10,000 scenarios).
+2. **Mean Yield**: Updated to 21.78% APY.
+3. **Metric Swap**: Replaced "Mean Final TVL" with "Max Drawdown" (2.62%) to better reflect downside risk.
+4. **VaR Update**: Switched from VaR 95 to VaR 99% ($86.77M) with a clearer description of capital preservation (86.77c per dollar).
+
+**Files Modified**: `frontend/src/app/transparency/page.tsx`
+**Deployed to**: m-vercel remote
+
+## 2026-02-19 11:25 - Refactored Monte Carlo Section Layout
+**Status**: ✅ Complete
+**Action**: Refactored the Monte Carlo Risk Simulation section on the transparency page for better layout, spacing, and content clarity.
+**Changes Made**:
+1. **Spacing Standardization**: Updated the card container to use `space-y-4`, matching the spacing of the Bento Box section above.
+2. **Methodology Card Refactor**: Converted the Simulation Methodology card into a clean header and paragraph format, removing the complex 4-column grid and extra elements.
+3. **Card Reordering**: Moved the Simulation Methodology card to the top of the grid for better narrative flow.
+4. **TVL Neutrality**: Removed all mentions of the initial $100M TVL to emphasize that the protocol's risk resilience is independent of specific TVL thresholds.
+5. **Visual Consistency**: Maintained the `bg-gradient-to-b from-[#ffffff] to-[#d4dce1]` for the section background.
+
+**Files Modified**: `frontend/src/app/transparency/page.tsx`
+**Deployed to**: m-vercel remote
+
 ## 2026-02-18 13:05 - Standardized Transparency Page Background Gradients
 **Status**: ✅ Complete
 **Action**: Standardized the background logic for the Risk Management Framework section on the transparency page to match the site-wide design language.
