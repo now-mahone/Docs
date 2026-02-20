@@ -351,8 +351,8 @@ export default function TransparencyPage() {
                     </div>
                     {/* Legend */}
                     <div className="flex flex-col items-start md:items-end gap-1 shrink-0">
-                      <div className="flex items-start md:items-center gap-2">
-                        <span className="text-[10px] text-[#aab9be] uppercase font-medium tracking-widest mt-[2px] md:mt-0">Density</span>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-[#aab9be] uppercase font-medium tracking-widest">Density</span>
                         <div className="flex flex-col gap-1">
                           <div className="flex gap-0 h-2 w-32 rounded-[1px] overflow-hidden">
                             {Array.from({ length: 50 }).map((_, i) => (
