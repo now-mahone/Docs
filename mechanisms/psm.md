@@ -1,10 +1,10 @@
 # Peg Stability Module (PSM)
 
-The **Peg Stability Module** is the protocol's primary mechanism for maintaining the $1.00 peg of kUSD through deterministic arbitrage.
+The **Peg Stability Module** is the protocol's anchor, maintaining the $1.00 peg of kUSD through deterministic arbitrage and hard-coded price floors.
 
-## How It Works
+## Execution Logic
 
-The PSM allows users to swap between kUSD and approved reserve assets (USDC, USDT) at a fixed 1:1 ratio, minus a small fee.
+The PSM facilitates high-efficiency swaps between kUSD and approved reserve assets (USDC, USDT) at a fixed 1:1 ratio.
 
 ### Minting (USDC → kUSD)
 1. User sends USDC to the PSM contract.
@@ -27,12 +27,12 @@ Fees are adjustable via governance to manage demand side pressure on the peg.
 
 ## Arbitrage Mechanics
 
-The PSM creates a hard price floor and ceiling for kUSD:
+The PSM enforces a hard price floor and ceiling for kUSD:
 
-- **If kUSD > $1.00**: Arbitrageurs mint kUSD via PSM (at $1.00) and sell on secondary markets for profit, pushing the price back down.
-- **If kUSD < $1.00**: Arbitrageurs buy kUSD on secondary markets and redeem via PSM (at $1.00) for profit, pushing the price back up.
+- **If kUSD > $1.00**: Arbitrageurs mint kUSD via PSM (at $1.00) and sell on secondary markets, capturing the spread and normalizing the price.
+- **If kUSD < $1.00**: Arbitrageurs buy kUSD on secondary markets and redeem via PSM (at $1.00), extracting profit and restoring the peg.
 
-This creates a tight **$0.999 – $1.001** trading range under normal conditions.
+This mechanism ensures a tight **$0.999 – $1.001** trading range.
 
 ## Reserve Management
 

@@ -1,14 +1,14 @@
 # The Narrative Collective
 
-The **Narrative Collective** is Kerne's strategic approach to dominating mindshare in the DeFi ecosystem through coordinated narrative engineering, community weaponization, and content saturation.
+The **Narrative Collective** is Kerne's strategic framework for establishing mindshare through coordinated narrative engineering, community engagement, and content saturation.
 
 ## Philosophy
 
-In crypto, **narrative is liquidity**. The protocols that control the conversation capture the capital. Kerne's approach is systematic:
+In the decentralized economy, **narrative is liquidity**. The protocols that control the conversation capture the capital. Kerne's approach is systematic and strategic:
 
-1. **Own the Vocabulary**: Introduce and popularize terms that frame Kerne as the category leader (e.g., "Liquidity Black Hole," "Glass House Standard," "Prime Liquidity Layer").
+1. **Own the Vocabulary**: We define the terms of engagement. We popularize concepts that frame Kerne as the definitive category leader (e.g., "Liquidity Black Hole," "Glass House Standard," "Institutional Yield Infrastructure").
 2. **Saturate the Feed**: Maintain constant presence across CT (Crypto Twitter), governance forums, and research publications.
-3. **Weaponize Transparency**: Use the Glass House Standard not just as a safety feature, but as a marketing weapon against competitors who cannot match our transparency.
+3. **Weaponize Transparency**: We use the Glass House Standard as a marketing weapon to expose and outcompete protocols that cannot match our real-time proof of solvency.
 
 ## Execution Framework
 

@@ -1,16 +1,16 @@
-# Institutional On Ramp
+# Institutional On-Ramp
 
-Kerne's institutional strategy is designed to capture the largest untapped capital pool in crypto: treasury management and yield allocation from funds, DAOs, and corporate treasuries.
+Kerne's institutional strategy is engineered to capture the largest untapped capital pool in the digital asset space: treasury management and yield allocation from funds, DAOs, and corporate treasuries.
 
 ## The Opportunity
 
-Institutional capital (hedge funds, family offices, DAO treasuries) is looking for:
-1. **Predictable yields** without directional market exposure
-2. **Regulatory clarity** and compliance tooling
-3. **Transparent custody** with realtime auditability
-4. **Enterprise grade** infrastructure and SLAs
+Institutional allocators (hedge funds, family offices, DAO treasuries) require:
+1. **Predictable yields** without directional market exposure.
+2. **Regulatory clarity** and compliance-hardened tooling.
+3. **Transparent custody** with real-time auditability.
+4. **Enterprise-grade** infrastructure and SLAs.
 
-Kerne provides all four through its delta neutral architecture and Glass House Standard.
+Kerne delivers all four through its delta-neutral architecture and the **Glass House Standard**.
 
 ## Pro Mode Vaults
 
@@ -46,8 +46,8 @@ Kerne operates a separate tier of **whitelisted vaults** specifically designed f
 
 ## Strategic Partnerships
 
-Kerne actively pursues partnerships with:
-- **DeFi protocols** seeking treasury yield (e.g., DAO treasuries holding idle stablecoins)
-- **Crypto funds** looking for market neutral strategies
-- **Traditional finance** allocators exploring onchain yield
-- **RWA issuers** seeking liquidity and distribution
+Kerne aggressively pursues partnerships with:
+- **DeFi Protocols** seeking treasury yield (DAO treasuries holding idle stablecoins).
+- **Crypto Funds** requiring market-neutral strategies.
+- **Traditional Finance** allocators exploring onchain yield.
+- **RWA Issuers** seeking liquidity and distribution.

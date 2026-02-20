@@ -1,6 +1,6 @@
 # Regulatory Arbitrage
 
-Kerne is designed to operate within the emerging regulatory framework while exploiting jurisdictional asymmetries to maximize operational freedom and capital flow.
+Kerne is engineered to operate within emerging regulatory frameworks while leveraging jurisdictional asymmetries to maximize operational freedom and capital velocity.
 
 ## The Regulatory Landscape
 
@@ -29,11 +29,11 @@ Rather than viewing regulation as an obstacle, Kerne treats compliance tooling a
 
 ## The Regulatory Moat
 
-By proactively building compliance infrastructure, Kerne creates a regulatory moat:
+By proactively engineering compliance infrastructure, Kerne establishes an impenetrable regulatory moat:
 
-1. **First Mover Advantage**: Protocols that build compliance tooling early will be grandfathered into regulatory frameworks, while competitors scramble to retrofit.
-2. **Institutional Gate**: Regulated capital (pension funds, endowments, public companies) can only allocate to compliant protocols. Kerne will be positioned to capture this capital wave.
-3. **License Accumulation**: Strategic acquisition of relevant licenses across jurisdictions creates barriers to entry for competitors.
+1. **First-Mover Advantage**: Protocols that integrate compliance tooling early will be grandfathered into regulatory frameworks, while competitors are forced into costly retrofits.
+2. **Institutional Gate**: Regulated capital (pension funds, endowments, public companies) can only allocate to compliant protocols. Kerne is positioned to absorb this capital wave.
+3. **License Accumulation**: Strategic acquisition of jurisdictional licenses creates insurmountable barriers to entry for competitors.
 
 ## Risk Mitigation
 
