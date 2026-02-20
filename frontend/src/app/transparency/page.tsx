@@ -347,7 +347,7 @@ export default function TransparencyPage() {
                 <div className="md:col-span-2 md:row-span-2 p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm border border-[#444a4f] flex flex-col relative">
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-start gap-4 md:gap-0 mb-6">
                     <div className="text-left">
-                      <h3 className="font-heading font-medium tracking-tight text-[#ffffff] mb-1">Risk Distribution</h3>
+                      <h3 className="font-heading font-medium tracking-tight text-[#ffffff] mb-1">Yield vs. Drawdown Density</h3>
                     </div>
                     {/* Legend */}
                     <div className="flex flex-col items-start md:items-end gap-1 shrink-0">
@@ -416,7 +416,7 @@ export default function TransparencyPage() {
                       <span>15%</span>
                     </div>
                     <div className="text-center text-[10px] text-[#aab9be] font-medium mt-1 pl-10 tracking-widest uppercase">
-                      Max Drawdown
+                      Max Portfolio Drawdown
                     </div>
                   </div>
                 </div>
