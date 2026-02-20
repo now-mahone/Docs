@@ -352,10 +352,20 @@ export default function TransparencyPage() {
                     {/* Legend */}
                     <div className="flex flex-col items-end gap-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-[8px] text-[#aab9be] uppercase font-bold">Density</span>
-                        <div className="w-24 h-1.5 rounded-full bg-gradient-to-r from-[rgb(0,0,255)] via-[rgb(0,255,0)] to-[rgb(255,0,0)]" />
+                        <span className="text-xs text-[#aab9be] uppercase font-bold">Density</span>
+                        <div 
+                          className="w-32 h-2 rounded-[1px]" 
+                          style={{
+                            background: 'linear-gradient(to right, rgb(0,0,255), rgb(0,255,255), rgb(0,255,0), rgb(255,255,0), rgb(255,165,0), rgb(255,0,0))'
+                          }}
+                        />
                       </div>
-                      <div className="flex justify-between w-24 text-[8px] text-[#aab9be] font-medium px-0.5">
+                      <div className="flex justify-between w-32 text-xs text-[#aab9be] font-medium px-0.5">
+                        <span>Low</span>
+                        <span>High</span>
+                      </div>
+                    </div>
+                      <div className="flex justify-between w-32 text-xs text-[#aab9be] font-medium px-0.5">
                         <span>Low</span>
                         <span>High</span>
                       </div>
