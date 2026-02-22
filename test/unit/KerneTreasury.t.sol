@@ -206,7 +206,7 @@ contract KerneTreasuryTest is Test {
     
     function test_DistributeAndBuyback_ExecutesInOneTransaction() public {
         uint256 balance = weth.balanceOf(address(treasury));
-        uint256 buybackAmount = (balance * 2000) / 10000; // 20%
+        // uint256 buybackAmount = (balance * 2000) / 10000; // 20%
         
         treasury.distributeAndBuyback(address(weth), 0);
         

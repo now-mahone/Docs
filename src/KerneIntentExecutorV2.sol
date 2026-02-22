@@ -229,7 +229,7 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
         require(initiator == address(this), "Untrusted initiator");
         require(approvedLenders[msg.sender], "Unapproved lender");
         
-        (address tokenIn, uint256 amountOut, address user, address target, bytes memory aggregatorData, address solver, uint8 fulfillmentType) = 
+        (address tokenIn, uint256 amountOut, address user, address target, bytes memory aggregatorData, address solver, uint8 fulfillmentType) =
             abi.decode(data, (address, uint256, address, address, bytes, address, uint8));
 
         // SECURITY FIX: Validate target is a whitelisted aggregator/DEX router

@@ -77,7 +77,7 @@ contract KernePriceOracleForkTest is Test {
         assertLt(deviationBps, 1000, "Deviation should be < 10%");
     }
     
-    function test_IsPriceValid() public {
+    function test_IsPriceValid() public view {
         bool isValid = oracle.isPriceValid();
         assertTrue(isValid, "Price should be valid on mainnet");
     }

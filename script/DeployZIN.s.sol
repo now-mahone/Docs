@@ -134,7 +134,7 @@ contract DeployZIN is Script {
         console.log("ZIN Pool:", zinPoolAddress);
         
         KerneIntentExecutorV2 zinExecutor = KerneIntentExecutorV2(zinExecutorAddress);
-        KerneZINPool zinPool = KerneZINPool(zinPoolAddress);
+        // KerneZINPool zinPool = KerneZINPool(zinPoolAddress);
         
         (uint256 totalSpread, uint256 totalIntents, address profitVault) = zinExecutor.getZINMetrics();
         console.log("Total Spread:", totalSpread);

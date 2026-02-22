@@ -27,7 +27,7 @@ contract KerneCrossChainTest is Test {
     }
 
 
-    function testOFTDeployment() public {
+    function testOFTDeployment() public view {
         assertEq(kusdBase.name(), "kUSD");
         assertEq(kusdArb.symbol(), "kUSD");
     }

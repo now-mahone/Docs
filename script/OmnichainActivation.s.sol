@@ -80,7 +80,7 @@ contract OmnichainActivation is Script {
         console.log("Peers set on Arbitrum for Base EID:", BASE_EID);
     }
 
-    function _configureBasePeers(address admin) internal {
+    function _configureBasePeers(address /*admin*/) internal {
         console.log("--- Configuring Base Peers ---");
         
         address baseKusd = vm.envAddress("BASE_KUSD_OFT");

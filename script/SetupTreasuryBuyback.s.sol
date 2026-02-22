@@ -156,7 +156,7 @@ contract SetupTreasuryBuyback is Script {
         }
     }
     
-    function _verifyPool() internal view {
+    function _verifyPool() internal pure {
         // Check if KERNE/WETH pool exists on Aerodrome
         // Pool address can be computed or queried from factory
         
