@@ -208,7 +208,7 @@ contract KernePriceOracleTest is Test {
         vm.prank(updater);
         oracle.updateObservation();
         
-        (uint256 timestamp, int56 tickCumulative, uint160 secondsPerLiquidity) = oracle.lastObservation();
+        (uint256 timestamp, , ) = oracle.lastObservation();
         assertGt(timestamp, 0);
     }
 

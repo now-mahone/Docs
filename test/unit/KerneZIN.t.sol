@@ -515,7 +515,7 @@ contract KerneZINTest is Test {
     
     // ============ Gas Optimization Tests ============
     
-    function test_Gas_AnalyzeRoute() public {
+    function test_Gas_AnalyzeRoute() public view {
         uint256 gasBefore = gasleft();
         zinRouter.analyzeRoute(address(weth), address(weth), 100e18);
         uint256 gasUsed = gasBefore - gasleft();
@@ -524,7 +524,7 @@ contract KerneZINTest is Test {
         assertLt(gasUsed, 50000);
     }
     
-    function test_Gas_GetAvailableLiquidity() public {
+    function test_Gas_GetAvailableLiquidity() public view {
         uint256 gasBefore = gasleft();
         zinPool.getAvailableLiquidity(address(weth));
         uint256 gasUsed = gasBefore - gasleft();

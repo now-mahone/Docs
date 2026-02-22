@@ -196,7 +196,7 @@ contract KerneVaultCircuitBreakerTest is Test {
     
     // ============ VIEW FUNCTION TESTS ============
     
-    function test_ViewFunctions() public {
+    function test_ViewFunctions() public view {
         // Check initial state
         assertFalse(vault.isCRCircuitBreakerActive());
         assertEq(vault.crCircuitBreakerTriggeredAt(), 0);

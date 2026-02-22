@@ -20,7 +20,7 @@ contract DeployOFT is Script {
         string memory chainName = _resolveChainName(block.chainid);
 
         // Shared decimals for cross-chain compatibility (6 for USDC-like precision)
-        uint8 sharedDecimals = 6;
+        // uint8 sharedDecimals = 6;
 
         console.log("Deploying OFTs on:", chainName);
         console.log("LayerZero Endpoint:", lzEndpoint);
