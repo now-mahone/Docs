@@ -9,6 +9,7 @@ import { ERC4626 } from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { IYieldAdapter } from "./interfaces/IYieldAdapter.sol";
 
 interface IAerodromeGauge {
     function getReward(address account, address[] memory tokens) external;
@@ -24,7 +25,7 @@ interface IMoonwellComptroller {
  * @notice A universal adapter that wraps any ERC-4626 vault into the Kerne ecosystem.
  * Hardened with full Aerodrome and Moonwell integration for automated yield harvesting.
  */
-contract KerneUniversalAdapter is ERC4626, AccessControl, ReentrancyGuard {
+contract KerneUniversalAdapter is ERC4626, AccessControl, ReentrancyGuard, IYieldAdapter {
     using SafeERC20 for IERC20;
 
     bytes32 public constant STRATEGIST_ROLE = keccak256("STRATEGIST_ROLE");
@@ -54,7 +55,7 @@ contract KerneUniversalAdapter is ERC4626, AccessControl, ReentrancyGuard {
         _grantRole(STRATEGIST_ROLE, _strategist);
     }
 
-    function totalAssets() public view virtual override returns (uint256) {
+    function totalAssets() public view virtual override(ERC4626, IYieldAdapter) returns (uint256) {
         uint256 vaultShares = targetVault.balanceOf(address(this));
         uint256 onChainAssets = ERC4626(address(targetVault)).convertToAssets(vaultShares);
         return onChainAssets + offChainAssets + IERC20(asset()).balanceOf(address(this));
@@ -86,8 +87,10 @@ contract KerneUniversalAdapter is ERC4626, AccessControl, ReentrancyGuard {
 
     /**
      * @notice Harvests yield and claims rewards from integrated protocols.
+     * @param data Flexible data payload (currently unused in this adapter, but required by IYieldAdapter).
+     * @return harvestedAmount The amount of yield harvested.
      */
-    function harvest() external onlyRole(STRATEGIST_ROLE) nonReentrant {
+    function harvest(bytes calldata data) external onlyRole(STRATEGIST_ROLE) nonReentrant returns (uint256 harvestedAmount) {
         // 1. Claim Aerodrome Rewards
         if (aerodromeGauge != address(0)) {
             IAerodromeGauge(aerodromeGauge).getReward(address(this), rewardTokens);
@@ -108,6 +111,8 @@ contract KerneUniversalAdapter is ERC4626, AccessControl, ReentrancyGuard {
 
         uint256 currentOnChain = ERC4626(address(targetVault)).convertToAssets(targetVault.balanceOf(address(this)));
         emit YieldHarvested(currentOnChain, block.timestamp);
+        
+        return currentOnChain;
     }
 
     function setIntegrations(address _aerodromeGauge, address _moonwellComptroller, address[] calldata _rewardTokens) external onlyRole(DEFAULT_ADMIN_ROLE) {

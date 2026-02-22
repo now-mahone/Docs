@@ -78,7 +78,7 @@ contract KerneIntentExecutorTest is Test {
     }
 
     function testFulfillIntentWithVault() public {
-        uint256 amount = 1000 ether;
+        // uint256 amount = 1000 ether;
         
         // Mock user having tokenIn (WETH)
         weth.mint(user, 10 ether);
@@ -126,7 +126,7 @@ contract KerneIntentExecutorTest is Test {
     }
 
     function testFulfillIntentWithPSM() public {
-        uint256 amount = 1000 ether;
+        // uint256 amount = 1000 ether;
         
         // Fund the mock aggregator with kUSD to simulate swap output
         kUSD.mint(ONE_INCH_ROUTER, 1000 ether);

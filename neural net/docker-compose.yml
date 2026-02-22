@@ -17,6 +17,11 @@ services:
       - DATA_FETCH_INTERVAL_MINUTES=60
       - MIN_NEW_SAMPLES=100
       - EPOCHS_PER_RETRAIN=5
+      - DATABASE_HOST=${DATABASE_HOST:-localhost}
+      - DATABASE_PORT=${DATABASE_PORT:-5432}
+      - DATABASE_NAME=${DATABASE_NAME:-kerne}
+      - DATABASE_USER=${DATABASE_USER:-postgres}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 60s

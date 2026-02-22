@@ -150,14 +150,20 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     //                LIQUIDATION CASCADE PREVENTION
     // ============================================================
     
-    /// @notice Whether the collateral ratio circuit breaker is active
+    /// @notice Whether the collateral ratio circuit breaker is active (Red Halt)
     bool public crCircuitBreakerActive;
     
-    /// @notice Critical collateral ratio threshold (1.25x = 125%)
+    /// @notice Whether the collateral ratio soft alert is active (Yellow Alert)
+    bool public crSoftAlertActive;
+    
+    /// @notice Critical collateral ratio threshold (1.25x = 125%) - Triggers Red Halt
     uint256 public constant CRITICAL_CR_THRESHOLD = 12500; // 1.25x in basis points
     
-    /// @notice Safe collateral ratio for recovery (1.35x = 135%)
-    uint256 public constant SAFE_CR_THRESHOLD = 13500; // 1.35x in basis points
+    /// @notice Warning collateral ratio threshold (1.35x = 135%) - Triggers Yellow Alert
+    uint256 public constant WARNING_CR_THRESHOLD = 13500; // 1.35x in basis points
+    
+    /// @notice Safe collateral ratio for recovery (1.40x = 140%)
+    uint256 public constant SAFE_CR_THRESHOLD = 14000; // 1.40x in basis points
     
     /// @notice Timestamp when circuit breaker was triggered
     uint256 public crCircuitBreakerTriggeredAt;
@@ -208,8 +214,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     event PriceCircuitBreakerReset();
     
     // --- Liquidation Cascade Prevention Events ---
-    event CRCircuitBreakerTriggered(uint256 cr, uint256 timestamp);
+    event CRCircuitBreakerTriggered(uint256 cr, uint256 timestamp); // Red Halt
+    event CRSoftAlertTriggered(uint256 cr, uint256 timestamp); // Yellow Alert
     event CRCircuitBreakerRecovered(uint256 cr, uint256 timestamp);
+    event CRSoftAlertRecovered(uint256 cr, uint256 timestamp);
     event DynamicBufferUpdated(uint256 oldBuffer, uint256 newBuffer);
     event LiquidationRateLimited(uint256 attempted, uint256 allowed, uint256 hour);
 
@@ -276,7 +284,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
      *      without needing admin role post-deployment.
      */
     function initializeWithConfig(
-        address asset_,
+        address /*asset_*/,
         string memory name_,
         string memory symbol_,
         address admin_,
@@ -1139,13 +1147,13 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         _;
     }
     
-    /// @notice Check and update CR circuit breaker state
+    /// @notice Check and update CR circuit breaker state (Tiered: Yellow/Red)
     /// @dev Called internally before critical operations
     function _checkCRCircuitBreaker() internal {
         uint256 cr = getSolvencyRatio();
         
+        // 1. Check Red Halt (Critical)
         if (!crCircuitBreakerActive) {
-            // Check if we should trigger
             if (cr < CRITICAL_CR_THRESHOLD) {
                 crCircuitBreakerActive = true;
                 crCircuitBreakerTriggeredAt = block.timestamp;
@@ -1153,14 +1161,28 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
                 emit CRCircuitBreakerTriggered(cr, block.timestamp);
             }
         } else {
-            // Check if we can recover
+            // Check if we can recover from Red Halt
             // Must be above safe threshold AND cooldown period must have passed
             if (cr >= SAFE_CR_THRESHOLD && 
                 block.timestamp >= crCircuitBreakerTriggeredAt + crCircuitBreakerCooldown) {
                 crCircuitBreakerActive = false;
                 crCircuitBreakerTriggeredAt = 0;
-                _unpause();
+                if (paused()) _unpause();
                 emit CRCircuitBreakerRecovered(cr, block.timestamp);
+            }
+        }
+
+        // 2. Check Yellow Alert (Warning)
+        if (!crSoftAlertActive && !crCircuitBreakerActive) {
+            if (cr < WARNING_CR_THRESHOLD) {
+                crSoftAlertActive = true;
+                emit CRSoftAlertTriggered(cr, block.timestamp);
+            }
+        } else if (crSoftAlertActive) {
+            // Recover from Yellow Alert if CR goes back above Warning Threshold
+            if (cr >= WARNING_CR_THRESHOLD) {
+                crSoftAlertActive = false;
+                emit CRSoftAlertRecovered(cr, block.timestamp);
             }
         }
     }

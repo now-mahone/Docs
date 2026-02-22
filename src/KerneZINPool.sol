@@ -167,7 +167,7 @@ contract KerneZINPool is AccessControl, ReentrancyGuard, IERC3156FlashLender {
                 // Calculate profit based on spread
                 profit = (tokenInBalance * zinFeeBps) / 10000;
                 if (profit > 0) {
-                    uint256 remaining = tokenInBalance - profit;
+                    // uint256 remaining = tokenInBalance - profit;
                     IERC20(tokenIn).safeTransfer(profitRecipient, profit);
                     totalProfitCaptured[tokenIn] += profit;
                     emit ProfitCaptured(tokenIn, profit);

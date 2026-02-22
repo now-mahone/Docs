@@ -1,0 +1,19 @@
+{
+  "status": "success",
+  "data": [
+    {
+      "pool_id": "0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC-base",
+      "pool_name": "Kerne WETH Delta-Neutral Basis Yield",
+      "tvl": 5000000,
+      "apy": 15.5,
+      "base_apy": 15.5,
+      "reward_apy": 0,
+      "reward_tokens": [],
+      "underlying_tokens": [
+        "0x4200000000000000000000000000000000000006"
+      ],
+      "chain": "Base",
+      "url": "https://kerne.ai"
+    }
+  ]
+}

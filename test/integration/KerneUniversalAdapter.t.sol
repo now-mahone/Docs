@@ -102,7 +102,7 @@ contract KerneUniversalAdapterTest is Test {
 
         // 2. Harvest (should not revert even without integrations set)
         vm.prank(bot);
-        adapter.harvest();
+        adapter.harvest("");
         
         // Verify state is unchanged after harvest with no integrations
         assertEq(adapter.totalAssets(), 100 ether);

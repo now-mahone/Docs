@@ -30,6 +30,20 @@ class HedgingEngine:
         self.MAX_LEVERAGE = 12.0
         self.RISK_AVERSION_FACTOR = 2.5 
         self.SETTLEMENT_THRESHOLD = 0.01 
+
+        # ── Circuit Breaker Configuration ──────────────────────────────────────
+        # CB1: Max single-cycle trade size (ETH). Caps the notional sent per cycle.
+        self.CB_MAX_TRADE_ETH = float(os.getenv("CB_MAX_TRADE_ETH", "50.0"))
+        # CB2: Maximum allowed over-hedge ratio relative to active TVL.
+        #      1.05 = up to 5 % over-hedge is tolerated before blocking.
+        self.CB_MAX_OVERHhedge_RATIO = float(os.getenv("CB_MAX_OVERHHEDGE_RATIO", "1.05"))
+        # CB3: Minimum TVL sanity floor (ETH). Refuse to touch positions if TVL
+        #      reads implausibly low — guards against RPC phantom TVL spikes.
+        self.CB_MIN_TVL_ETH = float(os.getenv("CB_MIN_TVL_ETH", "0.1"))
+        # CB4: Max consecutive circuit-breaker trips before emergency panic.
+        self.CB_MAX_TRIPS = int(os.getenv("CB_MAX_TRIPS", "3"))
+        self._cb_trip_count = 0
+        # ───────────────────────────────────────────────────────────────────────
         
         # Buyback Configuration
         self.MIN_BUYBACK_THRESHOLD_WETH = float(os.getenv("BUYBACK_MIN_WETH", "0.01"))
@@ -168,11 +182,69 @@ class HedgingEngine:
             # 4. Rebalance (only if delta exceeds threshold)
             if not dry_run and abs(delta) > self.THRESHOLD_ETH:
                 logger.info(f"🔄 Rebalancing: delta={delta:.4f} ETH exceeds threshold={self.THRESHOLD_ETH}")
-                if delta > 0:
-                    await asyncio.to_thread(self.exchange.execute_short, self.SYMBOL, delta)
+
+                # ── CIRCUIT BREAKER CHECKS ──────────────────────────────────────
+                cb_tripped = False
+
+                # CB1 — Over-hedge prevention
+                # Reject any rebalance that would result in a short >CB_MAX_OVERHHEDGE_RATIO × TVL
+                max_allowable_short = active_tvl * self.CB_MAX_OVERHHEDGE_RATIO
+                projected_position = short_pos + delta
+                if projected_position > max_allowable_short:
+                    capped_delta = max(0.0, max_allowable_short - short_pos)
+                    logger.critical(
+                        f"🚨 CB1 OVER-HEDGE BREAKER: projected position {projected_position:.4f} ETH "
+                        f"> max allowable {max_allowable_short:.4f} ETH. "
+                        f"Capping delta from {delta:.4f} → {capped_delta:.4f} ETH."
+                    )
+                    delta = capped_delta
+                    cb_tripped = True
+
+                # CB2 — Max single-cycle trade size
+                if abs(delta) > self.CB_MAX_TRADE_ETH:
+                    capped_delta = math.copysign(self.CB_MAX_TRADE_ETH, delta)
+                    logger.critical(
+                        f"🚨 CB2 TRADE-SIZE BREAKER: trade size {abs(delta):.4f} ETH "
+                        f"> max {self.CB_MAX_TRADE_ETH} ETH. "
+                        f"Capping delta from {delta:.4f} → {capped_delta:.4f} ETH."
+                    )
+                    delta = capped_delta
+                    cb_tripped = True
+
+                # CB3 — TVL sanity check (guard against phantom TVL inflation)
+                if active_tvl < self.CB_MIN_TVL_ETH:
+                    logger.critical(
+                        f"🚨 CB3 TVL-FLOOR BREAKER: active_tvl={active_tvl:.4f} ETH "
+                        f"< minimum floor {self.CB_MIN_TVL_ETH} ETH. Halting rebalance this cycle."
+                    )
+                    cb_tripped = True
+                    delta = 0.0
+
+                if cb_tripped:
+                    self._cb_trip_count += 1
+                    logger.warning(f"Circuit breaker trip count: {self._cb_trip_count}/{self.CB_MAX_TRIPS}")
+                    if self._cb_trip_count >= self.CB_MAX_TRIPS:
+                        logger.critical(
+                            f"🚨 CB EMERGENCY: {self._cb_trip_count} consecutive trips reached. "
+                            "Triggering panic to close all positions."
+                        )
+                        self._trigger_panic("Circuit breaker tripped too many consecutive times.")
+                        self._cb_trip_count = 0
+                        return
                 else:
-                    await asyncio.to_thread(self.exchange.execute_buy, self.SYMBOL, abs(delta))
+                    # Reset trip counter on a clean cycle
+                    self._cb_trip_count = 0
+                # ───────────────────────────────────────────────────────────────
+
+                if abs(delta) > self.THRESHOLD_ETH:
+                    if delta > 0:
+                        await asyncio.to_thread(self.exchange.execute_short, self.SYMBOL, delta)
+                    else:
+                        await asyncio.to_thread(self.exchange.execute_buy, self.SYMBOL, abs(delta))
+                else:
+                    logger.info("Delta capped below threshold after circuit breakers — no order placed.")
             elif not dry_run:
+                self._cb_trip_count = 0  # Healthy cycle resets counter
                 logger.info(f"✅ Position balanced. Delta={delta:.4f} ETH within threshold={self.THRESHOLD_ETH}. No action needed.")
             
             # 5. Reporting (non-critical — errors here should NOT crash the cycle)

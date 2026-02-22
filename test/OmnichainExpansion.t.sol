@@ -81,7 +81,7 @@ contract OmnichainExpansionTest is Test {
         console.log("Peer wiring verified successfully.");
     }
 
-    function testInstitutionalVaultDeployment() public {
+    function testInstitutionalVaultDeployment() public view {
         assertEq(arbVault.name(), "Kerne wstETH Vault");
         assertEq(arbVault.symbol(), "k-wstETH");
         assertTrue(arbVault.hasRole(arbVault.DEFAULT_ADMIN_ROLE(), admin));

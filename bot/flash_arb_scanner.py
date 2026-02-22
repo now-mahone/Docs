@@ -65,11 +65,16 @@ class Pool:
 @dataclass
 class ArbPath:
     pools: List[Pool]
-    tokens: List[Token] # tokens[i] is input to pools[i]
+    tokens: List[Token]  # tokens[i] is input to pools[i]
     amount_in: int
     expected_profit: int = 0
     profit_usd: float = 0.0
-    
+    # Per-hop expected output amounts — used by executor for slippage protection.
+    # hop_amounts[i] is the expected output of pools[i] given hop_amounts[i-1] (or amount_in for i=0).
+    hop_amounts: List[int] = field(default_factory=list)
+    # Unix timestamp when this opportunity was discovered — used for deadline enforcement.
+    created_at: int = field(default_factory=lambda: int(time.time()))
+
     def __str__(self) -> str:
         path_str = " -> ".join([t.symbol for t in self.tokens] + [self.tokens[0].symbol])
         dex_str = " | ".join([p.dex.name for p in self.pools])
@@ -459,44 +464,60 @@ class GraphArbScanner:
         curr_amount = amount_in
         curr_token = start_token
         tokens_in_path = []
+        # Track each hop's output amount for slippage protection in the executor
+        hop_amounts: List[int] = []
+
         for pool in cycle:
             tokens_in_path.append(curr_token)
             out_amount = await self.get_quote(pool, curr_token, curr_amount)
-            if out_amount == 0: return None
+            if out_amount == 0:
+                return None
             curr_token = pool.token1 if pool.token0.address == curr_token.address else pool.token0
             curr_amount = out_amount
-            
+            hop_amounts.append(out_amount)
+
         if curr_amount > amount_in:
             profit = curr_amount - amount_in
             eth_price = await self._get_eth_price()
-            
-            # Build dummy calldata for gas estimation
-            swaps = self.executor._build_swaps(ArbPath(pools=cycle, tokens=tokens_in_path, amount_in=amount_in))
+
+            # Build dummy calldata using a skeleton ArbPath (hop_amounts not needed for gas estimation)
+            swaps = self.executor._build_swaps(
+                ArbPath(pools=cycle, tokens=tokens_in_path, amount_in=amount_in, hop_amounts=hop_amounts)
+            )
             calldata = self.arb_bot.encode_abi("executeArbitrage", args=(
-                "0x0000000000000000000000000000000000000000", # dummy lender
+                "0x0000000000000000000000000000000000000000",  # dummy lender
                 start_token.address, amount_in, swaps
             ))
-            
+
             dexes = [pool.dex for pool in cycle]
             is_profitable, net_profit_usd = self.gas_estimator.is_profitable_after_gas(
-                profit if start_token.symbol == "WETH" else int(profit * (10**(18-start_token.decimals))), # Normalize to wei for estimator if needed
+                profit if start_token.symbol == "WETH" else int(profit * (10 ** (18 - start_token.decimals))),
                 dexes, calldata, self.min_profit_usd, eth_price
             )
-            
-            # Re-calculate profit USD correctly based on token decimals
+
+            # Re-calculate profit USD precisely from token decimals
             if start_token.symbol == "WETH":
                 gross_profit_usd = (profit / 1e18) * eth_price
             else:
                 gross_profit_usd = profit / (10 ** start_token.decimals)
-            
-            # Adjust net_profit_usd based on actual gross
+
             _, _, total_gas_cost_wei = self.gas_estimator.estimate_arb_gas(dexes, calldata)
             gas_cost_usd = (total_gas_cost_wei / 1e18) * eth_price
             net_profit_usd = gross_profit_usd - gas_cost_usd
 
             if net_profit_usd >= self.min_profit_usd:
-                logger.info(f"Gross: ${gross_profit_usd:.2f}, Gas: ${gas_cost_usd:.2f}, Net: ${net_profit_usd:.2f} | Path: {'->'.join([t.symbol for t in tokens_in_path])}")
-                return ArbPath(pools=cycle, tokens=tokens_in_path, amount_in=amount_in, expected_profit=profit, profit_usd=net_profit_usd)
+                logger.info(
+                    f"Gross: ${gross_profit_usd:.2f}, Gas: ${gas_cost_usd:.2f}, "
+                    f"Net: ${net_profit_usd:.2f} | Path: {'->'.join([t.symbol for t in tokens_in_path])}"
+                )
+                return ArbPath(
+                    pools=cycle,
+                    tokens=tokens_in_path,
+                    amount_in=amount_in,
+                    expected_profit=profit,
+                    profit_usd=net_profit_usd,
+                    hop_amounts=hop_amounts,      # ← per-hop amounts for slippage guards
+                )
         return None
 
     async def _fetch_vault_data(self) -> Dict:

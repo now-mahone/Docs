@@ -269,7 +269,7 @@ contract KerneTreasury is Ownable, ReentrancyGuard, Pausable {
         // Execute swap
         uint256 kerneBefore = IERC20(kerneToken).balanceOf(address(this));
         
-        uint256[] memory amounts = aerodromeRouter.swapExactTokensForTokens(
+        aerodromeRouter.swapExactTokensForTokens(
             amount,
             minKerneOut,
             routes,
@@ -340,7 +340,7 @@ contract KerneTreasury is Ownable, ReentrancyGuard, Pausable {
      * @notice Check if a pair should use stable pool
      * @dev Helper for stablecoin pairs (USDC/USDT, etc.)
      */
-    function _isStablePair(address tokenA, address tokenB) internal view returns (bool) {
+    function _isStablePair(address /*tokenA*/, address /*tokenB*/) internal pure returns (bool) {
         // For simplicity, we assume WETH routing is always volatile
         // In production, this could check against a list of stablecoins
         return false;

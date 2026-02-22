@@ -437,6 +437,32 @@ def run_server():
         reload=False
     )
 
+def run_server_with_learner(learner):
+    """Run the inference server with a continuous learner."""
+    import uvicorn
+    import threading
+    
+    @app.get("/status")
+    async def get_status():
+        return learner.get_status()
+        
+    @app.get("/predictions")
+    async def get_predictions():
+        return learner.get_predictions()
+        
+    # Start learner in background
+    threading.Thread(target=learner.start, daemon=True).start()
+    
+    server_config = config.get("server", {})
+    host = server_config.get("host", "0.0.0.0")
+    port = 8000  # Dockerfile exposes 8000
+    
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_level="info"
+    )
 
 if __name__ == "__main__":
     run_server()
