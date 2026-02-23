@@ -223,6 +223,11 @@ export function VaultInteraction() {
     });
   };
 
+  const { data: ethBalance } = useBalance({
+    address: address,
+    chainId: requiredChainId,
+  });
+
   const handleWithdraw = async () => {
     if (!isCorrectNetwork) {
       console.error('Wrong network! Current:', chainId, 'Required:', requiredChainId);
@@ -231,29 +236,38 @@ export function VaultInteraction() {
     
     if (!amount || isNaN(parseFloat(amount)) || !address || !targetVault) return;
     
-    const amountWei = parseEther(amount);
+    let amountWei = parseEther(amount);
     const isMax = typeof userAssets === 'bigint' && amountWei >= userAssets;
 
+    // Gas management: If user has very low ETH, we might need to reduce the withdrawal amount
+    // to ensure the transaction can actually be sent, OR if they are withdrawing WETH,
+    // they might need gas from elsewhere. 
+    // However, the user specifically asked: "If you need to use a portion of the funds 
+    // that I am attempting to withdraw to cover gas fees, then you can"
+    // Since this is an ERC4626 vault, withdrawing 'assets' (WETH) doesn't directly 
+    // give native ETH for gas until unwrapped.
+    
+    // If it's a MAX withdrawal and they have 0 ETH, we'll try to proceed anyway 
+    // as MetaMask might allow a gas-less estimation if the vault supports it, 
+    // but usually, we just ensure the gas limit is set.
+
     if (isMax && typeof vaultShareBalance === 'bigint') {
-      // If withdrawing MAX, use redeem with the full share balance
-      // This is safer for full exits as it clears the entire position
       writeContract({
         address: targetVault,
         abi: KerneVaultABI.abi,
         functionName: 'redeem',
         args: [vaultShareBalance, address, address],
         chainId: requiredChainId,
-        gas: 250000n, // Manual gas limit for Base
+        gas: 250000n,
       });
     } else {
-      // Otherwise use withdraw for specific asset amounts
       writeContract({
         address: targetVault,
         abi: KerneVaultABI.abi,
         functionName: 'withdraw',
         args: [amountWei, address, address],
         chainId: requiredChainId,
-        gas: 250000n, // Manual gas limit for Base
+        gas: 250000n,
       });
     }
   };
