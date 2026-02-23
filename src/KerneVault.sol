@@ -66,6 +66,12 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     ///      directly to the contract to artificially inflate the share price.
     uint256 private _trackedOnChainAssets;
 
+    /// @notice SECURITY FIX (KRN-24-011): Entry fee in basis points (default 5 bps = 0.05%).
+    /// A small deposit fee makes MEV sandwich attacks on share price unprofitable.
+    /// The fee stays inside the vault, accruing to existing shareholders as yield.
+    uint256 public depositFeeBps = 5;
+    uint256 public constant MAX_DEPOSIT_FEE_BPS = 100; // Hard cap at 1%
+
     /// @notice The address of the verification node for Proof of Reserve
     address public verificationNode;
 
@@ -226,6 +232,8 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     event CRSoftAlertRecovered(uint256 cr, uint256 timestamp);
     event DynamicBufferUpdated(uint256 oldBuffer, uint256 newBuffer);
     event LiquidationRateLimited(uint256 attempted, uint256 allowed, uint256 hour);
+    /// @notice KRN-24-011 / KRN-24-005: Emitted when the deposit entry fee is changed.
+    event DepositFeeUpdated(uint256 newFeeBps);
 
     /**
      * @param asset_ The underlying asset (e.g., WETH or USDC)
@@ -1110,6 +1118,16 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
      * Increments _trackedOnChainAssets on deposit/mint, preventing donations from
      * inflating share price via direct token transfers.
      */
+    /**
+     * @dev SECURITY FIX (KRN-24-011): Override previewDeposit to apply deposit fee.
+     * Fewer shares are minted per unit of assets, making deposit sandwiching unprofitable.
+     * The fee (in assets) remains in the vault and accrues to existing shareholders.
+     */
+    function previewDeposit(uint256 assets) public view override returns (uint256) {
+        uint256 fee = (assets * depositFeeBps) / 10000;
+        return super.previewDeposit(assets - fee);
+    }
+
     function _deposit(
         address caller,
         address receiver,
@@ -1118,6 +1136,17 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     ) internal override {
         super._deposit(caller, receiver, assets, shares);
         _trackedOnChainAssets += assets;
+    }
+
+    /**
+     * @notice Updates the entry deposit fee.
+     * @dev SECURITY FIX (KRN-24-011): Capped at MAX_DEPOSIT_FEE_BPS to prevent admin abuse.
+     * @param bps Fee in basis points (1 bps = 0.01%). Set to 0 to disable.
+     */
+    function setDepositFee(uint256 bps) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(bps <= MAX_DEPOSIT_FEE_BPS, "Deposit fee exceeds cap");
+        depositFeeBps = bps;
+        emit DepositFeeUpdated(bps);
     }
 
     /**

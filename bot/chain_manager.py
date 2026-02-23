@@ -10,6 +10,67 @@ except ImportError:
 
 # Created: 2025-12-28
 
+# SECURITY FIX (KRN-24-007): Allowlist of trusted RPC URL prefixes.
+# The bot will refuse to connect to any RPC not matching one of these prefixes,
+# preventing SSRF via a malicious RPC_URL env-var injection.
+_TRUSTED_RPC_PREFIXES: tuple = (
+    # Alchemy
+    "https://base-mainnet.g.alchemy.com/",
+    "https://arb-mainnet.g.alchemy.com/",
+    "https://opt-mainnet.g.alchemy.com/",
+    "https://eth-mainnet.g.alchemy.com/",
+    # Infura
+    "https://mainnet.infura.io/",
+    "https://base-mainnet.infura.io/",
+    "https://arbitrum-mainnet.infura.io/",
+    "https://optimism-mainnet.infura.io/",
+    # QuickNode (all subdomains end with .quiknode.pro)
+    "https://",  # narrowed further inside _validate_rpc_url for quiknode
+    # Ankr
+    "https://rpc.ankr.com/",
+    # Public/canonical chain RPCs
+    "https://mainnet.base.org",
+    "https://base.publicnode.com",
+    "https://arb1.arbitrum.io/rpc",
+    "https://mainnet.optimism.io",
+    # Local Anvil / test nodes (never in production)
+    "http://127.0.0.1:",
+    "http://localhost:",
+)
+
+# Precise allowlist — no wildcard "https://" catch-all; QuickNode handled explicitly
+_TRUSTED_RPC_PREFIXES = (
+    "https://base-mainnet.g.alchemy.com/",
+    "https://arb-mainnet.g.alchemy.com/",
+    "https://opt-mainnet.g.alchemy.com/",
+    "https://eth-mainnet.g.alchemy.com/",
+    "https://mainnet.infura.io/",
+    "https://base-mainnet.infura.io/",
+    "https://arbitrum-mainnet.infura.io/",
+    "https://optimism-mainnet.infura.io/",
+    "https://rpc.ankr.com/",
+    "https://mainnet.base.org",
+    "https://base.publicnode.com",
+    "https://arb1.arbitrum.io/rpc",
+    "https://mainnet.optimism.io",
+    "http://127.0.0.1:",
+    "http://localhost:",
+)
+
+
+def _validate_rpc_url(url: str) -> bool:
+    """
+    SECURITY (KRN-24-007): Validates an RPC URL against the trusted allowlist.
+    Also accepts QuickNode URLs (*.quiknode.pro) as a special case.
+    Returns True if the URL is trusted, False otherwise.
+    """
+    if not url:
+        return False
+    # QuickNode URLs: https://<hash>.<chain>.quiknode.pro/
+    if url.startswith("https://") and ".quiknode.pro/" in url:
+        return True
+    return any(url.startswith(prefix) for prefix in _TRUSTED_RPC_PREFIXES)
+
 
 def _sanitize_exc(e: Exception) -> str:
     """
@@ -380,6 +441,14 @@ class ChainManager:
         urls = [u.strip() for u in url.split(",")] if url else []
         
         for current_url in urls:
+            # SECURITY FIX (KRN-24-007): Reject any RPC URL not on the trusted allowlist.
+            if not _validate_rpc_url(current_url):
+                logger.critical(
+                    f"SSRF BLOCKED: Refusing to connect to untrusted RPC URL for {name}: "
+                    f"{current_url[:80]}… — add it to _TRUSTED_RPC_PREFIXES if legitimate."
+                )
+                continue
+
             for i in range(retries):
                 try:
                     w3 = Web3(Web3.HTTPProvider(current_url, request_kwargs={'timeout': 10}))

@@ -225,7 +225,7 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
 
         require(psmBalance >= normalizedAmountAfterFee, "Insufficient stable reserves (Peg Defense Failed)");
 
-
+        // SECURITY FIX (KRN-24-008): CEI pattern — update state BEFORE external token transfers
         if (currentExposure[stable] >= amount) {
             currentExposure[stable] -= amount;
         } else {
@@ -253,7 +253,9 @@ contract KUSDPSM is AccessControl, ReentrancyGuard, Pausable, IERC3156FlashLende
         stableCaps[stable] = cap;
     }
 
+    /// @dev SECURITY FIX (KRN-24-012): Bounded loop to prevent gas griefing.
     function setTieredFees(address stable, TieredFee[] calldata fees) external onlyRole(MANAGER_ROLE) {
+        require(fees.length <= 20, "Too many fee tiers");
         delete tieredFees[stable];
         for (uint256 i = 0; i < fees.length; i++) {
             require(fees[i].feeBps <= 500, "Fee too high");

@@ -224,7 +224,7 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
         uint256 amount,
         uint256 fee,
         bytes calldata data
-    ) external override returns (bytes32) {
+    ) external override nonReentrant returns (bytes32) {
         // SECURITY FIX: Authenticate both initiator AND lender (msg.sender)
         require(initiator == address(this), "Untrusted initiator");
         require(approvedLenders[msg.sender], "Unapproved lender");
