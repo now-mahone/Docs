@@ -219,7 +219,7 @@ export function VaultInteraction() {
       functionName: 'deposit',
       args: [amountWei, address],
       chainId: requiredChainId,
-      gas: undefined, // Let wallet estimate gas to avoid high estimates from simulation failures
+      gas: 250000n, // Manual gas limit for Base to bypass MetaMask estimation issues
     });
   };
 
@@ -243,7 +243,7 @@ export function VaultInteraction() {
         functionName: 'redeem',
         args: [vaultShareBalance, address, address],
         chainId: requiredChainId,
-        gas: undefined,
+        gas: 250000n, // Manual gas limit for Base
       });
     } else {
       // Otherwise use withdraw for specific asset amounts
@@ -253,7 +253,7 @@ export function VaultInteraction() {
         functionName: 'withdraw',
         args: [amountWei, address, address],
         chainId: requiredChainId,
-        gas: undefined,
+        gas: 250000n, // Manual gas limit for Base
       });
     }
   };
