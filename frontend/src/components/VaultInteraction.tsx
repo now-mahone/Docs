@@ -76,14 +76,25 @@ export function VaultInteraction() {
       chainId: requiredChainId 
     });
 
-  const { data: vaultShareBalance } = useReadContract({
+  const { data: vaultShareBalance, refetch: refetchVaultBalance } = useReadContract({
     address: targetVault,
     abi: KerneVaultABI.abi,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
     chainId: requiredChainId,
     query: {
-      enabled: !!address && !!targetVault,
+      enabled: !!address && !!targetVault && targetVault !== '0x0000000000000000000000000000000000000000',
+    },
+  });
+
+  const { data: userAssets, refetch: refetchUserAssets } = useReadContract({
+    address: targetVault,
+    abi: KerneVaultABI.abi,
+    functionName: 'convertToAssets',
+    args: vaultShareBalance ? [vaultShareBalance] : undefined,
+    chainId: requiredChainId,
+    query: {
+      enabled: !!vaultShareBalance && !!targetVault && targetVault !== '0x0000000000000000000000000000000000000000',
     },
   });
 
@@ -114,7 +125,7 @@ export function VaultInteraction() {
 
   useEffect(() => {
     if (isConfirmed) {
-      console.log('Transaction confirmed, refetching allowance...');
+      console.log('Transaction confirmed, refetching data...');
       
       // If we just finished an approval, and we have an amount, automatically trigger deposit
       if (activeTab === 'deposit' && needsApproval && amount) {
@@ -123,13 +134,17 @@ export function VaultInteraction() {
 
       const refetchInterval = setInterval(() => {
         refetchAllowance();
+        refetchVaultBalance();
+        refetchUserAssets();
       }, 500);
       
       const timer = setTimeout(() => {
         clearInterval(refetchInterval);
         resetWrite();
         refetchAllowance();
-        console.log('Write state reset, allowance:', allowance);
+        refetchVaultBalance();
+        refetchUserAssets();
+        console.log('Write state reset');
       }, 2000);
       
       return () => {
@@ -137,7 +152,7 @@ export function VaultInteraction() {
         clearTimeout(timer);
       };
     }
-  }, [isConfirmed, resetWrite, refetchAllowance, allowance, activeTab, needsApproval, amount]);
+  }, [isConfirmed, resetWrite, refetchAllowance, refetchVaultBalance, refetchUserAssets, activeTab, needsApproval, amount]);
 
   useEffect(() => {
     const fetchPrice = async () => {
@@ -310,7 +325,7 @@ export function VaultInteraction() {
             <span className="text-s font-medium text-[#aab9be] tracking-tight">
               Balance: {activeTab === 'deposit'
                 ? (balanceData ? parseFloat(formatEther(balanceData.value)).toFixed(4) : '0.00')
-                : (vaultShareBalance && typeof vaultShareBalance === 'bigint' ? parseFloat(formatEther(vaultShareBalance)).toFixed(4) : '0.00')
+                : (userAssets && typeof userAssets === 'bigint' ? parseFloat(formatEther(userAssets)).toFixed(4) : '0.00')
               }
             </span>
           </div>
@@ -326,8 +341,8 @@ export function VaultInteraction() {
               onClick={() => {
                 if (activeTab === 'deposit' && balanceData) {
                   setAmount(formatEther(balanceData.value));
-                } else if (activeTab === 'withdraw' && vaultShareBalance && typeof vaultShareBalance === 'bigint') {
-                  setAmount(formatEther(vaultShareBalance));
+                } else if (activeTab === 'withdraw' && userAssets && typeof userAssets === 'bigint') {
+                  setAmount(formatEther(userAssets));
                 }
               }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#37d097] hover:text-[#37d097]/80 transition-colors"
