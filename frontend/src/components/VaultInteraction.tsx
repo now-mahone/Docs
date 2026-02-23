@@ -232,9 +232,9 @@ export function VaultInteraction() {
     if (!amount || isNaN(parseFloat(amount)) || !address || !targetVault) return;
     
     const amountWei = parseEther(amount);
-    const isMax = userAssets && amountWei >= userAssets;
+    const isMax = typeof userAssets === 'bigint' && amountWei >= userAssets;
 
-    if (isMax && vaultShareBalance) {
+    if (isMax && typeof vaultShareBalance === 'bigint') {
       // If withdrawing MAX, use redeem with the full share balance
       // This is safer for full exits as it clears the entire position
       writeContract({
