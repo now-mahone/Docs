@@ -234,7 +234,7 @@ export function VaultInteraction() {
     // Convert the asset amount back to shares for the redeem function
     // This ensures we are withdrawing the exact amount of shares corresponding to the assets
     const amountWei = parseEther(amount);
-    const sharesToRedeem = vaultShareBalance && userAssets && userAssets > 0n
+    const sharesToRedeem = (typeof vaultShareBalance === 'bigint' && typeof userAssets === 'bigint' && userAssets > 0n)
       ? (amountWei * vaultShareBalance) / userAssets
       : amountWei;
 
