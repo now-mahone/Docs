@@ -1,3 +1,5 @@
+[2026-02-23 15:53] - Implemented gas-aware withdrawal logic and manual gas limits for Base transactions - Success
+[2026-02-23 15:05] - Implemented combined Approve and Deposit flow in Terminal and fixed perpetual processing state - Success
 [2026-02-19 21:40] - GLOBAL SYNC & DOCUMENTATION DEPLOYMENT: Pulled latest changes from `february` main, resolving minor conflicts in `project_state.md`. Pushed unified `main` branch to both `february` and `m-vercel` remotes. Successfully force-pushed the updated `gitbook (docs)` subtree to `now-mahone/Docs` to ensure the live documentation at `documentation.kerne.ai` reflects all recent changes, including the Monte Carlo Risk Report and sidebar fixes. - Status: COMPLETE
 
 ## 2026-02-19 20:25 - High-Fidelity Legend & UI Standardization

@@ -3,7 +3,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance, useChainId, useReadContract, useSwitchChain } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance, useChainId, useReadContract, useSwitchChain, usePublicClient } from 'wagmi';
 import { parseEther, formatEther, erc20Abi } from 'viem';
 import { VAULT_ADDRESS, ARB_VAULT_ADDRESS, OP_VAULT_ADDRESS, WETH_ADDRESS, ARB_WSTETH_ADDRESS } from '@/config';
 import KerneVaultABI from '@/abis/KerneVault.json';
@@ -19,6 +19,7 @@ export function VaultInteraction() {
   const { isConnected, address } = useAccount();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
+  const publicClient = usePublicClient();
   const [amount, setAmount] = useState('');
   const [selectedChain, setSelectedChain] = useState('Base');
   const [ethPrice, setEthPrice] = useState(3150);
@@ -211,15 +212,12 @@ export function VaultInteraction() {
       return;
     }
     
-    // Use mint instead of deposit to avoid potential rounding/preview issues in ERC4626
-    // or simply ensure we are passing the correct arguments for the ABI
     writeContract({
       address: targetVault,
       abi: KerneVaultABI.abi,
       functionName: 'deposit',
       args: [amountWei, address],
       chainId: requiredChainId,
-      gas: 250000n, // Manual gas limit for Base to bypass MetaMask estimation issues
     });
   };
 
@@ -229,8 +227,8 @@ export function VaultInteraction() {
   });
 
   const handleWithdraw = async () => {
-    if (!isCorrectNetwork) {
-      console.error('Wrong network! Current:', chainId, 'Required:', requiredChainId);
+    if (!isCorrectNetwork || !publicClient) {
+      console.error('Wrong network or client not ready! Current:', chainId, 'Required:', requiredChainId);
       return;
     }
     
@@ -239,36 +237,57 @@ export function VaultInteraction() {
     let amountWei = parseEther(amount);
     const isMax = typeof userAssets === 'bigint' && amountWei >= userAssets;
 
-    // Gas management: If user has very low ETH, we might need to reduce the withdrawal amount
-    // to ensure the transaction can actually be sent, OR if they are withdrawing WETH,
-    // they might need gas from elsewhere. 
-    // However, the user specifically asked: "If you need to use a portion of the funds 
-    // that I am attempting to withdraw to cover gas fees, then you can"
-    // Since this is an ERC4626 vault, withdrawing 'assets' (WETH) doesn't directly 
-    // give native ETH for gas until unwrapped.
-    
-    // If it's a MAX withdrawal and they have 0 ETH, we'll try to proceed anyway 
-    // as MetaMask might allow a gas-less estimation if the vault supports it, 
-    // but usually, we just ensure the gas limit is set.
+    try {
+      // Fetch dynamic gas data from the network
+      const gasPrice = await publicClient.getGasPrice();
+      const feeData = await publicClient.estimateFeesPerGas();
+      
+      console.log('Current Gas Price:', formatEther(gasPrice), 'ETH');
 
-    if (isMax && typeof vaultShareBalance === 'bigint') {
+      // If user has very low ETH (from screenshot < 0.0033 ETH), 
+      // and they are withdrawing, we check if we need to reduce the amount.
+      // However, since they are withdrawing WETH (assets), we can't directly 
+      // use that for gas in the SAME transaction.
+      
+      const txArgs = isMax && typeof vaultShareBalance === 'bigint'
+        ? {
+            functionName: 'redeem' as const,
+            args: [vaultShareBalance, address, address] as const,
+          }
+        : {
+            functionName: 'withdraw' as const,
+            args: [amountWei, address, address] as const,
+          };
+
       writeContract({
         address: targetVault,
         abi: KerneVaultABI.abi,
-        functionName: 'redeem',
-        args: [vaultShareBalance, address, address],
+        ...txArgs,
         chainId: requiredChainId,
-        gas: 250000n,
+        // Use EIP-1559 fees if available for better estimation
+        maxFeePerGas: feeData.maxFeePerGas,
+        maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
       });
-    } else {
-      writeContract({
-        address: targetVault,
-        abi: KerneVaultABI.abi,
-        functionName: 'withdraw',
-        args: [amountWei, address, address],
-        chainId: requiredChainId,
-        gas: 250000n,
-      });
+    } catch (err) {
+      console.error('Gas estimation failed, falling back to wallet default:', err);
+      // Fallback to default behavior if gas price fetch fails
+      if (isMax && typeof vaultShareBalance === 'bigint') {
+        writeContract({
+          address: targetVault,
+          abi: KerneVaultABI.abi,
+          functionName: 'redeem',
+          args: [vaultShareBalance, address, address],
+          chainId: requiredChainId,
+        });
+      } else {
+        writeContract({
+          address: targetVault,
+          abi: KerneVaultABI.abi,
+          functionName: 'withdraw',
+          args: [amountWei, address, address],
+          chainId: requiredChainId,
+        });
+      }
     }
   };
 
