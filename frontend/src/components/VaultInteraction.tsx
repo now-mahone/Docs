@@ -227,67 +227,32 @@ export function VaultInteraction() {
   });
 
   const handleWithdraw = async () => {
-    if (!isCorrectNetwork || !publicClient) {
-      console.error('Wrong network or client not ready! Current:', chainId, 'Required:', requiredChainId);
+    if (!isCorrectNetwork) {
+      console.error('Wrong network! Current:', chainId, 'Required:', requiredChainId);
       return;
     }
     
     if (!amount || isNaN(parseFloat(amount)) || !address || !targetVault) return;
     
-    let amountWei = parseEther(amount);
+    const amountWei = parseEther(amount);
     const isMax = typeof userAssets === 'bigint' && amountWei >= userAssets;
 
-    try {
-      // Fetch dynamic gas data from the network
-      const gasPrice = await publicClient.getGasPrice();
-      const feeData = await publicClient.estimateFeesPerGas();
-      
-      console.log('Current Gas Price:', formatEther(gasPrice), 'ETH');
-
-      // If user has very low ETH (from screenshot < 0.0033 ETH), 
-      // and they are withdrawing, we check if we need to reduce the amount.
-      // However, since they are withdrawing WETH (assets), we can't directly 
-      // use that for gas in the SAME transaction.
-      
-      const txArgs = isMax && typeof vaultShareBalance === 'bigint'
-        ? {
-            functionName: 'redeem' as const,
-            args: [vaultShareBalance, address, address] as const,
-          }
-        : {
-            functionName: 'withdraw' as const,
-            args: [amountWei, address, address] as const,
-          };
-
+    if (isMax && typeof vaultShareBalance === 'bigint') {
       writeContract({
         address: targetVault,
         abi: KerneVaultABI.abi,
-        ...txArgs,
+        functionName: 'redeem',
+        args: [vaultShareBalance, address, address],
         chainId: requiredChainId,
-        // On Base, providing explicit maxFeePerGas can sometimes confuse MetaMask's L1 fee calculation
-        // if the values are too low or high. We'll let the wallet handle the fee estimation
-        // but we've logged the data for debugging.
       });
-    } catch (err) {
-      console.error('Gas estimation failed, falling back to wallet default:', err);
-      // Fallback to default behavior if gas price fetch fails
-      if (isMax && typeof vaultShareBalance === 'bigint') {
-        writeContract({
-          address: targetVault,
-          abi: KerneVaultABI.abi,
-          functionName: 'redeem',
-          args: [vaultShareBalance, address, address],
-          chainId: requiredChainId,
-        });
-      } else {
-        writeContract({
-          address: targetVault,
-          abi: KerneVaultABI.abi,
-          functionName: 'withdraw',
-          args: [amountWei, address, address],
-          chainId: requiredChainId,
-        });
-      }
+    } else {
+      writeContract({
+        address: targetVault,
+        abi: KerneVaultABI.abi,
+        functionName: 'withdraw',
+        args: [amountWei, address, address],
+        chainId: requiredChainId,
+      });
     }
   };
 
