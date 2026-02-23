@@ -60,6 +60,12 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     /// @notice Hedging Reserve for institutional obfuscation
     uint256 public hedgingReserve;
 
+    /// @notice SECURITY (KRN-24-006): Internal tracked on-chain balance.
+    /// @dev Updated via _deposit/_withdraw hooks and all direct transfer functions.
+    ///      Prevents donation/inflation attacks where an attacker transfers tokens
+    ///      directly to the contract to artificially inflate the share price.
+    uint256 private _trackedOnChainAssets;
+
     /// @notice The address of the verification node for Proof of Reserve
     address public verificationNode;
 
@@ -383,25 +389,31 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     /**
      * @notice Returns the total amount of assets managed by the vault.
      */
+    /**
+     * @notice Returns the total amount of assets managed by the vault.
+     * @dev SECURITY FIX (KRN-24-001 & KRN-24-006):
+     *   - Uses _trackedOnChainAssets instead of balanceOf() to prevent donation attacks.
+     *   - When verificationNode is set, it is the SOLE source of off-chain asset truth.
+     *     Manual offChainAssets/l1Assets/hedgingReserve are IGNORED to prevent share price
+     *     manipulation by a compromised STRATEGIST_ROLE.
+     *   - If verificationNode call fails, conservatively returns only tracked on-chain assets.
+     */
     function totalAssets() public view virtual override returns (uint256) {
-        uint256 verifiedAssets = 0;
         address node = verificationNode;
         if (node != address(0)) {
             (bool success, bytes memory data) = node.staticcall(
                 abi.encodeWithSignature("getVerifiedAssets(address)", address(this))
             );
             if (success && data.length == 32) {
-                verifiedAssets = abi.decode(data, (uint256));
+                uint256 verifiedAssets = abi.decode(data, (uint256));
+                return _trackedOnChainAssets + verifiedAssets;
             }
+            // Call failed: conservatively report only tracked on-chain assets.
+            return _trackedOnChainAssets;
         }
-
-        // If verified assets are available, they represent the total off-chain value (including reserve)
-        if (verifiedAssets > 0) {
-            return super.totalAssets() + verifiedAssets;
-        }
-
-        // Fallback to reported off-chain assets, L1 assets, and hedging reserve
-        return super.totalAssets() + offChainAssets + l1Assets + hedgingReserve;
+        // No verificationNode: fall back to manually reported values.
+        // WARNING: This mode trusts the STRATEGIST_ROLE. Use only pre-launch.
+        return _trackedOnChainAssets + offChainAssets + l1Assets + hedgingReserve;
     }
 
     /**
@@ -548,6 +560,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
             ? exchangeDepositAddress
             : (treasury != address(0) ? treasury : founder);
         require(dest != address(0), "No sweep destination");
+        _trackedOnChainAssets -= amount; // SECURITY (KRN-24-006)
         SafeERC20.safeTransfer(IERC20(asset()), dest, amount);
         emit FundsSwept(amount, dest);
     }
@@ -654,11 +667,13 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         uint256 fee = (grossYieldAmount * grossPerformanceFeeBps) / 10000;
         if (fee > 0) {
             address recipient = treasury != address(0) ? treasury : founder;
+            _trackedOnChainAssets -= fee; // SECURITY (KRN-24-006)
             SafeERC20.safeTransfer(IERC20(asset()), recipient, fee);
             emit FounderWealthCaptured(fee, recipient);
         }
         uint256 insuranceContribution = (grossYieldAmount * insuranceFundBps) / 10000;
         if (insuranceContribution > 0 && insuranceFund != address(0)) {
+            _trackedOnChainAssets -= insuranceContribution; // SECURITY (KRN-24-006)
             IERC20(asset()).approve(insuranceFund, insuranceContribution);
             (bool success,) = insuranceFund.call(abi.encodeWithSignature("deposit(uint256)", insuranceContribution));
             require(success, "Insurance deposit failed");
@@ -670,8 +685,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         uint256 amount
     ) external onlyRole(STRATEGIST_ROLE) {
         require(insuranceFund != address(0), "Insurance fund not set");
+        uint256 balBefore = IERC20(asset()).balanceOf(address(this));
         (bool success,) = insuranceFund.call(abi.encodeWithSignature("claim(address,uint256)", address(this), amount));
         require(success, "Insurance claim failed");
+        _trackedOnChainAssets += IERC20(asset()).balanceOf(address(this)) - balBefore; // SECURITY (KRN-24-006)
     }
 
     function setInsuranceFundBps(
@@ -697,10 +714,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         emit YieldOracleUpdated(oldOracle, _oracle);
     }
 
+    /// @dev SECURITY FIX (KRN-24-009): Restricted to DEFAULT_ADMIN_ROLE only.
     function setMaxTotalAssets(
         uint256 _maxTotalAssets
-    ) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(STRATEGIST_ROLE, msg.sender), "Not authorized");
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         maxTotalAssets = _maxTotalAssets;
     }
 
@@ -760,6 +777,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     function requestL1Deposit(uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant whenNotPaused {
         require(amount > 0, "Amount must be greater than zero");
         require(l1DepositAddress != address(0), "L1 bridge not set");
+        _trackedOnChainAssets -= amount; // SECURITY (KRN-24-006)
         SafeERC20.safeTransfer(IERC20(asset()), l1DepositAddress, amount);
         emit L1DepositRequested(amount, l1DepositAddress);
     }
@@ -808,6 +826,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         request.claimed = true;
         
         _burn(address(this), request.shares);
+        _trackedOnChainAssets -= request.assets; // SECURITY (KRN-24-006)
         SafeERC20.safeTransfer(IERC20(asset()), msg.sender, request.assets);
         
         _checkSolvency(true);
@@ -1032,6 +1051,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         require(hasRole(STRATEGIST_ROLE, msg.sender) || msg.sender == prime, "Not authorized");
         require(prime != address(0), "Invalid prime address");
         _checkSolvency(true);
+        _trackedOnChainAssets -= amount; // SECURITY (KRN-24-006)
         SafeERC20.safeTransfer(IERC20(asset()), prime, amount);
     }
 
@@ -1040,6 +1060,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     ) external nonReentrant {
         require(hasRole(STRATEGIST_ROLE, msg.sender) || primeAccounts[msg.sender].active, "Not authorized");
         SafeERC20.safeTransferFrom(IERC20(asset()), msg.sender, address(this), amount);
+        _trackedOnChainAssets += amount; // SECURITY (KRN-24-006)
         _checkSolvency(false);
     }
 
@@ -1069,6 +1090,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         require(IERC20(asset()).balanceOf(address(this)) >= assets, "Insufficient liquid buffer");
 
         _burn(msg.sender, shares);
+        _trackedOnChainAssets -= assets; // SECURITY (KRN-24-006): total leaving vault
         
         if (fee > 0 && insuranceFund != address(0)) {
             SafeERC20.safeTransfer(IERC20(asset()), insuranceFund, fee);
@@ -1077,6 +1099,42 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         SafeERC20.safeTransfer(IERC20(asset()), msg.sender, netAssets);
         
         emit WithdrawalClaimed(msg.sender, type(uint256).max, netAssets);
+    }
+
+    // ============================================================
+    //                ERC4626 INTERNAL BALANCE HOOKS
+    // ============================================================
+
+    /**
+     * @dev SECURITY (KRN-24-006): Override _deposit to track on-chain balance.
+     * Increments _trackedOnChainAssets on deposit/mint, preventing donations from
+     * inflating share price via direct token transfers.
+     */
+    function _deposit(
+        address caller,
+        address receiver,
+        uint256 assets,
+        uint256 shares
+    ) internal override {
+        super._deposit(caller, receiver, assets, shares);
+        _trackedOnChainAssets += assets;
+    }
+
+    /**
+     * @dev SECURITY (KRN-24-006): Override _withdraw to track on-chain balance.
+     * Decrements _trackedOnChainAssets on withdraw/redeem.
+     * Note: withdraw() and redeem() are currently disabled (they revert). This exists
+     * as defensive programming in case they are re-enabled.
+     */
+    function _withdraw(
+        address caller,
+        address receiver,
+        address owner_,
+        uint256 assets,
+        uint256 shares
+    ) internal override {
+        _trackedOnChainAssets -= assets;
+        super._withdraw(caller, receiver, owner_, assets, shares);
     }
 
     // ============================================================

@@ -417,9 +417,12 @@ contract KerneTreasury is Ownable, ReentrancyGuard, Pausable {
     /**
      * @notice Update founder address
      * @param newFounder New founder address
+     * @dev SECURITY FIX (KRN-24-004): Restricted to onlyOwner. The founder role is a passive
+     *      fee recipient only and must not have the ability to reassign itself, as this constitutes
+     *      a privilege escalation that allows a compromised founder key to permanently redirect
+     *      all protocol revenue to an attacker-controlled address.
      */
-    function updateFounder(address newFounder) external {
-        if (msg.sender != founder && msg.sender != owner()) revert Unauthorized();
+    function updateFounder(address newFounder) external onlyOwner {
         if (newFounder == address(0)) revert ZeroAddress();
         address oldFounder = founder;
         founder = newFounder;

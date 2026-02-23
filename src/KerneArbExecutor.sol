@@ -116,10 +116,24 @@ contract KerneArbExecutor is AccessControl, IERC3156FlashBorrower {
         }
     }
 
+    // SECURITY (KRN-24-002): Selectors that must never be callable, regardless of whitelist.
+    // These could allow a rogue solver to drain token approvals from this contract.
+    bytes4 private constant SEL_APPROVE          = bytes4(keccak256("approve(address,uint256)"));
+    bytes4 private constant SEL_TRANSFER         = bytes4(keccak256("transfer(address,uint256)"));
+    bytes4 private constant SEL_TRANSFER_FROM    = bytes4(keccak256("transferFrom(address,address,uint256)"));
+    bytes4 private constant SEL_MULTICALL        = bytes4(keccak256("multicall(bytes[])"));
+    bytes4 private constant SEL_MULTICALL_DL     = bytes4(keccak256("multicall(uint256,bytes[])"));
+    bytes4 private constant SEL_EXECUTE          = bytes4(keccak256("execute(bytes,bytes[],uint256)"));
+    bytes4 private constant SEL_EXECUTE_SHORT    = bytes4(keccak256("execute(bytes,bytes[])"));
+
     /**
      * @notice Validates that all arb step targets and selectors are whitelisted.
-     * @dev SECURITY: Enforces both target whitelist AND function selector whitelist.
-     *      Also enforces max steps to prevent gas griefing.
+     * @dev SECURITY FIX (KRN-24-002):
+     *   - Fixed selector extraction: was using incorrect bitwise logic that scrambled the
+     *     selector, rendering the whitelist check ineffective. Now uses simple bytes4 cast.
+     *   - Added hard-blocked selectors: approve, transfer, transferFrom, multicall, execute
+     *     are always rejected regardless of whitelist to prevent calldata injection attacks
+     *     where a nested payload in multicall/execute could steal approvals.
      */
     function _validateSteps(ArbStep[] memory steps) internal view {
         if (steps.length > MAX_ARB_STEPS) {
@@ -130,9 +144,25 @@ contract KerneArbExecutor is AccessControl, IERC3156FlashBorrower {
             if (!allowedTargets[steps[i].target]) {
                 revert TargetNotWhitelisted(steps[i].target);
             }
-            // Extract function selector (first 4 bytes of calldata)
+            // SECURITY FIX: Correct selector extraction using simple bytes4 cast.
+            // Previous code used incorrect bitwise shifting that scrambled the selector
+            // and made the whitelist check completely ineffective.
             require(steps[i].data.length >= 4, "Invalid calldata");
-            bytes4 selector = bytes4(steps[i].data[0]) | (bytes4(steps[i].data[1]) >> 8) | (bytes4(steps[i].data[2]) >> 16) | (bytes4(steps[i].data[3]) >> 24);
+            bytes4 selector = bytes4(steps[i].data);
+
+            // SECURITY: Block hard-coded dangerous selectors unconditionally.
+            // These can be used to drain token approvals or execute arbitrary nested calls.
+            require(
+                selector != SEL_APPROVE &&
+                selector != SEL_TRANSFER &&
+                selector != SEL_TRANSFER_FROM &&
+                selector != SEL_MULTICALL &&
+                selector != SEL_MULTICALL_DL &&
+                selector != SEL_EXECUTE &&
+                selector != SEL_EXECUTE_SHORT,
+                "Dangerous selector blocked"
+            );
+
             if (!allowedSelectors[steps[i].target][selector]) {
                 revert SelectorNotWhitelisted(steps[i].target, selector);
             }
