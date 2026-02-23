@@ -2,8 +2,9 @@
 """
 Kerne Neural Net GPU Trainer
 ============================
-Local GPU training with real-time usage display.
-Like Stockfish - shows GPU utilization, progress, and ETA.
+Local GPU training with real-time usage display and dynamic throttling.
+Keeps GPU utilization below a configurable ceiling (default 75%) so
+other processes can share the GPU without starvation.
 """
 
 import os
@@ -32,10 +33,66 @@ pd.set_option('future.no_silent_downcasting', True)
 HORIZONS = ["1h", "24h", "7d", "30d"]
 
 
+def _get_gpu_utilization() -> float:
+    """Query current GPU utilization % via nvidia-smi. Returns -1 on failure."""
+    try:
+        import subprocess
+        result = subprocess.run(
+            ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
+            capture_output=True, text=True, timeout=2
+        )
+        if result.returncode == 0:
+            return float(result.stdout.strip())
+    except Exception:
+        pass
+    return -1.0
+
+
+class GPUThrottler:
+    """
+    Dynamically adjusts sleep delay between training batches to keep
+    GPU utilization below `max_util_pct`.
+
+    Algorithm:
+      - If current_util > max_util:      increase sleep by STEP_UP   ms (slow down)
+      - If current_util < max_util - 10: decrease sleep by STEP_DOWN ms (speed up)
+      - Sleep is clamped between MIN_SLEEP and MAX_SLEEP seconds
+    """
+    MIN_SLEEP   = 0.0    # seconds
+    MAX_SLEEP   = 2.0    # seconds
+    STEP_UP     = 0.04   # +40 ms when over limit
+    STEP_DOWN   = 0.01   # -10 ms when well under limit
+
+    def __init__(self, max_util_pct: float = 75.0):
+        self.max_util_pct = max_util_pct
+        self._sleep = 0.0            # current inter-batch sleep
+        self._last_util = 0.0       # last sampled utilization
+
+    def update(self, current_util: float):
+        """Update the throttler with the latest GPU utilization reading."""
+        if current_util < 0:         # nvidia-smi failed – do nothing
+            return
+        self._last_util = current_util
+        if current_util > self.max_util_pct:
+            self._sleep = min(self._sleep + self.STEP_UP, self.MAX_SLEEP)
+        elif current_util < self.max_util_pct - 10:
+            self._sleep = max(self._sleep - self.STEP_DOWN, self.MIN_SLEEP)
+
+    def wait(self):
+        """Sleep for the current throttle duration."""
+        if self._sleep > 0:
+            time.sleep(self._sleep)
+
+    @property
+    def sleep_ms(self) -> float:
+        return self._sleep * 1000
+
+
 class GPUTrainer:
-    """GPU trainer with real-time usage display."""
+    """GPU trainer with real-time usage display and adaptive throttling."""
     
-    def __init__(self):
+    def __init__(self, max_gpu_util: float = 75.0):
+        self.max_gpu_util = max_gpu_util
         self.device = self._check_gpu()
         self.model = None
         self.normalization_params = None
@@ -48,9 +105,11 @@ class GPUTrainer:
             "start_time": None,
             "gpu_memory_used": 0,
             "gpu_memory_total": 0,
-            "gpu_utilization": 0
+            "gpu_utilization": 0,
+            "throttle_sleep_ms": 0,
         }
         self.stop_flag = False
+        self._throttler = GPUThrottler(max_util_pct=max_gpu_util)
         
     def _check_gpu(self) -> torch.device:
         """Check for GPU and return device."""
@@ -65,27 +124,30 @@ class GPUTrainer:
             print(f"\n  [OK] GPU Detected: {gpu_name}")
             print(f"  [OK] GPU Memory: {gpu_memory:.1f} GB")
             print(f"  [OK] CUDA Version: {torch.version.cuda}")
+            print(f"  [OK] GPU Utilization Cap: {self.max_gpu_util:.0f}%")
             return device
         else:
             print("\n  [WARNING] No GPU detected - using CPU (slower)")
             return torch.device("cpu")
     
     def _update_gpu_stats(self):
-        """Update GPU statistics in background."""
+        """Update GPU statistics + throttler in background thread (every 500 ms)."""
         while not self.stop_flag:
             if self.device.type == "cuda":
                 try:
-                    self.training_stats["gpu_memory_used"] = torch.cuda.memory_allocated(0) / 1e9
-                    self.training_stats["gpu_memory_total"] = torch.cuda.get_device_properties(0).total_memory / 1e9
-                    # Try to get utilization via nvidia-smi
-                    import subprocess
-                    result = subprocess.run(
-                        ['nvidia-smi', '--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'],
-                        capture_output=True, text=True, timeout=2
+                    self.training_stats["gpu_memory_used"] = (
+                        torch.cuda.memory_allocated(0) / 1e9
                     )
-                    if result.returncode == 0:
-                        self.training_stats["gpu_utilization"] = float(result.stdout.strip())
-                except:
+                    self.training_stats["gpu_memory_total"] = (
+                        torch.cuda.get_device_properties(0).total_memory / 1e9
+                    )
+                    util = _get_gpu_utilization()
+                    if util >= 0:
+                        self.training_stats["gpu_utilization"] = util
+                        # Feed the throttler with the latest reading
+                        self._throttler.update(util)
+                        self.training_stats["throttle_sleep_ms"] = self._throttler.sleep_ms
+                except Exception:
                     pass
             time.sleep(0.5)
     
@@ -179,13 +241,13 @@ class GPUTrainer:
         return sequences
     
     def train(self, sequences: list, epochs: int = 50, batch_size: int = 64):
-        """Train the model with GPU."""
+        """Train the model with GPU and adaptive throttling."""
         if not sequences:
             print("  [ERROR] No training data!")
             return
         
         print("\n" + "-" * 60)
-        print("  TRAINING ON GPU")
+        print("  TRAINING ON GPU  (throttle cap: {:.0f}%)".format(self.max_gpu_util))
         print("-" * 60)
         
         # Start GPU monitor thread
@@ -212,6 +274,7 @@ class GPUTrainer:
         print(f"  Epochs: {epochs}")
         print(f"  Batch size: {batch_size}")
         print(f"  Device: {self.device}")
+        print(f"  GPU util cap: {self.max_gpu_util:.0f}%")
         
         # DataLoaders
         train_loader = DataLoader(
@@ -250,7 +313,7 @@ class GPUTrainer:
             
             self.training_stats["current_epoch"] = epoch + 1
             
-            # Train
+            # ---------- Train ----------
             self.model.train()
             train_loss = 0
             
@@ -269,10 +332,14 @@ class GPUTrainer:
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
                 optimizer.step()
                 train_loss += loss.item()
+
+                # ---- Dynamic throttle ----
+                # The background thread keeps _throttler updated; just wait.
+                self._throttler.wait()
             
             train_loss /= len(train_loader)
             
-            # Validate
+            # ---------- Validate ----------
             self.model.eval()
             val_loss = 0
             with torch.no_grad():
@@ -301,12 +368,15 @@ class GPUTrainer:
             elapsed = (datetime.now() - self.training_stats["start_time"]).total_seconds()
             eta = elapsed / (epoch + 1) * (epochs - epoch - 1)
             
-            gpu_mem = self.training_stats["gpu_memory_used"]
+            gpu_mem  = self.training_stats["gpu_memory_used"]
             gpu_util = self.training_stats["gpu_utilization"]
+            throttle = self.training_stats["throttle_sleep_ms"]
             
             print(f"\r  Epoch {epoch+1:3d}/{epochs} | "
                   f"Train: {train_loss:.4f} | Val: {val_loss:.4f} | "
-                  f"GPU: {gpu_util:3.0f}% | Mem: {gpu_mem:.2f}GB | "
+                  f"GPU: {gpu_util:3.0f}% (cap {self.max_gpu_util:.0f}%) | "
+                  f"Mem: {gpu_mem:.2f}GB | "
+                  f"Throttle: {throttle:4.0f}ms | "
                   f"ETA: {timedelta(seconds=int(eta))}", end="")
         
         print("\n")
@@ -341,10 +411,14 @@ def main():
     """Main entry point."""
     import argparse
     parser = argparse.ArgumentParser(description="Kerne Neural Net GPU Trainer")
-    parser.add_argument("--epochs", type=int, default=50, help="Number of epochs")
+    parser.add_argument("--epochs", type=int, default=50,
+                        help="Number of epochs (default: 50)")
+    parser.add_argument("--max-gpu-util", type=float, default=75.0,
+                        help="Maximum GPU utilization %% to allow (default: 75). "
+                             "Set to 100 to disable throttling.")
     args = parser.parse_args()
     
-    trainer = GPUTrainer()
+    trainer = GPUTrainer(max_gpu_util=args.max_gpu_util)
     trainer.run(epochs=args.epochs)
 
 
