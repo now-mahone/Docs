@@ -127,11 +127,6 @@ export function VaultInteraction() {
   useEffect(() => {
     if (isConfirmed) {
       console.log('Transaction confirmed, refetching data...');
-      
-      // If we just finished an approval, and we have an amount, automatically trigger deposit
-      if (activeTab === 'deposit' && needsApproval && amount) {
-        handleDeposit();
-      }
 
       const refetchInterval = setInterval(() => {
         refetchAllowance();
@@ -153,7 +148,7 @@ export function VaultInteraction() {
         clearTimeout(timer);
       };
     }
-  }, [isConfirmed, resetWrite, refetchAllowance, refetchVaultBalance, refetchUserAssets, activeTab, needsApproval, amount]);
+  }, [isConfirmed, resetWrite, refetchAllowance, refetchVaultBalance, refetchUserAssets]);
 
   useEffect(() => {
     const fetchPrice = async () => {
@@ -184,17 +179,31 @@ export function VaultInteraction() {
       return;
     }
     
-    if (!amount || isNaN(parseFloat(amount)) || !address || !tokenAddress || !targetVault) return;
+    if (!amount || isNaN(parseFloat(amount)) || !address || !tokenAddress || !targetVault) {
+      console.error('Missing required data for approval');
+      return;
+    }
     
-    const amountWei = parseEther(amount);
-    
-    writeContract({
-      address: tokenAddress,
-      abi: erc20Abi,
-      functionName: 'approve',
-      args: [targetVault, amountWei],
-      chainId: requiredChainId,
-    });
+    try {
+      const amountWei = parseEther(amount);
+      
+      console.log('Approving:', {
+        token: tokenAddress,
+        spender: targetVault,
+        amount: formatEther(amountWei),
+        chainId: requiredChainId
+      });
+      
+      writeContract({
+        address: tokenAddress,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [targetVault, amountWei],
+        chainId: requiredChainId,
+      });
+    } catch (error) {
+      console.error('Approval error:', error);
+    }
   };
 
   const handleDeposit = async () => {
@@ -203,22 +212,36 @@ export function VaultInteraction() {
       return;
     }
     
-    if (!amount || isNaN(parseFloat(amount)) || !address || !targetVault) return;
-    
-    const amountWei = parseEther(amount);
+    if (!amount || isNaN(parseFloat(amount)) || !address || !targetVault) {
+      console.error('Missing required data for deposit');
+      return;
+    }
 
     if (!targetVault || targetVault === '0x0000000000000000000000000000000000000000') {
       console.error("Vault address not configured for", selectedChain);
       return;
     }
-    
-    writeContract({
-      address: targetVault,
-      abi: KerneVaultABI.abi,
-      functionName: 'deposit',
-      args: [amountWei, address],
-      chainId: requiredChainId,
-    });
+
+    try {
+      const amountWei = parseEther(amount);
+      
+      console.log('Depositing:', {
+        vault: targetVault,
+        amount: formatEther(amountWei),
+        receiver: address,
+        chainId: requiredChainId
+      });
+      
+      writeContract({
+        address: targetVault,
+        abi: KerneVaultABI.abi,
+        functionName: 'deposit',
+        args: [amountWei, address],
+        chainId: requiredChainId,
+      });
+    } catch (error) {
+      console.error('Deposit error:', error);
+    }
   };
 
   const { data: ethBalance } = useBalance({
@@ -232,12 +255,23 @@ export function VaultInteraction() {
       return;
     }
     
-    if (!amount || isNaN(parseFloat(amount)) || !address || !targetVault) return;
+    if (!amount || isNaN(parseFloat(amount)) || !address || !targetVault) {
+      console.error('Missing required data for withdrawal');
+      return;
+    }
     
-    let amountWei = parseEther(amount);
-    const isMax = typeof userAssets === 'bigint' && amountWei >= userAssets;
-
     try {
+      const amountWei = parseEther(amount);
+      const isMax = typeof userAssets === 'bigint' && amountWei >= userAssets;
+
+      console.log('Withdrawing:', {
+        vault: targetVault,
+        amount: formatEther(amountWei),
+        isMax,
+        receiver: address,
+        chainId: requiredChainId
+      });
+
       // Fetch dynamic gas data from the network
       const gasPrice = await publicClient.getGasPrice();
       const feeData = await publicClient.estimateFeesPerGas();
@@ -264,24 +298,31 @@ export function VaultInteraction() {
         maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
       });
     } catch (err) {
-      console.error('Gas estimation failed, falling back to wallet default:', err);
+      console.error('Withdrawal error, falling back to wallet default:', err);
       // Fallback to default behavior if gas price fetch fails
-      if (isMax && typeof vaultShareBalance === 'bigint') {
-        writeContract({
-          address: targetVault,
-          abi: KerneVaultABI.abi,
-          functionName: 'redeem',
-          args: [vaultShareBalance, address, address],
-          chainId: requiredChainId,
-        });
-      } else {
-        writeContract({
-          address: targetVault,
-          abi: KerneVaultABI.abi,
-          functionName: 'withdraw',
-          args: [amountWei, address, address],
-          chainId: requiredChainId,
-        });
+      try {
+        const amountWei = parseEther(amount);
+        const isMax = typeof userAssets === 'bigint' && amountWei >= userAssets;
+        
+        if (isMax && typeof vaultShareBalance === 'bigint') {
+          writeContract({
+            address: targetVault,
+            abi: KerneVaultABI.abi,
+            functionName: 'redeem',
+            args: [vaultShareBalance, address, address],
+            chainId: requiredChainId,
+          });
+        } else {
+          writeContract({
+            address: targetVault,
+            abi: KerneVaultABI.abi,
+            functionName: 'withdraw',
+            args: [amountWei, address, address],
+            chainId: requiredChainId,
+          });
+        }
+      } catch (fallbackErr) {
+        console.error('Fallback withdrawal also failed:', fallbackErr);
       }
     }
   };
@@ -476,7 +517,7 @@ export function VaultInteraction() {
           <div className="h-6 flex items-center justify-center">
             {isConfirmed && (
               <p className="text-xs text-[#37d097] font-bold text-center leading-6">
-                {activeTab === 'deposit' && needsApproval ? 'Approval Successful' : activeTab === 'deposit' ? 'Deposit Successful' : 'Withdrawal Successful'}
+                Transaction Successful
               </p>
             )}
             {writeError && (
