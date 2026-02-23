@@ -52,15 +52,15 @@ contract KerneVaultCircuitBreakerTest is Test {
         
         // Verify initial state
         assertFalse(vault.crCircuitBreakerActive());
-        assertFalse(vault.yellowAlertActive());
-        assertEq(vault.RED_CR_THRESHOLD(), 12500);
-        
+        assertFalse(vault.crSoftAlertActive());
+        assertEq(vault.CRITICAL_CR_THRESHOLD(), 12500);
+
         // Simulate CR drop by having strategist report lower off-chain assets
         // (In real scenario, this would happen from price drops)
         // For this test, we verify the constants are set correctly
-        assertEq(vault.RED_CR_THRESHOLD(), 12500); // 1.25x
-        assertEq(vault.YELLOW_CR_THRESHOLD(), 13500); // 1.35x
-        assertEq(vault.SAFE_CR_THRESHOLD(), 13500); // 1.35x
+        assertEq(vault.CRITICAL_CR_THRESHOLD(), 12500); // 1.25x
+        assertEq(vault.WARNING_CR_THRESHOLD(), 13500);  // 1.35x
+        assertEq(vault.SAFE_CR_THRESHOLD(), 14000);     // 1.40x
         assertEq(vault.crCircuitBreakerCooldown(), 4 hours);
     }
 
@@ -84,7 +84,7 @@ contract KerneVaultCircuitBreakerTest is Test {
         vm.stopPrank();
 
         assertEq(vault.getSolvencyRatio(), 15000);
-        assertFalse(vault.yellowAlertActive());
+        assertFalse(vault.crSoftAlertActive());
         assertFalse(vault.crCircuitBreakerActive());
 
         // Drop CR to 1.30x (13000 bps) -> Triggers Yellow Alert
@@ -97,7 +97,7 @@ contract KerneVaultCircuitBreakerTest is Test {
         vault.updateCircuitBreaker();
 
         assertEq(vault.getSolvencyRatio(), 13000);
-        assertTrue(vault.yellowAlertActive());
+        assertTrue(vault.crSoftAlertActive());
         assertFalse(vault.crCircuitBreakerActive());
         assertFalse(vault.paused()); // Yellow alert does NOT pause
 
@@ -110,7 +110,7 @@ contract KerneVaultCircuitBreakerTest is Test {
         vault.updateCircuitBreaker();
 
         assertEq(vault.getSolvencyRatio(), 12000);
-        assertTrue(vault.yellowAlertActive());
+        assertTrue(vault.crSoftAlertActive());
         assertTrue(vault.crCircuitBreakerActive());
         assertTrue(vault.paused()); // Red alert PAUSES the vault
 
@@ -126,7 +126,7 @@ contract KerneVaultCircuitBreakerTest is Test {
         vault.updateCircuitBreaker();
 
         assertEq(vault.getSolvencyRatio(), 14000);
-        assertFalse(vault.yellowAlertActive());
+        assertFalse(vault.crSoftAlertActive());
         assertFalse(vault.crCircuitBreakerActive());
         assertFalse(vault.paused()); // Unpaused after recovery
     }

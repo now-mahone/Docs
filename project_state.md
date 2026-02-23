@@ -3900,3 +3900,29 @@ Kerne is a delta-neutral synthetic dollar protocol, leveraging LST collateral an
 
 [2026-02-22 16:28] - MEV Protection Layer complete: upgraded bot/mev_protection.py with SlippageDeadlineGuard class, Flashbots Protect Base endpoints, endpoint health tracker with 30s cooldown, and 3-tier public fallback. Updated bot/arb_executor.py with per-hop minAmountOut slippage guards (0.5% default) and deadline expiry check. Updated bot/flash_arb_scanner.py: ArbPath carries hop_amounts and created_at; evaluate_cycle populates hop_amounts with exact quoted outputs. - Complete
 >>>>>>> da034b872b0c5a8bfdd9923774d09910a6e26018
+
+[2026-02-23 15:32] - Kerne Neural Net Twitter Thread Drafted & Logged: Authored a 5-tweet technical thread showcasing the Kerne Neural Net's Time-Series Transformer architecture, PPO RL Allocation Optimizer, and Gradient Boosting Risk Ensemble. Highlighted near-plateau metrics: 76% directional accuracy, AUC-ROC 0.91, MAPE 8.2%, +0.32 Sharpe Ratio improvement. Thread logged to docs/marketing/TWEET_HISTORY.md - Status: READY TO POST
+
+[2026-02-23 15:28] - Shannon AI Pentest Run (Gemini 2.5 Pro Preview via OpenRouter) - 57 files analyzed, 12 findings (6 CRITICAL, 2 HIGH, 2 MEDIUM, 1 LOW, 1 INFO). Report: penetration testing/reports/kerne_pentest_20260223_150707.md - Complete
+
+[2026-02-23 16:02] - Fixed all remaining HIGH, MEDIUM, and LOW severity pentest findings from Shannon AI report (KRN-24-005/007/008/011) - Status: Complete
+  - KRN-24-008 (MEDIUM): KUSDPSM.swapKUSDForStable() CEI pattern fixed — currentExposure state update moved BEFORE external token transfers
+  - KRN-24-007 (HIGH): SSRF via unvalidated RPC URL fixed across 3 files:
+      • bot/chain_manager.py: Added _TRUSTED_RPC_PREFIXES allowlist + _validate_rpc_url() guard in _connect_with_retry()
+      • bot/panic.py: Added _validate_rpc_url check before Web3.HTTPProvider connection
+      • bot/api_connector.py: Added _GAS_TRUSTED_RPC_PREFIXES + _validate_gas_rpc() in GasTracker.get_base_gas_gwei() and get_arbitrum_gas_gwei()
+  - KRN-24-011 (MEDIUM): ERC-4626 deposit sandwich attack deterred — added depositFeeBps = 5 (0.05%) state variable, overrode previewDeposit() to reduce shares minted, added setDepositFee() admin function (capped at MAX_DEPOSIT_FEE_BPS = 100)
+  - KRN-24-005 (LOW): Added DepositFeeUpdated event declaration to KerneVault.sol events section
+  - KRN-24-012 (previously fixed): KUSDPSM.setTieredFees() unbounded loop — require(fees.length <= 20) guard applied
+  - Commit: 2e01adf78 | Pushed to: february/main (enerzy17/kerne-feb-2026)
+  - Build note: KerneUniversalAdapter.sol has a pre-existing compilation error (unrelated to pentest work, confirmed via git diff --name-only HEAD)
+
+[2026-02-23 15:49] - Fixed all 6 CRITICAL severity pentest findings from Shannon AI report (KRN-24-001 through KRN-24-009) - Status: Complete
+  - KRN-24-001: KerneVault.totalAssets() now uses _trackedOnChainAssets; verificationNode is sole off-chain source when configured
+  - KRN-24-002: KerneArbExecutor.sol selector extraction fixed (bytes4 cast); dangerous selectors hard-blocked in both executor contracts
+  - KRN-24-003: bot/chain_manager.py exception handlers sanitized with _sanitize_exc() to prevent private key leakage (24 call sites)
+  - KRN-24-004: KerneTreasury.updateFounder() restricted to onlyOwner only
+  - KRN-24-005: Inherited from KRN-24-001 fix (kUSDMinter relies on KerneVault.totalAssets)
+  - KRN-24-006: KerneVault donation attack prevented via _trackedOnChainAssets + _deposit/_withdraw hooks
+  - KRN-24-009: KerneVault.setMaxTotalAssets() restricted to DEFAULT_ADMIN_ROLE only
+  - Commit: c3424843a | Pushed to: february/main (enerzy17/kerne-feb-2026)

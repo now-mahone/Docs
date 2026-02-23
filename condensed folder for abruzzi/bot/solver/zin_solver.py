@@ -1,0 +1,1315 @@
+# Created: 2026-01-17
+# Refactoring started: 2026-01-27
+
+"""
+Kerne Zero-Fee Intent Network (ZIN) Solver - Complete CowSwap/UniswapX Integration
+Transforms Kerne into Base's primary execution engine for high-volume trading.
+
+This bot:
+1. Monitors intent-based trading protocols (CowSwap, UniswapX)
+2. Uses Kerne's internal liquidity to fulfill intents at zero cost
+3. Captures the spread as profit
+4. Routes profits to the profit vault
+
+Every trade filled shows "Filled by Kerne" for organic awareness.
+"""
+
+import os
+from pathlib import Path
+
+# Load .env file from bot directory
+def _load_env():
+    """Load environment variables from bot/.env file."""
+    # Try multiple possible locations for .env
+    possible_paths = [
+        Path(__file__).parent.parent / ".env",  # bot/.env from solver/
+        Path.cwd() / "bot" / ".env",            # bot/.env from project root
+        Path.cwd() / ".env",                     # .env in current dir
+    ]
+
+    for env_path in possible_paths:
+        if env_path.exists():
+            with open(env_path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, _, value = line.partition('=')
+                        key = key.strip()
+                        value = value.strip()
+                        # Don't override existing env vars
+                        if key and key not in os.environ:
+                            os.environ[key] = value
+            return str(env_path)
+    return None
+
+_env_path = _load_env()
+import asyncio
+import json
+import time
+from abc import ABC, abstractmethod
+from typing import Dict, List, Optional, Tuple, Any
+
+from dataclasses import dataclass, field
+from web3 import Web3
+from web3.contract import Contract
+from eth_account import Account
+from eth_abi import encode
+from loguru import logger
+from .fetchers import (
+    IntentVenue,
+    ChainConfig,
+    ChainContext,
+    IntentData,
+    BaseIntentFetcher,
+    CowSwapFetcher,
+    UniswapXFetcher,
+    FusionIntentFetcher,
+    LifiIntentFetcher,
+    AoriIntentFetcher
+)
+from .quotes import QuoteAggregator
+from .quotes.base import QuoteResult as AggQuoteResult
+
+
+
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
+
+def _parse_rpc_list(value: Optional[str]) -> List[str]:
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+PRIVATE_KEY = os.getenv("PRIVATE_KEY")
+ZIN_SOLVER_LIVE = os.getenv("ZIN_SOLVER_LIVE", "false").lower() == "true"
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+ONE_INCH_API_KEY = os.getenv("ONE_INCH_API_KEY")
+
+# Micro-cap live-run guardrails
+ZIN_MIN_PROFIT_BPS = int(os.getenv("ZIN_MIN_PROFIT_BPS", "8"))
+ZIN_MAX_INTENT_AMOUNT = int(os.getenv("ZIN_MAX_INTENT_AMOUNT", "0"))
+ZIN_MAX_GAS_PRICE_GWEI = int(os.getenv("ZIN_MAX_GAS_PRICE_GWEI", "40"))
+ZIN_MAX_INTENTS_PER_CYCLE = int(os.getenv("ZIN_MAX_INTENTS_PER_CYCLE", "2"))
+ZIN_MIN_ORDER_TTL_SECONDS = int(os.getenv("ZIN_MIN_ORDER_TTL_SECONDS", "30"))
+ZIN_MAX_PRICE_IMPACT_BPS = int(os.getenv("ZIN_MAX_PRICE_IMPACT_BPS", "75"))
+ZIN_MAX_INTENT_AMOUNT_BY_TOKEN = os.getenv("ZIN_MAX_INTENT_AMOUNT_BY_TOKEN", "")
+
+# ZIN Chain configuration
+ZIN_CHAINS = os.getenv("ZIN_CHAINS", os.getenv("ACTIVE_CHAIN", "base")).lower()
+
+# =============================================================================
+# CONSTANTS - Base Mainnet Addresses
+# =============================================================================
+
+# Aggregator Routers (Base)
+ONE_INCH_ROUTER = "0x111111125421cA6dc452d289314280a0f8842A65"
+UNISWAP_UNIVERSAL_ROUTER = "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD"
+UNISWAP_V3_ROUTER = "0xE592427A0AEce92De3Edee1F18E0157C05861564"
+AERODROME_ROUTER = "0xcF77a3Ba9A5CA399B7c97c478569a74DD55C726f"
+
+# Token Addresses (Base Mainnet)
+BASE_WETH = "0x4200000000000000000000000000000000000006"
+BASE_USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+BASE_WSTETH = "0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452"
+BASE_CBETH = "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22"
+BASE_RETH = "0xB6fe221Fe9EeF5aBa221c348bA20A1Bf5e73624c"
+
+# Token Addresses (Arbitrum)
+ARBITRUM_USDC = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
+ARBITRUM_USDC_E = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
+ARBITRUM_WETH = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+ARBITRUM_WSTETH = "0x5979D7b546E38E414F7E9822514be443A4800529"
+
+# CowSwap API
+COWSWAP_API_BASE = "https://api.cow.fi/base/api/v1"
+
+# UniswapX API Configuration per chain
+UNISWAPX_API_CONFIG = {
+    "base": {
+        "api_url": "https://api.uniswap.org/v2/orders",
+        "chain_id": 8453,
+        "order_type": "Priority",
+        "reactor": "0x000000001Ec5656dcdB24D90DFa42742738De729"
+    },
+    "unichain": {
+        "api_url": "https://api.uniswap.org/v2/orders",
+        "chain_id": 130,
+        "order_type": "Priority",
+        "reactor": "0x00000006021a6Bce796be7ba509BBBA71e956e37"
+    },
+    "arbitrum": {
+        "api_url": "https://api.uniswap.org/v2/orders",
+        "chain_id": 42161,
+        "order_type": "Dutch_V2",
+        "reactor": "0x1bd1aAdc9E230626C44a139d7E70d842749351eb"
+    },
+    "mainnet": {
+        "api_url": "https://api.uniswap.org/v2/orders",
+        "chain_id": 1,
+        "order_type": "Dutch_V2",
+        "reactor": "0x6000da47483062A0D734Ba3dc7576Ce6A0B645C4"
+    }
+}
+
+BASE_RPC_URLS = [
+    os.getenv("BASE_RPC_URL"),
+    *_parse_rpc_list(os.getenv("RPC_URL")),
+    "https://mainnet.base.org",
+    "https://base.llamarpc.com",
+    "https://base.drpc.org",
+]
+BASE_RPC_URLS = [url for url in BASE_RPC_URLS if url]
+
+ARBITRUM_RPC_URLS = [
+    os.getenv("ARBITRUM_RPC_URL"),
+    os.getenv("ARB_RPC_URL"),
+    *_parse_rpc_list(os.getenv("ARBITRUM_RPC_URL")),
+]
+ARBITRUM_RPC_URLS = [url for url in ARBITRUM_RPC_URLS if url]
+
+# =============================================================================
+# CONTRACT ABIs
+# =============================================================================
+
+ZIN_EXECUTOR_ABI = [
+    {
+        "inputs": [
+            {"name": "lender", "type": "address"},
+            {"name": "tokenIn", "type": "address"},
+            {"name": "tokenOut", "type": "address"},
+            {"name": "amount", "type": "uint256"},
+            {"name": "user", "type": "address"},
+            {"name": "aggregatorData", "type": "bytes"},
+            {"name": "safetyParams", "type": "bytes"}
+        ],
+        "name": "fulfillIntent",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getZINMetrics",
+        "outputs": [
+            {"name": "totalSpread", "type": "uint256"},
+            {"name": "totalIntents", "type": "uint256"},
+            {"name": "currentVault", "type": "address"}
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [{"name": "token", "type": "address"}],
+        "name": "getTokenSpread",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]
+
+VAULT_ABI = [
+    {
+        "inputs": [{"name": "token", "type": "address"}],
+        "name": "maxFlashLoan",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [{"name": "token", "type": "address"}, {"name": "amount", "type": "uint256"}],
+        "name": "flashFee",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "totalAssets",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]
+
+ERC20_ABI = [
+    {
+        "inputs": [{"name": "account", "type": "address"}],
+        "name": "balanceOf",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [{"name": "", "type": "uint8"}],
+        "stateMutability": "view",
+        "type": "function"
+    }
+]
+
+# =============================================================================
+# DATA CLASSES
+# =============================================================================
+
+@dataclass
+class QuoteResult:
+    """Result from an aggregator quote (legacy shim — wraps AggQuoteResult)."""
+    aggregator: str
+    calldata: bytes
+    expected_output: int
+    gas_estimate: int
+    price_impact_bps: int
+    router_address: str = ""
+
+
+@dataclass
+class FulfillmentResult:
+    """Result of intent fulfillment."""
+    success: bool
+    tx_hash: Optional[str]
+    profit_captured: int
+    profit_bps: int
+    gas_used: int
+    error: Optional[str] = None
+
+
+# =============================================================================
+# ZIN SOLVER - MAIN CLASS
+# =============================================================================
+
+class ZINSolver:
+    """
+    Zero-Fee Intent Network Solver - Complete CowSwap/UniswapX Integration
+
+    Core responsibilities:
+    - Detect profitable intents from CowSwap/UniswapX
+    - Fulfill intents using Kerne's internal liquidity (zero-fee flash loans)
+    - Capture spread profit and route to profit vault
+    - Monitor and report ZIN performance
+
+    Every trade filled shows "Filled by Kerne" for organic awareness.
+    """
+
+    def __init__(self):
+        self.account = Account.from_key(PRIVATE_KEY) if PRIVATE_KEY else None
+        self.live_mode = ZIN_SOLVER_LIVE
+        self.chain_names = [name.strip().lower() for name in ZIN_CHAINS.split(",") if name.strip()]
+        if not self.chain_names:
+            self.chain_names = ["base"]
+
+        self.chain_configs = self._build_chain_configs()
+        self._validate_config()
+        self.chain_contexts = self._init_chain_contexts()
+        self._init_logging()
+
+        # Performance tracking
+        self.total_intents_processed = 0
+        self.total_profit_captured = 0
+        self.failed_intents = 0
+        self.intents_by_venue: Dict[str, int] = {
+            IntentVenue.COWSWAP.value: 0,
+            IntentVenue.UNISWAPX.value: 0,
+            IntentVenue.FUSION.value: 0,
+            IntentVenue.LIFI.value: 0,
+            IntentVenue.AORI.value: 0
+        }
+
+        # Initialize fetchers
+        self.fetchers: List[BaseIntentFetcher] = [
+            CowSwapFetcher(self),
+            UniswapXFetcher(self),
+            FusionIntentFetcher(self),
+            LifiIntentFetcher(self),
+            AoriIntentFetcher(self)
+        ]
+
+        # Initialize modular quote aggregator (Aerodrome + UniswapV3 + 1inch + Paraswap)
+        self.quote_aggregator = QuoteAggregator()
+
+        # Rate limiting
+        self._min_fetch_interval = 2.0  # seconds
+        self._token_amount_caps = self._parse_token_amount_caps()
+
+
+        # Auto-scaling configuration
+        self._auto_scale_enabled = os.getenv("ZIN_AUTO_SCALE", "true").lower() == "true"
+        self._min_liquidity_ratio = float(os.getenv("ZIN_MIN_LIQUIDITY_RATIO", "0.1"))  # Min 10% of pool
+        self._max_liquidity_ratio = float(os.getenv("ZIN_MAX_LIQUIDITY_RATIO", "0.5"))  # Max 50% of pool
+        self._scale_factor_base = float(os.getenv("ZIN_SCALE_FACTOR", "1.0"))  # Multiplier for position sizing
+        self._liquidity_cache: Dict[str, Tuple[int, float]] = {}  # token_key -> (liquidity, timestamp)
+        self._liquidity_cache_ttl = 30.0  # seconds
+
+        logger.info("=" * 60)
+        logger.info("ZIN Solver Initialized - Kerne Intent Execution Engine")
+        logger.info("=" * 60)
+        logger.info(f"Account: {self.account.address if self.account else 'NOT SET'}")
+        logger.info(f"Live Mode: {self.live_mode}")
+        logger.info(f"Active Chains: {', '.join(self.chain_names)}")
+        for chain_name, context in self.chain_contexts.items():
+            logger.info(
+                f"Chain {chain_name}: executor={context.config.executor_address} "
+                f"pool={context.config.pool_address}"
+            )
+        logger.info(
+            "Guardrails: min_profit_bps={} max_intent_amount={} max_gas_price_gwei={} max_intents_per_cycle={}"
+            .format(
+                ZIN_MIN_PROFIT_BPS,
+                ZIN_MAX_INTENT_AMOUNT,
+                ZIN_MAX_GAS_PRICE_GWEI,
+                ZIN_MAX_INTENTS_PER_CYCLE
+            )
+        )
+        logger.info(
+            "Guardrails: min_ttl_seconds={} max_price_impact_bps={} per_token_caps={}"
+            .format(
+                ZIN_MIN_ORDER_TTL_SECONDS,
+                ZIN_MAX_PRICE_IMPACT_BPS,
+                self._token_amount_caps
+            )
+        )
+        logger.info("=" * 60)
+
+    def _build_chain_configs(self) -> Dict[str, ChainConfig]:
+        base_profit_vault = os.getenv("PROFIT_VAULT_ADDRESS")
+        arb_profit_vault = os.getenv("ARBITRUM_PROFIT_VAULT_ADDRESS", base_profit_vault)
+
+        base_targets = {
+            BASE_WSTETH.lower(): "wstETH",
+            BASE_CBETH.lower(): "cbETH",
+            BASE_RETH.lower(): "rETH",
+            BASE_WETH.lower(): "WETH",
+            BASE_USDC.lower(): "USDC",
+        }
+
+        arbitrum_targets = {
+            ARBITRUM_WSTETH.lower(): "wstETH",
+            ARBITRUM_WETH.lower(): "WETH",
+            ARBITRUM_USDC.lower(): "USDC",
+            ARBITRUM_USDC_E.lower(): "USDC.e",
+        }
+
+        configs = {
+            "base": ChainConfig(
+                name="base",
+                chain_id=8453,
+                rpc_urls=BASE_RPC_URLS,
+                executor_address=os.getenv("ZIN_EXECUTOR_ADDRESS", "0x04F52F9F4dAb1ba2330841Af85dAeeB8eaC9E995"),
+                pool_address=os.getenv("ZIN_POOL_ADDRESS", "0xB9BdF6F3Fc3819b61f6fE799bE1395501822d0c7"),
+                profit_vault_address=base_profit_vault,
+                cowswap_api_base=COWSWAP_API_BASE,
+                uniswapx_config=UNISWAPX_API_CONFIG["base"],
+                aerodrome_router=AERODROME_ROUTER,
+                token_targets=base_targets,
+                explorer_base_url="https://basescan.org/tx/",
+                fusion_settler="0x111111125421cA6dc452d289314280a0f8842A65",
+                lifi_settler="0x1234567890123456789012345678901234567890", # Placeholder
+                aori_settler="0x0987654321098765432109876543210987654321", # Placeholder
+            ),
+            "arbitrum": ChainConfig(
+                name="arbitrum",
+                chain_id=42161,
+                rpc_urls=ARBITRUM_RPC_URLS,
+                executor_address=os.getenv("ARBITRUM_ZIN_EXECUTOR_ADDRESS", ""),
+                pool_address=os.getenv("ARBITRUM_ZIN_POOL_ADDRESS", ""),
+                profit_vault_address=arb_profit_vault,
+                cowswap_api_base=None,
+                uniswapx_config=UNISWAPX_API_CONFIG["arbitrum"],
+                aerodrome_router=None,
+                token_targets=arbitrum_targets,
+                explorer_base_url="https://arbiscan.io/tx/",
+                fusion_settler="0x111111125421cA6dc452d289314280a0f8842A65",
+                lifi_settler="0x1234567890123456789012345678901234567890", # Placeholder
+                aori_settler="0x0987654321098765432109876543210987654321", # Placeholder
+            ),
+        }
+
+
+        return configs
+
+    @staticmethod
+    def _init_web3(rpc_urls: List[str]) -> Web3:
+        """Initialize Web3 with RPC fallback."""
+        for rpc_url in rpc_urls:
+            try:
+                w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={'timeout': 30}))
+                if w3.is_connected():
+                    logger.info(f"Connected to RPC: {rpc_url[:50]}...")
+                    return w3
+            except Exception as e:
+                logger.warning(f"Failed to connect to {rpc_url}: {e}")
+
+        raise ConnectionError("Failed to connect to any RPC endpoint")
+
+    def _validate_config(self):
+        """Validate required environment configuration."""
+        missing = []
+        if not PRIVATE_KEY:
+            missing.append("PRIVATE_KEY")
+
+        for chain_name in self.chain_names:
+            config = self.chain_configs.get(chain_name)
+            if not config:
+                missing.append(f"ZIN_CHAINS includes unsupported chain '{chain_name}'")
+                continue
+            if not config.executor_address:
+                missing.append(f"{chain_name.upper()}_ZIN_EXECUTOR_ADDRESS")
+            if not config.pool_address:
+                missing.append(f"{chain_name.upper()}_ZIN_POOL_ADDRESS")
+            if not config.rpc_urls:
+                missing.append(f"{chain_name.upper()}_RPC_URL")
+
+            if self.live_mode:
+                if not config.profit_vault_address:
+                    logger.warning(f"Profit vault not set for {chain_name} (will rely on on-chain config)")
+
+        if ZIN_MIN_PROFIT_BPS < 0:
+            missing.append("ZIN_MIN_PROFIT_BPS")
+        if ZIN_MAX_INTENT_AMOUNT < 0:
+            missing.append("ZIN_MAX_INTENT_AMOUNT")
+        if ZIN_MAX_GAS_PRICE_GWEI <= 0:
+            missing.append("ZIN_MAX_GAS_PRICE_GWEI")
+        if ZIN_MAX_INTENTS_PER_CYCLE <= 0:
+            missing.append("ZIN_MAX_INTENTS_PER_CYCLE")
+        if ZIN_MIN_ORDER_TTL_SECONDS < 0:
+            missing.append("ZIN_MIN_ORDER_TTL_SECONDS")
+        if ZIN_MAX_PRICE_IMPACT_BPS < 0:
+            missing.append("ZIN_MAX_PRICE_IMPACT_BPS")
+
+        if missing:
+            raise ValueError(f"Missing required env vars: {', '.join(missing)}")
+
+    def _init_chain_contexts(self) -> Dict[str, ChainContext]:
+        contexts: Dict[str, ChainContext] = {}
+        for chain_name in self.chain_names:
+            config = self.chain_configs[chain_name]
+            w3 = self._init_web3(config.rpc_urls)
+            executor = w3.eth.contract(
+                address=Web3.to_checksum_address(config.executor_address),
+                abi=ZIN_EXECUTOR_ABI
+            )
+            pool = w3.eth.contract(
+                address=Web3.to_checksum_address(config.pool_address),
+                abi=VAULT_ABI
+            )
+            contexts[chain_name] = ChainContext(
+                config=config,
+                w3=w3,
+                zin_executor=executor,
+                zin_pool=pool,
+            )
+        return contexts
+
+    def _init_logging(self):
+        """Initialize profit log file."""
+        self.profit_log_path = "bot/solver/zin_profit_log.csv"
+        log_dir = os.path.dirname(self.profit_log_path)
+
+        if log_dir and not os.path.exists(log_dir):
+            os.makedirs(log_dir, exist_ok=True)
+
+        if not os.path.exists(self.profit_log_path):
+            with open(self.profit_log_path, "w") as f:
+                f.write("timestamp,chain,venue,order_id,token_in,token_out,amount_out,profit_bps,gas_used,tx_hash,status\n")
+
+    def _parse_token_amount_caps(self) -> Dict[str, int]:
+        """Parse per-token intent caps from env."""
+        caps: Dict[str, int] = {}
+        if not ZIN_MAX_INTENT_AMOUNT_BY_TOKEN:
+            return caps
+
+        symbol_map = {
+            "USDC": [BASE_USDC, ARBITRUM_USDC, ARBITRUM_USDC_E],
+            "WETH": [BASE_WETH, ARBITRUM_WETH],
+            "WSTETH": [BASE_WSTETH, ARBITRUM_WSTETH],
+            "CBETH": [BASE_CBETH],
+            "RETH": [BASE_RETH],
+        }
+
+        entries = [item.strip() for item in ZIN_MAX_INTENT_AMOUNT_BY_TOKEN.split(",") if item.strip()]
+
+        for entry in entries:
+            if ":" in entry:
+                key, value = entry.split(":", 1)
+            elif "=" in entry:
+                key, value = entry.split("=", 1)
+            else:
+                logger.warning(f"Invalid token cap entry: {entry}")
+                continue
+
+            key = key.strip()
+            value = value.strip()
+            if not key or not value:
+                continue
+
+            try:
+                cap = int(value)
+            except ValueError:
+                logger.warning(f"Invalid cap value for {key}: {value}")
+                continue
+
+            token_key = key.lower()
+            caps[token_key] = cap
+
+            symbol_key = key.upper()
+            for address in symbol_map.get(symbol_key, []):
+                caps[address.lower()] = cap
+
+        return caps
+
+    def _get_intent_cap(self, intent: IntentData) -> int:
+        """Resolve the max allowed intent size for the token out."""
+        token_out_key = intent.token_out.lower()
+        
+        # Venue-specific position caps
+        venue_caps = {
+            IntentVenue.COWSWAP: 1.0,
+            IntentVenue.UNISWAPX: 1.0,
+            IntentVenue.FUSION: 0.5, # Lower cap for new venues initially
+            IntentVenue.LIFI: 0.5,
+            IntentVenue.AORI: 0.5,
+        }
+        
+        multiplier = venue_caps.get(intent.venue, 1.0)
+        
+        if token_out_key in self._token_amount_caps:
+            return int(self._token_amount_caps[token_out_key] * multiplier)
+
+        return int(ZIN_MAX_INTENT_AMOUNT * multiplier)
+
+
+    def _is_gas_price_ok(self, context: ChainContext) -> bool:
+        """Check if current gas price is within guardrails."""
+        gas_price_gwei = context.w3.eth.gas_price / 1e9
+        if gas_price_gwei > ZIN_MAX_GAS_PRICE_GWEI:
+            logger.debug(f"Gas price too high on {context.config.name}: {gas_price_gwei:.2f} gwei")
+            return False
+        return True
+
+    def _is_target_pair(self, token_in: str, token_out: str, context: ChainContext) -> bool:
+        """Check if this token pair is one we want to fulfill."""
+        token_in = token_in.lower()
+        token_out = token_out.lower()
+
+        return token_in in context.config.token_targets or token_out in context.config.token_targets
+
+    def _has_output_liquidity(self, token_out: str, context: ChainContext) -> bool:
+        """
+        Check if we have liquidity for the output token.
+        Only USDC and WETH are currently funded in the ZIN Pool.
+        """
+        token_out = token_out.lower()
+        
+        # Tokens we have liquidity for (funded in ZIN Pool)
+        funded_tokens = {
+            BASE_USDC.lower(),
+            BASE_WETH.lower(),
+            ARBITRUM_USDC.lower(),
+            ARBITRUM_WETH.lower(),
+        }
+        
+        return token_out in funded_tokens
+
+    # =========================================================================
+    # AGGREGATOR QUOTING  (delegates to modular QuoteAggregator)
+    # =========================================================================
+
+    async def get_best_quote(
+        self,
+        context: ChainContext,
+        token_in: str,
+        token_out: str,
+        amount_in: int,
+    ) -> Optional[QuoteResult]:
+        """
+        Get the best quote from all registered providers in parallel.
+
+        Delegates to QuoteAggregator which queries Aerodrome, UniswapV3,
+        1inch, and Paraswap concurrently and returns the highest output.
+        """
+        recipient = self.account.address if self.account else context.config.executor_address
+
+        agg_result: Optional[AggQuoteResult] = await self.quote_aggregator.get_best_quote(
+            chain_id=context.config.chain_id,
+            token_in=token_in,
+            token_out=token_out,
+            amount_in=amount_in,
+            recipient=recipient,
+            w3=context.w3,
+        )
+
+        if agg_result is None:
+            logger.warning(
+                f"No quote available for {token_in[:10]}…→{token_out[:10]}… "
+                f"on {context.config.name}"
+            )
+            return None
+
+        # Wrap into legacy QuoteResult so the rest of the solver is unchanged
+        return QuoteResult(
+            aggregator=agg_result.provider,
+            calldata=agg_result.calldata,
+            expected_output=agg_result.expected_output,
+            gas_estimate=agg_result.gas_estimate,
+            price_impact_bps=agg_result.price_impact_bps,
+            router_address=agg_result.router_address,
+        )
+
+    # =========================================================================
+    # PROFITABILITY ANALYSIS
+    # =========================================================================
+
+    def calculate_profit_potential(
+        self,
+        intent: IntentData,
+        quote: QuoteResult
+    ) -> Tuple[int, int, bool]:
+        """
+        Calculate profit potential for fulfilling an intent.
+        """
+        user_wants = intent.amount_out
+        we_can_get = quote.expected_output
+
+        # Venue-specific fee structures (bps)
+        venue_fees = {
+            IntentVenue.COWSWAP: 0,
+            IntentVenue.UNISWAPX: 0,
+            IntentVenue.FUSION: 2, # 1inch Fusion fee
+            IntentVenue.LIFI: 5,   # LI.FI fee
+            IntentVenue.AORI: 1,   # Aori fee
+        }
+        
+        fee_bps = venue_fees.get(intent.venue, 0)
+        fee_amount = (we_can_get * fee_bps) // 10000
+        
+        we_keep = we_can_get - fee_amount
+
+        if we_keep <= user_wants:
+            return (0, 0, False)
+
+        profit_amount = we_keep - user_wants
+        profit_bps = (profit_amount * 10000) // user_wants if user_wants > 0 else 0
+
+        min_profit_bps = max(ZIN_MIN_PROFIT_BPS, 0)
+        is_profitable = profit_bps >= min_profit_bps
+
+        return (profit_amount, profit_bps, is_profitable)
+
+
+    async def check_vault_liquidity(self, context: ChainContext, token: str) -> int:
+        """Check available liquidity in the ZIN pool for a token."""
+        try:
+            liquidity = context.zin_pool.functions.maxFlashLoan(
+                Web3.to_checksum_address(token)
+            ).call()
+            return liquidity
+        except Exception as e:
+            logger.error(f"Error checking vault liquidity: {e}")
+            return 0
+
+    # =========================================================================
+    # AUTO-SCALING POSITION SIZING
+    # =========================================================================
+
+    async def _get_cached_liquidity(self, context: ChainContext, token: str) -> int:
+        """Get liquidity with caching to reduce RPC calls."""
+        token_key = f"{context.config.name}:{token.lower()}"
+        now = time.time()
+
+        if token_key in self._liquidity_cache:
+            cached_liq, cached_time = self._liquidity_cache[token_key]
+            if now - cached_time < self._liquidity_cache_ttl:
+                return cached_liq
+
+        liquidity = await self.check_vault_liquidity(context, token)
+        self._liquidity_cache[token_key] = (liquidity, now)
+        
+        # Debug logging for liquidity checks
+        token_name = context.config.token_targets.get(token.lower(), token[:10] + "...")
+        if liquidity == 0:
+            logger.debug(f"No liquidity for {token_name} ({token[:10]}...) in ZIN Pool")
+        else:
+            logger.debug(f"Liquidity for {token_name}: {liquidity}")
+        
+        return liquidity
+
+    def _calculate_scaled_position(
+        self,
+        intent: IntentData,
+        pool_liquidity: int
+    ) -> Tuple[int, str]:
+        """
+        Calculate dynamically scaled position size based on pool liquidity.
+        """
+        if not self._auto_scale_enabled:
+            return (intent.amount_out, "auto_scale_disabled")
+
+        if pool_liquidity == 0:
+            return (0, "no_liquidity")
+
+        min_position = int(pool_liquidity * self._min_liquidity_ratio)
+        max_position = int(pool_liquidity * self._max_liquidity_ratio)
+
+        requested = intent.amount_out
+        scaled = int(requested * self._scale_factor_base)
+
+        if scaled > max_position:
+            return (max_position, f"clamped_to_max_{self._max_liquidity_ratio*100:.0f}%")
+
+        if scaled < min_position and requested >= min_position:
+            return (min_position, f"floor_at_min_{self._min_liquidity_ratio*100:.0f}%")
+
+        if scaled < min_position:
+            return (scaled, "below_min_but_allowed")
+
+        return (scaled, "scaled_normally")
+
+    async def get_auto_scaled_intent_cap(self, context: ChainContext, intent: IntentData) -> Tuple[int, str]:
+        """
+        Get the auto-scaled maximum intent amount for a token.
+        """
+        pool_liquidity = await self._get_cached_liquidity(context, intent.token_out)
+        scaled_amount, scale_reason = self._calculate_scaled_position(intent, pool_liquidity)
+
+        static_cap = self._get_intent_cap(intent)
+
+        if static_cap > 0 and scaled_amount > static_cap:
+            return (static_cap, f"static_cap_applied")
+
+        return (scaled_amount, scale_reason)
+
+    # =========================================================================
+    # INTENT FULFILLMENT
+    # =========================================================================
+
+    async def fulfill_intent(
+        self,
+        context: ChainContext,
+        intent: IntentData,
+        quote: QuoteResult
+    ) -> FulfillmentResult:
+        """
+        Fulfill a user intent using Kerne's internal liquidity.
+        """
+        if not self.live_mode:
+            logger.warning(f"[DRY RUN] Would fulfill intent {intent.order_id[:16]}...")
+            logger.info(f"  Chain: {intent.chain}")
+            logger.info(f"  Venue: {intent.venue.value}")
+            logger.info(f"  User: {intent.user[:16]}...")
+            logger.info(f"  Swap: {intent.token_in_symbol} -> {intent.token_out_symbol}")
+            logger.info(f"  Amount: {intent.amount_out}")
+            logger.info(f"  Aggregator: {quote.aggregator}")
+
+            self._log_trade(intent, 0, 0, "DRY_RUN", "dry_run")
+            return FulfillmentResult(
+                success=True,
+                tx_hash=None,
+                profit_captured=0,
+                profit_bps=0,
+                gas_used=0
+            )
+
+        try:
+            # Determine settlement target — prefer router from quote, then venue-specific settler
+            target = quote.router_address or ONE_INCH_ROUTER
+            if intent.venue == IntentVenue.FUSION:
+                target = context.config.fusion_settler or target
+            elif intent.venue == IntentVenue.LIFI:
+                target = context.config.lifi_settler or target
+            elif intent.venue == IntentVenue.AORI:
+                target = context.config.aori_settler or target
+
+            safety_params = encode(
+                ["uint256", "uint256", "uint256"],
+                [
+                    intent.deadline,
+                    intent.price_limit,
+                    5  # Minimum profit in bps
+                ]
+            )
+
+            tx = context.zin_executor.functions.fulfillIntent(
+                Web3.to_checksum_address(context.config.pool_address),
+                Web3.to_checksum_address(intent.token_in),
+                Web3.to_checksum_address(intent.token_out),
+                intent.amount_out,
+                Web3.to_checksum_address(intent.user),
+                Web3.to_checksum_address(target),
+                quote.calldata,
+                safety_params
+            ).build_transaction({
+                "from": self.account.address,
+                "nonce": context.w3.eth.get_transaction_count(self.account.address),
+                "gas": quote.gas_estimate + 200000,
+                "gasPrice": context.w3.eth.gas_price,
+                "chainId": context.config.chain_id
+            })
+
+
+            signed_tx = context.w3.eth.account.sign_transaction(tx, PRIVATE_KEY)
+            tx_hash = context.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+
+            logger.info(f"Intent fulfillment submitted: {tx_hash.hex()}")
+
+            receipt = context.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+
+            if receipt.status == 1:
+                profit_captured, profit_bps = self._parse_profit_from_receipt(context, receipt)
+
+                logger.success("Intent fulfilled successfully!")
+                logger.info(f"  TX: {tx_hash.hex()}")
+                logger.info(f"  Gas Used: {receipt.gasUsed}")
+                logger.info(f"  Profit: {profit_bps} bps")
+
+                self.total_intents_processed += 1
+                self.total_profit_captured += profit_captured
+                self.intents_by_venue[intent.venue.value] += 1
+
+                self._log_trade(intent, profit_bps, receipt.gasUsed, tx_hash.hex(), "SUCCESS")
+                await self._send_discord_alert(context, intent, profit_bps, tx_hash.hex())
+
+                return FulfillmentResult(
+                    success=True,
+                    tx_hash=tx_hash.hex(),
+                    profit_captured=profit_captured,
+                    profit_bps=profit_bps,
+                    gas_used=receipt.gasUsed
+                )
+
+            logger.error(f"Transaction failed: {tx_hash.hex()}")
+            self.failed_intents += 1
+            self._log_trade(intent, 0, receipt.gasUsed, tx_hash.hex(), "FAILED")
+
+            return FulfillmentResult(
+                success=False,
+                tx_hash=tx_hash.hex(),
+                profit_captured=0,
+                profit_bps=0,
+                gas_used=receipt.gasUsed,
+                error="Transaction reverted"
+            )
+
+        except Exception as e:
+            logger.error(f"Error fulfilling intent: {e}")
+            self.failed_intents += 1
+            self._log_trade(intent, 0, 0, "", f"ERROR: {str(e)[:50]}")
+
+            return FulfillmentResult(
+                success=False,
+                tx_hash=None,
+                profit_captured=0,
+                profit_bps=0,
+                gas_used=0,
+                error=str(e)
+            )
+
+    def _parse_profit_from_receipt(self, context: ChainContext, receipt) -> Tuple[int, int]:
+        """Parse profit from transaction receipt logs."""
+        try:
+            intent_fulfilled_topic = context.w3.keccak(
+                text="IntentFulfilled(address,address,address,uint256,uint256,uint256)"
+            )
+
+            for log in receipt.logs:
+                if log.topics and log.topics[0] == intent_fulfilled_topic:
+                    data = log.data
+                    if len(data) >= 128:  # 4 * 32 bytes
+                        spread_captured = int.from_bytes(data[64:96], 'big')
+                        amount_out = int.from_bytes(data[32:64], 'big')
+
+                        profit_bps = (spread_captured * 10000) // amount_out if amount_out > 0 else 0
+                        return (spread_captured, profit_bps)
+
+        except Exception as e:
+            logger.debug(f"Could not parse profit from receipt: {e}")
+
+        return (0, 0)
+
+    def _log_trade(
+        self,
+        intent: IntentData,
+        profit_bps: int,
+        gas_used: int,
+        tx_hash: str,
+        status: str
+    ):
+        """Log trade to CSV file."""
+        timestamp = int(time.time())
+        line = (
+            f"{timestamp},{intent.chain},{intent.venue.value},{intent.order_id[:32]},"
+            f"{intent.token_in[:16]},{intent.token_out[:16]},"
+            f"{intent.amount_out},{profit_bps},{gas_used},{tx_hash},{status}\n"
+        )
+
+        try:
+            with open(self.profit_log_path, "a") as f:
+                f.write(line)
+        except Exception as e:
+            logger.error(f"Error writing to profit log: {e}")
+
+    async def _send_discord_alert(
+        self,
+        context: ChainContext,
+        intent: IntentData,
+        profit_bps: int,
+        tx_hash: str
+    ):
+        """Send Discord alert for successful fulfillment."""
+        if not DISCORD_WEBHOOK_URL:
+            return
+
+        try:
+            embed = {
+                "title": "🎯 ZIN Intent Fulfilled!",
+                "color": 0x00ff00,
+                "fields": [
+                    {"name": "Chain", "value": intent.chain, "inline": True},
+                    {"name": "Venue", "value": intent.venue.value, "inline": True},
+                    {"name": "Profit", "value": f"{profit_bps} bps", "inline": True},
+                    {"name": "Pair", "value": f"{intent.token_in_symbol} → {intent.token_out_symbol}", "inline": True},
+                    {"name": "TX", "value": f"[{tx_hash[:10]}...]{context.config.explorer_base_url}{tx_hash}", "inline": False}
+                ],
+                "footer": {"text": "Filled by Kerne ZIN"}
+            }
+
+            payload = {"embeds": [embed]}
+
+            async with aiohttp.ClientSession() as session:
+                await session.post(DISCORD_WEBHOOK_URL, json=payload)
+
+        except Exception as e:
+            logger.debug(f"Failed to send Discord alert: {e}")
+
+    # =========================================================================
+    # METRICS & MONITORING
+    # =========================================================================
+
+    async def get_zin_metrics(self, context: ChainContext) -> Dict[str, Any]:
+        """
+        Get ZIN performance metrics from the executor contract and local stats.
+        """
+        try:
+            metrics = context.zin_executor.functions.getZINMetrics().call()
+
+            token_spreads = {}
+            for token_addr, token_name in context.config.token_targets.items():
+                try:
+                    spread = context.zin_executor.functions.getTokenSpread(
+                        Web3.to_checksum_address(token_addr)
+                    ).call()
+                    if spread > 0:
+                        token_spreads[token_name] = spread
+                except Exception:
+                    continue
+
+            return {
+                "on_chain": {
+                    "total_spread_captured": metrics[0],
+                    "total_intents_fulfilled": metrics[1],
+                    "profit_vault": metrics[2],
+                    "token_spreads": token_spreads
+                },
+                "bot_stats": {
+                    "intents_processed": self.total_intents_processed,
+                    "profit_captured": self.total_profit_captured,
+                    "failed_intents": self.failed_intents,
+                    "intents_by_venue": self.intents_by_venue,
+                    "success_rate": (
+                        self.total_intents_processed /
+                        (self.total_intents_processed + self.failed_intents) * 100
+                        if (self.total_intents_processed + self.failed_intents) > 0
+                        else 0
+                    )
+                },
+                "config": {
+                    "chain": context.config.name,
+                    "live_mode": self.live_mode,
+                    "executor_address": context.config.executor_address,
+                    "pool_address": context.config.pool_address
+                }
+            }
+        except Exception as e:
+            logger.error(f"Error fetching ZIN metrics for {context.config.name}: {e}")
+            return {
+                "error": str(e),
+                "bot_stats": {
+                    "intents_processed": self.total_intents_processed,
+                    "profit_captured": self.total_profit_captured,
+                    "failed_intents": self.failed_intents
+                }
+            }
+
+    async def log_metrics(self):
+        """Log current metrics to console."""
+        logger.info("=" * 40)
+        logger.info("ZIN Solver Metrics")
+        logger.info("=" * 40)
+
+        for chain_name, context in self.chain_contexts.items():
+            metrics = await self.get_zin_metrics(context)
+            logger.info(f"Chain: {chain_name}")
+            if "on_chain" in metrics:
+                on_chain = metrics["on_chain"]
+                logger.info(f"  On-Chain Total Spread: {on_chain['total_spread_captured']}")
+                logger.info(f"  On-Chain Total Intents: {on_chain['total_intents_fulfilled']}")
+
+        bot_stats = metrics.get("bot_stats", {})
+        logger.info(f"Bot Intents Processed: {bot_stats.get('intents_processed', 0)}")
+        logger.info(f"Bot Profit Captured: {bot_stats.get('profit_captured', 0)}")
+        logger.info(f"Failed Intents: {bot_stats.get('failed_intents', 0)}")
+        logger.info(f"Success Rate: {bot_stats.get('success_rate', 0):.1f}%")
+        logger.info(f"By Venue: {bot_stats.get('intents_by_venue', {})}")
+        logger.info("=" * 40)
+
+    # =========================================================================
+    # MAIN LOOP
+    # =========================================================================
+
+    async def process_intent(self, context: ChainContext, intent: IntentData) -> bool:
+        """
+        Process a single intent: check profitability and fulfill if profitable.
+
+        Returns True if intent was fulfilled successfully.
+        """
+        try:
+            logger.info(
+                f"Processing intent on {context.config.name} from {intent.venue.value}: {intent.order_id[:16]}..."
+            )
+
+            if not self._is_gas_price_ok(context):
+                return False
+
+            if intent.deadline - int(time.time()) < ZIN_MIN_ORDER_TTL_SECONDS:
+                logger.debug("Order TTL below guardrail")
+                return False
+
+            scaled_cap, scale_reason = await self.get_auto_scaled_intent_cap(context, intent)
+            if scaled_cap == 0:
+                logger.debug(f"Auto-scale rejected: {scale_reason}")
+                return False
+
+            if intent.amount_out > scaled_cap:
+                logger.debug(
+                    f"Intent amount above auto-scaled cap: {intent.amount_out} > {scaled_cap} ({scale_reason})"
+                )
+                return False
+
+            logger.debug(f"Auto-scale: cap={scaled_cap}, reason={scale_reason}")
+
+            liquidity = await self._get_cached_liquidity(context, intent.token_out)
+            if liquidity < intent.amount_out:
+                logger.debug(f"Insufficient liquidity: {liquidity} < {intent.amount_out}")
+                return False
+
+            quote = await self.get_best_quote(
+                context,
+                intent.token_in,
+                intent.token_out,
+                intent.amount_in
+            )
+
+            if not quote:
+                logger.debug("No quote available")
+                return False
+
+            if quote.price_impact_bps > ZIN_MAX_PRICE_IMPACT_BPS:
+                logger.debug(
+                    f"Price impact too high: {quote.price_impact_bps} bps"
+                )
+                return False
+
+            profit_amount, profit_bps, is_profitable = self.calculate_profit_potential(
+                intent, quote
+            )
+
+            if profit_bps < ZIN_MIN_PROFIT_BPS:
+                logger.debug(f"Profit below guardrail: {profit_bps} bps")
+                return False
+
+            if not is_profitable:
+                logger.debug(f"Not profitable: {profit_bps} bps")
+                return False
+
+            logger.info(f"Profitable intent found! Expected profit: {profit_bps} bps")
+
+            result = await self.fulfill_intent(context, intent, quote)
+
+            return result.success
+
+        except Exception as e:
+            logger.error(f"Error processing intent: {e}")
+            return False
+
+    async def run_cycle(self) -> int:
+        """
+        Run one cycle of intent fetching and processing.
+
+        Returns number of intents processed.
+        """
+        processed = 0
+
+        for chain_name, context in self.chain_contexts.items():
+            all_intents = []
+            for fetcher in self.fetchers:
+                intents = await fetcher.fetch_intents(context)
+                all_intents.extend(intents)
+
+            if ZIN_MAX_INTENTS_PER_CYCLE > 0:
+                all_intents = all_intents[:ZIN_MAX_INTENTS_PER_CYCLE]
+
+            if all_intents:
+                logger.info(
+                    f"[{chain_name}] Found {len(all_intents)} potential intents"
+                )
+
+            for intent in all_intents:
+                success = await self.process_intent(context, intent)
+                if success:
+                    processed += 1
+
+        return processed
+
+
+    def save_session_summary(self, start_time: float, cycle_count: int):
+        """Save session summary to file when shutting down."""
+        summary_path = "bot/solver/zin_session_summary.json"
+        end_time = time.time()
+        duration_minutes = (end_time - start_time) / 60
+
+        summary = {
+            "session_id": f"session_{int(start_time)}",
+            "start_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time)),
+            "end_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(end_time)),
+            "duration_minutes": round(duration_minutes, 2),
+            "total_cycles": cycle_count,
+            "live_mode": self.live_mode,
+            "chains": self.chain_names,
+            "stats": {
+                "intents_processed": self.total_intents_processed,
+                "profit_captured": self.total_profit_captured,
+                "failed_intents": self.failed_intents,
+                "intents_by_venue": self.intents_by_venue,
+                "success_rate": (
+                    self.total_intents_processed /
+                    (self.total_intents_processed + self.failed_intents) * 100
+                    if (self.total_intents_processed + self.failed_intents) > 0
+                    else 0
+                )
+            },
+            "config": {
+                "min_profit_bps": ZIN_MIN_PROFIT_BPS,
+                "max_gas_gwei": ZIN_MAX_GAS_PRICE_GWEI
+            }
+        }
+
+        try:
+            existing = []
+            if os.path.exists(summary_path):
+                with open(summary_path, "r") as f:
+                    existing = json.load(f)
+
+            existing.append(summary)
+
+            with open(summary_path, "w") as f:
+                json.dump(existing, f, indent=2)
+
+            logger.success(f"Session summary saved to {summary_path}")
+            logger.info(f"  Duration: {duration_minutes:.1f} minutes")
+            logger.info(f"  Cycles: {cycle_count}")
+            logger.info(f"  Intents Processed: {self.total_intents_processed}")
+            logger.info(f"  Profit Captured: {self.total_profit_captured}")
+        except Exception as e:
+            logger.error(f"Failed to save session summary: {e}")
+
+    async def run(self, interval: float = 5.0):
+        """
+        Main solver loop.
+
+        Args:
+            interval: Seconds between cycles
+        """
+        logger.info("Starting ZIN Solver main loop...")
+        logger.info("Monitoring CowSwap and UniswapX for profitable intents")
+        logger.info(f"Cycle interval: {interval}s")
+
+        cycle_count = 0
+        metrics_interval = 60  # Log metrics every 60 seconds
+        last_metrics_log = time.time()
+        start_time = time.time()
+
+        while True:
+            try:
+                cycle_count += 1
+
+                processed = await self.run_cycle()
+
+                if processed > 0:
+                    logger.success(f"Cycle {cycle_count}: Processed {processed} intents")
+
+                if time.time() - last_metrics_log >= metrics_interval:
+                    await self.log_metrics()
+                    last_metrics_log = time.time()
+
+                await asyncio.sleep(interval)
+
+            except KeyboardInterrupt:
+                logger.info("Shutting down ZIN Solver...")
+                self.save_session_summary(start_time, cycle_count)
+                break
+            except Exception as e:
+                logger.error(f"Error in solver loop: {e}")
+                await asyncio.sleep(interval * 2)  # Back off on error
+
+
+# =============================================================================
+# CLI ENTRY POINT
+# =============================================================================
+
+async def main():
+    """Main entry point for the ZIN Solver."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Kerne ZIN Solver - Intent Execution Engine")
+    parser.add_argument(
+        "--interval",
+        type=float,
+        default=5.0,
+        help="Seconds between cycles (default: 5.0)"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Run in dry-run mode (no actual transactions)"
+    )
+    parser.add_argument(
+        "--metrics-only",
+        action="store_true",
+        help="Just print current metrics and exit"
+    )
+
+    args = parser.parse_args()
+
+    if args.dry_run:
+        os.environ["ZIN_SOLVER_LIVE"] = "false"
+
+    try:
+        solver = ZINSolver()
+
+        if args.metrics_only:
+            await solver.log_metrics()
+            return
+
+        await solver.run(interval=args.interval)
+
+    except ValueError as e:
+        logger.error(f"Configuration error: {e}")
+        logger.info("Please check your .env file and ensure all required variables are set.")
+        raise SystemExit(1)
+    except ConnectionError as e:
+        logger.error(f"Connection error: {e}")
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

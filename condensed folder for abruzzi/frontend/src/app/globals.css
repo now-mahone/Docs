@@ -1,0 +1,200 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --radius: 1rem;
+  --background: #ffffff;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  --primary: #000000;
+  --primary-foreground: #ffffff;
+  --secondary: #000000;
+  --secondary-foreground: #ffffff;
+  --muted: #ffffff;
+  --muted-foreground: #000000;
+  --accent: #ffffff;
+  --accent-foreground: #000000;
+  --destructive: #000000;
+  --border: #000000;
+  --input: #ffffff;
+  --ring: #000000;
+  --chart-1: #000000;
+  --chart-2: #000000;
+  --chart-3: #000000;
+  --chart-4: #000000;
+  --chart-5: #000000;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #000000;
+  --sidebar-primary: #000000;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ffffff;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #000000;
+  --sidebar-ring: #000000;
+  
+  /* Kerne Color Palette - New Design System */
+  --color-green: #37d097;
+  --color-teal: #19b097;
+  --color-lightest-grey: #d4dce1;
+  --color-light-grey: #aab9be;
+  --color-grey: #444a4f;
+  --color-dark-grey: #22252a;
+}
+
+.dark {
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #000000;
+  --card-foreground: #ffffff;
+  --popover: #000000;
+  --popover-foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #ffffff;
+  --secondary-foreground: #000000;
+  --muted: #000000;
+  --muted-foreground: #ffffff;
+  --accent: #000000;
+  --accent-foreground: #ffffff;
+  --destructive: #ffffff;
+  --border: #ffffff;
+  --input: #000000;
+  --ring: #ffffff;
+  --chart-1: #ffffff;
+  --chart-2: #ffffff;
+  --chart-3: #ffffff;
+  --chart-4: #ffffff;
+  --chart-5: #ffffff;
+  --sidebar: #000000;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #000000;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #ffffff;
+  --sidebar-ring: #ffffff;
+}
+
+@layer base {
+  * {
+    @apply border-[#000000] shadow-none transition-none;
+  }
+  body {
+    @apply bg-[#ffffff] text-[#000000];
+  }
+  /* Font heading class for TASA Orbiter */
+  .font-heading {
+    font-family: 'TASA Orbiter', sans-serif;
+  }
+  
+  /* Standardized header sizes across the entire website */
+  h1 {
+    @apply text-5xl md:text-7xl font-heading font-medium tracking-tight;
+  }
+  h2 {
+    @apply text-4xl md:text-5xl font-heading font-medium tracking-tight;
+  }
+  h3 {
+    @apply text-2xl font-heading font-medium tracking-tight;
+  }
+  h4 {
+    @apply text-xl font-heading font-medium;
+  }
+  
+  /* Standardized text sizes for all non-header text (xs, s, m, l, xl) */
+  .text-xs {
+    @apply text-[11px];
+  }
+  .text-s {
+    @apply text-sm;
+  }
+  .text-m {
+    @apply text-base;
+  }
+  .text-l {
+    @apply text-lg;
+  }
+  .text-xl {
+    @apply text-3xl;
+  }
+  
+  /* Custom height utility for buttons (60px = 3.75rem) */
+  .h-15 {
+    height: 3.75rem;
+  }
+}
+
+@layer utilities {
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+  }
+  @keyframes marquee2 {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(0); }
+  }
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @keyframes mesh-gradient {
+    0% { background-position: 0% 0%; }
+    25% { background-position: 50% 100%; }
+    50% { background-position: 100% 0%; }
+    75% { background-position: 50% 100%; }
+    100% { background-position: 0% 0%; }
+  }
+  .animate-marquee {
+    animation: marquee 40s linear infinite;
+  }
+  .animate-marquee2 {
+    animation: marquee2 40s linear infinite;
+  }
+  .pause-marquee {
+    animation-play-state: paused;
+  }
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+  }
+  .animate-mesh {
+    background-size: 400% 400%;
+    animation: mesh-gradient 15s ease infinite;
+  }
+}
+
+/* WalletConnect Modal Styling */
+@layer components {
+  /* Target WalletConnect modal backdrop */
+  wcm-modal,
+  w3m-modal,
+  [data-walletconnect-modal] {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 10000 !important;
+  }
+
+  /* Add backdrop blur and prevent scrolling */
+  wcm-modal::before,
+  w3m-modal::before {
+    content: '' !important;
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    z-index: -1 !important;
+  }
+
+  /* Style the modal container */
+  wcm-modal > div,
+  w3m-modal > div {
+    border-radius: 1px !important;
+  }
+}
+

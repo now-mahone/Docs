@@ -1,0 +1,20 @@
+{
+    "brand": {
+        "name": "Kerne White-Label",
+        "logo": "/logo.svg",
+        "colors": {
+            "primary": "#4c7be7",
+            "secondary": "#0d33ec",
+            "background": "#000000"
+        }
+    },
+    "contracts": {
+        "factory": "0x0000000000000000000000000000000000000000",
+        "vault": "0x0000000000000000000000000000000000000000"
+    },
+    "features": {
+        "referrals": true,
+        "compliance": false,
+        "analytics": true
+    }
+}

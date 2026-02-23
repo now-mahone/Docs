@@ -1,0 +1,69 @@
+{
+  "timestamp": 1770532235.211901,
+  "timestamp_utc": "2026-02-08T06:30:35Z",
+  "prices": {
+    "ETH": 2084.94,
+    "WSTETH": 2553.59,
+    "CBETH": 2338.92,
+    "RETH": 2410.66,
+    "USDC": 0.999862,
+    "BTC": 69304
+  },
+  "funding_rates": {
+    "hyperliquid": {
+      "rate": -4.1058e-06,
+      "annual": -0.035966807999999996,
+      "interval": "1h"
+    },
+    "binance": {
+      "rate": 2.665e-05,
+      "annual": 0.029181750000000003,
+      "interval": "8h"
+    },
+    "bybit": {
+      "rate": -0.00010002,
+      "annual": -0.1095219,
+      "interval": "8h"
+    },
+    "okx": {
+      "rate": 3.49111664652e-05,
+      "annual": 0.038227727279394004,
+      "interval": "8h"
+    },
+    "average_annual": -0.019519807680151498,
+    "best_venue": "okx"
+  },
+  "lst_yields": {
+    "wstETH": 0.028399999999999998,
+    "stETH": 0.028399999999999998,
+    "rETH": 0.0257327,
+    "cbETH": 0.029994399999999997
+  },
+  "gas": {
+    "base_gwei": 0.003,
+    "arbitrum_gwei": 0.02
+  },
+  "strategy": {
+    "leverage": 3.0,
+    "staking_yield": 0.028399999999999998,
+    "avg_annual_funding": -0.01952,
+    "best_funding_venue": "okx",
+    "best_funding_annual": 0.038228,
+    "expected_apy": 0.016831,
+    "expected_apy_pct": "1.68%",
+    "best_lst": "cbETH",
+    "best_lst_apy": 0.029994
+  },
+  "meta": {
+    "generation_ms": 151.1,
+    "sources": [
+      "coingecko",
+      "defillama",
+      "binance",
+      "bybit",
+      "okx",
+      "hyperliquid",
+      "lido"
+    ]
+  }
+}

@@ -514,6 +514,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         offChainAssets = amount;
         lastReportedTimestamp = block.timestamp;
         emit OffChainAssetsUpdated(oldAmount, amount, block.timestamp);
+        _checkCRCircuitBreaker();
     }
 
     /**
@@ -1274,6 +1275,12 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         }
     }
     
+    /// @notice Permissionless keeper function to trigger a CR circuit breaker evaluation.
+    /// @dev Anyone can call to enforce protocol safety without waiting for an internal update.
+    function updateCircuitBreaker() external {
+        _checkCRCircuitBreaker();
+    }
+
     /// @notice Get the effective collateral ratio including dynamic buffer
     /// @return The effective CR threshold in basis points
     function getEffectiveCRThreshold() public view returns (uint256) {

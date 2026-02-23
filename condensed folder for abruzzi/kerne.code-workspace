@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"solidity.compileUsingRemoteDist": false,
+		"solidity.formatter": "forge",
+		"solidity.packageDefaultDependenciesDirectory": "lib",
+		"solidity.packageDefaultDependenciesContractsDirectory": "src"
+	}
+}

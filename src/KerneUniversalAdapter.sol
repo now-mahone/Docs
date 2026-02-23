@@ -55,7 +55,7 @@ contract KerneUniversalAdapter is ERC4626, AccessControl, ReentrancyGuard, IYiel
         _grantRole(STRATEGIST_ROLE, _strategist);
     }
 
-    function totalAssets() public view virtual override(ERC4
+    function totalAssets() public view virtual override(ERC4626, IYieldAdapter) returns (uint256) {
         uint256 vaultShares = targetVault.balanceOf(address(this));
         uint256 onChainAssets = ERC4626(address(targetVault)).convertToAssets(vaultShares);
         return onChainAssets + offChainAssets + IERC20(asset()).balanceOf(address(this));

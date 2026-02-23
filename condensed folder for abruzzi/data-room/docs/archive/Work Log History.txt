@@ -1,0 +1,8 @@
+This file contains all work completed by the primary person responsible for the project. It is useful because not all information is available and not all work is done through Cline, so it serves as a central place to record external project related information and ensure nothing is missed.
+
+[2026-01-07 17:06] - CI/CD RECOVERY & ARCHITECTURAL HARDENING
+- Issue: GitHub Actions failing for 5+ hours due to AccessControl errors in KerneVaultFactory.
+- Root Cause: Factory attempted post-deployment configuration (setPerformanceFee) on clones without DEFAULT_ADMIN_ROLE.
+- Fix: Refactored KerneVault.initialize to accept all bespoke parameters atomically.
+- Result: 26/26 tests passing. CI status: GREEN.
+- Lesson: Always prefer atomic initialization for clones to avoid permission loops.

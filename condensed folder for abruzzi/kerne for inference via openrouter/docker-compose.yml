@@ -1,0 +1,80 @@
+# Created: 2026-02-12
+# Kerne OpenRouter Inference Provider - Docker Compose
+
+version: '3.8'
+
+services:
+  # Main Llama 3.1 8B Inference Server
+  llama-8b:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kerne-llama-8b
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_NAME=meta-llama/Llama-3.1-8B-Instruct
+      - PORT=8000
+      - MAX_MODEL_LEN=8192
+      - GPU_MEMORY_UTIL=0.9
+      - HF_TOKEN=${HF_TOKEN}
+    volumes:
+      - model-cache:/root/.cache/huggingface
+      - ./metrics:/app/metrics
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    ipc: host
+
+  # Optional: Qwen 2.5 7B Server (requires second GPU)
+  # qwen-7b:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: kerne-qwen-7b
+  #   ports:
+  #     - "8001:8000"
+  #   environment:
+  #     - MODEL_NAME=Qwen/Qwen2.5-7B-Instruct
+  #     - PORT=8000
+  #     - MAX_MODEL_LEN=8192
+  #     - GPU_MEMORY_UTIL=0.9
+  #   volumes:
+  #     - model-cache:/root/.cache/huggingface
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+  #   restart: unless-stopped
+  #   ipc: host
+
+  # Monitoring Dashboard (Optional)
+  monitor:
+    image: python:3.11-slim
+    container_name: kerne-monitor
+    volumes:
+      - ./monitor.py:/app/monitor.py
+      - ./metrics:/app/metrics
+    working_dir: /app
+    command: python monitor.py
+    tty: true
+    stdin_open: true
+    depends_on:
+      - llama-8b
+
+volumes:
+  model-cache:
+    driver: local
+
+# Network configuration
+networks:
+  default:
+    name: kerne-inference

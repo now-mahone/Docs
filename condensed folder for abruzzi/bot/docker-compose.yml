@@ -1,0 +1,251 @@
+services:
+  kerne-bot:
+    build: .
+    container_name: kerne-bot
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env
+      - ../out:/app/out
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; exit(0 if os.path.exists('main.py') else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  kerne-sentinel:
+    build: .
+    container_name: kerne-sentinel
+    restart: always
+    command: ["uvicorn", "sentinel.api:app", "--host", "0.0.0.0", "--port", "8080"]
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./.env:/app/.env
+      - ../out:/app/out
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  kerne-guardian:
+    build: .
+    container_name: kerne-guardian
+    restart: always
+    command: ["python", "-m", "sentinel.risk_engine"]
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env
+      - ../out:/app/out
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; exit(0 if os.path.exists('sentinel/risk_engine.py') else 1)"]
+      interval: 60s
+      timeout: 10s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  kerne-flash-arb:
+    build: .
+    container_name: kerne-flash-arb
+    restart: always
+    command: ["python", "flash_arb_scanner.py"]
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env
+      - ../out:/app/out
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; exit(0 if os.path.exists('flash_arb_scanner.py') else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  kerne-zin-solver:
+    build: .
+    container_name: kerne-zin-solver
+    restart: always
+    command: ["python", "-m", "solver.zin_solver", "--interval", "5"]
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env
+      - ./solver:/app/solver
+      - ../out:/app/out
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; exit(0 if os.path.exists('solver/zin_solver.py') else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # Daily Proof of Reserve - Institutional-grade solvency attestation
+  kerne-por:
+    build: .
+    container_name: kerne-por
+    restart: always
+    command: ["python", "por_scheduler.py"]
+    env_file:
+      - .env
+    environment:
+      # Run daily at 00:00 UTC (Midnight - clean daily boundary)
+      - POR_HOUR_UTC=0
+      - POR_MINUTE_UTC=0
+      # Run immediately on startup, then daily
+      - POR_RUN_ON_STARTUP=true
+      # Post attestation results to Discord
+      - POR_POST_DISCORD=true
+      # For testing: set to "1" for hourly, "0.5" for 30 min (leave empty for daily)
+      - POR_INTERVAL_HOURS=
+    volumes:
+      - ./.env:/app/.env
+      - ../docs/reports:/app/docs/reports
+      - ../out:/app/out
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; exit(0 if os.path.exists('por_scheduler.py') else 1)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # CoW Swap Solver API - HTTP endpoint for CoW Protocol solver competition
+  kerne-cowswap-solver:
+    build: .
+    container_name: kerne-cowswap-solver
+    restart: always
+    command: ["python", "-m", "solver.cowswap_solver_api"]
+    env_file:
+      - .env
+    environment:
+      - SOLVER_HOST=0.0.0.0
+      - SOLVER_PORT=8081
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./.env:/app/.env
+      - ./solver:/app/solver
+      - ../out:/app/out
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # Daily Profit Telemetry - Automated reporting to Discord and docs/reports/
+  kerne-telemetry:
+    build: .
+    container_name: kerne-telemetry
+    restart: always
+    command: ["python", "telemetry_scheduler.py"]
+    env_file:
+      - .env
+    environment:
+      # Run daily at 9:00 AM UTC (2:00 AM Denver, 4:00 PM London)
+      - TELEMETRY_HOUR_UTC=9
+      - TELEMETRY_MINUTE_UTC=0
+      # Run immediately on startup, then daily
+      - TELEMETRY_RUN_ON_STARTUP=true
+      # For testing: set to "1" for hourly, "0.5" for 30 min (leave empty for daily)
+      - TELEMETRY_INTERVAL_HOURS=
+    volumes:
+      - ./.env:/app/.env
+      - ../docs/reports:/app/docs/reports
+      - ../out:/app/out
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; exit(0 if os.path.exists('telemetry_scheduler.py') else 1)"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"

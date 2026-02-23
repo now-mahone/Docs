@@ -1,0 +1,348 @@
+# Kerne Neural Net Configuration
+# Created: 2026-02-19
+
+# =============================================================================
+# YIELD PREDICTOR CONFIGURATION
+# =============================================================================
+yield_predictor:
+  # Model Architecture
+  model:
+    d_model: 128
+    n_heads: 8
+    n_encoder_layers: 4
+    n_decoder_layers: 2
+    d_ff: 512
+    dropout: 0.1
+    max_seq_len: 168  # 7 days of hourly data
+    
+  # Feature Configuration
+  features:
+    # Time series features (input dimensions)
+    ts_features:
+      - apy
+      - apy_base
+      - apy_reward
+      - tvl_usd
+      - volume_usd_1d
+      - il_7d
+      - apy_base_7d
+    
+    # Static features (protocol metadata)
+    static_features:
+      - chain_id
+      - protocol_category
+      - asset_type
+      - audit_status
+    
+    # Market features (external)
+    market_features:
+      - eth_price
+      - eth_volatility_24h
+      - funding_rate
+      - gas_price
+    
+    # Derived features (computed)
+    derived_features:
+      - apy_ma_7d
+      - apy_ma_30d
+      - apy_volatility
+      - tvl_change_24h
+      - tvl_change_7d
+      - yield_trend
+  
+  # Prediction Horizons
+  horizons:
+    - 1h
+    - 24h
+    - 7d
+    - 30d
+  
+  # Training Configuration
+  training:
+    batch_size: 64
+    learning_rate: 0.0001
+    weight_decay: 0.01
+    warmup_steps: 1000
+    max_epochs: 100
+    early_stopping_patience: 10
+    gradient_clip_val: 1.0
+    
+  # Inference Configuration
+  inference:
+    confidence_threshold: 0.7
+    anomaly_threshold: 3.0  # Standard deviations
+
+# =============================================================================
+# RISK SCORER CONFIGURATION
+# =============================================================================
+risk_scorer:
+  # Model Configuration
+  model:
+    type: ensemble  # ensemble, xgboost, lightgbm, catboost
+    n_models: 5
+    
+  # XGBoost Parameters
+  xgboost:
+    n_estimators: 500
+    max_depth: 8
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    min_child_weight: 3
+    reg_alpha: 0.1
+    reg_lambda: 1.0
+    
+  # LightGBM Parameters
+  lightgbm:
+    n_estimators: 500
+    max_depth: 8
+    learning_rate: 0.05
+    num_leaves: 64
+    feature_fraction: 0.8
+    bagging_fraction: 0.8
+    bagging_freq: 5
+    
+  # CatBoost Parameters
+  catboost:
+    iterations: 500
+    depth: 8
+    learning_rate: 0.05
+    l2_leaf_reg: 3.0
+    
+  # Risk Factors and Weights
+  risk_factors:
+    smart_contract:
+      weight: 0.25
+      features:
+        - audit_count
+        - audit_quality_score
+        - days_since_audit
+        - bug_bounty_size
+        - code_complexity_score
+        - upgradeable
+        - admin_key_timelock
+        
+    counterparty:
+      weight: 0.20
+      features:
+        - team_doxxed
+        - team_reputation_score
+        - multisig_threshold
+        - governance_decentralization
+        
+    liquidity:
+      weight: 0.20
+      features:
+        - tvl_usd
+        - tvl_stability
+        - liquidity_depth
+        - slippage_1m
+        - withdrawal_time
+        
+    market:
+      weight: 0.15
+      features:
+        - yield_volatility
+        - yield_sustainability
+        - correlation_eth
+        - correlation_btc
+        
+    systemic:
+      weight: 0.10
+      features:
+        - bridge_dependency
+        - oracle_dependency
+        - protocol_interconnections
+        
+    concentration:
+      weight: 0.10
+      features:
+        - tvl_concentration
+        - whale_percentage
+        - protocol_tvl_share
+        
+  # Risk Score Thresholds
+  thresholds:
+    excellent: 90   # Score >= 90
+    good: 80        # Score >= 80
+    moderate: 70    # Score >= 70
+    acceptable: 50  # Score >= 50
+    poor: 30        # Score >= 30
+    critical: 0     # Score < 30
+    
+  # Allocation Caps by Risk Score
+  allocation_caps:
+    excellent: 0.15   # Max 15% of TVL
+    good: 0.10        # Max 10% of TVL
+    moderate: 0.05    # Max 5% of TVL
+    acceptable: 0.02  # Max 2% of TVL
+    poor: 0.01        # Max 1% of TVL
+    critical: 0.0     # No allocation
+
+# =============================================================================
+# ALLOCATION OPTIMIZER CONFIGURATION
+# =============================================================================
+allocation_optimizer:
+  # RL Agent Configuration
+  agent:
+    algorithm: PPO
+    policy: MlpPolicy
+    learning_rate: 0.0003
+    n_steps: 2048
+    batch_size: 64
+    n_epochs: 10
+    gamma: 0.99
+    gae_lambda: 0.95
+    clip_range: 0.2
+    ent_coef: 0.01
+    
+  # Environment Configuration
+  environment:
+    max_steps: 1000
+    initial_tvl: 1000000
+    transaction_cost: 0.001  # 0.1% per rebalance
+    gas_cost_weight: 0.0001
+    
+  # Optimization Constraints
+  constraints:
+    max_single_allocation: 0.15    # Max 15% in single strategy
+    min_risk_score: 50             # Minimum risk score for allocation
+    max_chain_allocation: 0.30     # Max 30% on single chain
+    min_liquidity_reserve: 0.10    # Min 10% in liquid reserve
+    rebalance_threshold: 0.02      # Min 2% drift to trigger rebalance
+    max_rebalance_frequency: 24    # Hours between rebalances
+    
+  # Reward Function Weights
+  reward:
+    yield_weight: 1.0
+    risk_penalty: 0.5
+    gas_cost_penalty: 0.1
+    concentration_penalty: 0.2
+    stability_bonus: 0.1
+
+# =============================================================================
+# DATA PIPELINE CONFIGURATION
+# =============================================================================
+data_pipeline:
+  # Database Connection
+  database:
+    host: ${DATABASE_HOST:localhost}
+    port: ${DATABASE_PORT:5432}
+    name: ${DATABASE_NAME:kerne}
+    user: ${DATABASE_USER:postgres}
+    password: ${DATABASE_PASSWORD:}
+    
+  # Redis Cache
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    db: ${REDIS_DB:0}
+    
+  # Feature Windows
+  feature_windows:
+    lookback_days: 90
+    aggregation_intervals:
+      - 1h
+      - 24h
+      - 7d
+      - 30d
+      
+  # Data Quality
+  quality:
+    min_observations: 24  # Min 24 data points required
+    max_missing_ratio: 0.1  # Max 10% missing data
+    outlier_method: iqr
+    outlier_threshold: 3.0
+    
+  # Update Frequency
+  update_frequency:
+    yield_data: 1h
+    risk_scores: 24h
+    market_data: 5m
+    on_chain_data: 1h
+
+# =============================================================================
+# INFERENCE SERVER CONFIGURATION
+# =============================================================================
+server:
+  host: "0.0.0.0"
+  port: 8080
+  workers: 4
+  
+  # API Rate Limiting
+  rate_limit:
+    requests_per_minute: 100
+    burst: 20
+    
+  # Caching
+  cache:
+    enabled: true
+    ttl_seconds: 300  # 5 minutes
+    max_size: 1000
+    
+  # Logging
+  logging:
+    level: INFO
+    format: "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+    
+  # Monitoring
+  monitoring:
+    enabled: true
+    metrics_port: 9090
+
+# =============================================================================
+# MODEL REGISTRY
+# =============================================================================
+model_registry:
+  # Local Model Storage
+  local_path: "./models"
+  
+  # MLflow Configuration
+  mlflow:
+    tracking_uri: ${MLFLOW_TRACKING_URI:http://localhost:5000}
+    experiment_name: "kerne-neural-net"
+    
+  # Model Versioning
+  versioning:
+    max_versions: 5
+    auto_rollback: true
+    rollback_threshold: 0.1  # 10% performance degradation
+    
+  # Model Artifacts
+  artifacts:
+    yield_predictor: "models/yield_predictor/v1.0.0"
+    risk_scorer: "models/risk_scorer/v1.0.0"
+    allocation_optimizer: "models/allocation_optimizer/v1.0.0"
+
+# =============================================================================
+# TRAINING CONFIGURATION
+# =============================================================================
+training:
+  # Compute Resources
+  compute:
+    device: "cuda"  # cuda, cpu, mps
+    num_workers: 4
+    pin_memory: true
+    
+  # Experiment Tracking
+  tracking:
+    use_wandb: true
+    wandb_project: "kerne-neural-net"
+    use_mlflow: true
+    
+  # Hyperparameter Optimization
+  hyperopt:
+    method: optuna
+    n_trials: 100
+    timeout: 3600  # 1 hour
+    
+  # Cross-Validation
+  cross_validation:
+    method: time_series_split
+    n_splits: 5
+    
+  # Checkpointing
+  checkpointing:
+    save_top_k: 3
+    monitor: "val_loss"
+    mode: "min"

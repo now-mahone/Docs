@@ -1,0 +1,26 @@
+{
+  "name": "kerne-animations",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "editor": "revideo editor",
+    "serve": "revideo serve",
+    "render": "vite-node render.ts"
+  },
+  "dependencies": {
+    "@revideo/2d": "^0.10.4",
+    "@revideo/cli": "^0.10.4",
+    "@revideo/core": "^0.10.4",
+    "@revideo/ffmpeg": "^0.10.4",
+    "@revideo/renderer": "^0.10.4",
+    "@revideo/ui": "^0.10.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@revideo/vite-plugin": "^0.10.4",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.0",
+    "vite-node": "^5.3.0"
+  }
+}

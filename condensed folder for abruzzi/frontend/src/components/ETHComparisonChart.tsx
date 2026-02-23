@@ -1,0 +1,159 @@
+// Created: 2026-01-30
+'use client';
+
+import React from 'react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Area,
+  AreaChart,
+  ComposedChart,
+} from 'recharts';
+
+interface ETHComparisonChartProps {
+  data: Array<{
+    time: string;
+    eth: number;
+    simulated: number;
+    isBiWeekly?: boolean;
+  }>;
+}
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-gradient-to-b from-[#22252a] to-[#000000] rounded-sm p-4 shadow-lg border border-[#444a4f]">
+        <p className="text-xs font-bold text-[#ffffff] mb-2">{label}</p>
+        {payload.filter((entry: any) => entry.name !== 'Kerne Realized').map((entry: any, index: number) => (
+          <p key={index} className="text-xs font-medium" style={{ color: entry.color }}>
+            {entry.name}: ${entry.value.toLocaleString()}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+export const ETHComparisonChart: React.FC<ETHComparisonChartProps> = ({ data }) => {
+  return (
+    <div className="w-full h-full min-h-[300px] lg:min-h-[450px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart
+          data={data}
+          margin={{
+            top: 0,
+            right: 0,
+            left: -50,
+            bottom: 0,
+          }}
+        >
+          <defs>
+            <linearGradient id="kerneGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#37d097" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="#37d097" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke="#22252a" vertical={false} horizontal={true} strokeDasharray="none" />
+          <XAxis 
+            dataKey="time" 
+            stroke="#aab9be" 
+            style={{ fontSize: '11px', fontWeight: 500 }}
+            tickLine={false}
+            axisLine={false}
+            tick={(props: any) => {
+              const { x, y, payload } = props;
+              const isFirst = payload.index === 0;
+              const isLast = payload.index === data.length - 1;
+              
+              // Calculate dynamic interval based on data length to ensure even spacing
+              // For 30 days, show every ~7 days. For 90 days, show every ~14-20 days.
+              const totalPoints = data.length;
+              const targetTicks = 5; // We want roughly 5 evenly spaced ticks
+              const interval = Math.floor(totalPoints / (targetTicks - 1));
+              
+              const isTargetTick = payload.index % interval === 0;
+
+              // Always show first and last, and evenly spaced ticks in between
+              if (isFirst || isLast || isTargetTick) {
+                // Prevent overlap with the last tick
+                if (!isLast && (totalPoints - 1 - payload.index) < (interval * 0.7)) {
+                  return null;
+                }
+
+                return (
+                  <g transform={`translate(${x},${y})`}>
+                    <text 
+                      x={0} 
+                      y={0} 
+                      dy={16} 
+                      textAnchor={isFirst ? "start" : isLast ? "end" : "middle"} 
+                      fill="#aab9be" 
+                      fontSize="11px" 
+                      fontWeight={500}
+                    >
+                      {payload.value}
+                    </text>
+                  </g>
+                );
+              }
+              return null;
+            }}
+            interval={0}
+            padding={{ left: 50, right: 0 }}
+          />
+          <YAxis 
+            stroke="#aab9be" 
+            style={{ fontSize: '11px', fontWeight: 500 }}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(value: number) => `$${value.toLocaleString()}`}
+            domain={['auto', 'auto']}
+            tick={(props: any) => {
+              const { x, y, payload } = props;
+              return (
+                <g transform={`translate(${x},${y})`}>
+                  <text 
+                    x={5}
+                    y={0} 
+                    dy={4} 
+                    textAnchor="start"
+                    fill="#aab9be" 
+                    fontSize="11px" 
+                    fontWeight={500}
+                  >
+                    ${payload.value.toLocaleString()}
+                  </text>
+                </g>
+              );
+            }}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Area
+            name="Kerne Simulated"
+            type="linear"
+            dataKey="simulated"
+            stroke="#37d097"
+            strokeWidth={2}
+            fill="url(#kerneGradient)"
+            dot={false}
+          />
+          <Line
+            name="ETH Index"
+            type="linear"
+            dataKey="eth"
+            stroke="#babefb"
+            strokeWidth={2}
+            dot={false}
+            activeDot={{ r: 4, stroke: '#16191c', strokeWidth: 2 }}
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};

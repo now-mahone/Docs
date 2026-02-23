@@ -1,0 +1,50 @@
+{
+  "generated_at": "2026-02-20T03:18:17.204847+00:00",
+  "unix_timestamp": 1771557497,
+  "block_heights": {
+    "base": 42384076,
+    "arbitrum": 433954192
+  },
+  "chains": [
+    {
+      "chain_id": 8453,
+      "chain_name": "Base Mainnet",
+      "vault_address": "0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC",
+      "total_assets_wei": 57025253230177443,
+      "total_assets_eth": 0.057025253230177445,
+      "total_supply_wei": 4525596258110492512631217530069219000,
+      "total_supply_eth": 4.5255962581104927e+18,
+      "solvency_ratio": 1.2600605528604177e-20,
+      "rpc_healthy": true,
+      "timestamp": 1771557497
+    },
+    {
+      "chain_id": 42161,
+      "chain_name": "Arbitrum One",
+      "vault_address": "0x503D930dF68a68cdFeb8DEa173ADD8DD377841FF",
+      "total_assets_wei": 0,
+      "total_assets_eth": 0.0,
+      "total_supply_wei": 0,
+      "total_supply_eth": 0.0,
+      "solvency_ratio": 1.0,
+      "rpc_healthy": true,
+      "timestamp": 1771557498
+    }
+  ],
+  "total_onchain_assets_eth": 0.05702525,
+  "total_onchain_liabilities_eth": 4.5255962581104927e+18,
+  "offchain_venue": "Hyperliquid",
+  "offchain_equity_usd": 0.01,
+  "offchain_equity_eth_equiv": 2.74e-06,
+  "offchain_net_delta": 1.0,
+  "offchain_short_position_eth": 0.0,
+  "total_assets_eth": 0.05702799,
+  "total_liabilities_eth": 4.5255962581104927e+18,
+  "aggregate_solvency_ratio": 0.0,
+  "is_solvent": false,
+  "delta_neutral": false,
+  "attestation_hash": "0x584864c96f5d6c39bca014fdf7271cfea8f3c1260e55e0131ac1a263bfe0d563",
+  "signature": "0xdb535f64977652f18d96f6a9e55eca6bbcad0078246c961a5531f4f2db63cc2f0af4cbf2a09d05028584937ac21153b6424cd80f7e1be73c3236ad939fd7ba6e1b",
+  "signer": "0x57D400cED462a01Ed51a5De038F204Df49690A99",
+  "status": "CRITICAL"
+}

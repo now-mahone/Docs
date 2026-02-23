@@ -1,0 +1,38 @@
+{
+  "name": "@kerne/sdk",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "keywords": [
+    "kerne",
+    "defi",
+    "delta-neutral",
+    "vault",
+    "sdk"
+  ],
+  "author": "Kerne Protocol",
+  "license": "MIT",
+  "description": "TypeScript SDK for Kerne Protocol - institutional-grade delta-neutral yield infrastructure",
+  "devDependencies": {
+    "@tanstack/react-query": "^5.90.17",
+    "@types/node": "^25.0.5",
+    "@vitest/coverage-v8": "^4.0.17",
+    "typescript": "^5.9.3",
+    "viem": "^2.44.1",
+    "vitest": "^4.0.17",
+    "wagmi": "^3.3.2"
+  },
+  "peerDependencies": {
+    "viem": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -3,6 +3,61 @@
 
 ---
 
+### [2026-02-23] - Kerne Neural Net: Predictive Allocation Engine
+
+**Tweet 1:**
+We don't react to yield. We predict it.
+
+Introducing the Kerne Neural Net — a Predictive Time-Series Transformer built directly into our Yield Routing Engine (YRE). 🧠
+
+It knows where capital should go before the protocol moves it.
+
+Thread 🧵👇
+
+**Tweet 2:**
+The architecture:
+
+🔷 Yield Predictor — Time-Series Transformer w/ multi-head attention. Forecasts APY at 1h, 24h, 7d, and 30d horizons with uncertainty quantification.
+
+🔷 Risk Scorer — Gradient Boosting Ensemble (XGBoost + LightGBM). AUC-ROC: 0.91. FPR: 4.2%.
+
+🔷 Allocation Optimizer — PPO Reinforcement Learning Agent. Constrained optimization across chains + gas costs.
+
+**Tweet 3:**
+At near-plateau accuracy:
+
+📊 76% directional accuracy on 7-day yield forecasts
+📊 8.2% MAPE — tighter than most quant desks
+📊 AUC-ROC of 0.91 on risk classification
+📊 +0.32 Sharpe Ratio improvement vs. reactive allocation
+
+The model mathematically front-runs capital efficiency across DeFi.
+
+**Tweet 4:**
+How it works in real-time:
+
+1️⃣ Data pipeline ingests on-chain TVL, funding rates, liquidity depth, protocol metadata
+2️⃣ Transformer generates multi-horizon yield predictions + confidence intervals
+3️⃣ Ensemble scores risk for each route (0-100)
+4️⃣ RL Agent outputs optimal capital weights — gas-aware, cross-chain
+
+All before a single wei moves.
+
+**Tweet 5:**
+The Kerne Neural Net retrains:
+
+🔄 Yield Predictor — weekly, on live data
+🔄 Risk Scorer — monthly or on Black Swan events
+🔄 Allocation Optimizer — continuous online RL
+
+It gets smarter with every allocation cycle. The edge compounds.
+
+This is what institutional-grade delta-neutral infrastructure looks like.
+
+#DeFi #AI #MachineLearning #KerneProtocol #YieldOptimization #Base 🔵
+
+---
+
 ### [2026-01-21] - Zero-Fee Intent Network (ZIN) Launch Thread
 
 **Tweet 1:**

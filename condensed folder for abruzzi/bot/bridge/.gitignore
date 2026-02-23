@@ -1,0 +1,2 @@
+# Don't commit the Bridge installer binary (~70MB)
+*.exe
