@@ -231,13 +231,20 @@ export function VaultInteraction() {
     
     if (!amount || isNaN(parseFloat(amount)) || !address || !targetVault) return;
     
-    const sharesWei = parseEther(amount);
-    
+    // Convert the asset amount back to shares for the redeem function
+    // This ensures we are withdrawing the exact amount of shares corresponding to the assets
+    const amountWei = parseEther(amount);
+    const sharesToRedeem = vaultShareBalance && userAssets && userAssets > 0n
+      ? (amountWei * vaultShareBalance) / userAssets
+      : amountWei;
+
     writeContract({
       address: targetVault,
       abi: KerneVaultABI.abi,
       functionName: 'redeem',
-      args: [sharesWei, address, address],
+      args: [sharesToRedeem, address, address],
+      chainId: requiredChainId,
+      gas: undefined,
     });
   };
 
