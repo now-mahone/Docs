@@ -71,13 +71,17 @@ export function VaultInteraction() {
   } = useWriteContract();
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } = 
-    useWaitForTransactionReceipt({ hash });
+    useWaitForTransactionReceipt({ 
+      hash,
+      chainId: requiredChainId 
+    });
 
   const { data: vaultShareBalance } = useReadContract({
     address: targetVault,
     abi: KerneVaultABI.abi,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
+    chainId: requiredChainId,
     query: {
       enabled: !!address && !!targetVault,
     },
@@ -88,6 +92,7 @@ export function VaultInteraction() {
     abi: erc20Abi,
     functionName: 'allowance',
     args: address && targetVault ? [address, targetVault] : undefined,
+    chainId: requiredChainId,
     query: {
       enabled: !!address && !!tokenAddress && !!targetVault,
       refetchInterval: isConfirming ? 1000 : false,
@@ -110,6 +115,12 @@ export function VaultInteraction() {
   useEffect(() => {
     if (isConfirmed) {
       console.log('Transaction confirmed, refetching allowance...');
+      
+      // If we just finished an approval, and we have an amount, automatically trigger deposit
+      if (activeTab === 'deposit' && needsApproval && amount) {
+        handleDeposit();
+      }
+
       const refetchInterval = setInterval(() => {
         refetchAllowance();
       }, 500);
@@ -126,7 +137,7 @@ export function VaultInteraction() {
         clearTimeout(timer);
       };
     }
-  }, [isConfirmed, resetWrite, refetchAllowance, allowance]);
+  }, [isConfirmed, resetWrite, refetchAllowance, allowance, activeTab, needsApproval, amount]);
 
   useEffect(() => {
     const fetchPrice = async () => {
@@ -166,6 +177,7 @@ export function VaultInteraction() {
       abi: erc20Abi,
       functionName: 'approve',
       args: [targetVault, amountWei],
+      chainId: requiredChainId,
     });
   };
 
@@ -189,6 +201,7 @@ export function VaultInteraction() {
       abi: KerneVaultABI.abi,
       functionName: 'deposit',
       args: [amountWei, address],
+      chainId: requiredChainId,
     });
   };
 
