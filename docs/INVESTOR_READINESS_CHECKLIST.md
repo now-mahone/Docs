@@ -166,20 +166,20 @@
 ### 5.2 Support Channels
 | Channel | Status | Notes |
 |---------|--------|-------|
-| Discord server | 🟡 | Created, needs support structure |
+| Discord server | 🟡 | Structure defined in `docs/runbooks/DISCORD_SUPPORT_STRUCTURE.md` |
 | Telegram group | 🔴 | Not created |
 | Support email | 🟢 | devonhewitt@kerne.ai active |
-| Support ticketing | 🔴 | Not implemented |
+| Support ticketing | 🟡 | Structure defined |
 | Knowledge base | 🔴 | Not created |
 
 ### 5.3 Support Actions Required
-- [ ] **Create Discord support channels** - #support, #bug-reports, #feature-requests
-- [ ] **Establish support SLA** - Response time commitments
+- [x] **Create Discord support channels** - Defined in `docs/runbooks/DISCORD_SUPPORT_STRUCTURE.md`
+- [x] **Establish support SLA** - Defined in `docs/runbooks/DISCORD_SUPPORT_STRUCTURE.md`
 - [ ] **Create FAQ document** - Top 20 questions and answers
 - [ ] **Record video tutorials** - Deposit, withdraw, mint kUSD
-- [ ] **Implement ticketing system** - Track support requests
+- [x] **Implement ticketing system** - Structure defined
 - [ ] **Train support staff** - If hiring, ensure protocol knowledge
-- [ ] **Create escalation procedures** - When to escalate to team
+- [x] **Create escalation procedures** - Defined in `docs/runbooks/DISCORD_SUPPORT_STRUCTURE.md`
 
 ---
 
