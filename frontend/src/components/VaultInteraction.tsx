@@ -264,9 +264,9 @@ export function VaultInteraction() {
         abi: KerneVaultABI.abi,
         ...txArgs,
         chainId: requiredChainId,
-        // Use EIP-1559 fees if available for better estimation
-        maxFeePerGas: feeData.maxFeePerGas,
-        maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
+        // On Base, providing explicit maxFeePerGas can sometimes confuse MetaMask's L1 fee calculation
+        // if the values are too low or high. We'll let the wallet handle the fee estimation
+        // but we've logged the data for debugging.
       });
     } catch (err) {
       console.error('Gas estimation failed, falling back to wallet default:', err);
