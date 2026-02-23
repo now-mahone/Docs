@@ -231,18 +231,31 @@ export function VaultInteraction() {
     
     if (!amount || isNaN(parseFloat(amount)) || !address || !targetVault) return;
     
-    // Use withdraw instead of redeem to specify exact asset amount
-    // This is more user-friendly and avoids share calculation errors
     const amountWei = parseEther(amount);
+    const isMax = userAssets && amountWei >= userAssets;
 
-    writeContract({
-      address: targetVault,
-      abi: KerneVaultABI.abi,
-      functionName: 'withdraw',
-      args: [amountWei, address, address],
-      chainId: requiredChainId,
-      gas: undefined,
-    });
+    if (isMax && vaultShareBalance) {
+      // If withdrawing MAX, use redeem with the full share balance
+      // This is safer for full exits as it clears the entire position
+      writeContract({
+        address: targetVault,
+        abi: KerneVaultABI.abi,
+        functionName: 'redeem',
+        args: [vaultShareBalance, address, address],
+        chainId: requiredChainId,
+        gas: undefined,
+      });
+    } else {
+      // Otherwise use withdraw for specific asset amounts
+      writeContract({
+        address: targetVault,
+        abi: KerneVaultABI.abi,
+        functionName: 'withdraw',
+        args: [amountWei, address, address],
+        chainId: requiredChainId,
+        gas: undefined,
+      });
+    }
   };
 
   const chainLogos: { [key: string]: string } = {
