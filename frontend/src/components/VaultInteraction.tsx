@@ -196,12 +196,15 @@ export function VaultInteraction() {
       return;
     }
     
+    // Use mint instead of deposit to avoid potential rounding/preview issues in ERC4626
+    // or simply ensure we are passing the correct arguments for the ABI
     writeContract({
       address: targetVault,
       abi: KerneVaultABI.abi,
       functionName: 'deposit',
       args: [amountWei, address],
       chainId: requiredChainId,
+      gas: undefined, // Let wallet estimate gas to avoid high estimates from simulation failures
     });
   };
 
