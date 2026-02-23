@@ -67,6 +67,8 @@ from .fetchers import (
     LifiIntentFetcher,
     AoriIntentFetcher
 )
+from .quotes import QuoteAggregator
+from .quotes.base import QuoteResult as AggQuoteResult
 
 
 
@@ -253,13 +255,13 @@ ERC20_ABI = [
 
 @dataclass
 class QuoteResult:
-
-    """Result from an aggregator quote."""
+    """Result from an aggregator quote (legacy shim — wraps AggQuoteResult)."""
     aggregator: str
     calldata: bytes
     expected_output: int
     gas_estimate: int
     price_impact_bps: int
+    router_address: str = ""
 
 
 @dataclass
@@ -322,6 +324,9 @@ class ZINSolver:
             LifiIntentFetcher(self),
             AoriIntentFetcher(self)
         ]
+
+        # Initialize modular quote aggregator (Aerodrome + UniswapV3 + 1inch + Paraswap)
+        self.quote_aggregator = QuoteAggregator()
 
         # Rate limiting
         self._min_fetch_interval = 2.0  # seconds
@@ -607,215 +612,49 @@ class ZINSolver:
         return token_out in funded_tokens
 
     # =========================================================================
-    # AGGREGATOR QUOTING
+    # AGGREGATOR QUOTING  (delegates to modular QuoteAggregator)
     # =========================================================================
-
 
     async def get_best_quote(
         self,
         context: ChainContext,
         token_in: str,
         token_out: str,
-        amount_in: int
+        amount_in: int,
     ) -> Optional[QuoteResult]:
         """
-        Get the best quote from available aggregators.
+        Get the best quote from all registered providers in parallel.
 
-        Aerodrome-first mode on Base, 1inch on all chains if configured.
+        Delegates to QuoteAggregator which queries Aerodrome, UniswapV3,
+        1inch, and Paraswap concurrently and returns the highest output.
         """
-        # Try Aerodrome first on Base
-        quote = await self._get_aerodrome_quote(context, token_in, token_out, amount_in)
-        if quote:
-            return quote
+        recipient = self.account.address if self.account else context.config.executor_address
 
-        # Fallback to 1inch if API key is configured
-        if ONE_INCH_API_KEY:
-            quote = await self._get_1inch_quote(context, token_in, token_out, amount_in)
-            if quote:
-                return quote
+        agg_result: Optional[AggQuoteResult] = await self.quote_aggregator.get_best_quote(
+            chain_id=context.config.chain_id,
+            token_in=token_in,
+            token_out=token_out,
+            amount_in=amount_in,
+            recipient=recipient,
+            w3=context.w3,
+        )
 
-        logger.warning(f"No quote available for {token_in[:10]}... -> {token_out[:10]}... on {context.config.name}")
-        return None
-
-    async def _get_1inch_quote(
-        self,
-        context: ChainContext,
-        token_in: str,
-        token_out: str,
-        amount_in: int
-    ) -> Optional[QuoteResult]:
-        """
-        Get swap quote from 1inch API.
-        """
-        if not ONE_INCH_API_KEY:
-            logger.debug("1inch: API key not configured")
-            return None
-
-        url = f"https://api.1inch.dev/swap/v6.0/{context.config.chain_id}/swap"
-
-        params = {
-            "src": Web3.to_checksum_address(token_in),
-            "dst": Web3.to_checksum_address(token_out),
-            "amount": str(amount_in),
-            "from": self.account.address if self.account else context.config.executor_address,
-            "slippage": "0.5",
-            "disableEstimate": "true",
-            "allowPartialFill": "false",
-        }
-
-        headers = {
-            "Authorization": f"Bearer {ONE_INCH_API_KEY}",
-            "Accept": "application/json"
-        }
-
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(
-                    url,
-                    params=params,
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=10)
-                ) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-
-                        tx_data = data.get("tx", {})
-                        calldata = tx_data.get("data", "")
-                        output_amount = int(data.get("dstAmount", 0))
-                        gas_estimate = int(tx_data.get("gas", 300000))
-
-                        price_impact_bps = 0
-
-                        if calldata and output_amount > 0:
-                            return QuoteResult(
-                                aggregator="1inch",
-                                calldata=bytes.fromhex(calldata[2:]) if calldata.startswith("0x") else bytes.fromhex(calldata),
-                                expected_output=output_amount,
-                                gas_estimate=gas_estimate,
-                                price_impact_bps=price_impact_bps
-                            )
-
-                    elif resp.status == 400:
-                        error_data = await resp.json()
-                        logger.debug(f"1inch: Bad request - {error_data.get('description', 'Unknown error')}")
-                    elif resp.status == 429:
-                        logger.warning("1inch: Rate limited")
-                    else:
-                        logger.debug(f"1inch: API returned status {resp.status}")
-
-            except Exception as e:
-                logger.error(f"1inch: Error getting quote: {e}")
-
-        return None
-
-    async def _get_aerodrome_quote(
-        self,
-        context: ChainContext,
-        token_in: str,
-        token_out: str,
-        amount_in: int
-    ) -> Optional[QuoteResult]:
-        """
-        Get quote from Aerodrome (Base's primary DEX).
-        """
-        if not context.config.aerodrome_router:
-            return None
-
-        try:
-            # Aerodrome Router ABI for getAmountsOut
-            router_abi = [
-                {
-                    "inputs": [
-                        {"name": "amountIn", "type": "uint256"},
-                        {"components": [
-                            {"name": "from", "type": "address"},
-                            {"name": "to", "type": "address"},
-                            {"name": "stable", "type": "bool"},
-                            {"name": "factory", "type": "address"}
-                        ], "name": "routes", "type": "tuple[]"}
-                    ],
-                    "name": "getAmountsOut",
-                    "outputs": [{"name": "amounts", "type": "uint256[]"}],
-                    "stateMutability": "view",
-                    "type": "function"
-                }
-            ]
-
-            router = context.w3.eth.contract(
-                address=Web3.to_checksum_address(context.config.aerodrome_router),
-                abi=router_abi
+        if agg_result is None:
+            logger.warning(
+                f"No quote available for {token_in[:10]}…→{token_out[:10]}… "
+                f"on {context.config.name}"
             )
+            return None
 
-            factory = "0x420DD381b31aEf6683db6B902084cB0FFECe40Da"  # Aerodrome factory
-
-            for stable in [False, True]:
-                try:
-                    routes = [(
-                        Web3.to_checksum_address(token_in),
-                        Web3.to_checksum_address(token_out),
-                        stable,
-                        Web3.to_checksum_address(factory)
-                    )]
-
-                    amounts = router.functions.getAmountsOut(amount_in, routes).call()
-
-                    if len(amounts) >= 2 and amounts[-1] > 0:
-                        swap_abi = [
-                            {
-                                "inputs": [
-                                    {"name": "amountIn", "type": "uint256"},
-                                    {"name": "amountOutMin", "type": "uint256"},
-                                    {"components": [
-                                        {"name": "from", "type": "address"},
-                                        {"name": "to", "type": "address"},
-                                        {"name": "stable", "type": "bool"},
-                                        {"name": "factory", "type": "address"}
-                                    ], "name": "routes", "type": "tuple[]"},
-                                    {"name": "to", "type": "address"},
-                                    {"name": "deadline", "type": "uint256"}
-                                ],
-                                "name": "swapExactTokensForTokens",
-                                "outputs": [{"name": "amounts", "type": "uint256[]"}],
-                                "stateMutability": "nonpayable",
-                                "type": "function"
-                            }
-                        ]
-
-                        swap_router = context.w3.eth.contract(
-                            address=Web3.to_checksum_address(context.config.aerodrome_router),
-                            abi=swap_abi
-                        )
-
-                        min_out = int(amounts[-1] * 0.995)  # 0.5% slippage
-                        deadline = int(time.time()) + 300
-
-                        calldata = swap_router.encodeABI(
-                            fn_name="swapExactTokensForTokens",
-                            args=[
-                                amount_in,
-                                min_out,
-                                routes,
-                                context.config.executor_address,
-                                deadline
-                            ]
-                        )
-
-                        return QuoteResult(
-                            aggregator="Aerodrome",
-                            calldata=bytes.fromhex(calldata[2:]),
-                            expected_output=amounts[-1],
-                            gas_estimate=200000,
-                            price_impact_bps=0
-                        )
-
-                except Exception as e:
-                    logger.debug(f"Aerodrome: No {'stable' if stable else 'volatile'} route: {e}")
-                    continue
-
-        except Exception as e:
-            logger.error(f"Aerodrome: Error getting quote: {e}")
-
-        return None
+        # Wrap into legacy QuoteResult so the rest of the solver is unchanged
+        return QuoteResult(
+            aggregator=agg_result.provider,
+            calldata=agg_result.calldata,
+            expected_output=agg_result.expected_output,
+            gas_estimate=agg_result.gas_estimate,
+            price_impact_bps=agg_result.price_impact_bps,
+            router_address=agg_result.router_address,
+        )
 
     # =========================================================================
     # PROFITABILITY ANALYSIS
@@ -972,14 +811,14 @@ class ZINSolver:
             )
 
         try:
-            # Determine settlement target
-            target = ONE_INCH_ROUTER # Default
+            # Determine settlement target — prefer router from quote, then venue-specific settler
+            target = quote.router_address or ONE_INCH_ROUTER
             if intent.venue == IntentVenue.FUSION:
-                target = context.config.fusion_settler or ONE_INCH_ROUTER
+                target = context.config.fusion_settler or target
             elif intent.venue == IntentVenue.LIFI:
-                target = context.config.lifi_settler or ONE_INCH_ROUTER
+                target = context.config.lifi_settler or target
             elif intent.venue == IntentVenue.AORI:
-                target = context.config.aori_settler or ONE_INCH_ROUTER
+                target = context.config.aori_settler or target
 
             safety_params = encode(
                 ["uint256", "uint256", "uint256"],

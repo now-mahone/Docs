@@ -224,20 +224,36 @@ contract KerneIntentExecutorV2 is AccessControl, ReentrancyGuard, IERC3156FlashB
         uint256 amount,
         uint256 fee,
         bytes calldata data
-    ) external override returns (bytes32) {
+    ) external override nonReentrant returns (bytes32) {
         // SECURITY FIX: Authenticate both initiator AND lender (msg.sender)
         require(initiator == address(this), "Untrusted initiator");
         require(approvedLenders[msg.sender], "Unapproved lender");
         
-        (address tokenIn, uint256 amountOut, address user, address target, bytes memory aggregatorData, address solver, uint8 fulfillmentType) = 
+        (address tokenIn, uint256 amountOut, address user, address target, bytes memory aggregatorData, address solver, uint8 fulfillmentType) =
             abi.decode(data, (address, uint256, address, address, bytes, address, uint8));
 
         // SECURITY FIX: Validate target is a whitelisted aggregator/DEX router
         require(allowedTargets[target], "Target not allowed");
 
-        // SECURITY FIX: Validate function selector is whitelisted for this target
+        // SECURITY FIX (KRN-24-002): Validate function selector is whitelisted for this target.
+        // Also hard-block dangerous selectors regardless of whitelist to prevent calldata
+        // injection attacks where a compromised solver crafts a multicall/execute payload
+        // containing nested approve/transfer calls to drain the contract.
         if (aggregatorData.length >= 4) {
             bytes4 selector = bytes4(aggregatorData);
+
+            // Hard-blocked selectors — never callable via aggregator data
+            require(
+                selector != bytes4(keccak256("approve(address,uint256)")) &&
+                selector != bytes4(keccak256("transfer(address,uint256)")) &&
+                selector != bytes4(keccak256("transferFrom(address,address,uint256)")) &&
+                selector != bytes4(keccak256("multicall(bytes[])")) &&
+                selector != bytes4(keccak256("multicall(uint256,bytes[])")) &&
+                selector != bytes4(keccak256("execute(bytes,bytes[],uint256)")) &&
+                selector != bytes4(keccak256("execute(bytes,bytes[])")),
+                "Dangerous selector blocked"
+            );
+
             require(allowedSelectors[target][selector], "Function selector not allowed");
         }
 

@@ -22,6 +22,16 @@ async def panic_pause():
         logger.error("Missing environment variables for Panic script.")
         return False
 
+    # SECURITY FIX (KRN-24-007): Validate RPC URL before connecting.
+    try:
+        from chain_manager import _validate_rpc_url
+    except ImportError:
+        from bot.chain_manager import _validate_rpc_url
+
+    if not _validate_rpc_url(rpc_url):
+        logger.critical(f"SSRF BLOCKED in panic: RPC_URL is not on trusted allowlist. Refusing to connect.")
+        return False
+
     try:
         w3 = Web3(Web3.HTTPProvider(rpc_url))
         account = w3.eth.account.from_key(private_key)

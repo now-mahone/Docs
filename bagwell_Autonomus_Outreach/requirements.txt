@@ -1,0 +1,18 @@
+# Bagwell Autonomous Outreach Dependencies
+# Created: 2026-02-22
+
+# Core
+requests>=2.28.0
+python-dotenv>=1.0.0
+loguru>=0.7.0
+
+# Data processing
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# Optional: LinkedIn scraping (requires browser)
+# selenium>=4.15.0
+# playwright>=1.40.0
+
+# Optional: API enrichment services
+# proxycurl>=1.0.0

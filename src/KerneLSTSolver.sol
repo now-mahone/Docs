@@ -99,7 +99,7 @@ contract KerneLSTSolver is IKerneLSTSolver, IERC3156FlashBorrower, AccessControl
         return CALLBACK_SUCCESS;
     }
 
-    function _executeSwap(address tokenIn, address tokenOut, uint256 amountIn, bytes memory swapData) internal {
+    function _executeSwap(address tokenIn, address /*tokenOut*/, uint256 amountIn, bytes memory swapData) internal {
         (uint8 routerType, bytes memory pathData) = abi.decode(swapData, (uint8, bytes));
 
         if (routerType == 0) { // Aerodrome

@@ -119,7 +119,7 @@ contract KerneSecuritySuite is Test {
         _checkSolvencyInvariant();
     }
 
-    function _checkSolvencyInvariant() internal {
+    function _checkSolvencyInvariant() internal view {
         uint256 assets = vault.totalAssets();
         uint256 supply = vault.totalSupply();
         

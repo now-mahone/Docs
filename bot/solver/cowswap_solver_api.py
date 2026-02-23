@@ -55,7 +55,21 @@ _load_env()
 # =============================================================================
 
 SOLVER_NAME = "Kerne"
-SOLVER_VERSION = "1.1.0"
+SOLVER_VERSION = "1.2.0"
+
+# Network name → chain ID mapping (CoW Protocol convention)
+NETWORK_TO_CHAIN_ID: Dict[str, int] = {
+    "mainnet": 1,
+    "base": 8453,
+    "arbitrum": 42161,
+    "gnosis": 100,
+    "sepolia": 11155111,
+    "arbitrum-one": 42161,
+    "arb": 42161,
+}
+
+# Supported env names (staging, production, barn, etc.)
+VALID_ENV_NAMES = {"staging", "production", "barn", "prod", "dev"}
 
 # Base Mainnet Addresses
 BASE_WETH = "0x4200000000000000000000000000000000000006"
@@ -502,6 +516,155 @@ class KerneSolver:
 # FASTAPI APPLICATION
 # =============================================================================
 
+# ---------------------------------------------------------------------------
+# Helper: resolve chain_id from network path param
+# ---------------------------------------------------------------------------
+
+def _resolve_chain_id(network: str) -> Optional[int]:
+    """Map a CoW Protocol network name to a chain ID."""
+    return NETWORK_TO_CHAIN_ID.get(network.lower())
+
+# ---------------------------------------------------------------------------
+# Parameterised router: /{env_name}/{network}/*
+# ---------------------------------------------------------------------------
+
+from fastapi import APIRouter
+
+cow_router = APIRouter()
+
+@cow_router.api_route("", methods=["GET", "HEAD"])
+@cow_router.api_route("/", methods=["GET", "HEAD"])
+async def cow_root(env_name: str, network: str):
+    """Health check for a specific env/network combination."""
+    chain_id = _resolve_chain_id(network)
+    if solver is None:
+        return Response(status_code=503)
+    return {
+        "solver": SOLVER_NAME,
+        "version": SOLVER_VERSION,
+        "status": "healthy",
+        "env": env_name,
+        "network": network,
+        "chain_id": chain_id,
+        "timestamp": int(time.time()),
+    }
+
+@cow_router.get("/health")
+async def cow_health(env_name: str, network: str):
+    """Health check for monitoring."""
+    if solver is None:
+        return Response(status_code=503)
+    return {"status": "ok", "env": env_name, "network": network}
+
+@cow_router.get("/info")
+async def cow_info(env_name: str, network: str):
+    """Solver information for a specific network."""
+    chain_id = _resolve_chain_id(network)
+    return {
+        "name": SOLVER_NAME,
+        "version": SOLVER_VERSION,
+        "env": env_name,
+        "network": network,
+        "chain_id": chain_id,
+        "supported_chains": [8453, 42161],
+        "supported_tokens": list(SUPPORTED_TOKENS.keys()),
+        "zin_executor_base": ZIN_EXECUTOR_BASE,
+        "zin_pool_base": ZIN_POOL_BASE,
+        "zin_executor_arbitrum": ZIN_EXECUTOR_ARBITRUM,
+        "zin_pool_arbitrum": ZIN_POOL_ARBITRUM,
+        "min_profit_bps": MIN_PROFIT_BPS,
+    }
+
+@cow_router.get("/solve")
+async def cow_solve_get(env_name: str, network: str):
+    """Helper for browser visits."""
+    return {
+        "message": "This endpoint accepts POST requests for CoW Protocol auctions.",
+        "env": env_name,
+        "network": network,
+        "docs": "/docs",
+    }
+
+@cow_router.post("/solve")
+async def cow_solve(env_name: str, network: str, request: SolveRequest):
+    """
+    Main solver endpoint — CoW Protocol driver calls this.
+
+    URL pattern: POST /{env_name}/{network}/solve
+    Example:     POST /staging/arbitrum/solve
+    """
+    try:
+        if solver is None:
+            logger.error("Solver not initialized")
+            return SolveResponse(solutions=[])
+
+        chain_id = _resolve_chain_id(network)
+        logger.info(f"[{env_name}/{network}] Auction {request.id} — chain_id={chain_id}, orders={len(request.orders)}")
+
+        # Filter orders to only those matching this network's chain
+        if chain_id is not None:
+            filtered_orders = [
+                o for o in request.orders
+                if (
+                    SUPPORTED_TOKENS.get(o.sellToken.lower(), {}).get("chain") == chain_id
+                    or SUPPORTED_TOKENS.get(o.buyToken.lower(), {}).get("chain") == chain_id
+                    # If token not in our map, let the solver try anyway
+                    or (
+                        o.sellToken.lower() not in SUPPORTED_TOKENS
+                        and o.buyToken.lower() not in SUPPORTED_TOKENS
+                    )
+                )
+            ]
+            request = SolveRequest(
+                id=request.id,
+                tokens=request.tokens,
+                orders=filtered_orders,
+                liquidity=request.liquidity,
+                effectiveGasPrice=request.effectiveGasPrice,
+                deadline=request.deadline,
+            )
+
+        response = await solver.solve(request)
+        return response if response is not None else SolveResponse(solutions=[])
+
+    except Exception as e:
+        logger.error(f"[{env_name}/{network}] Solve error: {e}", exc_info=True)
+        return SolveResponse(solutions=[])
+
+@cow_router.post("/quote")
+async def cow_quote(env_name: str, network: str, request: Request):
+    """Quote endpoint for a specific network."""
+    try:
+        body = await request.json()
+        sell_token = body.get("sellToken", "")
+        buy_token = body.get("buyToken", "")
+        sell_amount = int(body.get("sellAmount", 0))
+
+        if not all([sell_token, buy_token, sell_amount]):
+            raise HTTPException(status_code=400, detail="Missing required fields")
+
+        quote_output = solver._get_aerodrome_quote(sell_token, buy_token, sell_amount)
+
+        if not quote_output:
+            return {"quote": None, "reason": "No route available", "env": env_name, "network": network}
+
+        return {
+            "sellToken": sell_token,
+            "buyToken": buy_token,
+            "sellAmount": str(sell_amount),
+            "buyAmount": str(quote_output),
+            "aggregator": "Aerodrome",
+            "env": env_name,
+            "network": network,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Quote error [{env_name}/{network}]: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan event handler for the FastAPI application."""
@@ -536,6 +699,9 @@ app.add_middleware(
 # Initialize solver
 solver = KerneSolver()
 
+# Mount the parameterised router — handles /{env_name}/{network}/*
+app.include_router(cow_router, prefix="/{env_name}/{network}")
+
 @app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     """Health check endpoint."""
@@ -567,7 +733,12 @@ async def info():
         "zin_pool_base": ZIN_POOL_BASE,
         "zin_executor_arbitrum": ZIN_EXECUTOR_ARBITRUM,
         "zin_pool_arbitrum": ZIN_POOL_ARBITRUM,
-        "min_profit_bps": MIN_PROFIT_BPS
+        "min_profit_bps": MIN_PROFIT_BPS,
+        "routing": {
+            "pattern": "/{env_name}/{network}/solve",
+            "example": "/staging/arbitrum/solve",
+            "supported_networks": list(NETWORK_TO_CHAIN_ID.keys()),
+        }
     }
 
 @app.get("/solve")

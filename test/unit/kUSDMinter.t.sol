@@ -102,7 +102,7 @@ contract MockAggregator {
     IERC20 asset;
     constructor(address _asset) { asset = IERC20(_asset); }
     
-    function swap(address from, address to, uint256 amount, uint256) external returns (uint256) {
+    function swap(address /*from*/, address /*to*/, uint256 amount, uint256) external returns (uint256) {
         // Burn input (simulated) or just ignore
         // Mint output to caller
         MockERC20(address(asset)).mint(msg.sender, amount);

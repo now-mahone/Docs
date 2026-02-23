@@ -60,6 +60,18 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     /// @notice Hedging Reserve for institutional obfuscation
     uint256 public hedgingReserve;
 
+    /// @notice SECURITY (KRN-24-006): Internal tracked on-chain balance.
+    /// @dev Updated via _deposit/_withdraw hooks and all direct transfer functions.
+    ///      Prevents donation/inflation attacks where an attacker transfers tokens
+    ///      directly to the contract to artificially inflate the share price.
+    uint256 private _trackedOnChainAssets;
+
+    /// @notice SECURITY FIX (KRN-24-011): Entry fee in basis points (default 5 bps = 0.05%).
+    /// A small deposit fee makes MEV sandwich attacks on share price unprofitable.
+    /// The fee stays inside the vault, accruing to existing shareholders as yield.
+    uint256 public depositFeeBps = 5;
+    uint256 public constant MAX_DEPOSIT_FEE_BPS = 100; // Hard cap at 1%
+
     /// @notice The address of the verification node for Proof of Reserve
     address public verificationNode;
 
@@ -150,14 +162,20 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     //                LIQUIDATION CASCADE PREVENTION
     // ============================================================
     
-    /// @notice Whether the collateral ratio circuit breaker is active
+    /// @notice Whether the collateral ratio circuit breaker is active (Red Halt)
     bool public crCircuitBreakerActive;
     
-    /// @notice Critical collateral ratio threshold (1.25x = 125%)
+    /// @notice Whether the collateral ratio soft alert is active (Yellow Alert)
+    bool public crSoftAlertActive;
+    
+    /// @notice Critical collateral ratio threshold (1.25x = 125%) - Triggers Red Halt
     uint256 public constant CRITICAL_CR_THRESHOLD = 12500; // 1.25x in basis points
     
-    /// @notice Safe collateral ratio for recovery (1.35x = 135%)
-    uint256 public constant SAFE_CR_THRESHOLD = 13500; // 1.35x in basis points
+    /// @notice Warning collateral ratio threshold (1.35x = 135%) - Triggers Yellow Alert
+    uint256 public constant WARNING_CR_THRESHOLD = 13500; // 1.35x in basis points
+    
+    /// @notice Safe collateral ratio for recovery (1.40x = 140%)
+    uint256 public constant SAFE_CR_THRESHOLD = 14000; // 1.40x in basis points
     
     /// @notice Timestamp when circuit breaker was triggered
     uint256 public crCircuitBreakerTriggeredAt;
@@ -208,10 +226,14 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     event PriceCircuitBreakerReset();
     
     // --- Liquidation Cascade Prevention Events ---
-    event CRCircuitBreakerTriggered(uint256 cr, uint256 timestamp);
+    event CRCircuitBreakerTriggered(uint256 cr, uint256 timestamp); // Red Halt
+    event CRSoftAlertTriggered(uint256 cr, uint256 timestamp); // Yellow Alert
     event CRCircuitBreakerRecovered(uint256 cr, uint256 timestamp);
+    event CRSoftAlertRecovered(uint256 cr, uint256 timestamp);
     event DynamicBufferUpdated(uint256 oldBuffer, uint256 newBuffer);
     event LiquidationRateLimited(uint256 attempted, uint256 allowed, uint256 hour);
+    /// @notice KRN-24-011 / KRN-24-005: Emitted when the deposit entry fee is changed.
+    event DepositFeeUpdated(uint256 newFeeBps);
 
     /**
      * @param asset_ The underlying asset (e.g., WETH or USDC)
@@ -276,7 +298,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
      *      without needing admin role post-deployment.
      */
     function initializeWithConfig(
-        address asset_,
+        address /*asset_*/,
         string memory name_,
         string memory symbol_,
         address admin_,
@@ -375,25 +397,31 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     /**
      * @notice Returns the total amount of assets managed by the vault.
      */
+    /**
+     * @notice Returns the total amount of assets managed by the vault.
+     * @dev SECURITY FIX (KRN-24-001 & KRN-24-006):
+     *   - Uses _trackedOnChainAssets instead of balanceOf() to prevent donation attacks.
+     *   - When verificationNode is set, it is the SOLE source of off-chain asset truth.
+     *     Manual offChainAssets/l1Assets/hedgingReserve are IGNORED to prevent share price
+     *     manipulation by a compromised STRATEGIST_ROLE.
+     *   - If verificationNode call fails, conservatively returns only tracked on-chain assets.
+     */
     function totalAssets() public view virtual override returns (uint256) {
-        uint256 verifiedAssets = 0;
         address node = verificationNode;
         if (node != address(0)) {
             (bool success, bytes memory data) = node.staticcall(
                 abi.encodeWithSignature("getVerifiedAssets(address)", address(this))
             );
             if (success && data.length == 32) {
-                verifiedAssets = abi.decode(data, (uint256));
+                uint256 verifiedAssets = abi.decode(data, (uint256));
+                return _trackedOnChainAssets + verifiedAssets;
             }
+            // Call failed: conservatively report only tracked on-chain assets.
+            return _trackedOnChainAssets;
         }
-
-        // If verified assets are available, they represent the total off-chain value (including reserve)
-        if (verifiedAssets > 0) {
-            return super.totalAssets() + verifiedAssets;
-        }
-
-        // Fallback to reported off-chain assets, L1 assets, and hedging reserve
-        return super.totalAssets() + offChainAssets + l1Assets + hedgingReserve;
+        // No verificationNode: fall back to manually reported values.
+        // WARNING: This mode trusts the STRATEGIST_ROLE. Use only pre-launch.
+        return _trackedOnChainAssets + offChainAssets + l1Assets + hedgingReserve;
     }
 
     /**
@@ -540,6 +568,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
             ? exchangeDepositAddress
             : (treasury != address(0) ? treasury : founder);
         require(dest != address(0), "No sweep destination");
+        _trackedOnChainAssets -= amount; // SECURITY (KRN-24-006)
         SafeERC20.safeTransfer(IERC20(asset()), dest, amount);
         emit FundsSwept(amount, dest);
     }
@@ -646,11 +675,13 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         uint256 fee = (grossYieldAmount * grossPerformanceFeeBps) / 10000;
         if (fee > 0) {
             address recipient = treasury != address(0) ? treasury : founder;
+            _trackedOnChainAssets -= fee; // SECURITY (KRN-24-006)
             SafeERC20.safeTransfer(IERC20(asset()), recipient, fee);
             emit FounderWealthCaptured(fee, recipient);
         }
         uint256 insuranceContribution = (grossYieldAmount * insuranceFundBps) / 10000;
         if (insuranceContribution > 0 && insuranceFund != address(0)) {
+            _trackedOnChainAssets -= insuranceContribution; // SECURITY (KRN-24-006)
             IERC20(asset()).approve(insuranceFund, insuranceContribution);
             (bool success,) = insuranceFund.call(abi.encodeWithSignature("deposit(uint256)", insuranceContribution));
             require(success, "Insurance deposit failed");
@@ -662,8 +693,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         uint256 amount
     ) external onlyRole(STRATEGIST_ROLE) {
         require(insuranceFund != address(0), "Insurance fund not set");
+        uint256 balBefore = IERC20(asset()).balanceOf(address(this));
         (bool success,) = insuranceFund.call(abi.encodeWithSignature("claim(address,uint256)", address(this), amount));
         require(success, "Insurance claim failed");
+        _trackedOnChainAssets += IERC20(asset()).balanceOf(address(this)) - balBefore; // SECURITY (KRN-24-006)
     }
 
     function setInsuranceFundBps(
@@ -689,10 +722,10 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         emit YieldOracleUpdated(oldOracle, _oracle);
     }
 
+    /// @dev SECURITY FIX (KRN-24-009): Restricted to DEFAULT_ADMIN_ROLE only.
     function setMaxTotalAssets(
         uint256 _maxTotalAssets
-    ) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(STRATEGIST_ROLE, msg.sender), "Not authorized");
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         maxTotalAssets = _maxTotalAssets;
     }
 
@@ -752,6 +785,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     function requestL1Deposit(uint256 amount) external onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant whenNotPaused {
         require(amount > 0, "Amount must be greater than zero");
         require(l1DepositAddress != address(0), "L1 bridge not set");
+        _trackedOnChainAssets -= amount; // SECURITY (KRN-24-006)
         SafeERC20.safeTransfer(IERC20(asset()), l1DepositAddress, amount);
         emit L1DepositRequested(amount, l1DepositAddress);
     }
@@ -800,6 +834,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         request.claimed = true;
         
         _burn(address(this), request.shares);
+        _trackedOnChainAssets -= request.assets; // SECURITY (KRN-24-006)
         SafeERC20.safeTransfer(IERC20(asset()), msg.sender, request.assets);
         
         _checkSolvency(true);
@@ -1024,6 +1059,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         require(hasRole(STRATEGIST_ROLE, msg.sender) || msg.sender == prime, "Not authorized");
         require(prime != address(0), "Invalid prime address");
         _checkSolvency(true);
+        _trackedOnChainAssets -= amount; // SECURITY (KRN-24-006)
         SafeERC20.safeTransfer(IERC20(asset()), prime, amount);
     }
 
@@ -1032,6 +1068,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     ) external nonReentrant {
         require(hasRole(STRATEGIST_ROLE, msg.sender) || primeAccounts[msg.sender].active, "Not authorized");
         SafeERC20.safeTransferFrom(IERC20(asset()), msg.sender, address(this), amount);
+        _trackedOnChainAssets += amount; // SECURITY (KRN-24-006)
         _checkSolvency(false);
     }
 
@@ -1061,6 +1098,7 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         require(IERC20(asset()).balanceOf(address(this)) >= assets, "Insufficient liquid buffer");
 
         _burn(msg.sender, shares);
+        _trackedOnChainAssets -= assets; // SECURITY (KRN-24-006): total leaving vault
         
         if (fee > 0 && insuranceFund != address(0)) {
             SafeERC20.safeTransfer(IERC20(asset()), insuranceFund, fee);
@@ -1069,6 +1107,63 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         SafeERC20.safeTransfer(IERC20(asset()), msg.sender, netAssets);
         
         emit WithdrawalClaimed(msg.sender, type(uint256).max, netAssets);
+    }
+
+    // ============================================================
+    //                ERC4626 INTERNAL BALANCE HOOKS
+    // ============================================================
+
+    /**
+     * @dev SECURITY (KRN-24-006): Override _deposit to track on-chain balance.
+     * Increments _trackedOnChainAssets on deposit/mint, preventing donations from
+     * inflating share price via direct token transfers.
+     */
+    /**
+     * @dev SECURITY FIX (KRN-24-011): Override previewDeposit to apply deposit fee.
+     * Fewer shares are minted per unit of assets, making deposit sandwiching unprofitable.
+     * The fee (in assets) remains in the vault and accrues to existing shareholders.
+     */
+    function previewDeposit(uint256 assets) public view override returns (uint256) {
+        uint256 fee = (assets * depositFeeBps) / 10000;
+        return super.previewDeposit(assets - fee);
+    }
+
+    function _deposit(
+        address caller,
+        address receiver,
+        uint256 assets,
+        uint256 shares
+    ) internal override {
+        super._deposit(caller, receiver, assets, shares);
+        _trackedOnChainAssets += assets;
+    }
+
+    /**
+     * @notice Updates the entry deposit fee.
+     * @dev SECURITY FIX (KRN-24-011): Capped at MAX_DEPOSIT_FEE_BPS to prevent admin abuse.
+     * @param bps Fee in basis points (1 bps = 0.01%). Set to 0 to disable.
+     */
+    function setDepositFee(uint256 bps) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(bps <= MAX_DEPOSIT_FEE_BPS, "Deposit fee exceeds cap");
+        depositFeeBps = bps;
+        emit DepositFeeUpdated(bps);
+    }
+
+    /**
+     * @dev SECURITY (KRN-24-006): Override _withdraw to track on-chain balance.
+     * Decrements _trackedOnChainAssets on withdraw/redeem.
+     * Note: withdraw() and redeem() are currently disabled (they revert). This exists
+     * as defensive programming in case they are re-enabled.
+     */
+    function _withdraw(
+        address caller,
+        address receiver,
+        address owner_,
+        uint256 assets,
+        uint256 shares
+    ) internal override {
+        _trackedOnChainAssets -= assets;
+        super._withdraw(caller, receiver, owner_, assets, shares);
     }
 
     // ============================================================
@@ -1139,13 +1234,13 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         _;
     }
     
-    /// @notice Check and update CR circuit breaker state
+    /// @notice Check and update CR circuit breaker state (Tiered: Yellow/Red)
     /// @dev Called internally before critical operations
     function _checkCRCircuitBreaker() internal {
         uint256 cr = getSolvencyRatio();
         
+        // 1. Check Red Halt (Critical)
         if (!crCircuitBreakerActive) {
-            // Check if we should trigger
             if (cr < CRITICAL_CR_THRESHOLD) {
                 crCircuitBreakerActive = true;
                 crCircuitBreakerTriggeredAt = block.timestamp;
@@ -1153,14 +1248,28 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
                 emit CRCircuitBreakerTriggered(cr, block.timestamp);
             }
         } else {
-            // Check if we can recover
+            // Check if we can recover from Red Halt
             // Must be above safe threshold AND cooldown period must have passed
             if (cr >= SAFE_CR_THRESHOLD && 
                 block.timestamp >= crCircuitBreakerTriggeredAt + crCircuitBreakerCooldown) {
                 crCircuitBreakerActive = false;
                 crCircuitBreakerTriggeredAt = 0;
-                _unpause();
+                if (paused()) _unpause();
                 emit CRCircuitBreakerRecovered(cr, block.timestamp);
+            }
+        }
+
+        // 2. Check Yellow Alert (Warning)
+        if (!crSoftAlertActive && !crCircuitBreakerActive) {
+            if (cr < WARNING_CR_THRESHOLD) {
+                crSoftAlertActive = true;
+                emit CRSoftAlertTriggered(cr, block.timestamp);
+            }
+        } else if (crSoftAlertActive) {
+            // Recover from Yellow Alert if CR goes back above Warning Threshold
+            if (cr >= WARNING_CR_THRESHOLD) {
+                crSoftAlertActive = false;
+                emit CRSoftAlertRecovered(cr, block.timestamp);
             }
         }
     }

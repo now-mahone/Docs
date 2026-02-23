@@ -164,7 +164,7 @@ contract KerneZINRouter is AccessControl, ReentrancyGuard, IERC3156FlashBorrower
         
         // Track starting balances
         uint256 tokenOutBefore = IERC20(intent.tokenOut).balanceOf(address(this));
-        uint256 tokenInBefore = IERC20(intent.tokenIn).balanceOf(address(this));
+        // uint256 tokenInBefore = IERC20(intent.tokenIn).balanceOf(address(this));
 
         // Execute primary route
         Route memory primaryRoute = routes[0];

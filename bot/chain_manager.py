@@ -10,6 +10,82 @@ except ImportError:
 
 # Created: 2025-12-28
 
+# SECURITY FIX (KRN-24-007): Allowlist of trusted RPC URL prefixes.
+# The bot will refuse to connect to any RPC not matching one of these prefixes,
+# preventing SSRF via a malicious RPC_URL env-var injection.
+_TRUSTED_RPC_PREFIXES: tuple = (
+    # Alchemy
+    "https://base-mainnet.g.alchemy.com/",
+    "https://arb-mainnet.g.alchemy.com/",
+    "https://opt-mainnet.g.alchemy.com/",
+    "https://eth-mainnet.g.alchemy.com/",
+    # Infura
+    "https://mainnet.infura.io/",
+    "https://base-mainnet.infura.io/",
+    "https://arbitrum-mainnet.infura.io/",
+    "https://optimism-mainnet.infura.io/",
+    # QuickNode (all subdomains end with .quiknode.pro)
+    "https://",  # narrowed further inside _validate_rpc_url for quiknode
+    # Ankr
+    "https://rpc.ankr.com/",
+    # Public/canonical chain RPCs
+    "https://mainnet.base.org",
+    "https://base.publicnode.com",
+    "https://arb1.arbitrum.io/rpc",
+    "https://mainnet.optimism.io",
+    # Local Anvil / test nodes (never in production)
+    "http://127.0.0.1:",
+    "http://localhost:",
+)
+
+# Precise allowlist — no wildcard "https://" catch-all; QuickNode handled explicitly
+_TRUSTED_RPC_PREFIXES = (
+    "https://base-mainnet.g.alchemy.com/",
+    "https://arb-mainnet.g.alchemy.com/",
+    "https://opt-mainnet.g.alchemy.com/",
+    "https://eth-mainnet.g.alchemy.com/",
+    "https://mainnet.infura.io/",
+    "https://base-mainnet.infura.io/",
+    "https://arbitrum-mainnet.infura.io/",
+    "https://optimism-mainnet.infura.io/",
+    "https://rpc.ankr.com/",
+    "https://mainnet.base.org",
+    "https://base.publicnode.com",
+    "https://arb1.arbitrum.io/rpc",
+    "https://mainnet.optimism.io",
+    "http://127.0.0.1:",
+    "http://localhost:",
+)
+
+
+def _validate_rpc_url(url: str) -> bool:
+    """
+    SECURITY (KRN-24-007): Validates an RPC URL against the trusted allowlist.
+    Also accepts QuickNode URLs (*.quiknode.pro) as a special case.
+    Returns True if the URL is trusted, False otherwise.
+    """
+    if not url:
+        return False
+    # QuickNode URLs: https://<hash>.<chain>.quiknode.pro/
+    if url.startswith("https://") and ".quiknode.pro/" in url:
+        return True
+    return any(url.startswith(prefix) for prefix in _TRUSTED_RPC_PREFIXES)
+
+
+def _sanitize_exc(e: Exception) -> str:
+    """
+    SECURITY (KRN-24-003): Returns a sanitized string representation of an exception.
+    Strips raw private key hex patterns (0x + 64 hex chars) to prevent accidental
+    leakage of the bot's private key into log files / log aggregation services.
+    """
+    import re as _re
+    msg = str(e)
+    # Redact any 64-character hex string (bare or 0x-prefixed) - typical private key format
+    msg = _re.sub(r'0x[0-9a-fA-F]{64}', '0x[REDACTED]', msg)
+    msg = _re.sub(r'(?<![0-9a-fA-F])[0-9a-fA-F]{64}(?![0-9a-fA-F])', '[REDACTED]', msg)
+    return msg
+
+
 class ChainManager:
     """
     Handles interactions with the Base blockchain and the KerneVault contract.
@@ -121,7 +197,7 @@ class ChainManager:
             total_assets_wei = vault.functions.totalAssets().call()
             return float(w3.from_wei(total_assets_wei, 'ether'))
         except Exception as e:
-            logger.error(f"Error calling totalAssets on {chain_name}: {e}")
+            logger.error(f"Error calling totalAssets on {chain_name}: {_sanitize_exc(e)}")
             return 0.0
 
 
@@ -142,7 +218,7 @@ class ChainManager:
             balance_wei = asset_contract.functions.balanceOf(self.vault_address).call()
             return float(self.w3.from_wei(balance_wei, 'ether'))
         except Exception as e:
-            logger.error(f"Error getting on-chain assets: {e}")
+            logger.error(f"Error getting on-chain assets: {_sanitize_exc(e)}")
             return 0.0
 
     def get_lst_eth_ratio(self) -> float:
@@ -172,7 +248,7 @@ class ChainManager:
                 return 1.0
             return ratio
         except Exception as e:
-            logger.warning(f"Error getting LST/ETH ratio: {e}")
+            logger.warning(f"Error getting LST/ETH ratio: {_sanitize_exc(e)}")
             return 1.0
 
     def update_hedging_reserve(self, amount_eth: float) -> str:
@@ -197,7 +273,7 @@ class ChainManager:
                 logger.success(f"Hedging reserve updated: {tx_hash.hex()}")
             return tx_hash.hex()
         except Exception as e:
-            logger.error(f"Error updating hedging reserve: {e}")
+            logger.error(f"Error updating hedging reserve: {_sanitize_exc(e)}")
             raise
 
     def update_yield_oracle(self) -> str:
@@ -220,7 +296,7 @@ class ChainManager:
                 logger.success(f"Yield oracle updated: {tx_hash.hex()}")
             return tx_hash.hex()
         except Exception as e:
-            logger.error(f"Error updating yield oracle: {e}")
+            logger.error(f"Error updating yield oracle: {_sanitize_exc(e)}")
             raise
 
     def register_vault_in_registry(self, vault_address: str, asset_address: str, metadata: str = "") -> str:
@@ -248,7 +324,7 @@ class ChainManager:
                 logger.success(f"Vault registered in registry: {tx_hash.hex()}")
             return tx_hash.hex()
         except Exception as e:
-            logger.error(f"Error registering vault: {e}")
+            logger.error(f"Error registering vault: {_sanitize_exc(e)}")
             raise
 
     def update_l1_assets(self, amount_wei: int) -> str:
@@ -272,7 +348,7 @@ class ChainManager:
                 logger.success(f"L1 assets updated: {tx_hash.hex()}")
             return tx_hash.hex()
         except Exception as e:
-            logger.error(f"Error updating L1 assets: {e}")
+            logger.error(f"Error updating L1 assets: {_sanitize_exc(e)}")
             raise
 
     def update_offchain_value(self, amount_eth: float) -> str:
@@ -304,7 +380,7 @@ class ChainManager:
                         send_discord_alert(msg, level="WARNING")
 
             except Exception as e:
-                logger.error(f"Failed to perform deviation check: {e}")
+                logger.error(f"Failed to perform deviation check: {_sanitize_exc(e)}")
 
             amount_wei = self.w3.to_wei(amount_eth, 'ether')
             nonce = self.w3.eth.get_transaction_count(self.account.address)
@@ -326,7 +402,7 @@ class ChainManager:
                 
             return tx_hash.hex()
         except Exception as e:
-            logger.error(f"Error updating off-chain value: {e}")
+            logger.error(f"Error updating off-chain value: {_sanitize_exc(e)}")
             raise
 
     def capture_founder_wealth(self, gross_yield_eth: float) -> str:
@@ -354,7 +430,7 @@ class ChainManager:
                 logger.success(f"Founder wealth captured: {tx_hash.hex()}")
             return tx_hash.hex()
         except Exception as e:
-            logger.error(f"Error capturing founder wealth: {e}")
+            logger.error(f"Error capturing founder wealth: {_sanitize_exc(e)}")
             raise
 
     def _connect_with_retry(self, url: str, name: str, retries: int = 3) -> Web3:
@@ -365,6 +441,14 @@ class ChainManager:
         urls = [u.strip() for u in url.split(",")] if url else []
         
         for current_url in urls:
+            # SECURITY FIX (KRN-24-007): Reject any RPC URL not on the trusted allowlist.
+            if not _validate_rpc_url(current_url):
+                logger.critical(
+                    f"SSRF BLOCKED: Refusing to connect to untrusted RPC URL for {name}: "
+                    f"{current_url[:80]}… — add it to _TRUSTED_RPC_PREFIXES if legitimate."
+                )
+                continue
+
             for i in range(retries):
                 try:
                     w3 = Web3(Web3.HTTPProvider(current_url, request_kwargs={'timeout': 10}))
@@ -372,7 +456,7 @@ class ChainManager:
                         logger.info(f"Connected to {name} RPC: {current_url}")
                         return w3
                 except Exception as e:
-                    logger.warning(f"Retry {i+1}/{retries} for {name} RPC ({current_url}) failed: {e}")
+                    logger.warning(f"Retry {i+1}/{retries} for {name} RPC ({current_url}) failed: {_sanitize_exc(e)}")
             
             logger.error(f"Failed to connect to {name} RPC at {current_url}. Trying next fallback...")
         
@@ -425,7 +509,7 @@ class ChainManager:
             
             return float(w3.from_wei(total_pending_wei, 'ether'))
         except Exception as e:
-            logger.error(f"Error fetching pending withdrawals on {chain_name}: {e}")
+            logger.error(f"Error fetching pending withdrawals on {chain_name}: {_sanitize_exc(e)}")
             return 0.0
 
 
@@ -471,7 +555,7 @@ class ChainManager:
                 logger.success(f"Insurance fund drawn: {tx_hash.hex()}")
             return tx_hash.hex()
         except Exception as e:
-            logger.error(f"Error drawing from insurance fund: {e}")
+            logger.error(f"Error drawing from insurance fund: {_sanitize_exc(e)}")
             raise
 
     # ═══════════════════════════════════════════════════════════════════════════════
@@ -500,7 +584,7 @@ class ChainManager:
             decimals = token.functions.decimals().call()
             return float(balance) / (10 ** decimals)
         except Exception as e:
-            logger.error(f"Error getting treasury balance: {e}")
+            logger.error(f"Error getting treasury balance: {_sanitize_exc(e)}")
             return 0.0
 
     def get_buyback_stats(self) -> dict:
@@ -517,7 +601,7 @@ class ChainManager:
                 "total_spent": float(self.w3.from_wei(stats[1], 'ether'))
             }
         except Exception as e:
-            logger.error(f"Error getting buyback stats: {e}")
+            logger.error(f"Error getting buyback stats: {_sanitize_exc(e)}")
             return {"total_kerne_bought": 0, "total_spent": 0}
 
     def preview_buyback(self, token_address: str, amount: float) -> dict:
@@ -542,7 +626,7 @@ class ChainManager:
                 "error": None
             }
         except Exception as e:
-            logger.error(f"Error previewing buyback: {e}")
+            logger.error(f"Error previewing buyback: {_sanitize_exc(e)}")
             return {"expected": 0, "minimum": 0, "error": str(e)}
 
     def is_buyback_token_approved(self, token_address: str) -> bool:
@@ -554,7 +638,7 @@ class ChainManager:
                 return False
             return self.treasury.functions.isApprovedToken(token_address).call()
         except Exception as e:
-            logger.error(f"Error checking approved token: {e}")
+            logger.error(f"Error checking approved token: {_sanitize_exc(e)}")
             return False
 
     def execute_treasury_distribute(self, token_address: str) -> str:
@@ -585,7 +669,7 @@ class ChainManager:
                 logger.error(f"Treasury distribution failed: {tx_hash.hex()}")
             return tx_hash.hex()
         except Exception as e:
-            logger.error(f"Error executing treasury distribute: {e}")
+            logger.error(f"Error executing treasury distribute: {_sanitize_exc(e)}")
             return ""
 
     def execute_buyback(self, token_address: str, amount: float, min_kerne_out: float = 0) -> str:
@@ -644,7 +728,7 @@ class ChainManager:
                 logger.error(f"Buyback transaction failed: {tx_hash.hex()}")
             return tx_hash.hex()
         except Exception as e:
-            logger.error(f"Error executing buyback: {e}")
+            logger.error(f"Error executing buyback: {_sanitize_exc(e)}")
             return ""
 
     def execute_distribute_and_buyback(self, token_address: str, min_kerne_out: float = 0) -> str:
@@ -688,7 +772,7 @@ class ChainManager:
                 logger.error(f"Distribute+Buyback transaction failed: {tx_hash.hex()}")
             return tx_hash.hex()
         except Exception as e:
-            logger.error(f"Error executing distribute+buyback: {e}")
+            logger.error(f"Error executing distribute+buyback: {_sanitize_exc(e)}")
             return ""
 
     def approve_buyback_token(self, token_address: str, approved: bool = True) -> str:
@@ -721,7 +805,7 @@ class ChainManager:
                 logger.success(f"Token {action} for buyback: {tx_hash.hex()}")
             return tx_hash.hex()
         except Exception as e:
-            logger.error(f"Error approving buyback token: {e}")
+            logger.error(f"Error approving buyback token: {_sanitize_exc(e)}")
             return ""
 
     def set_routing_hop(self, token_address: str, hop_address: str) -> str:
@@ -753,7 +837,7 @@ class ChainManager:
                 logger.success(f"Routing hop set: {tx_hash.hex()}")
             return tx_hash.hex()
         except Exception as e:
-            logger.error(f"Error setting routing hop: {e}")
+            logger.error(f"Error setting routing hop: {_sanitize_exc(e)}")
             return ""
 
     def transfer_erc20(self, token_address: str, to_address: str, amount: float, chain_name: str = "Arbitrum") -> str:
@@ -790,7 +874,7 @@ class ChainManager:
                 return tx_hash.hex()
             return ""
         except Exception as e:
-            logger.error(f"ERC20 Transfer failed: {e}")
+            logger.error(f"ERC20 Transfer failed: {_sanitize_exc(e)}")
             return ""
 
     def bridge_kusd_v2(self, amount_eth: float, dst_eid: int) -> str:
@@ -854,5 +938,5 @@ class ChainManager:
                 logger.success(f"kUSD V2 bridged to EID {dst_eid}: {tx_hash.hex()}")
             return tx_hash.hex()
         except Exception as e:
-            logger.error(f"Error bridging kUSD V2: {e}")
+            logger.error(f"Error bridging kUSD V2: {_sanitize_exc(e)}")
             raise

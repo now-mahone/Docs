@@ -4,7 +4,7 @@
 **CRITICAL:** This project is developed EXCLUSIVELY on Windows 11. All commands, shell syntax, and tool usage must be compatible with Windows (cmd.exe/PowerShell). Never assume a Linux/Unix environment.
 
 ## 1. DECISION PROTOCOL (SINGULAR PATH)
-**CRITICAL:** Never recommend multiple options or "A or B" scenarios to Scofield or Mahone unless explicitly asked.
+**CRITICAL:** Never recommend multiple options or "A or B" scenarios to the Kerne team unless explicitly asked.
 - **Action:** Always analyze all possibilities internally, then present ONLY the singular best path forward.
 - **Tone:** Decisive, authoritative, and direct.
 - **Exception:** Only provide options if the user specifically asks "What are my options?" or "Give me 3 alternatives."
@@ -13,7 +13,8 @@
 - **Scofield:** Detected if `git config user.name` is `enerzy17` or hostname is `LAPTOP-1C5TJ4CH`.
 - **Mahone:** Detected if `git config user.name` is `now-mahone` or `kamil-pia`or their hostname is `DESKTOP-L028632`.
 - **Bagwell** Detected if `git config user.name` is `tb12344444444` or hostname is `littletimmy`
-- **Action:** DO NOT address the user by their name (Scofield, Bagwell or Mahone) in any response. These names are reserved for internal messaging between the owners.
+- **Abruzzi** Doesn't have the repo/folder so disregard detecting him.
+- **Action:** DO NOT address the user by their name (Scofield, Bagwell or Mahone) in any public mesresponse. These names are reserved for internal messaging between the owners.
 - **CRITICAL:** "Scofield", "Mahone" and "Bagwell" are internal operational codenames (Prison Break gimmicks). They MUST NEVER be used in external outreach, emails, public documentation, or any user-facing content. All outreach must use professional titles (e.g., "Kerne Protocol Team") or real names if provided.
 
 ## 2.5 COMPANY IDENTITY IN COMMUNICATIONS
@@ -22,8 +23,8 @@
 - **Applies to:** All emails, Twitter DMs, grant applications, investor outreach, partnership inquiries, and any external communication.
 
 ## 3. THE "MEMORY" PROTOCOL
-- **Update `project_state.md`:** At the end of every successful task, update `project_state.md` with the format: `[YYYY-MM-DD HH:MM] - Action Taken - Status`.
-- **Twitter Workflow:** Every 2-3 days, Cline must check `project_state.md`, draft a "Twitter-friendly" update based on recent milestones (no sensitive data), and remind Bagwell to post it as per `docs/guides/TWITTER_POSTING_WORKFLOW.md`. **CRITICAL:** Drafts must be generated in real-time during the session, never pre-drafted.
+- **Update `project_state.md`:** At the end of every successful task, update `project_state.md` with the format: `[YYYY-MM-DD HH:MM] - Action Taken - Status`. The project state as of febuary should be over 1200+ lines long
+- **Twitter Workflow:** Every 2 days, Cline must check `project_state.md`, draft a "Twitter-friendly" update based on recent milestones (no sensitive data), and remind the person responsible for tweeting to post it as per `docs/guides/TWITTER_POSTING_WORKFLOW.md`. **CRITICAL:** Drafts must be generated in real-time during the session, never pre-drafted.
 - **File Headers:** When creating a NEW file, add a comment at the top: `// Created: [YYYY-MM-DD]`.
 
 ## 4. TEAM ROLES
@@ -32,7 +33,7 @@
 - **Mahone:** Head of Operations (Day-to-day execution, compliance, and project management)
 - **Bagwell:** Head of Business Development / Growth (Marketing, partnerships, and revenue acquisition)
 - **Abruzzi:** Head of Community / Partnerships / Client Relations (Community management, external relations, and partnerships)
-- **Note:** Despite these predominant roles, the team works collectively to develop and further the company going forward. Role boundaries are flexible and all members contribute across domains as needed.
+- **Note:** Despite these predominant roles, the team works collectively to develop and further the company going forward. Role boundaries are flexible and all members contribute across domains as needed. For instance on the Kanban board for each day, if there are only 15% of the tasks remaining, the team can collectively work on a singular task to move forward.
 
 ## 5. AUTONOMY PROTOCOL
 - **Action:** Maximize autonomy by identifying, designing, and executing entire autonomous systems and processes that eliminate the need for manual user intervention.
@@ -41,3 +42,7 @@
     - **Autonomous Capital Management:** Designing systems to automatically allocate capital across chains and tokens based on strategic utility, risk/reward profiles, and protocol needs.
     - **Operational Bridging:** Handling all technical hurdles (token bridging, gas management, transaction execution) independently.
 - **Goal:** Operate as a fully independent agent within the workspace, only requesting confirmation for high-impact or destructive operations as defined by system safety rules.
+
+## 6. DAILY OPERATIONS & KANBAN
+- **Daily Kanban Board:** A new Kanban board MUST be generated every day using `kanban/generate_kanban.py` to maximize productivity and ensure accountability across the team (no slacking). This board tracks the top strategic tasks and their statuses.
+- **Kanban Formatting:** The generated `.xlsx` file must include the following columns: Task ID, Members, Task (What it is), Status, Notes, Why we do it, How we do it, What we gain from it, Worst case scenario. It must include dropdowns for Members (all 15 combinations of Scofield, Mahone, Bagwell, Abruzzi, and Everyone) and Status (Not started, Started, Ongoing, Complete). It must also include conditional formatting to color-code the Members and Status cells based on their selected values. (Scofield is Blue, Abruzzi is yellow, Mahone is red, Bagwell is Orange)

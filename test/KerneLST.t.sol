@@ -84,9 +84,9 @@ contract KerneLSTTest is Test {
         // or just check the logic in a mock.
         // For now, let's just verify the solver can hold and transfer tokens.
         
-        uint256 profit = 1 ether;
-        uint256 insuranceExpected = 0.2 ether;
-        uint256 vaultExpected = 0.8 ether;
+        // uint256 profit = 1 ether;
+        // uint256 insuranceExpected = 0.2 ether;
+        // uint256 vaultExpected = 0.8 ether;
         
         // We'll use a trick to call the internal function by making it public in a test contract
         // or just testing the outcome of executeLSTSwap if we had mocks for routers.

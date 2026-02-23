@@ -13,7 +13,7 @@ contract DeployPriceOracle is Script {
     address constant USDC_USD_CHAINLINK = 0x833D8Eb16D306ed1FbB5D7A2E019e106B960965A;
     
     // Uniswap V3 WETH/USDC Pool on Base (0.05% fee)
-    address constant WETH_USDC_POOL = 0xD0B53D94776b2FfABBF66993B687Fe9F0a2b7F22;
+    address constant WETH_USDC_POOL = 0xd0b53D9277642d899DF5C87A3966A349A798F224;
     
     // Token addresses on Base
     address constant WETH = 0x4200000000000000000000000000000000000006;

@@ -1,0 +1,45 @@
+{
+  "_comment": "Maps on-chain asset addresses (Base mainnet) to DeFiLlama protocol slugs and pool IDs for risk scoring.",
+  "assets": [
+    {
+      "symbol": "ETH",
+      "address": "0x4200000000000000000000000000000000000006",
+      "defillama_protocol_slug": "lido",
+      "defillama_pool_id": "747c1d2a-c668-4682-b9f9-296708a3dd90",
+      "category": "ETH_LST",
+      "notes": "Wrapped ETH on Base; LST yield via wstETH/Lido"
+    },
+    {
+      "symbol": "wstETH",
+      "address": "0xc1cba3fcea344f92d9239c08c0568f6f2f0ee452",
+      "defillama_protocol_slug": "lido",
+      "defillama_pool_id": "747c1d2a-c668-4682-b9f9-296708a3dd90",
+      "category": "ETH_LST",
+      "notes": "Wrapped staked ETH - Lido"
+    },
+    {
+      "symbol": "USDC",
+      "address": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+      "defillama_protocol_slug": "aave-v3",
+      "defillama_pool_id": "aa70268e-4d52-42dc-b558-bc28e7baf7b1",
+      "category": "STABLECOIN",
+      "notes": "Native USDC on Base; Aave V3 supply yield"
+    },
+    {
+      "symbol": "cbETH",
+      "address": "0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22",
+      "defillama_protocol_slug": "coinbase-wrapped-staked-eth",
+      "defillama_pool_id": "0f45d730-b279-4629-8f2b-a87a59d12439",
+      "category": "ETH_LST",
+      "notes": "Coinbase Wrapped Staked ETH"
+    },
+    {
+      "symbol": "rETH",
+      "address": "0xb6fe221fe9eef5aba221c348ba20a1bf5e73624c",
+      "defillama_protocol_slug": "rocket-pool",
+      "defillama_pool_id": "d4b3c522-6127-4b89-bedf-83641cdcd2eb",
+      "category": "ETH_LST",
+      "notes": "Rocket Pool staked ETH"
+    }
+  ]
+}

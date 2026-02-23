@@ -575,6 +575,34 @@ class DeFiContext:
 # GAS TRACKER
 # =============================================================================
 
+# SECURITY FIX (KRN-24-007): Trusted prefixes for GasTracker RPC calls.
+# These are canonical public nodes only — env-var-derived URLs are validated against this set.
+_GAS_TRUSTED_RPC_PREFIXES: tuple = (
+    "https://mainnet.base.org",
+    "https://base.llamarpc.com",
+    "https://base.drpc.org",
+    "https://base.publicnode.com",
+    "https://base-mainnet.g.alchemy.com/",
+    "https://base-mainnet.infura.io/",
+    "https://rpc.ankr.com/base",
+    "https://arb1.arbitrum.io/rpc",
+    "https://arbitrum-mainnet.infura.io/",
+    "https://arb-mainnet.g.alchemy.com/",
+    "https://rpc.ankr.com/arbitrum",
+    "http://127.0.0.1:",
+    "http://localhost:",
+)
+
+
+def _validate_gas_rpc(url: str) -> bool:
+    """SECURITY (KRN-24-007): Validate a gas-query RPC URL against its trusted allowlist."""
+    if not url:
+        return False
+    if url.startswith("https://") and ".quiknode.pro/" in url:
+        return True
+    return any(url.startswith(p) for p in _GAS_TRUSTED_RPC_PREFIXES)
+
+
 class GasTracker:
     """Track gas prices across chains using free public RPCs."""
 
@@ -586,11 +614,13 @@ class GasTracker:
         if cached is not None:
             return cached
 
-        rpc_urls = [
-            os.getenv("BASE_RPC_URL", "https://mainnet.base.org"),
-            "https://base.llamarpc.com",
-            "https://base.drpc.org",
-        ]
+        # SECURITY FIX (KRN-24-007): env-var RPC validated before use; hardcoded fallbacks are safe.
+        env_rpc = os.getenv("BASE_RPC_URL", "")
+        rpc_urls = ["https://mainnet.base.org", "https://base.llamarpc.com", "https://base.drpc.org"]
+        if env_rpc and _validate_gas_rpc(env_rpc.split(",")[0].strip()):
+            rpc_urls.insert(0, env_rpc.split(",")[0].strip())
+        elif env_rpc:
+            logger.warning(f"SSRF BLOCKED (GasTracker/Base): untrusted BASE_RPC_URL ignored.")
 
         for rpc in rpc_urls:
             try:
@@ -622,9 +652,13 @@ class GasTracker:
         if cached is not None:
             return cached
 
-        rpc = os.getenv("ARBITRUM_RPC_URL", "https://arb1.arbitrum.io/rpc")
-        if "," in rpc:
-            rpc = rpc.split(",")[0].strip()
+        # SECURITY FIX (KRN-24-007): validate env-var RPC before use.
+        rpc_raw = os.getenv("ARBITRUM_RPC_URL", "https://arb1.arbitrum.io/rpc")
+        rpc = rpc_raw.split(",")[0].strip() if rpc_raw else "https://arb1.arbitrum.io/rpc"
+        if not _validate_gas_rpc(rpc):
+            logger.warning(f"SSRF BLOCKED (GasTracker/Arbitrum): untrusted ARBITRUM_RPC_URL ignored. Using fallback.")
+            rpc = "https://arb1.arbitrum.io/rpc"
+
         try:
             payload = {"jsonrpc": "2.0", "method": "eth_gasPrice", "params": [], "id": 1}
             if requests is None:

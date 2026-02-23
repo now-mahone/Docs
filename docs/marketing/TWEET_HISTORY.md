@@ -90,3 +90,68 @@ Institutional yield, engineered for @base. 🔵
 #DeFi #Base #RiskManagement
 
 ---
+
+### [2026-02-20] - Investor Readiness & Monte Carlo v4
+
+**Tweet 1:**
+Kerne Protocol: This Week
+
+✅ Investor Readiness Checklist (200+ items) 
+✅ Monte Carlo v4 metrics live 
+✅ Risk Heatmap built of Monte Carlo v4
+✅ GitBook synced
+
+35 contracts. 50+ bot modules. Full frontend.
+
+Delta-neutral infrastructure. Transparent yield. 
+
+#DeFi #Stablecoin #Crypto #Kerne
+
+**Tweet 2:**
+📊 10,000 simulations. 365 days each. One conclusion:
+
+Kerne Protocol achieves 99.73% survival rate at scale.
+
+Key findings from our Monte Carlo v4:
+• 21.78% mean APY
+• $86.77M VaR 99% floor
+• 9-layer protection architecture
+• 0 oracle manipulation failures
+
+Triple-source oracles + circuit breakers + insurance fund = institutional-grade resilience.
+
+The math works. Now we execute.
+
+#DeFi #RiskManagement #Stablecoin #MonteCarlo #Crypto
+
+🧵
+
+*[Image: Monte Carlo UI from Kerne Website Transparency Page]*
+
+---
+
+### [2026-02-22] - Retail Launch & Discord Announcement
+
+**Tweet 1:**
+The floodgates are opening. 🌊
+
+Kerne Protocol is finalizing the infrastructure to support massive retail TVL with institutional-grade precision. We are engineering for scale.
+
+We will soon be launching the Kerne Community Discord. 
+Link dropping soon for early access. 🔵
+
+Building the yield layer for @base.
+
+#DeFi #Base #Stablecoins #Kerne
+
+**Reply to Monte Carlo v4 Tweet:**
+Tail risk is the primary focus. v4 models correlated shocks via:
+
+- Black Swan Multiplier (BSM): Scales exploit/depeg probabilities 6x during crashes.
+- Liquidity Caps: 5% TVL/day limit simulates exit slippage and thin books.
+- Basis Correlation: Yield is dynamically linked to ETH price shocks.
+
+The 99.73% survival rate accounts for these simultaneous failure modes.
+
+---
+

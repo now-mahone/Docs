@@ -148,7 +148,7 @@ contract KUSDPSMStressTest is Test {
         // The fee is 10 bps, so the whale gets psmInitialKUSD - fee
         // The PSM should have 0 kUSD left if the swap was for the full amount
         uint256 fee = (psmInitialKUSD * 10) / 10000;
-        uint256 amountOut = psmInitialKUSD - fee;
+        // uint256 amountOut = psmInitialKUSD - fee;
         
         // If the whale wanted to drain EXACTLY what's in the PSM, they need to account for the fee
         // Let's adjust the test to swap enough to drain the PSM

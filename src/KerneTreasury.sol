@@ -269,7 +269,7 @@ contract KerneTreasury is Ownable, ReentrancyGuard, Pausable {
         // Execute swap
         uint256 kerneBefore = IERC20(kerneToken).balanceOf(address(this));
         
-        uint256[] memory amounts = aerodromeRouter.swapExactTokensForTokens(
+        aerodromeRouter.swapExactTokensForTokens(
             amount,
             minKerneOut,
             routes,
@@ -340,7 +340,7 @@ contract KerneTreasury is Ownable, ReentrancyGuard, Pausable {
      * @notice Check if a pair should use stable pool
      * @dev Helper for stablecoin pairs (USDC/USDT, etc.)
      */
-    function _isStablePair(address tokenA, address tokenB) internal view returns (bool) {
+    function _isStablePair(address /*tokenA*/, address /*tokenB*/) internal pure returns (bool) {
         // For simplicity, we assume WETH routing is always volatile
         // In production, this could check against a list of stablecoins
         return false;
@@ -417,9 +417,12 @@ contract KerneTreasury is Ownable, ReentrancyGuard, Pausable {
     /**
      * @notice Update founder address
      * @param newFounder New founder address
+     * @dev SECURITY FIX (KRN-24-004): Restricted to onlyOwner. The founder role is a passive
+     *      fee recipient only and must not have the ability to reassign itself, as this constitutes
+     *      a privilege escalation that allows a compromised founder key to permanently redirect
+     *      all protocol revenue to an attacker-controlled address.
      */
-    function updateFounder(address newFounder) external {
-        if (msg.sender != founder && msg.sender != owner()) revert Unauthorized();
+    function updateFounder(address newFounder) external onlyOwner {
         if (newFounder == address(0)) revert ZeroAddress();
         address oldFounder = founder;
         founder = newFounder;

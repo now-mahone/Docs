@@ -19,11 +19,11 @@ contract MockERC20 is ERC20 {
 }
 
 contract MockLendingPool is IERC3156FlashLender {
-    function maxFlashLoan(address token) external view override returns (uint256) {
+    function maxFlashLoan(address /*token*/) external pure override returns (uint256) {
         return type(uint256).max;
     }
 
-    function flashFee(address token, uint256 amount) external view override returns (uint256) {
+    function flashFee(address /*token*/, uint256 /*amount*/) external pure override returns (uint256) {
         return 0;
     }
 
