@@ -196,34 +196,40 @@ export function VaultInteraction() {
   };
 
   const handleWithdraw = async () => {
-    if (!isCorrectNetwork || !amount || !address || !vaultAddress) return;
+    if (!isCorrectNetwork || !amount || !address || !vaultAddress || !vaultShareBalance) return;
     
     try {
       const amountWei = parseEther(amount);
       
-      // Check if withdrawing all assets
-      if (userAssets && typeof userAssets === 'bigint') {
-        const isMax = amountWei >= userAssets;
+      // Always use redeem with shares for simplicity and gas efficiency
+      // Convert the asset amount user wants to withdraw into shares
+      if (userAssets && typeof userAssets === 'bigint' && typeof vaultShareBalance === 'bigint') {
+        // Calculate shares needed for desired asset amount
+        // shares = (amountWei * totalShares) / totalAssets
+        const sharesToRedeem = userAssets > 0n 
+          ? (amountWei * vaultShareBalance) / userAssets 
+          : 0n;
         
-        if (isMax && vaultShareBalance && typeof vaultShareBalance === 'bigint') {
-          // Use redeem for max withdrawal
+        console.log('Withdrawal debug:', {
+          amountRequested: formatEther(amountWei),
+          userAssets: formatEther(userAssets),
+          vaultShareBalance: formatEther(vaultShareBalance),
+          sharesToRedeem: formatEther(sharesToRedeem)
+        });
+        
+        if (sharesToRedeem > 0n) {
           writeContract({
             address: vaultAddress,
             abi: KerneVaultABI.abi,
             functionName: 'redeem',
-            args: [vaultShareBalance, address, address],
+            args: [sharesToRedeem, address, address],
             chainId: requiredChainId,
           });
         } else {
-          // Use withdraw for partial withdrawal
-          writeContract({
-            address: vaultAddress,
-            abi: KerneVaultABI.abi,
-            functionName: 'withdraw',
-            args: [amountWei, address, address],
-            chainId: requiredChainId,
-          });
+          console.error('Cannot calculate shares to redeem');
         }
+      } else {
+        console.error('Missing required data for withdrawal:', { userAssets, vaultShareBalance });
       }
     } catch (error) {
       console.error('Withdrawal error:', error);
