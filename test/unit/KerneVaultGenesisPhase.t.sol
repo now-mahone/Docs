@@ -102,13 +102,23 @@ contract KerneVaultGenesisPhaseTest is Test {
     }
     
     function test_GenesisPhase_EffectiveFeeAfterEnd() public {
-        // End Genesis Phase
+        // End Genesis Phase with $100k (enters Growth Phase at 5%)
         uint256 depositAmount = 100_000 * 1e18;
         vm.prank(user1);
         vault.deposit(depositAmount, user1);
         
-        // Effective fee should now be 10%
-        assertEq(vault.getEffectivePerformanceFee(), 1000, "Effective fee should be 10% after Genesis");
+        // Effective fee should now be 5% (Growth Phase: $100k <= TVL < $1M)
+        assertEq(vault.getEffectivePerformanceFee(), 500, "Effective fee should be 5% in Growth Phase");
+    }
+    
+    function test_GenesisPhase_MaturityPhaseFee() public {
+        // Deposit $1M to enter Maturity Phase (10% fee)
+        uint256 depositAmount = 1_000_000 * 1e18;
+        vm.prank(user1);
+        vault.deposit(depositAmount, user1);
+        
+        assertEq(vault.genesisPhaseActive(), false, "Genesis Phase should end");
+        assertEq(vault.getEffectivePerformanceFee(), 1000, "Effective fee should be 10% in Maturity Phase");
     }
     
     function test_GenesisPhase_AdminCanEndManually() public {

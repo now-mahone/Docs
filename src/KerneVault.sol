@@ -46,13 +46,23 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     uint256 public grossPerformanceFeeBps = 1000;
 
     // ============================================================
-    //                GENESIS PHASE (0% PERFORMANCE FEE)
+    //                TIERED PERFORMANCE FEE STRUCTURE
     // ============================================================
     
     /// @notice Genesis Phase TVL threshold in USD (100,000 USD with 18 decimals)
     /// @dev During Genesis Phase, performance fees are 0% until TVL reaches this threshold.
     ///      This incentivizes early depositors and bootstraps protocol liquidity.
     uint256 public constant GENESIS_TVL_THRESHOLD = 100_000 * 1e18; // $100,000
+    
+    /// @notice Growth Phase TVL threshold in USD (1,000,000 USD with 18 decimals)
+    /// @dev After Genesis Phase ends, 5% fee applies until TVL reaches $1M.
+    uint256 public constant GROWTH_TVL_THRESHOLD = 1_000_000 * 1e18; // $1,000,000
+    
+    /// @notice Performance fee during Growth Phase (5% = 500 basis points)
+    uint256 public constant GROWTH_PHASE_FEE_BPS = 500;
+    
+    /// @notice Performance fee during Maturity Phase (10% = 1000 basis points)
+    uint256 public constant MATURITY_PHASE_FEE_BPS = 1000;
     
     /// @notice Whether Genesis Phase is active (0% performance fee)
     /// @dev Automatically becomes false when TVL >= GENESIS_TVL_THRESHOLD
@@ -1401,17 +1411,52 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     }
 
     // ============================================================
-    //                GENESIS PHASE FUNCTIONS
+    //                TIERED PERFORMANCE FEE FUNCTIONS
     // ============================================================
     
-    /// @notice Returns the effective performance fee in basis points.
-    /// @dev Returns 0% during Genesis Phase, otherwise returns grossPerformanceFeeBps.
+    /// @notice Returns the effective performance fee in basis points based on TVL tier.
+    /// @dev Tiered fee structure:
+    ///      - Genesis Phase (TVL < $100k): 0% performance fee
+    ///      - Growth Phase ($100k <= TVL < $1M): 5% performance fee
+    ///      - Maturity Phase (TVL >= $1M): 10% performance fee
     /// @return The effective performance fee in basis points.
     function getEffectivePerformanceFee() public view returns (uint256) {
-        if (genesisPhaseActive) {
-            return 0; // 0% during Genesis Phase
+        uint256 tvl = totalAssets();
+        
+        // Genesis Phase: 0% fee (TVL < $100k)
+        if (tvl < GENESIS_TVL_THRESHOLD) {
+            return 0;
         }
-        return grossPerformanceFeeBps;
+        
+        // Growth Phase: 5% fee ($100k <= TVL < $1M)
+        if (tvl < GROWTH_TVL_THRESHOLD) {
+            return GROWTH_PHASE_FEE_BPS;
+        }
+        
+        // Maturity Phase: 10% fee (TVL >= $1M)
+        return MATURITY_PHASE_FEE_BPS;
+    }
+    
+    /// @notice Returns the current fee tier name for display purposes.
+    /// @return 0 = Genesis (0%), 1 = Growth (5%), 2 = Maturity (10%)
+    function getCurrentFeeTier() public view returns (uint8) {
+        uint256 tvl = totalAssets();
+        if (tvl < GENESIS_TVL_THRESHOLD) return 0;
+        if (tvl < GROWTH_TVL_THRESHOLD) return 1;
+        return 2;
+    }
+    
+    /// @notice Returns the TVL needed to reach the next fee tier.
+    /// @return The remaining TVL needed, or 0 if at highest tier.
+    function getRemainingToNextTier() public view returns (uint256) {
+        uint256 tvl = totalAssets();
+        if (tvl < GENESIS_TVL_THRESHOLD) {
+            return GENESIS_TVL_THRESHOLD - tvl;
+        }
+        if (tvl < GROWTH_TVL_THRESHOLD) {
+            return GROWTH_TVL_THRESHOLD - tvl;
+        }
+        return 0; // Already at highest tier
     }
     
     /// @notice Returns the TVL in USD (assuming asset is priced in USD or ETH).
