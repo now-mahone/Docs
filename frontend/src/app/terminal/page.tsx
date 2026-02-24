@@ -12,7 +12,6 @@ import KerneVaultABI from '@/abis/KerneVault.json';
 import { PerformanceChart } from '@/components/PerformanceChart';
 import { ETHComparisonChart } from '@/components/ETHComparisonChart';
 import { AssetComposition } from '@/components/AssetComposition';
-import { VaultInteraction } from '@/components/VaultInteraction';
 import { WalletConnectButton } from '@/components/WalletConnectButton';
 
 function CountUp({ value, decimals = 0, prefix = "", suffix = "" }: { value: number; decimals?: number; prefix?: string; suffix?: string }) {
