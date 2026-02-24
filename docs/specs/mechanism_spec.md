@@ -30,7 +30,23 @@ Kerne is a yield-bearing synthetic dollar protocol designed to maximize TVL by c
 - **Institutional Compliance:** Bespoke vaults can be gated via the `KerneComplianceHook`, allowing for automated KYC/AML verification before deposits are accepted.
 - **Emergency Unwind:** In extreme scenarios, the protocol can execute a full unwind, pausing on-chain contracts and closing all CEX positions simultaneously to protect principal capital.
 
-## 5. Peg Stability Module (PSM)
+## 5. Performance Fee Structure
+
+### Launch Promotion: 0% Performance Fee Tier
+Kerne offers **0% performance fee** for the first **$100,000 TVL** to bootstrap protocol growth and reward early adopters.
+
+| TVL Range | Performance Fee | Effective User APY |
+|-----------|-----------------|-------------------|
+| **$0 - $100,000** | **0%** | **12.00%** (full yield) |
+| $100,000 - $500,000 | 5% | 11.40% |
+| $500,000+ | 10% | 10.80% |
+
+**Economic Rationale:**
+- Early users receive maximum yield = strongest referral incentive
+- $1,200/year "marketing investment" at 100k TVL vs $10-20K KOL partnerships
+- Creates competitive positioning against sDAI (3-8%) and Ethena
+
+## 6. Peg Stability Module (PSM)
 The KUSDPSM allows for 1:1 swaps between kUSD and other major stablecoins (USDC, cbBTC) to maintain the peg.
 - **Tiered Fees:** Institutional users benefit from a tiered fee structure, where larger swap volumes incur lower basis point fees, incentivizing deep liquidity and peg stability.
 

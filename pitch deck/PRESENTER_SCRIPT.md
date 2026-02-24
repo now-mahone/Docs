@@ -42,7 +42,7 @@ Behind the scenes, our Yield Routing Engine automatically puts that collateral t
 
 Your kUSD balance simply grows every day. We're targeting 12 to 20% APY.
 
-For users, it's effortless. For the protocol, we take a 10 to 20% performance fee on the yield generated. It's a win-win."
+For users, it's effortless. And here's what makes our launch unique: **we charge zero performance fee for the first $100,000 TVL.** Early adopters keep every dollar of yield. After that, a standard tiered fee kicks in — 5% up to $500k TVL, 10% beyond that. It aligns us completely with our early community."
 
 ---
 
@@ -153,10 +153,9 @@ As our TVL grows, revenue grows, and the token becomes more scarce. It's a power
 
 "Our revenue model is simple and scales directly with TVL.
 
-At $1 billion TVL, we generate about $25 million a year.
-At $10 billion TVL, that's $250 million a year.
+We launch with a **0% performance fee for the first $100k TVL** — that's our growth investment, equivalent to about $1,200/year in foregone revenue. Compare that to $10-20K for a single KOL partnership, and you see why this is the highest-ROI user acquisition move we can make.
 
-This is based on standard fee structures already proven by protocols like Lido and Maker."
+Once we're past $100k, we move to 5%, then 10% at $500k. At $1 billion TVL, that's roughly $25 million a year. At $10 billion, $250 million. These are multiples on top of what Lido and Maker built."
 
 ---
 

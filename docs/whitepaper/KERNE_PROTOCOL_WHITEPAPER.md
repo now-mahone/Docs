@@ -90,8 +90,20 @@ $$
 *   $F_{annual}$: Annualized Funding Rate (Historical Avg: 10.95%)
 *   $S_{annual}$: Annualized Staking Yield (Fixed: 3.5%)
 *   $C_{spread}$: Execution Spread Cost (0.1%)
-*   $P_{fee}$: Performance Fee (10%)
+*   $P_{fee}$: Performance Fee (0-10%, see tiered structure below)
 *   $I_{ins}$: Insurance Fund Contribution (10%)
+
+### 3.1.1 Performance Fee Tiers (Launch Promotion)
+
+Kerne implements a **tiered performance fee structure** to reward early adopters and bootstrap TVL:
+
+| TVL Range | Performance Fee | User APY (at 12% gross) |
+|-----------|-----------------|--------------------------|
+| **$0 - $100,000** | **0%** | **12.00%** |
+| $100,000 - $500,000 | 5% | 11.40% |
+| $500,000+ | 10% | 10.80% |
+
+**Rationale:** The 0% fee for the first $100k TVL represents a ~$1,200/year "marketing investment" that yields 10-20x ROI in user acquisition compared to traditional KOL partnerships ($10-20K). Early users become evangelists, creating organic growth flywheels.
 
 **Sensitivity Analysis (3D Surface):**
 Our backtests (July 2024 - Jan 2026) show that at **3x Leverage**, the protocol generates a stable **19.66% APY**. In high-volatility regimes ($F > 30%$), 8x leverage can produce yields exceeding **60%**.

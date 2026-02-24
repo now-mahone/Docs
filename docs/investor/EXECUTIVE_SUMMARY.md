@@ -57,6 +57,15 @@ $170B+ sits in stablecoins earning zero yield. Circle and Tether collect $5B+/ye
 
 Protocol revenue from 4 streams: performance fee on yield (10-20%), minting/redemption fees, PSM swap fees, liquidation penalties. At $1B TVL → $25M annual revenue. At $5B TVL → $125M.
 
+### Launch Promotion: Tiered Performance Fees
+| TVL Range | Performance Fee | User APY |
+|-----------|-----------------|----------|
+| **$0 - $100,000** | **0%** | **12.00%** |
+| $100,000 - $500,000 | 5% | 11.40% |
+| $500,000+ | 10% | 10.80% |
+
+**Strategy:** The 0% fee for first $100k TVL is a ~$1,200/year "marketing investment" that yields 10-20x ROI in user acquisition vs. traditional KOL partnerships ($10-20K). Early users become evangelists, creating organic growth flywheels.
+
 **KERNE token** (1B fixed supply, no inflation): 50% of revenue → buy-and-burn, 30% → staking distribution, 20% → treasury.
 
 ---
