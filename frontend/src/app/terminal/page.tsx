@@ -5,7 +5,7 @@ import React, { useMemo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion, useInView, animate } from 'framer-motion';
 import { Zap, Shield, TrendingUp, DollarSign, Wallet2, Info, ChartArea, HandCoins, Percent, Scale, Hourglass, ChartLine, BookOpenText, HeartPulse, Tangent } from 'lucide-react';
-import { useAccount, useReadContract, useChainId } from 'wagmi';
+import { useAccount, useReadContract, useChainId, useSwitchChain } from 'wagmi';
 import { formatEther } from 'viem';
 import { VAULT_ADDRESS, ARB_VAULT_ADDRESS, OP_VAULT_ADDRESS } from '@/config';
 import KerneVaultABI from '@/abis/KerneVault.json';
@@ -40,6 +40,7 @@ function CountUp({ value, decimals = 0, prefix = "", suffix = "" }: { value: num
 export default function TerminalPage() {
   const { isConnected, address } = useAccount();
   const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
   const [apyData, setApyData] = useState<any>(null);
   const [solvencyData, setSolvencyData] = useState<any>(null);
   const [protocolHealth, setProtocolHealth] = useState<any>(null);
@@ -487,6 +488,39 @@ export default function TerminalPage() {
       color: '#ffffff' 
     },
   ];
+
+  // Network Gate: Block entire page if not on Base
+  if (isConnected && chainId !== 8453) {
+    return (
+      <div className="min-h-screen bg-[#000000] text-[#ffffff] font-sans selection:bg-[#ffffff]/10 flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto p-8">
+          <div className="bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#ff6b6b]/40 rounded-sm p-8 text-center space-y-6">
+            <div className="p-4 bg-[#16191c] rounded-full border border-[#ff6b6b]/40 w-20 h-20 mx-auto flex items-center justify-center">
+              <Shield size={40} className="text-[#ff6b6b]" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-heading font-medium text-[#ffffff] mb-2">Wrong Network</h2>
+              <p className="text-sm text-[#aab9be] mb-1">
+                Kerne Protocol is only available on Base Mainnet.
+              </p>
+              <p className="text-xs text-[#ff6b6b] mb-6">
+                Current network: {chainId === 1 ? 'Ethereum Mainnet' : chainId === 42161 ? 'Arbitrum' : chainId === 10 ? 'Optimism' : `Chain ${chainId}`}
+              </p>
+              <button
+                onClick={() => switchChain({ chainId: 8453 })}
+                className="w-full bg-[#ffffff] text-[#000000] hover:bg-[#aab9be] rounded-sm font-bold h-14 transition-all text-xs uppercase tracking-widest"
+              >
+                Switch to Base
+              </button>
+            </div>
+            <p className="text-xs text-[#aab9be]/60">
+              This modal will remain until you switch to Base
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#000000] text-[#ffffff] font-sans selection:bg-[#ffffff]/10 overflow-x-hidden">

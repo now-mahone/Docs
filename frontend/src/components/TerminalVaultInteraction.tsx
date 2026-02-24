@@ -16,9 +16,6 @@ import { Wallet2, ArrowDownCircle, ArrowUpCircle, Loader2, Shield } from 'lucide
 export function TerminalVaultInteraction() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const { switchChain } = useSwitchChain();
-  
-  const isCorrectNetwork = chainId === 8453;
 
   const { 
     convertToAssets, 
@@ -117,6 +114,14 @@ export function TerminalVaultInteraction() {
       return;
     }
     
+    // Pre-flight chain validation
+    if (chainId !== 8453) {
+      toast.error("Please switch to Base network", {
+        description: "The page will prompt you to switch networks",
+      });
+      return;
+    }
+    
     try {
       const amountBI = parseUnits(depositAmount, 18);
       console.log('[TerminalVaultInteraction] Handling deposit for:', amountBI.toString());
@@ -135,6 +140,14 @@ export function TerminalVaultInteraction() {
     
     if (!address) {
       toast.error("Wallet not connected");
+      return;
+    }
+    
+    // Pre-flight chain validation
+    if (chainId !== 8453) {
+      toast.error("Please switch to Base network", {
+        description: "The page will prompt you to switch networks",
+      });
       return;
     }
     
@@ -179,26 +192,6 @@ export function TerminalVaultInteraction() {
         <div>
           <h3 className="text-lg font-heading font-medium text-[#ffffff]">Connect Wallet</h3>
           <p className="text-sm text-[#aab9be] mt-1">Please connect your wallet to interact with the Kerne Vault.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isCorrectNetwork) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-4 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#ff6b6b]/20 rounded-sm">
-        <div className="p-4 bg-[#16191c] rounded-full border border-[#ff6b6b]/40">
-          <Shield size={32} className="text-[#ff6b6b]" />
-        </div>
-        <div>
-          <h3 className="text-lg font-heading font-medium text-[#ffffff]">Wrong Network</h3>
-          <p className="text-sm text-[#aab9be] mt-1 mb-6">The Kerne Vault is currently only available on Base Mainnet.</p>
-          <Button 
-            onClick={() => switchChain({ chainId: 8453 })}
-            className="w-full bg-[#ffffff] text-[#000000] hover:bg-[#aab9be] rounded-sm font-bold h-12 transition-all text-xs uppercase tracking-widest"
-          >
-            Switch to Base
-          </Button>
         </div>
       </div>
     );
@@ -313,7 +306,7 @@ export function TerminalVaultInteraction() {
           <TabsContent value="withdraw" className="mt-6 flex-1 flex flex-col space-y-6">
             <div className="space-y-3">
               <div className="flex justify-between text-[10px] font-bold text-[#aab9be] uppercase tracking-wider">
-                <span>Asset: Kerne Shares</span>
+                <span>Withdrawable: WETH</span>
                 <span>Balance: {convertToAssets ? parseFloat(formatUnits(convertToAssets, 18)).toFixed(4) : '0.0000'} WETH</span>
               </div>
               <div className="relative">
