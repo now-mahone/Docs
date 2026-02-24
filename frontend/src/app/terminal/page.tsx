@@ -57,7 +57,7 @@ export default function TerminalPage() {
 
   // Read ALL chain balances for User Balance/Earnings cards
   // Base Chain
-  const { data: baseShareBalance } = useReadContract({
+  const { data: baseShareBalance, refetch: refetchBaseBalance } = useReadContract({
     address: VAULT_ADDRESS,
     abi: KerneVaultABI.abi,
     functionName: 'balanceOf',
@@ -65,25 +65,32 @@ export default function TerminalPage() {
     chainId: 8453,
     query: {
       enabled: !!address && isConnected,
+      refetchInterval: 5000, // Refetch every 5s for live updates
     },
   });
 
-  const { data: baseTotalAssets } = useReadContract({
+  const { data: baseTotalAssets, refetch: refetchBaseAssets } = useReadContract({
     address: VAULT_ADDRESS,
     abi: KerneVaultABI.abi,
     functionName: 'totalAssets',
     chainId: 8453,
+    query: {
+      refetchInterval: 10000,
+    }
   });
 
-  const { data: baseTotalSupply } = useReadContract({
+  const { data: baseTotalSupply, refetch: refetchBaseSupply } = useReadContract({
     address: VAULT_ADDRESS,
     abi: KerneVaultABI.abi,
     functionName: 'totalSupply',
     chainId: 8453,
+    query: {
+      refetchInterval: 10000,
+    }
   });
 
   // Arbitrum Chain
-  const { data: arbShareBalance } = useReadContract({
+  const { data: arbShareBalance, refetch: refetchArbBalance } = useReadContract({
     address: ARB_VAULT_ADDRESS,
     abi: KerneVaultABI.abi,
     functionName: 'balanceOf',
@@ -91,25 +98,32 @@ export default function TerminalPage() {
     chainId: 42161,
     query: {
       enabled: !!address && isConnected,
+      refetchInterval: 5000,
     },
   });
 
-  const { data: arbTotalAssets } = useReadContract({
+  const { data: arbTotalAssets, refetch: refetchArbAssets } = useReadContract({
     address: ARB_VAULT_ADDRESS,
     abi: KerneVaultABI.abi,
     functionName: 'totalAssets',
     chainId: 42161,
+    query: {
+      refetchInterval: 10000,
+    }
   });
 
-  const { data: arbTotalSupply } = useReadContract({
+  const { data: arbTotalSupply, refetch: refetchArbSupply } = useReadContract({
     address: ARB_VAULT_ADDRESS,
     abi: KerneVaultABI.abi,
     functionName: 'totalSupply',
     chainId: 42161,
+    query: {
+      refetchInterval: 10000,
+    }
   });
 
   // OP Mainnet Chain
-  const { data: opShareBalance } = useReadContract({
+  const { data: opShareBalance, refetch: refetchOpBalance } = useReadContract({
     address: OP_VAULT_ADDRESS,
     abi: KerneVaultABI.abi,
     functionName: 'balanceOf',
@@ -117,25 +131,33 @@ export default function TerminalPage() {
     chainId: 10,
     query: {
       enabled: !!address && isConnected,
+      refetchInterval: 5000,
     },
   });
 
-  const { data: opTotalAssets } = useReadContract({
+  const { data: opTotalAssets, refetch: refetchOpAssets } = useReadContract({
     address: OP_VAULT_ADDRESS,
     abi: KerneVaultABI.abi,
     functionName: 'totalAssets',
     chainId: 10,
+    query: {
+      refetchInterval: 10000,
+    }
   });
 
-  const { data: opTotalSupply } = useReadContract({
+  const { data: opTotalSupply, refetch: refetchOpSupply } = useReadContract({
     address: OP_VAULT_ADDRESS,
     abi: KerneVaultABI.abi,
     functionName: 'totalSupply',
     chainId: 10,
+    query: {
+      refetchInterval: 10000,
+    }
   });
 
   // Calculate user's combined ETH balance across ALL chains
   const userVaultBalance = useMemo(() => {
+    if (!isConnected) return 0;
     let totalBalance = 0;
 
     // Base balance
@@ -162,22 +184,21 @@ export default function TerminalPage() {
       totalBalance += parseFloat(formatEther(opAssets));
     }
 
-    return totalBalance.toFixed(4);
+    return totalBalance;
   }, [baseShareBalance, baseTotalAssets, baseTotalSupply, 
       arbShareBalance, arbTotalAssets, arbTotalSupply,
-      opShareBalance, opTotalAssets, opTotalSupply]);
+      opShareBalance, opTotalAssets, opTotalSupply, isConnected]);
 
   // Calculate user's combined earnings across ALL chains
   const userEarnings = useMemo(() => {
-    const balanceNum = parseFloat(userVaultBalance);
-    if (balanceNum === 0) return '$0.00';
+    if (userVaultBalance === 0) return 0;
     
     // Real implementation would track deposit time and calculate actual accrued interest
     // For now, we'll use a more conservative estimate (e.g., 1 hour of yield) to avoid unrealistic displays
     const apy = apyData?.apy || 18.40;
-    const estimatedEarnings = balanceNum * ethPrice * (apy / 100) * (1 / (365 * 24));
+    const estimatedEarnings = userVaultBalance * ethPrice * (apy / 100) * (1 / (365 * 24));
     
-    return '$' + estimatedEarnings.toFixed(4);
+    return estimatedEarnings;
   }, [userVaultBalance, ethPrice, apyData]);
 
   useEffect(() => {
@@ -451,8 +472,20 @@ export default function TerminalPage() {
       color: '#37d097' 
     },
     { label: 'Cooldown Period', value: 'Instant', icon: Hourglass, color: '#ffffff' },
-    { label: 'User Earnings', value: userEarnings, icon: HandCoins, color: '#ffffff' },
-    { label: 'User Balance', value: userVaultBalance + ' ETH', icon: Wallet2, color: '#ffffff' },
+    { 
+      label: 'User Earnings', 
+      value: userEarnings, 
+      display: (val: number) => <CountUp value={val} decimals={4} prefix="$" />,
+      icon: HandCoins, 
+      color: '#ffffff' 
+    },
+    { 
+      label: 'User Balance', 
+      value: userVaultBalance, 
+      display: (val: number) => <CountUp value={val} decimals={4} suffix=" ETH" />,
+      icon: Wallet2, 
+      color: '#ffffff' 
+    },
   ];
 
   return (

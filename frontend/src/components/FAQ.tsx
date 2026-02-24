@@ -20,7 +20,7 @@ const faqs = [
   },
   {
     question: "What is the 'Genesis Phase'?",
-    answer: "The Genesis Phase is our initial launch period. The first 50 depositors (or up to 50 ETH TVL) benefit from 0% performance fees, maximizing their yield as early adopters of the protocol."
+    answer: "The Genesis Phase is our initial launch period. Depositors benefit from 0% performance fees until the protocol reaches $100,000 TVL. This incentivizes early adoption and helps bootstrap protocol liquidity. Once TVL exceeds $100k, standard performance fees apply."
   },
   {
     question: "How do I withdraw my funds?",

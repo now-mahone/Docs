@@ -25,6 +25,7 @@ export function TerminalVaultInteraction() {
     deposit, 
     withdraw, 
     isPending: isVaultPending,
+    isSuccess: isVaultSuccess,
     refetchBalanceOf,
     refetchTotalAssets
   } = useVault();
@@ -34,9 +35,30 @@ export function TerminalVaultInteraction() {
     balance: wethBalance, 
     approve, 
     isPending: isTokenPending,
+    isConfirmed: isTokenConfirmed,
     refetchAllowance,
     refetchBalance: refetchWethBalance
   } = useToken(address, VAULT_ADDRESS);
+
+  // Real-time refetching after transactions
+  useEffect(() => {
+    if (isTokenConfirmed) {
+      toast.success("WETH approved");
+      refetchAllowance();
+    }
+  }, [isTokenConfirmed, refetchAllowance]);
+
+  useEffect(() => {
+    if (isVaultSuccess) {
+      toast.success("Transaction successful");
+      setDepositAmount('');
+      setWithdrawAmount('');
+      refetchBalanceOf();
+      refetchTotalAssets();
+      refetchWethBalance();
+      refetchAllowance();
+    }
+  }, [isVaultSuccess, refetchBalanceOf, refetchTotalAssets, refetchWethBalance, refetchAllowance]);
 
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
@@ -45,46 +67,30 @@ export function TerminalVaultInteraction() {
 
   const handleApprove = async () => {
     if (!depositAmount) return;
-    const toastId = toast.loading("Initializing approval...");
     try {
       await approve(depositAmount);
-      refetchAllowance();
-      toast.success("WETH approved", { id: toastId });
     } catch (e) {
-      toast.error("Approval failed", { id: toastId });
+      console.error("Approval failed", e);
     }
   };
 
   const handleDeposit = async () => {
     if (!depositAmount) return;
-    const toastId = toast.loading("Confirming deposit...");
     try {
       const amountBI = parseUnits(depositAmount, 18);
       await deposit(amountBI);
-      setDepositAmount('');
-      refetchBalanceOf();
-      refetchTotalAssets();
-      refetchWethBalance();
-      refetchAllowance();
-      toast.success("Deposit successful", { id: toastId });
     } catch (e) {
-      toast.error("Deposit failed", { id: toastId });
+      console.error("Deposit failed", e);
     }
   };
 
   const handleWithdraw = async () => {
     if (!withdrawAmount) return;
-    const toastId = toast.loading("Confirming withdrawal...");
     try {
       const amountBI = parseUnits(withdrawAmount, 18);
       await withdraw(amountBI);
-      setWithdrawAmount('');
-      refetchBalanceOf();
-      refetchTotalAssets();
-      refetchWethBalance();
-      toast.success("Withdrawal successful", { id: toastId });
     } catch (e) {
-      toast.error("Withdrawal failed", { id: toastId });
+      console.error("Withdrawal failed", e);
     }
   };
 

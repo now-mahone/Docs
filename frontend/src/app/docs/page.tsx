@@ -85,12 +85,23 @@ export default function DocsPage() {
           <div className="p-6 bg-zinc-950 border border-dashed border-zinc-800">
             <div className="flex justify-between items-center">
               <span className="text-zinc-500">PERFORMANCE_FEE</span>
-              <span className="text-2xl text-white">20%</span>
+              <span className="text-2xl text-white">10%</span>
             </div>
             <p className="text-xs text-zinc-400 mt-4 uppercase leading-relaxed">
               The performance fee is a <span className="text-white font-bold">commission on profits only</span>. 
               It is automatically deducted from the generated yield before it is distributed to depositors. 
               Kerne charges <span className="text-emerald-500 font-bold">0% management fees</span> and 0% entry/exit fees.
+            </p>
+          </div>
+          <div className="p-6 bg-emerald-950/30 border border-emerald-800/50">
+            <div className="flex justify-between items-center">
+              <span className="text-emerald-400">GENESIS_PHASE_FEE</span>
+              <span className="text-2xl text-emerald-400">0%</span>
+            </div>
+            <p className="text-xs text-zinc-400 mt-4 uppercase leading-relaxed">
+              During the Genesis Phase, early depositors enjoy <span className="text-emerald-400 font-bold">0% performance fees</span> until 
+              the protocol reaches <span className="text-white font-bold">$100,000 TVL</span>. This incentivizes early adoption and 
+              helps bootstrap protocol liquidity. Once TVL exceeds the threshold, standard performance fees apply.
             </p>
           </div>
         </section>
