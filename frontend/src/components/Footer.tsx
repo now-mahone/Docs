@@ -35,6 +35,7 @@ export default function Footer() {
             <h5 className="text-s font-bold tracking-tight text-[#ffffff] font-heading">Socials</h5>
             <a href="https://x.com/KerneProtocol" target="_blank" rel="noopener noreferrer" className="text-[#ffffff] font-medium hover:text-[#000000/10] transition-colors text-s">X / Twitter</a>
             <a href="https://farcaster.xyz/kerne" target="_blank" rel="noopener noreferrer" className="text-[#ffffff] font-medium hover:text-[#000000/10] transition-colors text-s">Farcaster</a>
+            <a href="https://discord.gg/Csb3S83K" target="_blank" rel="noopener noreferrer" className="text-[#ffffff] font-medium hover:text-[#000000/10] transition-colors text-s">Discord</a>
             <a href="https://github.com/kerne-protocol" target="_blank" rel="noopener noreferrer" className="text-[#ffffff] font-medium hover:text-[#000000/10] transition-colors text-s">GitHub</a>
           </div>
           <div className="flex flex-col gap-6">
