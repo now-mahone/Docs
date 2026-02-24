@@ -202,8 +202,8 @@ export function VaultInteraction() {
       amount,
       address,
       vaultAddress,
-      vaultShareBalance: vaultShareBalance ? formatEther(vaultShareBalance) : 'undefined',
-      userAssets: userAssets ? formatEther(userAssets) : 'undefined'
+      vaultShareBalance: vaultShareBalance && typeof vaultShareBalance === 'bigint' ? formatEther(vaultShareBalance) : 'undefined',
+      userAssets: userAssets && typeof userAssets === 'bigint' ? formatEther(userAssets) : 'undefined'
     });
     
     if (!isCorrectNetwork) {
