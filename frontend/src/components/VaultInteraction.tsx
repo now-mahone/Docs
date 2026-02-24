@@ -1,10 +1,10 @@
 // Created: 2026-01-30
-// Rebuilt: 2026-02-13 - Fixed layout with zero shift
+// Rebuilt from scratch: 2026-02-23 - Clean deposit/withdrawal logic
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance, useChainId, useReadContract, useSwitchChain } from 'wagmi';
-import { parseEther, formatEther, erc20Abi } from 'viem';
+import { parseEther, formatEther, erc20Abi, maxUint256 } from 'viem';
 import { VAULT_ADDRESS, ARB_VAULT_ADDRESS, OP_VAULT_ADDRESS, WETH_ADDRESS, ARB_WSTETH_ADDRESS } from '@/config';
 import KerneVaultABI from '@/abis/KerneVault.json';
 import { 
@@ -15,119 +15,113 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Vault, ChevronDown } from 'lucide-react';
 
+type Chain = 'Base' | 'Arbitrum' | 'OP Mainnet';
+type Tab = 'deposit' | 'withdraw';
+
+const CHAIN_IDS: Record<Chain, number> = {
+  'Base': 8453,
+  'Arbitrum': 42161,
+  'OP Mainnet': 10,
+};
+
+const VAULT_ADDRESSES: Record<Chain, `0x${string}`> = {
+  'Base': VAULT_ADDRESS,
+  'Arbitrum': ARB_VAULT_ADDRESS,
+  'OP Mainnet': OP_VAULT_ADDRESS,
+};
+
+const TOKEN_ADDRESSES: Record<Chain, `0x${string}` | undefined> = {
+  'Base': WETH_ADDRESS,
+  'Arbitrum': ARB_WSTETH_ADDRESS,
+  'OP Mainnet': undefined,
+};
+
+const CHAIN_LOGOS: Record<Chain, string> = {
+  'Base': '/Base-Square-Blue.svg',
+  'Arbitrum': '/Arbitrum-Mark.svg',
+  'OP Mainnet': '/OP-Mainnet.svg',
+};
+
 export function VaultInteraction() {
   const { isConnected, address } = useAccount();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
+  
+  const [selectedChain, setSelectedChain] = useState<Chain>('Base');
+  const [activeTab, setActiveTab] = useState<Tab>('deposit');
   const [amount, setAmount] = useState('');
-  const [selectedChain, setSelectedChain] = useState('Base');
   const [ethPrice, setEthPrice] = useState(3150);
-  const [needsApproval, setNeedsApproval] = useState(false);
-  const [activeTab, setActiveTab] = useState<'deposit' | 'withdraw'>('deposit');
 
-  // Chain ID mapping
-  const requiredChainId = selectedChain === 'Base' 
-    ? 8453 
-    : selectedChain === 'Arbitrum' 
-      ? 42161 
-      : 10;
+  // Derived values
+  const requiredChainId = CHAIN_IDS[selectedChain];
+  const vaultAddress = VAULT_ADDRESSES[selectedChain];
+  const tokenAddress = TOKEN_ADDRESSES[selectedChain];
+  const isCorrectNetwork = isConnected && chainId === requiredChainId;
 
-  const isCorrectNetwork = isConnected && chainId !== undefined && chainId === requiredChainId;
-
-  useEffect(() => {
-    console.log('Network Debug:', {
-      isConnected,
-      chainId,
-      requiredChainId,
-      isCorrectNetwork,
-      selectedChain
-    });
-  }, [isConnected, chainId, requiredChainId, isCorrectNetwork, selectedChain]);
-
-  const tokenAddress = selectedChain === 'Base' 
-    ? WETH_ADDRESS 
-    : selectedChain === 'Arbitrum' 
-      ? ARB_WSTETH_ADDRESS 
-      : undefined;
-
-  const { data: balanceData } = useBalance({
-    address: address,
-    token: tokenAddress,
-    chainId: selectedChain === 'Base' ? 8453 : selectedChain === 'Arbitrum' ? 42161 : 10,
+  // Contract interactions
+  const { writeContract, data: txHash, isPending, error: writeError, reset: resetWrite } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ 
+    hash: txHash,
+    chainId: requiredChainId 
   });
 
-  const targetVault = selectedChain === 'Base' 
-    ? VAULT_ADDRESS 
-    : selectedChain === 'Arbitrum' 
-      ? ARB_VAULT_ADDRESS 
-      : OP_VAULT_ADDRESS;
+  // Token balance
+  const { data: tokenBalance, refetch: refetchTokenBalance } = useBalance({
+    address: address,
+    token: tokenAddress,
+    chainId: requiredChainId,
+  });
 
-  const { 
-    writeContract, 
-    data: hash, 
-    isPending,
-    error: writeError,
-    reset: resetWrite
-  } = useWriteContract();
-
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = 
-    useWaitForTransactionReceipt({ hash });
-
-  const { data: vaultShareBalance } = useReadContract({
-    address: targetVault,
+  // Vault share balance
+  const { data: vaultShareBalance, refetch: refetchVaultBalance } = useReadContract({
+    address: vaultAddress,
     abi: KerneVaultABI.abi,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
-    query: {
-      enabled: !!address && !!targetVault,
-    },
+    chainId: requiredChainId,
   });
 
+  // Convert shares to assets
+  const { data: userAssets, refetch: refetchUserAssets } = useReadContract({
+    address: vaultAddress,
+    abi: KerneVaultABI.abi,
+    functionName: 'convertToAssets',
+    args: vaultShareBalance ? [vaultShareBalance] : undefined,
+    chainId: requiredChainId,
+  });
+
+  // Token allowance
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
     address: tokenAddress,
     abi: erc20Abi,
     functionName: 'allowance',
-    args: address && targetVault ? [address, targetVault] : undefined,
-    query: {
-      enabled: !!address && !!tokenAddress && !!targetVault,
-      refetchInterval: isConfirming ? 1000 : false,
-    },
+    args: address && vaultAddress ? [address, vaultAddress] : undefined,
+    chainId: requiredChainId,
   });
 
-  useEffect(() => {
-    if (amount && allowance !== undefined && tokenAddress && targetVault) {
-      try {
-        const amountWei = parseEther(amount);
-        setNeedsApproval(allowance < amountWei);
-      } catch (e) {
-        setNeedsApproval(false);
-      }
-    } else {
-      setNeedsApproval(false);
+  // Check if approval is needed
+  const needsApproval = useMemo(() => {
+    if (activeTab !== 'deposit' || !amount || !allowance || !tokenAddress) return false;
+    try {
+      const amountWei = parseEther(amount);
+      return allowance < amountWei;
+    } catch {
+      return false;
     }
-  }, [amount, allowance, tokenAddress, targetVault]);
+  }, [activeTab, amount, allowance, tokenAddress]);
 
-  useEffect(() => {
-    if (isConfirmed) {
-      console.log('Transaction confirmed, refetching allowance...');
-      const refetchInterval = setInterval(() => {
-        refetchAllowance();
-      }, 500);
-      
-      const timer = setTimeout(() => {
-        clearInterval(refetchInterval);
-        resetWrite();
-        refetchAllowance();
-        console.log('Write state reset, allowance:', allowance);
-      }, 2000);
-      
-      return () => {
-        clearInterval(refetchInterval);
-        clearTimeout(timer);
-      };
+  // USD value
+  const usdValue = useMemo(() => {
+    if (!amount) return '0.00';
+    try {
+      const value = parseFloat(amount) * ethPrice;
+      return value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    } catch {
+      return '0.00';
     }
-  }, [isConfirmed, resetWrite, refetchAllowance, allowance]);
+  }, [amount, ethPrice]);
 
+  // Fetch ETH price
   useEffect(() => {
     const fetchPrice = async () => {
       try {
@@ -135,14 +129,30 @@ export function VaultInteraction() {
         const data = await res.json();
         if (data.price) setEthPrice(parseFloat(data.price));
       } catch (e) {
-        console.error("Failed to fetch ETH price in VaultInteraction", e);
+        console.error('Failed to fetch ETH price:', e);
       }
     };
     fetchPrice();
+    const interval = setInterval(fetchPrice, 60000);
+    return () => clearInterval(interval);
   }, []);
 
-  const usdValue = amount ? (parseFloat(amount) * ethPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00';
+  // Refetch balances on confirmation
+  useEffect(() => {
+    if (isConfirmed) {
+      const timer = setTimeout(() => {
+        refetchTokenBalance();
+        refetchVaultBalance();
+        refetchUserAssets();
+        refetchAllowance();
+        setAmount('');
+        resetWrite();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isConfirmed, refetchTokenBalance, refetchVaultBalance, refetchUserAssets, refetchAllowance, resetWrite]);
 
+  // Handlers
   const handleSwitchNetwork = async () => {
     try {
       await switchChain({ chainId: requiredChainId });
@@ -152,69 +162,159 @@ export function VaultInteraction() {
   };
 
   const handleApprove = async () => {
-    if (!isCorrectNetwork) {
-      console.error('Wrong network! Current:', chainId, 'Required:', requiredChainId);
-      return;
+    if (!isCorrectNetwork || !amount || !tokenAddress || !vaultAddress) return;
+    
+    try {
+      const amountWei = parseEther(amount);
+      writeContract({
+        address: tokenAddress,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [vaultAddress, amountWei],
+        chainId: requiredChainId,
+        gas: 100000n,
+      });
+    } catch (error) {
+      console.error('Approval error:', error);
     }
-    
-    if (!amount || isNaN(parseFloat(amount)) || !address || !tokenAddress || !targetVault) return;
-    
-    const amountWei = parseEther(amount);
-    
-    writeContract({
-      address: tokenAddress,
-      abi: erc20Abi,
-      functionName: 'approve',
-      args: [targetVault, amountWei],
-    });
   };
 
   const handleDeposit = async () => {
-    if (!isCorrectNetwork) {
-      console.error('Wrong network! Current:', chainId, 'Required:', requiredChainId);
-      return;
+    if (!isCorrectNetwork || !amount || !address || !vaultAddress) return;
+    
+    try {
+      const amountWei = parseEther(amount);
+      writeContract({
+        address: vaultAddress,
+        abi: KerneVaultABI.abi,
+        functionName: 'deposit',
+        args: [amountWei, address],
+        chainId: requiredChainId,
+        gas: 250000n,
+      });
+    } catch (error) {
+      console.error('Deposit error:', error);
     }
-    
-    if (!amount || isNaN(parseFloat(amount)) || !address || !targetVault) return;
-    
-    const amountWei = parseEther(amount);
-
-    if (!targetVault || targetVault === '0x0000000000000000000000000000000000000000') {
-      console.error("Vault address not configured for", selectedChain);
-      return;
-    }
-    
-    writeContract({
-      address: targetVault,
-      abi: KerneVaultABI.abi,
-      functionName: 'deposit',
-      args: [amountWei, address],
-    });
   };
 
   const handleWithdraw = async () => {
+    console.log('=== WITHDRAWAL DEBUG START ===');
+    console.log('Prerequisites check:', {
+      isCorrectNetwork,
+      amount,
+      address,
+      vaultAddress,
+      hasVaultShareBalance: !!vaultShareBalance,
+      vaultShareBalanceType: typeof vaultShareBalance,
+      hasUserAssets: !!userAssets,
+      userAssetsType: typeof userAssets
+    });
+    
     if (!isCorrectNetwork) {
-      console.error('Wrong network! Current:', chainId, 'Required:', requiredChainId);
+      console.error('FAILED: Not on correct network');
+      return;
+    }
+    if (!amount) {
+      console.error('FAILED: No amount entered');
+      return;
+    }
+    if (!address) {
+      console.error('FAILED: No wallet address');
+      return;
+    }
+    if (!vaultAddress) {
+      console.error('FAILED: No vault address');
       return;
     }
     
-    if (!amount || isNaN(parseFloat(amount)) || !address || !targetVault) return;
-    
-    const sharesWei = parseEther(amount);
-    
-    writeContract({
-      address: targetVault,
-      abi: KerneVaultABI.abi,
-      functionName: 'redeem',
-      args: [sharesWei, address, address],
-    });
+    try {
+      const amountWei = parseEther(amount);
+      console.log('Amount parsed:', {
+        amountInput: amount,
+        amountWei: amountWei.toString()
+      });
+      
+      console.log('Calling writeContract with args:', {
+        address: vaultAddress,
+        functionName: 'requestWithdrawal',
+        args: [amountWei.toString()],
+        chainId: requiredChainId,
+        gas: 300000n
+      });
+      
+      writeContract({
+        address: vaultAddress,
+        abi: KerneVaultABI.abi,
+        functionName: 'requestWithdrawal',
+        args: [amountWei],
+        chainId: requiredChainId,
+        gas: 300000n,
+      });
+      
+      console.log('writeContract call completed without throwing');
+    } catch (error) {
+      console.error('WITHDRAWAL ERROR CAUGHT:', error);
+      console.error('Error details:', {
+        name: error instanceof Error ? error.name : 'unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
+    }
   };
 
-  const chainLogos: { [key: string]: string } = {
-    'Base': '/Base-Square-Blue.svg',
-    'Arbitrum': '/Arbitrum-Mark.svg',
-    'OP Mainnet': '/OP-Mainnet.svg'
+  const handleMaxClick = () => {
+    if (activeTab === 'deposit' && tokenBalance) {
+      setAmount(formatEther(tokenBalance.value));
+    } else if (activeTab === 'withdraw' && userAssets && typeof userAssets === 'bigint') {
+      setAmount(formatEther(userAssets));
+    }
   };
+
+  const getButtonText = () => {
+    if (!isConnected) return 'Connect wallet to interact';
+    if (!isCorrectNetwork) return `Switch to ${selectedChain}`;
+    if (isPending) return 'Confirming in Wallet...';
+    if (isConfirming) return 'Processing Transaction...';
+    if (activeTab === 'deposit') {
+      if (needsApproval) return 'Approve Token';
+      return 'Confirm Deposit';
+    }
+    return 'Request Withdrawal';
+  };
+
+  const isButtonDisabled = () => {
+    if (!isConnected) return true;
+    if (!isCorrectNetwork) return false; // Allow network switch
+    if (isPending || isConfirming) return true;
+    if (!amount || parseFloat(amount) <= 0) return true;
+    return false;
+  };
+
+  const handleButtonClick = () => {
+    if (!isConnected) return;
+    if (!isCorrectNetwork) {
+      handleSwitchNetwork();
+      return;
+    }
+    if (activeTab === 'deposit') {
+      if (needsApproval) {
+        handleApprove();
+      } else {
+        handleDeposit();
+      }
+    } else {
+      handleWithdraw();
+    }
+  };
+
+  const displayBalance = useMemo(() => {
+    if (activeTab === 'deposit') {
+      return tokenBalance ? parseFloat(formatEther(tokenBalance.value)).toFixed(4) : '0.00';
+    }
+    return userAssets && typeof userAssets === 'bigint' ? parseFloat(formatEther(userAssets)).toFixed(4) : '0.00';
+  }, [activeTab, tokenBalance, userAssets]);
+
+  const tokenSymbol = selectedChain === 'Arbitrum' ? 'wstETH' : 'WETH';
 
   return (
     <div className="p-6 lg:p-8 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] rounded-sm h-[600px] flex flex-col">
@@ -224,32 +324,21 @@ export function VaultInteraction() {
           <span className="text-xs font-bold text-[#aab9be] uppercase tracking-wide">Vault Interaction</span>
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger className="flex items-center gap-4 text-xl font-heading font-medium text-[#ffffff] mt-4 outline-none text-left">
-              <img src={chainLogos[selectedChain]} alt={selectedChain} className="w-5 h-5 object-contain" />
+              <img src={CHAIN_LOGOS[selectedChain]} alt={selectedChain} className="w-5 h-5 object-contain" />
               {selectedChain}
               <ChevronDown size={20} className="text-[#aab9be] ml-1" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="bg-[#000000] border-[#444a4f] text-[#ffffff] min-w-[260px] p-4 shadow-2xl space-y-1">
-              <DropdownMenuItem 
-                onClick={() => setSelectedChain('Base')}
-                className="cursor-pointer bg-[#22252a] border border-[#444a4f] rounded-sm text-s font-medium py-3 px-4 flex items-center gap-3 focus:bg-[#22252a] focus:text-[#ffffff]"
-              >
-                <img src="/Base-Square-Blue.svg" alt="Base" className="w-5 h-5 object-contain" />
-                Base
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setSelectedChain('Arbitrum')}
-                className="cursor-pointer bg-[#22252a] border border-[#444a4f] rounded-sm text-s font-medium py-3 px-4 flex items-center gap-3 focus:bg-[#22252a] focus:text-[#ffffff]"
-              >
-                <img src="/Arbitrum-Mark.svg" alt="Arbitrum" className="w-5 h-5 object-contain" />
-                Arbitrum
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => setSelectedChain('OP Mainnet')}
-                className="cursor-pointer bg-[#22252a] border border-[#444a4f] rounded-sm text-s font-medium py-3 px-4 flex items-center gap-3 focus:bg-[#22252a] focus:text-[#ffffff]"
-              >
-                <img src="/OP-Mainnet.svg" alt="OP Mainnet" className="w-5 h-5 object-contain" />
-                OP Mainnet
-              </DropdownMenuItem>
+              {(Object.keys(CHAIN_LOGOS) as Chain[]).map((chain) => (
+                <DropdownMenuItem 
+                  key={chain}
+                  onClick={() => setSelectedChain(chain)}
+                  className="cursor-pointer bg-[#22252a] border border-[#444a4f] rounded-sm text-s font-medium py-3 px-4 flex items-center gap-3 focus:bg-[#22252a] focus:text-[#ffffff]"
+                >
+                  <img src={CHAIN_LOGOS[chain]} alt={chain} className="w-5 h-5 object-contain" />
+                  {chain}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -280,40 +369,28 @@ export function VaultInteraction() {
         </button>
       </div>
 
-      {/* Content Area - Fixed Height 340px */}
+      {/* Content Area */}
       <div className="h-[340px] flex flex-col">
-        {/* Input Section - Fixed 130px */}
+        {/* Input Section */}
         <div className="h-[130px] flex flex-col">
           <div className="flex justify-between items-center mb-3">
             <label className="text-s font-medium text-[#aab9be] tracking-tight">
-              {activeTab === 'deposit' 
-                ? `Amount (${selectedChain === 'Arbitrum' ? 'wstETH' : 'WETH'})`
-                : 'Amount (Kerne-V1)'
-              }
+              {activeTab === 'deposit' ? `Amount (${tokenSymbol})` : 'Amount (Kerne-V1)'}
             </label>
             <span className="text-s font-medium text-[#aab9be] tracking-tight">
-              Balance: {activeTab === 'deposit'
-                ? (balanceData ? parseFloat(formatEther(balanceData.value)).toFixed(4) : '0.00')
-                : (vaultShareBalance && typeof vaultShareBalance === 'bigint' ? parseFloat(formatEther(vaultShareBalance)).toFixed(4) : '0.00')
-              }
+              Balance: {displayBalance}
             </span>
           </div>
           <div className="relative h-[52px] mb-3">
             <input 
               type="number"
               value={amount}
-              onChange={(e: any) => setAmount(e.target.value)}
+              onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
               className="w-full h-full bg-[#22252a] border border-[#444a4f] rounded-sm px-5 py-4 text-[#ffffff] font-medium focus:border-[#37d097] outline-none transition-colors shadow-none placeholder:font-medium placeholder:text-s placeholder:text-[#aab9be] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
             <button 
-              onClick={() => {
-                if (activeTab === 'deposit' && balanceData) {
-                  setAmount(formatEther(balanceData.value));
-                } else if (activeTab === 'withdraw' && vaultShareBalance && typeof vaultShareBalance === 'bigint') {
-                  setAmount(formatEther(vaultShareBalance));
-                }
-              }}
+              onClick={handleMaxClick}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-[#37d097] hover:text-[#37d097]/80 transition-colors"
             >
               MAX
@@ -327,85 +404,41 @@ export function VaultInteraction() {
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Button Section - Fixed 80px */}
+        {/* Button Section */}
         <div className="h-[80px] flex flex-col">
           <div className="h-12 mb-2">
-            {!isConnected ? (
-              <button 
-                disabled
-                className="w-full h-full font-bold text-s rounded-sm flex items-center justify-center bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50"
-              >
-                Connect wallet to interact
-              </button>
-            ) : !isCorrectNetwork ? (
-              <button 
-                onClick={handleSwitchNetwork}
-                className="w-full h-full font-bold text-s rounded-sm flex items-center justify-center bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff] transition-all"
-              >
-                Switch to {selectedChain}
-              </button>
-            ) : activeTab === 'deposit' && needsApproval ? (
-              <button 
-                onClick={handleApprove}
-                disabled={isPending || isConfirming || !amount}
-                className={`w-full h-full font-bold text-s rounded-sm flex items-center justify-center transition-all ${
-                  !isPending && !isConfirming && amount
-                    ? 'bg-[#37d097] text-[#ffffff] hover:bg-[#37d097]/80' 
-                    : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
-                }`}
-              >
-                {isPending || isConfirming ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                    {isPending ? 'Confirming in Wallet...' : 'Processing Approval...'}
-                  </div>
-                ) : 'Approve Token'}
-              </button>
-            ) : activeTab === 'deposit' ? (
-              <button 
-                onClick={handleDeposit}
-                disabled={isPending || isConfirming || !amount}
-                className={`w-full h-full font-bold text-s rounded-sm flex items-center justify-center transition-all ${
-                  !isPending && !isConfirming && amount
-                    ? 'bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff]' 
-                    : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
-                }`}
-              >
-                {isPending || isConfirming ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                    {isPending ? 'Confirming in Wallet...' : 'Processing Transaction...'}
-                  </div>
-                ) : 'Confirm Deposit'}
-              </button>
-            ) : (
-              <button 
-                onClick={handleWithdraw}
-                disabled={isPending || isConfirming || !amount}
-                className={`w-full h-full font-bold text-s rounded-sm flex items-center justify-center transition-all ${
-                  !isPending && !isConfirming && amount
-                    ? 'bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff]' 
-                    : 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
-                }`}
-              >
-                {isPending || isConfirming ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                    {isPending ? 'Confirming in Wallet...' : 'Processing Transaction...'}
-                  </div>
-                ) : 'Confirm Withdrawal'}
-              </button>
-            )}
+            <button 
+              onClick={handleButtonClick}
+              disabled={isButtonDisabled()}
+              className={`w-full h-full font-bold text-s rounded-sm flex items-center justify-center transition-all ${
+                !isButtonDisabled() && isCorrectNetwork
+                  ? needsApproval && activeTab === 'deposit'
+                    ? 'bg-[#37d097] text-[#ffffff] hover:bg-[#37d097]/80'
+                    : 'bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff]'
+                  : !isConnected || (isCorrectNetwork && (isPending || isConfirming || !amount))
+                  ? 'bg-transparent border border-[#444a4f] text-[#ffffff] cursor-not-allowed opacity-50'
+                  : 'bg-[#ffffff] text-[#000000] hover:bg-[#37d097] hover:text-[#ffffff]'
+              }`}
+            >
+              {(isPending || isConfirming) ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  {getButtonText()}
+                </div>
+              ) : (
+                getButtonText()
+              )}
+            </button>
           </div>
           <div className="h-6 flex items-center justify-center">
             {isConfirmed && (
               <p className="text-xs text-[#37d097] font-bold text-center leading-6">
-                {activeTab === 'deposit' && needsApproval ? 'Approval Successful' : activeTab === 'deposit' ? 'Deposit Successful' : 'Withdrawal Successful'}
+                Transaction Successful
               </p>
             )}
             {writeError && (
               <p className="text-xs text-red-500 font-bold text-center leading-6">
-                {writeError.message.includes('User rejected') ? 'Transaction rejected' : activeTab === 'deposit' && needsApproval ? 'Approval failed' : activeTab === 'deposit' ? 'Deposit failed' : 'Withdrawal failed'}
+                {writeError.message?.includes('User rejected') ? 'Transaction rejected' : 'Transaction failed'}
               </p>
             )}
           </div>

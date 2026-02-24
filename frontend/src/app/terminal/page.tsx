@@ -172,13 +172,12 @@ export default function TerminalPage() {
     const balanceNum = parseFloat(userVaultBalance);
     if (balanceNum === 0) return '$0.00';
     
-    const apy = apyData?.apy || 18.40;
-    
-    // Rough estimate: assume average hold time of 30 days for earnings display
     // Real implementation would track deposit time and calculate actual accrued interest
-    const estimatedEarnings = balanceNum * ethPrice * (apy / 100) * (30 / 365);
+    // For now, we'll use a more conservative estimate (e.g., 1 hour of yield) to avoid unrealistic displays
+    const apy = apyData?.apy || 18.40;
+    const estimatedEarnings = balanceNum * ethPrice * (apy / 100) * (1 / (365 * 24));
     
-    return '$' + estimatedEarnings.toFixed(2);
+    return '$' + estimatedEarnings.toFixed(4);
   }, [userVaultBalance, ethPrice, apyData]);
 
   useEffect(() => {
