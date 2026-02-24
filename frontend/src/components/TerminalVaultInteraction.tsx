@@ -1,8 +1,8 @@
-// Created: 2026-02-23
+wi// Created: 2026-02-23
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useAccount, useChainId } from 'wagmi';
+import { useAccount, useChainId, useSwitchChain } from 'wagmi';
 import { formatUnits, parseUnits } from 'viem';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -11,12 +11,15 @@ import { useVault } from '@/hooks/useVault';
 import { useToken } from '@/hooks/useToken';
 import { VAULT_ADDRESS, ARB_VAULT_ADDRESS, OP_VAULT_ADDRESS, WETH_ADDRESS } from '@/config';
 import { toast } from 'sonner';
-import { Wallet2, ArrowDownCircle, ArrowUpCircle, Loader2 } from 'lucide-react';
+import { Wallet2, ArrowDownCircle, ArrowUpCircle, Loader2, Shield } from 'lucide-react';
 
 export function TerminalVaultInteraction() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
   
+  const isCorrectNetwork = chainId === 8453;
+
   // Determine target vault based on chain
   const targetVault = useMemo(() => {
     if (chainId === 8453) return VAULT_ADDRESS;
@@ -111,6 +114,26 @@ export function TerminalVaultInteraction() {
         <div>
           <h3 className="text-lg font-heading font-medium text-[#ffffff]">Connect Wallet</h3>
           <p className="text-sm text-[#aab9be] mt-1">Please connect your wallet to interact with the Kerne Vault.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isCorrectNetwork) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-4 bg-gradient-to-b from-[#22252a] via-[#16191c] to-[#000000] border border-[#ff6b6b]/20 rounded-sm">
+        <div className="p-4 bg-[#16191c] rounded-full border border-[#ff6b6b]/40">
+          <Shield size={32} className="text-[#ff6b6b]" />
+        </div>
+        <div>
+          <h3 className="text-lg font-heading font-medium text-[#ffffff]">Wrong Network</h3>
+          <p className="text-sm text-[#aab9be] mt-1 mb-6">The Kerne Vault is currently only available on Base Mainnet.</p>
+          <Button 
+            onClick={() => switchChain({ chainId: 8453 })}
+            className="w-full bg-[#ffffff] text-[#000000] hover:bg-[#aab9be] rounded-sm font-bold h-12 transition-all text-xs uppercase tracking-widest"
+          >
+            Switch to Base
+          </Button>
         </div>
       </div>
     );
