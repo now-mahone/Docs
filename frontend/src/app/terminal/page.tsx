@@ -13,6 +13,7 @@ import { PerformanceChart } from '@/components/PerformanceChart';
 import { ETHComparisonChart } from '@/components/ETHComparisonChart';
 import { AssetComposition } from '@/components/AssetComposition';
 import { WalletConnectButton } from '@/components/WalletConnectButton';
+import { TerminalVaultInteraction } from '@/components/TerminalVaultInteraction';
 
 function CountUp({ value, decimals = 0, prefix = "", suffix = "" }: { value: number; decimals?: number; prefix?: string; suffix?: string }) {
   const nodeRef = React.useRef<HTMLSpanElement>(null);
@@ -624,6 +625,11 @@ export default function TerminalPage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Vault Interaction Card */}
+          <div className="lg:col-span-2 h-[600px]">
+            <TerminalVaultInteraction />
           </div>
 
           {/* Bottom Row: Protocol Health (6 Cols) */}

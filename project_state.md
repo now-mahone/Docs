@@ -1,4 +1,12 @@
 <<<<<<< HEAD
+[2026-02-23 19:15] - Added Terminal Vault Interaction Card: Implemented a new "Vault Interaction" card on the terminal page to allow users to deposit and withdraw WETH on Base.
+- Created `TerminalVaultInteraction.tsx` component with a high-fidelity, monochrome UI matching the terminal dashboard.
+- Integrated the card into the terminal page grid (red square area from screenshot).
+- Updated `frontend/src/config.ts` to point `VAULT_ADDRESS` to the correct Base vault: `0x8005bc7A86AD904C20fd62788ABED7546c1cF2AC`.
+- Implemented full deposit/withdraw logic with ERC-20 approval flow and real-time balance refetching.
+- Files Modified: frontend/src/app/terminal/page.tsx, frontend/src/config.ts, frontend/src/components/TerminalVaultInteraction.tsx.
+- Status: SUCCESS
+
 [2026-02-23 21:00] - 0% PERFORMANCE FEE LAUNCH TIER DOCUMENTED ACROSS ALL KEY FILES: Audited every major fee-related document and updated all files missing the 0%% performance fee tier (launch promotion: 0%% up to  TVL, 5%% to , 10%% above). Files confirmed already updated: docs/specs/profit_model.md, docs/specs/mechanism_spec.md, docs/whitepaper/KERNE_PROTOCOL_WHITEPAPER.md, README.md, docs/investor/EXECUTIVE_SUMMARY.md. Files updated this session: gitbook (docs)/litepaper.md (Section 9 rewritten from generic standard fee to full tiered table), pitch deck/PRESENTER_SCRIPT.md (Slides 3 and 12 updated with 0%% tier and CAC rationale). Pulled latest from GitHub (february/main) before changes. Committed and pushed 7 files to february/main (commit 32da4ee21). - Status: COMPLETE
 
 [2026-02-23 20:30] - DISCORD COMMUNITY LAUNCHED: Official Kerne Discord server is now live at https://discord.gg/Xx8TSuWrCA. Posted announcement tweet to @KerneProtocol with community launch graphic. Tweet logged to docs/marketing/TWEET_HISTORY.md. Discord provides real-time protocol updates, community engagement, and direct team access for yield seekers, DeFi builders, and institutional allocators. - Status: COMPLETE
