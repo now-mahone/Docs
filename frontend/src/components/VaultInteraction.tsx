@@ -172,6 +172,7 @@ export function VaultInteraction() {
         functionName: 'approve',
         args: [vaultAddress, amountWei],
         chainId: requiredChainId,
+        gas: 100000n,
       });
     } catch (error) {
       console.error('Approval error:', error);
@@ -189,6 +190,7 @@ export function VaultInteraction() {
         functionName: 'deposit',
         args: [amountWei, address],
         chainId: requiredChainId,
+        gas: 250000n,
       });
     } catch (error) {
       console.error('Deposit error:', error);
@@ -196,45 +198,67 @@ export function VaultInteraction() {
   };
 
   const handleWithdraw = async () => {
-    if (!isCorrectNetwork || !amount || !address || !vaultAddress) return;
-    if (!vaultShareBalance || typeof vaultShareBalance !== 'bigint') return;
-    if (!userAssets || typeof userAssets !== 'bigint') return;
+    console.log('=== WITHDRAWAL DEBUG START ===');
+    console.log('Prerequisites check:', {
+      isCorrectNetwork,
+      amount,
+      address,
+      vaultAddress,
+      hasVaultShareBalance: !!vaultShareBalance,
+      vaultShareBalanceType: typeof vaultShareBalance,
+      hasUserAssets: !!userAssets,
+      userAssetsType: typeof userAssets
+    });
+    
+    if (!isCorrectNetwork) {
+      console.error('FAILED: Not on correct network');
+      return;
+    }
+    if (!amount) {
+      console.error('FAILED: No amount entered');
+      return;
+    }
+    if (!address) {
+      console.error('FAILED: No wallet address');
+      return;
+    }
+    if (!vaultAddress) {
+      console.error('FAILED: No vault address');
+      return;
+    }
     
     try {
       const amountWei = parseEther(amount);
+      console.log('Amount parsed:', {
+        amountInput: amount,
+        amountWei: amountWei.toString()
+      });
       
-      // ERC-4626 redeem: Calculate shares to burn for desired assets
-      // For precision: shares = (amountWei * vaultShareBalance) / userAssets
-      // But we need to ensure proper bigint math without overflow
-      let sharesToRedeem: bigint;
-      
-      if (amountWei >= userAssets) {
-        // Withdrawing all or more than available - redeem all shares
-        sharesToRedeem = vaultShareBalance;
-      } else {
-        // Proportional calculation with explicit bigint operations
-        sharesToRedeem = (amountWei * vaultShareBalance) / userAssets;
-      }
-      
-      // Ensure we're not trying to redeem more shares than the user has
-      if (sharesToRedeem > vaultShareBalance) {
-        sharesToRedeem = vaultShareBalance;
-      }
-      
-      if (sharesToRedeem <= 0n) {
-        console.error('Invalid share calculation');
-        return;
-      }
+      console.log('Calling writeContract with args:', {
+        address: vaultAddress,
+        functionName: 'requestWithdrawal',
+        args: [amountWei.toString()],
+        chainId: requiredChainId,
+        gas: 300000n
+      });
       
       writeContract({
         address: vaultAddress,
         abi: KerneVaultABI.abi,
-        functionName: 'redeem',
-        args: [sharesToRedeem, address, address],
+        functionName: 'requestWithdrawal',
+        args: [amountWei],
         chainId: requiredChainId,
+        gas: 300000n,
       });
+      
+      console.log('writeContract call completed without throwing');
     } catch (error) {
-      console.error('Withdrawal error:', error);
+      console.error('WITHDRAWAL ERROR CAUGHT:', error);
+      console.error('Error details:', {
+        name: error instanceof Error ? error.name : 'unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
     }
   };
 
@@ -255,7 +279,7 @@ export function VaultInteraction() {
       if (needsApproval) return 'Approve Token';
       return 'Confirm Deposit';
     }
-    return 'Confirm Withdrawal';
+    return 'Request Withdrawal';
   };
 
   const isButtonDisabled = () => {
