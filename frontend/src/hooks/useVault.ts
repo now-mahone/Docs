@@ -1,11 +1,12 @@
 // Created: 2025-12-28
-import { useReadContract, useWriteContract, useAccount, useChainId } from 'wagmi';
+import { useReadContract, useWriteContract, useAccount, useChainId, useConnectorClient } from 'wagmi';
 import { CONTRACT_ADDRESSES, DEFAULT_CHAIN_ID } from '@/constants/addresses';
 import KerneVaultABI from '@/abis/KerneVault.json';
 
 export function useVault() {
-  const { address } = useAccount();
+  const { address, connector } = useAccount();
   const chainId = useChainId();
+  const { data: client } = useConnectorClient();
   
   const addresses = CONTRACT_ADDRESSES[chainId] || CONTRACT_ADDRESSES[DEFAULT_CHAIN_ID];
   const VAULT_ADDRESS = addresses.VAULT;
@@ -70,18 +71,25 @@ export function useVault() {
   // Write functions
   const { writeContract, data: hash, isPending, isSuccess, error } = useWriteContract();
 
-  const deposit = (amount: bigint) => {
+  const deposit = async (amount: bigint) => {
+    // Get ACTUAL current chain from connector (not cached React state)
+    const actualChainId = client?.chain?.id || chainId;
+    
     console.log('[useVault] Initiating deposit:', {
       amount: amount.toString(),
       receiver: address,
       vaultAddress: VAULT_ADDRESS,
-      chainId,
+      reactChainId: chainId,
+      actualChainId,
     });
     
-    // Critical: Ensure we're on Base before constructing transaction
-    if (chainId !== 8453) {
-      console.error('[useVault] Wrong chain detected:', chainId);
-      throw new Error(`Please switch to Base network. Current chain: ${chainId}`);
+    // Critical: Verify wallet's ACTUAL chain matches Base
+    if (actualChainId !== 8453) {
+      console.error('[useVault] Chain mismatch detected!', {
+        reactState: chainId,
+        walletActual: actualChainId,
+      });
+      throw new Error(`Wallet is on wrong network. Please switch to Base in MetaMask. (Actual chain: ${actualChainId})`);
     }
     
     writeContract({
@@ -93,19 +101,26 @@ export function useVault() {
     });
   };
 
-  const withdraw = (assets: bigint) => {
+  const withdraw = async (assets: bigint) => {
+    // Get ACTUAL current chain from connector (not cached React state)
+    const actualChainId = client?.chain?.id || chainId;
+    
     console.log('[useVault] Initiating withdrawal:', {
       assets: assets.toString(),
       receiver: address,
       owner: address,
       vaultAddress: VAULT_ADDRESS,
-      chainId,
+      reactChainId: chainId,
+      actualChainId,
     });
     
-    // Critical: Ensure we're on Base before constructing transaction
-    if (chainId !== 8453) {
-      console.error('[useVault] Wrong chain detected:', chainId);
-      throw new Error(`Please switch to Base network. Current chain: ${chainId}`);
+    // Critical: Verify wallet's ACTUAL chain matches Base
+    if (actualChainId !== 8453) {
+      console.error('[useVault] Chain mismatch detected!', {
+        reactState: chainId,
+        walletActual: actualChainId,
+      });
+      throw new Error(`Wallet is on wrong network. Please switch to Base in MetaMask. (Actual chain: ${actualChainId})`);
     }
     
     writeContract({

@@ -11,8 +11,8 @@ export function useToken(owner?: `0x${string}`, spender?: `0x${string}`, tokenAd
     args: owner && spender ? [owner, spender] : undefined,
     query: {
       enabled: !!owner && !!spender,
-      refetchInterval: 3000, // Refetch every 3 seconds for live updates
-      staleTime: 1000, // Consider data stale after 1 second
+      refetchInterval: 10000, // Reduced to every 10 seconds to prevent 429 errors
+      staleTime: 5000, // Consider data stale after 5 seconds
     },
   });
 
