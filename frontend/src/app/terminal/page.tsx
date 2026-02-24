@@ -452,22 +452,22 @@ export default function TerminalPage() {
   const cards = [
     { 
       label: 'APY%', 
-      value: apyData?.apy || 18.40, 
-      display: (val: number) => <CountUp value={val} decimals={2} suffix="%" />,
+      value: apyData?.apy || 0, 
+      display: (val: number) => apyData ? <CountUp value={val} decimals={2} suffix="%" /> : <span className="animate-pulse text-[#444a4f]">--.--%</span>,
       icon: Percent, 
       color: '#37d097' 
     },
     { 
       label: 'Solvency Ratio', 
-      value: solvencyData?.solvency_ratio ? parseFloat(solvencyData.solvency_ratio)/100 : 1.42, 
-      display: (val: number) => <CountUp value={val} decimals={2} suffix="x" />,
+      value: solvencyData?.solvency_ratio ? parseFloat(solvencyData.solvency_ratio)/100 : 0, 
+      display: (val: number) => solvencyData ? <CountUp value={val} decimals={2} suffix="x" /> : <span className="animate-pulse text-[#444a4f]">-.--x</span>,
       icon: Scale, 
       color: '#37d097' 
     },
     { 
       label: 'Sharpe Ratio (30D)', 
       value: parseFloat(benchmarkMetrics.sharpe), 
-      display: (val: number) => <CountUp value={val} decimals={1} />,
+      display: (val: number) => apyData ? <CountUp value={val} decimals={1} /> : <span className="animate-pulse text-[#444a4f]">--.-</span>,
       icon: Tangent, 
       color: '#37d097' 
     },
@@ -475,14 +475,14 @@ export default function TerminalPage() {
     { 
       label: 'User Earnings', 
       value: userEarnings, 
-      display: (val: number) => <CountUp value={val} decimals={4} prefix="$" />,
+      display: (val: number) => isConnected ? <CountUp value={val} decimals={4} prefix="$" /> : <span className="text-[#444a4f]">$0.0000</span>,
       icon: HandCoins, 
       color: '#ffffff' 
     },
     { 
       label: 'User Balance', 
       value: userVaultBalance, 
-      display: (val: number) => <CountUp value={val} decimals={4} suffix=" ETH" />,
+      display: (val: number) => isConnected ? <CountUp value={val} decimals={4} suffix=" ETH" /> : <span className="text-[#444a4f]">0.0000 ETH</span>,
       icon: Wallet2, 
       color: '#ffffff' 
     },
