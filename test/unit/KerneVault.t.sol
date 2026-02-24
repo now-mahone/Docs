@@ -69,6 +69,12 @@ contract KerneVaultTest is Test {
         // totalAssets = on-chain (5 ether) + off-chain (5.5 ether) = 10.5 ether
         assertEq(vault.totalAssets(), 10.5 ether);
 
+        // CR = 10.5 / ~9.995 ≈ 1.050x which is below CRITICAL_CR_THRESHOLD (1.25x).
+        // The circuit breaker fires and pauses the vault — this is correct protocol behavior.
+        // For the test to proceed (checking withdrawal queue logic), admin force-recovers.
+        vm.prank(admin);
+        vault.forceRecoverCRCircuitBreaker();
+
         // 4. Request Withdrawal (Should fail due to buffer when claiming)
         vm.startPrank(user);
         // We can only request what we have. userShares corresponds to ~10 ether.
@@ -81,10 +87,25 @@ contract KerneVaultTest is Test {
         vault.claimWithdrawal(requestId);
         vm.stopPrank();
 
-        // 5. Return funds AND update off-chain assets to 0
-        asset.mint(address(vault), 5.5 ether); // Simulate return from CEX
+        // 5. Return funds: CEX sends tokens back via returnFromPrime, which properly
+        //    increments _trackedOnChainAssets (unlike a direct mint/send which is a donation).
+        asset.mint(bot, 5.5 ether); // Mint tokens to bot (representing CEX return)
+        vm.startPrank(bot);
+        asset.approve(address(vault), 5.5 ether);
+        vault.returnFromPrime(5.5 ether); // Updates _trackedOnChainAssets += 5.5 ether
+        vm.stopPrank();
+
+        // Update off-chain assets to 0 after CEX return
+        vm.warp(block.timestamp + 5 minutes + 1); // Advance past offChainUpdateCooldown
         vm.prank(bot);
         vault.updateOffChainAssets(0);
+
+        // CR drops below CRITICAL (tracked on-chain = 10.5 ether, liabilities ~= 9.995 ether)
+        // Force-recover so claimWithdrawal can execute
+        if (vault.crCircuitBreakerActive()) {
+            vm.prank(admin);
+            vault.forceRecoverCRCircuitBreaker();
+        }
 
         // 6. Claim Withdrawal
         vm.startPrank(user);
@@ -111,6 +132,11 @@ contract KerneVaultTest is Test {
         // Update off-chain assets to keep totalAssets consistent
         vm.prank(bot);
         vault.updateOffChainAssets(95 ether);
+
+        // CR = (5+95) / ~99.95 ≈ 1.0005x < CRITICAL (1.25x) → circuit breaker fires.
+        // Force-recover so requestWithdrawal (whenNotPaused) can proceed.
+        vm.prank(admin);
+        vault.forceRecoverCRCircuitBreaker();
 
         // 3. Request Withdrawal 10 ether (only 5 ether left)
         vm.startPrank(user);

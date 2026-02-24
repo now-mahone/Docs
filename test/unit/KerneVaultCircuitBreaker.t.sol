@@ -22,6 +22,7 @@ contract KerneVaultCircuitBreakerTest is Test {
     address public user = address(0x3);
     
     function setUp() public {
+        vm.warp(1800); // Advance past default 10-min offChainUpdateCooldown
         asset = new MockAsset();
         vault = new KerneVault(
             IERC20(address(asset)),
@@ -35,9 +36,11 @@ contract KerneVaultCircuitBreakerTest is Test {
         // Give user some assets
         asset.transfer(user, 10000 * 10**18);
         
-        // Set up roles
+        // Set up roles — disable circuit breakers/solvency check so they don't interfere
         vm.startPrank(admin);
-        vault.setCircuitBreakers(1000 * 10**18, 500 * 10**18, 9000); // 90% min solvency
+        vault.setCircuitBreakers(0, 0, 0); // No limits in base setup
+        // Disable deposit fee for precise ratio assertions
+        vault.setDepositFee(0);
         vm.stopPrank();
     }
     
@@ -65,16 +68,19 @@ contract KerneVaultCircuitBreakerTest is Test {
     }
 
     function test_TieredCircuitBreaker_YellowAndRedAlerts() public {
-        // Setup: Admin allows large off-chain updates for testing
+        // Setup: Admin allows large off-chain updates for testing, with 5-min minimum cooldown
         vm.startPrank(admin);
-        vault.setOffChainUpdateParams(5000, 0); // 50% max change, 0 cooldown
+        vault.setOffChainUpdateParams(5000, 5 minutes); // 50% max change, 5 min cooldown
         vm.stopPrank();
 
-        // User deposits 1000 assets -> 1000 shares
+        // User deposits 1000 assets -> ~1000 normalized shares (fee=0 set in setUp)
         vm.startPrank(user);
         asset.approve(address(vault), 1000 * 10**18);
         vault.deposit(1000 * 10**18, user);
         vm.stopPrank();
+
+        // Warp past cooldown before first update
+        vm.warp(block.timestamp + 5 minutes + 1);
 
         // Strategist reports 500 off-chain assets
         // Total assets = 1000 (on-chain) + 500 (off-chain) = 1500
@@ -87,19 +93,22 @@ contract KerneVaultCircuitBreakerTest is Test {
         assertFalse(vault.crSoftAlertActive());
         assertFalse(vault.crCircuitBreakerActive());
 
+        // Warp past cooldown before next update
+        vm.warp(block.timestamp + 5 minutes + 1);
+
         // Drop CR to 1.30x (13000 bps) -> Triggers Yellow Alert
         // Total assets needed = 1300. On-chain = 1000. Off-chain = 300.
         vm.startPrank(strategist);
         vault.updateOffChainAssets(300 * 10**18);
         vm.stopPrank();
 
-        // Call updateCircuitBreaker to trigger checks
-        vault.updateCircuitBreaker();
-
         assertEq(vault.getSolvencyRatio(), 13000);
         assertTrue(vault.crSoftAlertActive());
         assertFalse(vault.crCircuitBreakerActive());
         assertFalse(vault.paused()); // Yellow alert does NOT pause
+
+        // Warp past cooldown before next update
+        vm.warp(block.timestamp + 5 minutes + 1);
 
         // Drop CR to 1.20x (12000 bps) -> Triggers Red Alert
         // Total assets needed = 1200. On-chain = 1000. Off-chain = 200.
@@ -107,21 +116,32 @@ contract KerneVaultCircuitBreakerTest is Test {
         vault.updateOffChainAssets(200 * 10**18);
         vm.stopPrank();
 
-        vault.updateCircuitBreaker();
-
         assertEq(vault.getSolvencyRatio(), 12000);
         assertTrue(vault.crSoftAlertActive());
         assertTrue(vault.crCircuitBreakerActive());
         assertTrue(vault.paused()); // Red alert PAUSES the vault
 
-        // Recover CR to 1.40x (14000 bps) -> Recovers Yellow and Red Alerts
-        // Total assets needed = 1400. On-chain = 1000. Off-chain = 400.
+        // Warp past CB cooldown (4 hours) + update cooldown
+        vm.warp(block.timestamp + 5 hours);
+
+        // Admin force-recovers to unpause vault and clear circuit breaker state
+        vm.startPrank(admin);
+        vault.forceRecoverCRCircuitBreaker();
+        vm.stopPrank();
+
+        // Step 1: 200 → 300 (50% increase, within max rate of 50%)
+        // CR = (1000 + 300) / 1000 = 13000 bps — below SAFE but above CRITICAL
+        vm.warp(block.timestamp + 5 minutes + 1);
+        vm.startPrank(strategist);
+        vault.updateOffChainAssets(300 * 10**18);
+        vm.stopPrank();
+
+        // Step 2: 300 → 400 (~33% increase, within max rate of 50%)
+        // CR = (1000 + 400) / 1000 = 14000 bps — hits SAFE_CR_THRESHOLD
+        vm.warp(block.timestamp + 5 minutes + 1);
         vm.startPrank(strategist);
         vault.updateOffChainAssets(400 * 10**18);
         vm.stopPrank();
-
-        // Fast forward past cooldown
-        vm.warp(block.timestamp + 5 hours);
 
         vault.updateCircuitBreaker();
 

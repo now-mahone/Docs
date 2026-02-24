@@ -426,10 +426,15 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
 
     /**
      * @notice Returns the solvency ratio of the vault (Assets / Liabilities).
+     * @dev The totalSupply() is in share units which have `_decimalsOffset()` more decimal places
+     *      than the underlying asset. We normalize by dividing by 10^_decimalsOffset so that
+     *      the ratio is expressed in the same decimal scale as totalAssets().
+     *      Example: 1.5x overcollateralization = 15000 (in basis points * 100).
      */
     function getSolvencyRatio() public view returns (uint256) {
         uint256 assets = totalAssets();
-        uint256 liabilities = totalSupply();
+        // Normalize shares to asset decimals by dividing out the offset factor (10^3 = 1000)
+        uint256 liabilities = totalSupply() / (10 ** _decimalsOffset());
         if (liabilities == 0) return 20000;
         return (assets * 10000) / liabilities;
     }

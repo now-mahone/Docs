@@ -285,13 +285,16 @@ contract KerneTreasuryTest is Test {
         assertEq(treasury.isApprovedToken(address(usdc)), true);
     }
     
-    function test_UpdateFounder_ByFounder() public {
+    // KRN-24-004 Security Fix: founder can no longer self-update (privilege escalation prevention).
+    // updateFounder is now onlyOwner. This test documents the restriction.
+    function test_UpdateFounder_ByFounder_Reverts() public {
         address newFounder = address(0x999);
-        
+
         vm.prank(founder);
+        vm.expectRevert(); // OwnableUnauthorizedAccount — founder is not owner
         treasury.updateFounder(newFounder);
-        
-        assertEq(treasury.founder(), newFounder);
+
+        assertEq(treasury.founder(), founder); // founder remains unchanged
     }
     
     function test_UpdateFounder_ByOwner() public {
@@ -304,7 +307,7 @@ contract KerneTreasuryTest is Test {
     
     function test_UpdateFounder_RevertsForUnauthorized() public {
         vm.prank(user);
-        vm.expectRevert(KerneTreasury.Unauthorized.selector);
+        vm.expectRevert(); // OwnableUnauthorizedAccount (KRN-24-004: now onlyOwner)
         treasury.updateFounder(user);
     }
     
