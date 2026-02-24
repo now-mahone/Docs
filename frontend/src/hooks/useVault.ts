@@ -78,12 +78,18 @@ export function useVault() {
       chainId,
     });
     
+    // Critical: Ensure we're on Base before constructing transaction
+    if (chainId !== 8453) {
+      console.error('[useVault] Wrong chain detected:', chainId);
+      throw new Error(`Please switch to Base network. Current chain: ${chainId}`);
+    }
+    
     writeContract({
       address: VAULT_ADDRESS,
       abi: KerneVaultABI.abi,
       functionName: 'deposit',
       args: [amount, address],
-      chainId, // Explicit chain ID to prevent cross-chain confusion
+      chainId: 8453, // Explicit Base chain ID
     });
   };
 
@@ -96,12 +102,18 @@ export function useVault() {
       chainId,
     });
     
+    // Critical: Ensure we're on Base before constructing transaction
+    if (chainId !== 8453) {
+      console.error('[useVault] Wrong chain detected:', chainId);
+      throw new Error(`Please switch to Base network. Current chain: ${chainId}`);
+    }
+    
     writeContract({
       address: VAULT_ADDRESS,
       abi: KerneVaultABI.abi,
       functionName: 'withdraw',
       args: [assets, address, address],
-      chainId, // Explicit chain ID to prevent cross-chain confusion
+      chainId: 8453, // Explicit Base chain ID
     });
   };
 

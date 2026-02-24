@@ -114,21 +114,25 @@ export function TerminalVaultInteraction() {
       return;
     }
     
-    // Pre-flight chain validation
+    // CRITICAL: Double-check chain before ANY transaction attempt
+    console.log('[TerminalVaultInteraction] Pre-flight check - Current chainId:', chainId);
     if (chainId !== 8453) {
-      toast.error("Please switch to Base network", {
-        description: "The page will prompt you to switch networks",
+      console.error('[TerminalVaultInteraction] BLOCKED: Wrong chain detected', { chainId, expected: 8453 });
+      toast.error("Wrong Network Detected!", {
+        description: `You're on chain ${chainId}. Please switch to Base (8453) in your wallet.`,
       });
       return;
     }
     
     try {
       const amountBI = parseUnits(depositAmount, 18);
-      console.log('[TerminalVaultInteraction] Handling deposit for:', amountBI.toString());
+      console.log('[TerminalVaultInteraction] Handling deposit for:', amountBI.toString(), 'on chain:', chainId);
       deposit(amountBI);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Deposit failed", e);
-      toast.error("Invalid amount format");
+      toast.error("Transaction Failed", {
+        description: e.message || "Please check the console for details"
+      });
     }
   };
 
@@ -143,21 +147,25 @@ export function TerminalVaultInteraction() {
       return;
     }
     
-    // Pre-flight chain validation
+    // CRITICAL: Double-check chain before ANY transaction attempt
+    console.log('[TerminalVaultInteraction] Pre-flight check - Current chainId:', chainId);
     if (chainId !== 8453) {
-      toast.error("Please switch to Base network", {
-        description: "The page will prompt you to switch networks",
+      console.error('[TerminalVaultInteraction] BLOCKED: Wrong chain detected', { chainId, expected: 8453 });
+      toast.error("Wrong Network Detected!", {
+        description: `You're on chain ${chainId}. Please switch to Base (8453) in your wallet.`,
       });
       return;
     }
     
     try {
       const amountBI = parseUnits(withdrawAmount, 18);
-      console.log('[TerminalVaultInteraction] Handling withdrawal for:', amountBI.toString());
+      console.log('[TerminalVaultInteraction] Handling withdrawal for:', amountBI.toString(), 'on chain:', chainId);
       withdraw(amountBI);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Withdrawal failed", e);
-      toast.error("Invalid amount format");
+      toast.error("Transaction Failed", {
+        description: e.message || "Please check the console for details"
+      });
     }
   };
 
