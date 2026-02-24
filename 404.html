@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Kerne Protocol — Documentation</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="Kerne Protocol documentation — delta-neutral yield infrastructure built on Base.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <meta name="theme-color" content="#0a0a0a">
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="Kerne Protocol — Documentation">
+  <meta property="og:description" content="Delta-neutral yield infrastructure. Institutional-grade documentation for the Kerne Protocol.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://docs.kerne.ai">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="https://kerne.ai/favicon.ico">
+  
+  <!-- Docsify Theme -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple-dark.css">
+  
+  <style>
+    :root {
+      /* Kerne brand colors */
+      --theme-color: #ffffff;
+      --base-background-color: #0a0a0a;
+      --base-color: #e0e0e0;
+      
+      /* Sidebar */
+      --sidebar-background: #0f0f0f;
+      --sidebar-nav-link-color: #a0a0a0;
+      --sidebar-nav-link-color--active: #ffffff;
+      --sidebar-nav-link-font-weight--active: 600;
+      --sidebar-nav-link-border-color--active: #ffffff;
+      --sidebar-name-color: #ffffff;
+      --sidebar-name-font-weight: 700;
+      --sidebar-name-font-size: 1.2rem;
+      --sidebar-width: 280px;
+      --sidebar-border-color: #1a1a1a;
+      --sidebar-border-width: 1px;
+      
+      /* Content */
+      --content-max-width: 860px;
+      --heading-color: #ffffff;
+      --heading-h1-font-size: 2rem;
+      --heading-h2-font-size: 1.5rem;
+      --heading-h2-border-color: #1a1a1a;
+      
+      /* Code */
+      --code-theme-background: #141414;
+      --code-theme-text: #e0e0e0;
+      --code-inline-background: #1a1a1a;
+      --code-inline-color: #ffffff;
+      
+      /* Links */
+      --link-color: #8b8b8b;
+      --link-color--hover: #ffffff;
+      
+      /* Table */
+      --table-head-background: #141414;
+      --table-head-color: #ffffff;
+      --table-body-border-color: #1a1a1a;
+      --table-cell-border-color: #1a1a1a;
+      
+      /* Blockquote */
+      --blockquote-border-color: #333333;
+      --blockquote-background: #0f0f0f;
+      
+      /* Cover */
+      --cover-background-color: #0a0a0a;
+      --cover-color: #ffffff;
+      
+      /* Search */
+      --search-background: #141414;
+      --search-input-background-color: #1a1a1a;
+      --search-input-color: #ffffff;
+      --search-result-heading-color: #ffffff;
+      --search-result-keyword-background: rgba(255,255,255,0.1);
+      --search-result-keyword-color: #ffffff;
+    }
+    
+    /* Custom overrides */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    .sidebar .app-name {
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-align: left;
+      padding-left: 0;
+    }
+    
+    .sidebar .app-name img {
+      display: block;
+      margin: 0;
+    }
+    
+    .markdown-section h1 {
+      border-bottom: 1px solid #1a1a1a;
+      padding-bottom: 0.5rem;
+    }
+    
+    .markdown-section table {
+      display: table;
+      width: 100%;
+    }
+    
+    .markdown-section table th {
+      text-align: left;
+      font-weight: 600;
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a0a0a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 3px;
+    }
+    
+    /* Mobile */
+    @media (max-width: 768px) {
+      :root {
+        --sidebar-width: 240px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.$docsify = {
+      name: '<img src="kerne-lockup.svg" alt="Kerne" style="width: 95px; height: 20px; filter: brightness(0) invert(1);">',
+      nameLink: '/',
+      repo: '',
+      loadSidebar: '_sidebar.md',
+      subMaxLevel: 3,
+      auto2top: true,
+      homepage: 'README.md',
+      notFoundPage: true,
+      routerMode: 'history',
+      search: {
+        maxAge: 86400000,
+        paths: 'auto',
+        placeholder: 'Search documentation...',
+        noData: 'No results found.',
+        depth: 3,
+        hideOtherSidebarContent: true,
+      },
+      copyCode: {
+        buttonText: 'Copy',
+        errorText: 'Error',
+        successText: 'Copied'
+      },
+      pagination: {
+        previousText: 'Previous',
+        nextText: 'Next',
+        crossChapter: true,
+        crossChapterText: true,
+      },
+      themeColor: '#ffffff',
+    }
+  </script>
+  
+  <!-- Docsify core -->
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
+  
+  <!-- Plugins -->
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-copy-code@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-pagination@2/dist/docsify-pagination.min.js"></script>
+  
+  <!-- Syntax highlighting -->
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-solidity.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-python.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-typescript.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
+</body>
+</html>
