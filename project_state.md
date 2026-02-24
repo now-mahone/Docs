@@ -1,4 +1,18 @@
-<<<<<<< HEAD
+[2026-02-23 19:45] - Fixed network enforcement and address logic in TerminalVaultInteraction.tsx: Resolved issue where transactions were leaking to Ethereum Mainnet.
+- Hardcoded `VAULT_ADDRESS` in `useToken` hook call within `TerminalVaultInteraction.tsx` to ensure correct spender address regardless of chain state.
+- Verified `WETH_ADDRESS` and `VAULT_ADDRESS` in `config.ts` are correctly set for Base Mainnet.
+- Confirmed `isCorrectNetwork` logic correctly blocks transactions unless on Chain ID 8453.
+- Status: SUCCESS
+
+[2026-02-23 19:30] - Terminal Vault Interaction Card Finalized & Deployed: Successfully implemented and deployed the "Vault Interaction" card on the terminal page.
+- Created `TerminalVaultInteraction.tsx` with high-fidelity monochrome UI and full deposit/withdraw logic for WETH on Base.
+- Fixed critical "burn address" error by updating `CONTRACT_ADDRESSES` in `frontend/src/constants/addresses.ts`.
+- Implemented mandatory network switching to Base Mainnet (Chain ID 8453) for all vault transactions.
+- Resolved build errors related to missing `Shield` icon and directive typos.
+- Pushed verified fixes to `m-vercel` remote for production deployment.
+- Files Modified: frontend/src/components/TerminalVaultInteraction.tsx, frontend/src/constants/addresses.ts, frontend/src/config.ts, frontend/src/app/terminal/page.tsx.
+- Status: SUCCESS
+
 [2026-02-23 19:15] - Added Terminal Vault Interaction Card: Implemented a new "Vault Interaction" card on the terminal page to allow users to deposit and withdraw WETH on Base.
 - Created `TerminalVaultInteraction.tsx` component with a high-fidelity, monochrome UI matching the terminal dashboard.
 - Integrated the card into the terminal page grid (red square area from screenshot).
@@ -7,7 +21,7 @@
 - Files Modified: frontend/src/app/terminal/page.tsx, frontend/src/config.ts, frontend/src/components/TerminalVaultInteraction.tsx.
 - Status: SUCCESS
 
-[2026-02-23 21:00] - 0% PERFORMANCE FEE LAUNCH TIER DOCUMENTED ACROSS ALL KEY FILES: Audited every major fee-related document and updated all files missing the 0%% performance fee tier (launch promotion: 0%% up to  TVL, 5%% to , 10%% above). Files confirmed already updated: docs/specs/profit_model.md, docs/specs/mechanism_spec.md, docs/whitepaper/KERNE_PROTOCOL_WHITEPAPER.md, README.md, docs/investor/EXECUTIVE_SUMMARY.md. Files updated this session: gitbook (docs)/litepaper.md (Section 9 rewritten from generic standard fee to full tiered table), pitch deck/PRESENTER_SCRIPT.md (Slides 3 and 12 updated with 0%% tier and CAC rationale). Pulled latest from GitHub (february/main) before changes. Committed and pushed 7 files to february/main (commit 32da4ee21). - Status: COMPLETE
+[2026-02-23 21:00] - 0% PERFORMANCE FEE LAUNCH TIER DOCUMENTED ACROSS ALL KEY FILES: Audited every major fee-related document and updated all files missing the 0% performance fee tier (launch promotion: 0% up to TVL, 5% to , 10% above). Files confirmed already updated: docs/specs/profit_model.md, docs/specs/mechanism_spec.md, docs/whitepaper/KERNE_PROTOCOL_WHITEPAPER.md, README.md, docs/investor/EXECUTIVE_SUMMARY.md. Files updated this session: gitbook (docs)/litepaper.md (Section 9 rewritten from generic standard fee to full tiered table), pitch deck/PRESENTER_SCRIPT.md (Slides 3 and 12 updated with 0% tier and CAC rationale). Pulled latest from GitHub (february/main) before changes. Committed and pushed 7 files to february/main (commit 32da4ee21). - Status: COMPLETE
 
 [2026-02-23 20:30] - DISCORD COMMUNITY LAUNCHED: Official Kerne Discord server is now live at https://discord.gg/Xx8TSuWrCA. Posted announcement tweet to @KerneProtocol with community launch graphic. Tweet logged to docs/marketing/TWEET_HISTORY.md. Discord provides real-time protocol updates, community engagement, and direct team access for yield seekers, DeFi builders, and institutional allocators. - Status: COMPLETE
 

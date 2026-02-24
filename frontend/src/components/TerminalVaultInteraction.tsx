@@ -20,14 +20,6 @@ export function TerminalVaultInteraction() {
   
   const isCorrectNetwork = chainId === 8453;
 
-  // Determine target vault based on chain
-  const targetVault = useMemo(() => {
-    if (chainId === 8453) return VAULT_ADDRESS;
-    if (chainId === 42161) return ARB_VAULT_ADDRESS;
-    if (chainId === 10) return OP_VAULT_ADDRESS;
-    return VAULT_ADDRESS;
-  }, [chainId]);
-
   const { 
     convertToAssets, 
     deposit, 
@@ -44,7 +36,7 @@ export function TerminalVaultInteraction() {
     isPending: isTokenPending,
     refetchAllowance,
     refetchBalance: refetchWethBalance
-  } = useToken(address, targetVault);
+  } = useToken(address, VAULT_ADDRESS);
 
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
