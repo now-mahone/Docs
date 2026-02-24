@@ -14,6 +14,7 @@ import { ETHComparisonChart } from '@/components/ETHComparisonChart';
 import { AssetComposition } from '@/components/AssetComposition';
 import { WalletConnectButton } from '@/components/WalletConnectButton';
 import { TerminalVaultInteraction } from '@/components/TerminalVaultInteraction';
+import GenesisBanner from '@/components/GenesisBanner';
 
 function CountUp({ value, decimals = 0, prefix = "", suffix = "" }: { value: number; decimals?: number; prefix?: string; suffix?: string }) {
   const nodeRef = React.useRef<HTMLSpanElement>(null);
@@ -524,11 +525,12 @@ export default function TerminalPage() {
 
   return (
     <div className="min-h-screen bg-[#000000] text-[#ffffff] font-sans selection:bg-[#ffffff]/10 overflow-x-hidden">
+      <GenesisBanner />
       <motion.nav 
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed top-6 left-0 right-0 z-[100]"
+        className="fixed top-[48px] left-0 right-0 z-[100]"
       >
         <div className="max-w-[1920px] mx-auto px-6 md:px-12">
           <div className="h-20 border border-[#22252a] bg-[#000000]/80 backdrop-blur-md rounded-sm shadow-sm px-4 flex items-center justify-between">
@@ -550,7 +552,7 @@ export default function TerminalPage() {
         </div>
       </motion.nav>
       
-      <main className="relative z-10 pt-36 pb-32 max-w-[1920px] mx-auto px-6 md:px-12">
+      <main className="relative z-10 pt-[132px] pb-32 max-w-[1920px] mx-auto px-6 md:px-12">
         <div className="text-left mb-12">
           <h1 className="font-heading font-medium tracking-tighter text-[#ffffff]">
             kUSD Dashboard

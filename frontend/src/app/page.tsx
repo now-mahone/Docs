@@ -9,6 +9,7 @@ import { ArrowRight, Shield, BarChart3, Landmark, Lock, Activity, Cpu, Database,
 import { motion, useScroll, useTransform, useMotionValue, useSpring, animate, useInView } from 'framer-motion';
 import Footer from '@/components/Footer';
 import Navbar from '@/components/Navbar';
+import GenesisBanner from '@/components/GenesisBanner';
 import TypedHeading from '@/components/TypedHeading';
 import TypedText from '@/components/TypedText';
 import RandomNumberReveal from '@/components/RandomNumberReveal';
@@ -140,9 +141,10 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(currentColor_1px,transparent_1px)] [background-size:40px_40px]" />
       </div>
 
+      <GenesisBanner />
       <Navbar />
 
-      <main className="relative z-10 pt-24">
+      <main className="relative z-10 pt-24 mt-[48px]">
         {/* Massive Hero Section inspired by Cursor/Morpho */}
         <section className="relative pt-24 md:pt-32 pb-32 overflow-hidden flex flex-col items-center text-center bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
           <div className="max-w-7xl mx-auto px-6 md:px-12 text-center relative z-20 flex flex-col items-center w-full">
