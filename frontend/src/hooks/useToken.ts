@@ -11,6 +11,8 @@ export function useToken(owner?: `0x${string}`, spender?: `0x${string}`, tokenAd
     args: owner && spender ? [owner, spender] : undefined,
     query: {
       enabled: !!owner && !!spender,
+      refetchInterval: 3000, // Refetch every 3 seconds for live updates
+      staleTime: 1000, // Consider data stale after 1 second
     },
   });
 
@@ -31,8 +33,19 @@ export function useToken(owner?: `0x${string}`, spender?: `0x${string}`, tokenAd
   });
 
   const approve = async (amount: string) => {
-    if (!spender) return;
+    if (!spender) {
+      console.error('[useToken] Cannot approve: spender is undefined');
+      return;
+    }
+    
     const amountBI = parseUnits(amount, 18);
+    console.log('[useToken] Initiating approval:', {
+      tokenAddress,
+      spender,
+      amount: amountBI.toString(),
+      owner,
+    });
+    
     writeContract({
       address: tokenAddress,
       abi: erc20Abi,

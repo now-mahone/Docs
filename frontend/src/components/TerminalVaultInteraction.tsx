@@ -26,6 +26,7 @@ export function TerminalVaultInteraction() {
     withdraw, 
     isPending: isVaultPending,
     isSuccess: isVaultSuccess,
+    error: vaultError,
     refetchBalanceOf,
     refetchTotalAssets
   } = useVault();
@@ -36,6 +37,7 @@ export function TerminalVaultInteraction() {
     approve, 
     isPending: isTokenPending,
     isConfirmed: isTokenConfirmed,
+    error: tokenError,
     refetchAllowance,
     refetchBalance: refetchWethBalance
   } = useToken(address, VAULT_ADDRESS);
@@ -43,62 +45,127 @@ export function TerminalVaultInteraction() {
   // Real-time refetching after transactions
   useEffect(() => {
     if (isTokenConfirmed) {
-      toast.success("WETH approved");
-      refetchAllowance();
+      toast.success("WETH Approved - Step 1/2 Complete", {
+        description: "Now click 'Confirm Deposit' to transfer your WETH",
+      });
+      // Force refetch allowance with a small delay to ensure on-chain state is updated
+      setTimeout(() => {
+        refetchAllowance();
+      }, 1500);
     }
   }, [isTokenConfirmed, refetchAllowance]);
 
   useEffect(() => {
     if (isVaultSuccess) {
-      toast.success("Transaction successful");
+      toast.success("Transaction Complete!", {
+        description: "Your transaction has been successfully processed",
+      });
       setDepositAmount('');
       setWithdrawAmount('');
-      refetchBalanceOf();
-      refetchTotalAssets();
-      refetchWethBalance();
-      refetchAllowance();
+      // Refetch all balances
+      setTimeout(() => {
+        refetchBalanceOf();
+        refetchTotalAssets();
+        refetchWethBalance();
+        refetchAllowance();
+      }, 1500);
     }
   }, [isVaultSuccess, refetchBalanceOf, refetchTotalAssets, refetchWethBalance, refetchAllowance]);
+
+  // Error handling
+  useEffect(() => {
+    if (vaultError) {
+      console.error('[TerminalVaultInteraction] Vault error:', vaultError);
+      toast.error("Transaction Failed", {
+        description: vaultError.message || "An error occurred. Please try again.",
+      });
+    }
+  }, [vaultError]);
+
+  useEffect(() => {
+    if (tokenError) {
+      console.error('[TerminalVaultInteraction] Token error:', tokenError);
+      toast.error("Approval Failed", {
+        description: tokenError.message || "Could not approve WETH. Please try again.",
+      });
+    }
+  }, [tokenError]);
 
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
 
   const isPending = isVaultPending || isTokenPending;
 
-  const handleApprove = async () => {
-    if (!depositAmount) return;
-    try {
-      await approve(depositAmount);
-    } catch (e) {
-      console.error("Approval failed", e);
+  const handleApprove = () => {
+    if (!depositAmount) {
+      toast.error("Please enter an amount");
+      return;
     }
+    
+    console.log('[TerminalVaultInteraction] Handling approval for:', depositAmount);
+    approve(depositAmount);
   };
 
-  const handleDeposit = async () => {
-    if (!depositAmount) return;
+  const handleDeposit = () => {
+    if (!depositAmount) {
+      toast.error("Please enter an amount");
+      return;
+    }
+    
+    if (!address) {
+      toast.error("Wallet not connected");
+      return;
+    }
+    
     try {
       const amountBI = parseUnits(depositAmount, 18);
-      await deposit(amountBI);
+      console.log('[TerminalVaultInteraction] Handling deposit for:', amountBI.toString());
+      deposit(amountBI);
     } catch (e) {
       console.error("Deposit failed", e);
+      toast.error("Invalid amount format");
     }
   };
 
-  const handleWithdraw = async () => {
-    if (!withdrawAmount) return;
+  const handleWithdraw = () => {
+    if (!withdrawAmount) {
+      toast.error("Please enter an amount");
+      return;
+    }
+    
+    if (!address) {
+      toast.error("Wallet not connected");
+      return;
+    }
+    
     try {
       const amountBI = parseUnits(withdrawAmount, 18);
-      await withdraw(amountBI);
+      console.log('[TerminalVaultInteraction] Handling withdrawal for:', amountBI.toString());
+      withdraw(amountBI);
     } catch (e) {
       console.error("Withdrawal failed", e);
+      toast.error("Invalid amount format");
     }
   };
 
   const needsApproval = useMemo(() => {
-    if (!depositAmount || !allowance) return true;
+    if (!depositAmount || !allowance) {
+      console.log('[needsApproval] Missing data:', { depositAmount, allowance: allowance?.toString() });
+      return true;
+    }
+    
     try {
-      return allowance < parseUnits(depositAmount, 18);
-    } catch {
+      const requiredAmount = parseUnits(depositAmount, 18);
+      const needsApproval = allowance < requiredAmount;
+      console.log('[needsApproval] Check:', {
+        depositAmount,
+        allowance: allowance.toString(),
+        requiredAmount: requiredAmount.toString(),
+        needsApproval,
+      });
+      return needsApproval;
+    } catch (e) {
+      console.error('[needsApproval] Error parsing amount:', e);
       return true;
     }
   }, [depositAmount, allowance]);
@@ -177,7 +244,15 @@ export function TerminalVaultInteraction() {
                   type="number"
                   placeholder="0.00"
                   value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Only allow positive numbers with up to 18 decimals
+                    if (value === '' || /^\d*\.?\d{0,18}$/.test(value)) {
+                      setDepositAmount(value);
+                    }
+                  }}
+                  min="0"
+                  step="0.000001"
                   className="bg-[#000000] border-[#444a4f] rounded-sm font-medium text-lg h-14 focus-visible:ring-[#37d097]/20 text-[#ffffff] px-4"
                 />
                 <button
@@ -200,26 +275,38 @@ export function TerminalVaultInteraction() {
               </div>
             </div>
 
-            <div className="mt-auto">
-              {needsApproval ? (
-                <Button
-                  onClick={handleApprove}
-                  disabled={isPending || !depositAmount}
-                  className="w-full bg-[#ffffff] text-[#000000] hover:bg-[#aab9be] rounded-sm font-bold h-14 transition-all text-xs uppercase tracking-widest"
-                >
-                  {isPending ? <Loader2 className="animate-spin mr-2" size={16} /> : <ArrowDownCircle className="mr-2" size={16} />}
-                  {isPending ? 'Processing...' : 'Approve WETH'}
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleDeposit}
-                  disabled={isPending || !depositAmount}
-                  className="w-full bg-[#37d097] text-[#000000] hover:bg-[#2eb07f] rounded-sm font-bold h-14 transition-all text-xs uppercase tracking-widest"
-                >
-                  {isPending ? <Loader2 className="animate-spin mr-2" size={16} /> : <ArrowDownCircle className="mr-2" size={16} />}
-                  {isPending ? 'Processing...' : 'Confirm Deposit'}
-                </Button>
-              )}
+            <div className="mt-auto space-y-3">
+              <Button
+                onClick={handleApprove}
+                disabled={!needsApproval || isPending || !depositAmount}
+                className={`w-full rounded-sm font-bold h-14 transition-all text-xs uppercase tracking-widest ${
+                  needsApproval 
+                    ? 'bg-[#ffffff] text-[#000000] hover:bg-[#aab9be]' 
+                    : 'bg-[#16191c] text-[#37d097] border border-[#37d097] cursor-not-allowed'
+                }`}
+              >
+                {needsApproval ? (
+                  <>
+                    {isPending ? <Loader2 className="animate-spin mr-2" size={16} /> : <ArrowDownCircle className="mr-2" size={16} />}
+                    {isPending ? 'Processing...' : 'Step 1: Approve WETH'}
+                  </>
+                ) : (
+                  <>✓ WETH Approved</>
+                )}
+              </Button>
+              
+              <Button
+                onClick={handleDeposit}
+                disabled={needsApproval || isPending || !depositAmount}
+                className={`w-full rounded-sm font-bold h-14 transition-all text-xs uppercase tracking-widest ${
+                  needsApproval
+                    ? 'bg-[#16191c] text-[#aab9be] border border-[#444a4f] cursor-not-allowed'
+                    : 'bg-[#37d097] text-[#000000] hover:bg-[#2eb07f]'
+                }`}
+              >
+                {isPending ? <Loader2 className="animate-spin mr-2" size={16} /> : <ArrowDownCircle className="mr-2" size={16} />}
+                {isPending ? 'Processing...' : 'Step 2: Confirm Deposit'}
+              </Button>
             </div>
           </TabsContent>
 
@@ -234,7 +321,15 @@ export function TerminalVaultInteraction() {
                   type="number"
                   placeholder="0.00"
                   value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Only allow positive numbers with up to 18 decimals
+                    if (value === '' || /^\d*\.?\d{0,18}$/.test(value)) {
+                      setWithdrawAmount(value);
+                    }
+                  }}
+                  min="0"
+                  step="0.000001"
                   className="bg-[#000000] border-[#444a4f] rounded-sm font-medium text-lg h-14 focus-visible:ring-[#37d097]/20 text-[#ffffff] px-4"
                 />
                 <button

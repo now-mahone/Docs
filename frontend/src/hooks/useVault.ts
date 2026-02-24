@@ -71,20 +71,37 @@ export function useVault() {
   const { writeContract, data: hash, isPending, isSuccess, error } = useWriteContract();
 
   const deposit = (amount: bigint) => {
+    console.log('[useVault] Initiating deposit:', {
+      amount: amount.toString(),
+      receiver: address,
+      vaultAddress: VAULT_ADDRESS,
+      chainId,
+    });
+    
     writeContract({
       address: VAULT_ADDRESS,
       abi: KerneVaultABI.abi,
       functionName: 'deposit',
       args: [amount, address],
+      chainId, // Explicit chain ID to prevent cross-chain confusion
     });
   };
 
-  const withdraw = (shares: bigint) => {
+  const withdraw = (assets: bigint) => {
+    console.log('[useVault] Initiating withdrawal:', {
+      assets: assets.toString(),
+      receiver: address,
+      owner: address,
+      vaultAddress: VAULT_ADDRESS,
+      chainId,
+    });
+    
     writeContract({
       address: VAULT_ADDRESS,
       abi: KerneVaultABI.abi,
       functionName: 'withdraw',
-      args: [shares, address, address],
+      args: [assets, address, address],
+      chainId, // Explicit chain ID to prevent cross-chain confusion
     });
   };
 
