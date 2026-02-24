@@ -1,4 +1,4 @@
-wi// Created: 2026-02-23
+// Created: 2026-02-23
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -11,7 +11,7 @@ import { useVault } from '@/hooks/useVault';
 import { useToken } from '@/hooks/useToken';
 import { VAULT_ADDRESS, ARB_VAULT_ADDRESS, OP_VAULT_ADDRESS, WETH_ADDRESS } from '@/config';
 import { toast } from 'sonner';
-import { Wallet2, ArrowDownCircle, ArrowUpCircle, Loader2, Shield } from 'lucide-react';
+import { Wallet2, ArrowDownCircle, ArrowUpCircle, Loader2 } from 'lucide-react';
 
 export function TerminalVaultInteraction() {
   const { address, isConnected } = useAccount();
