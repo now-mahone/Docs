@@ -185,6 +185,22 @@ The math works. Now we execute.
 
 ---
 
+### [2026-02-23] - Discord Community Launch
+
+**Tweet 1:**
+Kerne is now live on Discord. 
+Join the conversation. 💬
+
+https://discord.gg/Xx8TSuWrCA
+
+Connect with the team, get real-time protocol updates, and engage with the community building the future of delta-neutral yield infrastructure. 🚀
+
+#Kerne #DeFi #DeltaNeutral
+
+*[Image: "Kerne is now live on discord, join the conversation"]*
+
+---
+
 ### [2026-02-22] - Retail Launch & Discord Announcement
 
 **Tweet 1:**
