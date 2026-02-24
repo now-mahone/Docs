@@ -45,6 +45,25 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     /// @notice The performance fee in basis points (e.g., 1000 = 10%)
     uint256 public grossPerformanceFeeBps = 1000;
 
+    // ============================================================
+    //                GENESIS PHASE (0% PERFORMANCE FEE)
+    // ============================================================
+    
+    /// @notice Genesis Phase TVL threshold in USD (100,000 USD with 18 decimals)
+    /// @dev During Genesis Phase, performance fees are 0% until TVL reaches this threshold.
+    ///      This incentivizes early depositors and bootstraps protocol liquidity.
+    uint256 public constant GENESIS_TVL_THRESHOLD = 100_000 * 1e18; // $100,000
+    
+    /// @notice Whether Genesis Phase is active (0% performance fee)
+    /// @dev Automatically becomes false when TVL >= GENESIS_TVL_THRESHOLD
+    bool public genesisPhaseActive = true;
+    
+    /// @notice Timestamp when Genesis Phase ended
+    uint256 public genesisPhaseEndedAt;
+    
+    /// @notice Total USD value deposited during Genesis Phase (for tracking)
+    uint256 public genesisPhaseDeposits;
+
     /// @notice The fee taken by the Kerne founder from white-label instances
     uint256 public founderFeeBps;
 
@@ -234,6 +253,12 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     event LiquidationRateLimited(uint256 attempted, uint256 allowed, uint256 hour);
     /// @notice KRN-24-011 / KRN-24-005: Emitted when the deposit entry fee is changed.
     event DepositFeeUpdated(uint256 newFeeBps);
+    
+    // --- Genesis Phase Events ---
+    /// @notice Emitted when Genesis Phase ends (TVL reached $100k threshold)
+    event GenesisPhaseEnded(uint256 tvlAtEnd, uint256 timestamp);
+    /// @notice Emitted when a deposit is made during Genesis Phase
+    event GenesisPhaseDeposit(address indexed user, uint256 assets, uint256 totalGenesisDeposits);
 
     /**
      * @param asset_ The underlying asset (e.g., WETH or USDC)
@@ -678,7 +703,11 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
         uint256 grossYieldAmount
     ) external onlyRole(STRATEGIST_ROLE) {
         require(founder != address(0), "Founder not set");
-        uint256 fee = (grossYieldAmount * grossPerformanceFeeBps) / 10000;
+        
+        // Use effective performance fee (0% during Genesis Phase)
+        uint256 effectiveFeeBps = getEffectivePerformanceFee();
+        uint256 fee = (grossYieldAmount * effectiveFeeBps) / 10000;
+        
         if (fee > 0) {
             address recipient = treasury != address(0) ? treasury : founder;
             _trackedOnChainAssets -= fee; // SECURITY (KRN-24-006)
@@ -1002,7 +1031,19 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
             require(assets <= maxDepositLimit, "Deposit limit exceeded");
         }
         _checkSolvency(false);
-        return super.deposit(assets, receiver);
+        
+        // Track Genesis Phase deposits
+        if (genesisPhaseActive) {
+            genesisPhaseDeposits += assets;
+            emit GenesisPhaseDeposit(receiver, assets, genesisPhaseDeposits);
+        }
+        
+        uint256 shares = super.deposit(assets, receiver);
+        
+        // Check if Genesis Phase should end
+        _checkGenesisPhase();
+        
+        return shares;
     }
 
     function mint(uint256 shares, address receiver) public virtual override whenNotPaused returns (uint256) {
@@ -1357,5 +1398,73 @@ contract KerneVault is ERC4626, AccessControl, ReentrancyGuard, Pausable, IERC31
     /// @return Whether the circuit breaker is currently triggered
     function isCRCircuitBreakerActive() external view returns (bool) {
         return crCircuitBreakerActive;
+    }
+
+    // ============================================================
+    //                GENESIS PHASE FUNCTIONS
+    // ============================================================
+    
+    /// @notice Returns the effective performance fee in basis points.
+    /// @dev Returns 0% during Genesis Phase, otherwise returns grossPerformanceFeeBps.
+    /// @return The effective performance fee in basis points.
+    function getEffectivePerformanceFee() public view returns (uint256) {
+        if (genesisPhaseActive) {
+            return 0; // 0% during Genesis Phase
+        }
+        return grossPerformanceFeeBps;
+    }
+    
+    /// @notice Returns the TVL in USD (assuming asset is priced in USD or ETH).
+    /// @dev For ETH vaults, this returns TVL in ETH units. For stablecoin vaults, 
+    ///      this returns TVL in the stablecoin's units (assumed ~$1).
+    /// @return The total value locked in the vault's native asset units.
+    function getTVL() public view returns (uint256) {
+        return totalAssets();
+    }
+    
+    /// @notice Returns the remaining TVL needed to exit Genesis Phase.
+    /// @return The remaining amount in the vault's native asset units.
+    function getRemainingGenesisTVL() public view returns (uint256) {
+        if (!genesisPhaseActive) return 0;
+        uint256 tvl = totalAssets();
+        if (tvl >= GENESIS_TVL_THRESHOLD) return 0;
+        return GENESIS_TVL_THRESHOLD - tvl;
+    }
+    
+    /// @notice Internal function to check and update Genesis Phase status.
+    /// @dev Called after deposits to check if TVL threshold has been reached.
+    function _checkGenesisPhase() internal {
+        if (genesisPhaseActive) {
+            uint256 tvl = totalAssets();
+            if (tvl >= GENESIS_TVL_THRESHOLD) {
+                genesisPhaseActive = false;
+                genesisPhaseEndedAt = block.timestamp;
+                emit GenesisPhaseEnded(tvl, block.timestamp);
+            }
+        }
+    }
+    
+    /// @notice Manually end Genesis Phase (admin only, for emergencies).
+    /// @dev Only callable if Genesis Phase is still active.
+    function endGenesisPhase() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(genesisPhaseActive, "Genesis Phase already ended");
+        genesisPhaseActive = false;
+        genesisPhaseEndedAt = block.timestamp;
+        emit GenesisPhaseEnded(totalAssets(), block.timestamp);
+    }
+    
+    /// @notice Check if Genesis Phase is still active.
+    /// @return Whether Genesis Phase is active (0% performance fee).
+    function isGenesisPhaseActive() external view returns (bool) {
+        return genesisPhaseActive;
+    }
+    
+    /// @notice Get Genesis Phase progress as a percentage.
+    /// @return Progress in basis points (e.g., 5000 = 50% of threshold reached).
+    function getGenesisPhaseProgress() external view returns (uint256) {
+        if (!genesisPhaseActive) return 10000; // 100%
+        uint256 tvl = totalAssets();
+        if (tvl >= GENESIS_TVL_THRESHOLD) return 10000;
+        return (tvl * 10000) / GENESIS_TVL_THRESHOLD;
     }
 }
