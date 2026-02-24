@@ -36,7 +36,7 @@ export default function Navbar() {
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed top-6 left-0 right-0 z-[100]"
+      className="fixed top-[54px] left-0 right-0 z-[100]"
     >
       <div className="max-w-[1920px] mx-auto px-6 md:px-12">
         {/* Floating bar with perfect symmetry: 16px (px-4) horizontal and 16px vertical spacing for internal elements */}

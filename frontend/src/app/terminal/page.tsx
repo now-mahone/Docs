@@ -530,7 +530,7 @@ export default function TerminalPage() {
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed top-[48px] left-0 right-0 z-[100]"
+        className="fixed top-[54px] left-0 right-0 z-[100]"
       >
         <div className="max-w-[1920px] mx-auto px-6 md:px-12">
           <div className="h-20 border border-[#22252a] bg-[#000000]/80 backdrop-blur-md rounded-sm shadow-sm px-4 flex items-center justify-between">
@@ -552,7 +552,7 @@ export default function TerminalPage() {
         </div>
       </motion.nav>
       
-      <main className="relative z-10 pt-[132px] pb-32 max-w-[1920px] mx-auto px-6 md:px-12">
+      <main className="relative z-10 pt-[150px] pb-32 max-w-[1920px] mx-auto px-6 md:px-12">
         <div className="text-left mb-12">
           <h1 className="font-heading font-medium tracking-tighter text-[#ffffff]">
             kUSD Dashboard

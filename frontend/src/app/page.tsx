@@ -144,7 +144,7 @@ export default function LandingPage() {
       <GenesisBanner />
       <Navbar />
 
-      <main className="relative z-10 pt-24 mt-[48px]">
+      <main className="relative z-10 pt-24 mt-[54px]">
         {/* Massive Hero Section inspired by Cursor/Morpho */}
         <section className="relative pt-24 md:pt-32 pb-32 overflow-hidden flex flex-col items-center text-center bg-gradient-to-b from-[#ffffff] to-[#d4dce1]">
           <div className="max-w-7xl mx-auto px-6 md:px-12 text-center relative z-20 flex flex-col items-center w-full">
