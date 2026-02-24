@@ -1,7 +1,7 @@
 // Created: 2026-02-23
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance, useChainId, useReadContract, useSwitchChain } from 'wagmi';
 import { parseEther, formatEther, erc20Abi } from 'viem';
 import { VAULT_ADDRESS, WETH_ADDRESS } from '@/config';
@@ -24,7 +24,10 @@ export function VaultInteraction() {
   const isBase = chainId === BASE_ID;
 
   const { writeContract, data: hash, isPending, reset: resetWrite } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ 
+    hash,
+    chainId: BASE_ID 
+  });
 
   const { data: wethBalance, refetch: refetchWeth } = useBalance({
     address,
@@ -37,6 +40,7 @@ export function VaultInteraction() {
     abi: KerneVaultABI.abi,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
+    chainId: BASE_ID,
   });
 
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
@@ -44,6 +48,7 @@ export function VaultInteraction() {
     abi: erc20Abi,
     functionName: 'allowance',
     args: address && VAULT ? [address, VAULT] : undefined,
+    chainId: BASE_ID,
   });
 
   useEffect(() => {
@@ -70,12 +75,30 @@ export function VaultInteraction() {
     if (activeTab === 'deposit') {
       const currentAllowance = allowance ? BigInt(allowance.toString()) : 0n;
       if (currentAllowance < val) {
-        writeContract({ address: WETH, abi: erc20Abi, functionName: 'approve', args: [VAULT, val] });
+        writeContract({ 
+          address: WETH, 
+          abi: erc20Abi, 
+          functionName: 'approve', 
+          args: [VAULT, val],
+          chainId: BASE_ID 
+        });
       } else {
-        writeContract({ address: VAULT, abi: KerneVaultABI.abi, functionName: 'deposit', args: [val, address] });
+        writeContract({ 
+          address: VAULT, 
+          abi: KerneVaultABI.abi, 
+          functionName: 'deposit', 
+          args: [val, address],
+          chainId: BASE_ID 
+        });
       }
     } else {
-      writeContract({ address: VAULT, abi: KerneVaultABI.abi, functionName: 'requestWithdrawal', args: [val] });
+      writeContract({ 
+        address: VAULT, 
+        abi: KerneVaultABI.abi, 
+        functionName: 'requestWithdrawal', 
+        args: [val],
+        chainId: BASE_ID 
+      });
     }
   };
 
